@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ASoundJob Company Directory",
+  "description": "List of audio companies with careers page URLs for job scraping",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string",
+        "description": "Company name",
+        "minLength": 1
+      },
+      "careers_url": {
+        "type": "string",
+        "description": "Direct URL to the careers/job listings page",
+        "pattern": "^https?://",
+        "minLength": 8
+      },
+      "category": {
+        "type": "string",
+        "description": "Industry category",
+        "enum": [
+          "AI/ML Audio",
+          "Acoustic Consulting & Engineering",
+          "Audio Accessories & Cables",
+          "Audio Health & Wellness",
+          "Audio IP & Licensing",
+          "Audio Interfaces & Converters",
+          "Audio Middleware & SDK",
+          "Audio Plugins & Virtual Instruments",
+          "Audio Retailers & Distributors",
+          "Audio Testing & Measurement",
+          "Automotive OEMs",
+          "Car Audio",
+          "Consumer Electronics & Tech",
+          "DAW & Music Production Software",
+          "DJ Equipment",
+          "Electronic Musical Instruments",
+          "Gaming, VR & Immersive Audio",
+          "Headphones & Personal Audio",
+          "Hearing Aid & Hearing Tech",
+          "Hi-Fi & Consumer Speakers",
+          "Music Education Technology",
+          "Professional Audio & Live Sound",
+          "Recording Studios & Post Houses",
+          "Smart Home & IoT Audio",
+          "Streaming & Music Services",
+          "Transducer & Driver Manufacturers",
+          "Voice & Speech Technology"
+        ]
+      },
+      "verified": {
+        "type": "boolean",
+        "description": "Whether the careers URL has been confirmed to load and contain job listings",
+        "default": false
+      },
+      "source": {
+        "type": "string",
+        "description": "How the entry was added to the list",
+        "enum": ["manual", "auto"],
+        "default": "auto"
+      },
+      "scrape_method": {
+        "type": "string",
+        "description": "Recommended scraping method (determined at runtime if absent)",
+        "enum": ["http", "playwright"],
+        "default": "http"
+      },
+      "notes": {
+        "type": "string",
+        "description": "Optional manual notes about this entry"
+      }
+    },
+    "required": ["name", "careers_url", "category", "verified", "source"],
+    "additionalProperties": false
+  }
+}
