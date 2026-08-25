@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "asoundjob-api"
+version = "0.1.0"
+description = "ASoundJob FastAPI backend"
+requires-python = ">=3.9"
+dependencies = [
+    "fastapi==0.128.8",
+    "uvicorn[standard]==0.39.0",
+    "python-jose[cryptography]==3.5.0",
+    "passlib[bcrypt]==1.7.4",
+    "python-multipart==0.0.20",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff==0.16.4",
+    "mypy==1.19.1",
+]
+
+[tool.setuptools.packages.find]
+include = ["api*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "W"]
+ignore = ["B008"]
+
+[tool.mypy]
+python_version = "3.9"
+ignore_missing_imports = true
+check_untyped_defs = true
+warn_unused_ignores = false
+mypy_path = "$MYPY_CONFIG_FILE_DIR/../scraper"

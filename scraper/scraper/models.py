@@ -15,7 +15,7 @@ from sqlalchemy import (
     func,
 )
 from sqlalchemy.dialects.postgresql import ARRAY
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 JobCategories = JSON().with_variant(ARRAY(Text), "postgresql")
 
@@ -82,6 +82,8 @@ class Job(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
+
+    company: Mapped[Optional[Company]] = relationship()
 
     def identity_key(self) -> tuple:
         return (self.company_id, self.external_id)
