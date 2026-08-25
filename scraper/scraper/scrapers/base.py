@@ -33,6 +33,7 @@ class ScrapeResult:
     jobs: list[RawJob] = field(default_factory=list)
     error: Optional[str] = None
     duration: float = 0.0
+    trust_empty: bool = False
 
 
 class ScrapeError(Exception):

@@ -4,7 +4,7 @@ import asyncio
 import re
 from typing import TYPE_CHECKING
 
-from scraper.scrapers.base import BaseScraper, RawJob, ScrapeResult
+from scraper.scrapers.base import BaseScraper, RawJob
 from scraper.scrapers.fetch import fetch_json, parse_date
 
 if TYPE_CHECKING:

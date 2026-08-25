@@ -5,7 +5,7 @@ import threading
 from datetime import date, datetime, timezone
 from typing import Any
 
-import requests
+import requests  # type: ignore[import-untyped]
 
 from scraper.config import Settings
 
