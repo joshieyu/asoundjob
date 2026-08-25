@@ -8,3 +8,9 @@ build/
 node_modules/
 .svelte-kit/
 .opencode/
+.mypy_cache/
+.ruff_cache/
+.DS_Store
+*.db
+*.sqlite
+*.sqlite3

@@ -147,11 +147,12 @@ CREATE TABLE jobs (
     location      TEXT,                   -- e.g. "San Francisco, CA" or "Remote"
     remote        BOOLEAN DEFAULT FALSE,
     job_type      TEXT,                   -- 'full-time', 'part-time', 'contract', 'internship'
+    seniority      TEXT,                   -- 'entry', 'mid', 'senior', 'lead' (auto-detected by normalizer)
     salary_min    INTEGER,                -- Optional
     salary_max    INTEGER,
     salary_currency TEXT,                 -- e.g. 'USD', 'EUR'
-    experience_level TEXT,                -- e.g. 'entry', 'mid', 'senior', 'lead'
-    audio_domain  TEXT,                   -- e.g. 'DSP', 'Acoustics', 'Live Sound'
+    job_categories TEXT[],                -- Array of category IDs from audio_job_categories.json
+                                           -- e.g. ['audio_dsp', 'audio_systems']
     posted_date   DATE,
     scraped_date  TIMESTAMPTZ DEFAULT NOW(),
     expires_date  DATE,                   -- For community jobs: set to now()+30d on insert.
@@ -230,7 +231,7 @@ CREATE TABLE career_resources (
 
 | Method | Path | Description | Query params |
 |---|---|---|---|
-| GET | `/api/jobs` | Paginated job listings | `page`, `per_page`, `category`, `location`, `remote`, `job_type`, `audio_domain`, `company_id`, `search`, `sort` |
+| GET | `/api/jobs` | Paginated job listings | `page`, `per_page`, `category`, `seniority`, `job_type`, `salary_min`, `salary_max`, `company_id`, `location`, `remote`, `job_categories`, `search`, `sort` |
 | GET | `/api/jobs/{id}` | Single job detail | — |
 | POST | `/api/jobs/submit` | Community job submission | Body: title, company_name, url, location, etc. |
 | GET | `/api/companies` | Company directory | `page`, `per_page`, `category`, `search`, `verified_only` |
@@ -378,38 +379,138 @@ search queries like "audio engineer", "DSP engineer", "acoustics".
 These are the hardest to maintain due to anti-bot measures.
 Start with Indeed (most permissive) and add others later.
 
+### Scraping Fallback Strategy
+
+For each company, the scraper tries methods in order and falls back on failure:
+
+```
+1. ATS JSON API     (if URL matches Greenhouse/Lever/Workable/etc.)
+   → Simple HTTP GET, fastest, no browser needed
+
+2. HTTP + BeautifulSoup (for server-rendered pages like Apple Careers)
+   → Fast, handles most non-ATS sites
+
+3. Playwright         (for JS-rendered SPAs)
+   → Slower (~5s/page), handles sites that need JavaScript
+
+4. Playwright + stealth + proxies (only if step 3 gets blocked)
+   → For hardened Cloudflare/Turnstile sites
+   → Add playwright-stealth plugin and residential proxy rotation
+   → Only a small number of sites should reach this step
+```
+
+Steps 1-3 are the default path. Step 4 is the exception handler for the
+rare sites that actively block automated browsers. Implement steps 1-3
+first; add step 4 only when specific companies are confirmed to need it.
+
+## Job Filtering & Sorting System
+
+### Job Categories (`data/audio_job_categories.json`)
+
+Jobs are tagged with one or more audio-specific categories from a curated
+taxonomy of 14 job categories:
+
+| ID | Name | Description |
+|---|---|---|
+| `acoustics_architectural` | Acoustics & Architectural Design | Room tuning, noise mitigation, acoustic consulting |
+| `audio_ee` | Audio Electrical Engineering | Circuit design, PCB layout, amplifier design |
+| `transducers_microphones` | Microphones & Transducer Engineering | Loudspeaker, microphone, headphone physical design |
+| `audio_software` | Audio Software Engineering | C++, JUCE, DAWs, audio engines, middleware |
+| `music_technology` | Music Technology | Synthesizers, guitar pedals, MIDI, virtual instruments |
+| `audio_systems` | Audio Systems | End-to-end integration, measurement, tuning |
+| `automotive_audio` | Automotive Audio | Vehicle cabin audio, infotainment |
+| `audio_dsp` | Audio DSP | Filters, EQs, compressors, spatial audio |
+| `audio_aiml` | Audio AI & Machine Learning | Source separation, MIR, speech recognition |
+| `music_production_recording` | Music Production & Recording Arts | Tracking, mixing, mastering |
+| `live_sound_events` | Live Sound & Event Production | FOH, monitors, A/V rigging |
+| `nvh` | NVH (Noise, Vibration, Harshness) | Mechanical noise, automotive/aerospace |
+| `psychoacoustics_perception` | Psychoacoustics & Audio Perception | Listening tests, HRTF research |
+| `game_audio_interactive` | Game Audio & Interactive Sound | Wwise, FMOD, XR sound design |
+
+A single job can have multiple categories (e.g. an automotive acoustics
+role might be tagged `audio_systems`, `automotive_audio`, `nvh`).
+
+### Filter Dimensions
+
+The job board (`/jobs`) supports these filters:
+
+| Filter | Source | Type | Example values |
+|---|---|---|---|
+| **Job category** | `audio_job_categories.json` | Multi-select | "Audio DSP", "Live Sound" |
+| **Seniority** | Parsed from title/description | Single | Entry, Mid, Senior, Lead, Principal |
+| **Job type** | Parsed from posting | Single | Full-time, Part-time, Contract, Internship |
+| **Salary range** | Parsed from posting | Range | $80k-$120k USD |
+| **Company** | Linked from `companies` table | Single | "Bose", "Apple" |
+| **Location** | Parsed from posting | Text + remote flag | "San Francisco, CA", "Remote" |
+| **Remote only** | Parsed from posting | Boolean | true / false |
+| **Sort** | Derived | Single | Date (newest), Relevance, Salary (high-low) |
+
+### How Categories Are Assigned
+
+1. **Scraper**: The normalizer attempts to auto-classify each job into
+   categories by matching keywords in the title and description against
+   the category descriptions. E.g. a job titled "DSP Engineer" with
+   mentions of "filters" and "FFT" gets tagged `audio_dsp`.
+2. **Community submissions**: The submitter selects categories from a
+   dropdown populated by `audio_job_categories.json`.
+3. **Admin**: Can edit/add categories on any job during approval.
+
+### Seniority Detection
+
+The normalizer infers seniority from job title patterns:
+- `entry`, `junior`, `intern` → Entry
+- (no qualifier) → Mid
+- `senior`, `sr` → Senior
+- `lead`, `principal`, `staff` → Lead
+- `manager`, `head`, `director` → Manager (excluded from engineering filters)
+
 ## Frontend Pages
 
 ### Pages and Modes
 
 | Page | Mode | SEO Priority | Description |
 |---|---|---|---|
-| `/` | Persuade | High | Hero, search bar, featured jobs, categories, submit CTA |
-| `/jobs` | Operate | High | Filterable job listings with pagination |
+| `/` | Persuade | High | Hero, search bar, featured jobs, categories, submit CTA, YAP logo |
+| `/jobs` | Operate | High | Filterable job listings with pagination + sorting |
 | `/jobs/[id]` | Read | Critical | Individual job posting (must be indexable by Google) |
 | `/jobs/submit` | Operate | Medium | Community job submission form |
-| `/companies` | Operate | High | Company directory — browse 1,385 companies by category, search |
-| `/companies/[slug]` | Read | High | Company profile: description, logo, open jobs, link to careers page |
+| `/companies` | Operate | High | Company directory — browse 1,385 companies by category, search (WIP) |
+| `/companies/[slug]` | Read | High | Company profile: description, logo, open jobs, link to careers page (WIP) |
 | `/resources` | Read | Medium | Career development resources hub |
-| `/resources/interview-prep` | Read | High | Interview prep guide — structured, multi-article |
-| `/resources/interview-prep/[slug]` | Read | High | Individual interview prep article |
-| `/resources/[slug]` | Read | Medium | Other resource articles (resume, salary, career path) |
+| `/resources/interview-prep` | Read | High | Interview prep guide — structured, multi-article (WIP) |
+| `/resources/interview-prep/[slug]` | Read | High | Individual interview prep article (WIP) |
+| `/resources/[slug]` | Read | Medium | Other resource articles (resume, salary, career path) (WIP) |
 | `/admin` | Operate | None | Admin dashboard (auth required, not indexed) |
 | `/admin/submissions` | Operate | None | Job submission approval queue |
 | `/admin/companies` | Operate | None | Company management (edit, verify, add) |
 | `/admin/scraper` | Operate | None | Scraper monitoring + manual trigger |
-| `/about` | Read | Low | About ASoundJob |
+| `/about` | Read | Low | About ASoundJob + Young Audio Professionals |
+
+### Branding & Assets
+
+- **Organization**: Young Audio Professionals (YAP) — the community creating ASoundJob
+- **Logo**: `assets/YAP_logo.png` (placeholder for now, replace later)
+- **Discord**: Link to YAP Discord in nav/footer (URL in `assets/discord_link.txt`, currently empty — fill in before launch)
+- **About page**: Mentions YAP, links to Discord, explains the community-driven mission
 
 ### Site Sections
 
 #### 1. Job Board (`/jobs`)
-- Filterable listings: category, location, remote/onsite, job type, experience level, audio domain
+- Filterable listings with robust filtering and sorting:
+  - **Job category** (multi-select from 14 audio-specific categories)
+  - **Seniority** (entry, mid, senior, lead)
+  - **Job type** (full-time, part-time, contract, internship)
+  - **Salary range** (slider or min/max)
+  - **Company** (dropdown of companies with active jobs)
+  - **Location** (text search + remote toggle)
+  - **Sort** (newest, relevance, salary high-low)
 - Server-side filtered via API, SSR for SEO
 - Each job detail page has JSON-LD JobPosting structured data
 - "Submit a Job" CTA prominent on this page and homepage
 
 #### 2. Community Job Submissions (`/jobs/submit`)
 - Public form: job title, company name, URL, location, remote, job type, salary, description
+- Submitter selects job categories from dropdown (populated by `audio_job_categories.json`)
 - Submitter name + email (for spam tracking, never published)
 - Optional: link to existing company in directory if matched
 - On submit: creates `job_submissions` row with `status='pending'`
@@ -423,20 +524,22 @@ Start with Indeed (most permissive) and add others later.
 - Reject → marks submission `rejected` with reason
 - Shows count badge in admin nav
 
-#### 4. Company Directory (`/companies`)
-- Browse all 1,385 companies (including unverified ones — they're still valid directory entries)
-- Filter by category (27 categories)
-- Search by name
-- Company profile pages (`/companies/[slug]`):
-  - Company name, logo, description, category, headquarters
-  - Link to their careers page
-  - Active job listings at that company
-  - "No open positions" state if no active jobs
-- This is a key SEO asset — 1,385 company pages, each indexable
+#### 4. Company Directory (`/companies`) — Work in Progress
+- **Initial state**: Empty page with "This section is a work in progress" message
+- **Target state**: Browse all 1,385 companies (including unverified)
+  - Filter by category (27 categories), search by name
+  - Company profile pages (`/companies/[slug]`):
+    - Company name, logo, description, category, headquarters
+    - Link to their careers page
+    - Active job listings at that company
+    - "No open positions" state if no active jobs
+  - Key SEO asset — 1,385 company pages, each indexable
+- **Build now**: Create the route + page with the WIP message. Populate with
+  real data in a later pass after the scraper and API are working.
 
-#### 5. Interview Prep Guide (`/resources/interview-prep`)
-- Dedicated section within career resources
-- Structured as a series of articles, organized by topic:
+#### 5. Interview Prep Guide (`/resources/interview-prep`) — Work in Progress
+- **Initial state**: Empty page with "This section is a work in progress" message
+- **Target state**: Structured multi-article guide:
   - Common audio engineering interview questions
   - DSP concepts you should know
   - Acoustics fundamentals for interviews
@@ -445,8 +548,9 @@ Start with Indeed (most permissive) and add others later.
   - Portfolio/preparation tips
   - Salary negotiation for audio roles
   - What to expect at major companies (Apple, Bose, Harman, etc.)
-- Each article is a Markdown document in the `career_resources` table
-- Seeded with initial content, expandable over time
+- Each article is Markdown in the `career_resources` table
+- **Build now**: Create the route + page with the WIP message. Seed with
+  content in a later pass.
 
 #### 6. Career Resources (`/resources`)
 - Broader category including:
@@ -459,18 +563,24 @@ Start with Indeed (most permissive) and add others later.
 
 ### Key Frontend Features
 
-1. **Job search + filters**: Category, location, remote/onsite, job type,
-   experience level, audio domain. Server-side filtered via API.
+1. **Robust filtering & sorting**: Multi-select job categories, seniority,
+   job type, salary range, company, location, remote toggle, sort options.
+   All server-side filtered via API for SEO-friendly URLs.
 2. **SEO**: SvelteKit SSR renders full HTML. Each job page needs:
    - `<title>`: "{Job Title} at {Company} | ASoundJob"
    - `<meta name="description">`: First 160 chars of job description
    - JSON-LD structured data (JobPosting schema)
    - Canonical URL
    - sitemap.xml generated at build time with all job/company/resource URLs
-3. **Community submissions**: Low-friction form, no login required, IP rate-limited
-4. **Admin dashboard**: Simple, functional. Approval queue, scraper monitoring, company management
-5. **Saved searches / alerts**: Optional, email notifications (phase 2)
-6. **Responsive**: Mobile-first, must work well on phone (most job seekers browse on mobile)
+3. **YAP branding**: Logo in header/nav, Discord link in footer, About page
+   explains Young Audio Professionals
+4. **WIP pages**: Company Directory and Interview Prep pages exist as
+   routes with "work in progress" messages — present in nav, indexable,
+   populated with real data later
+5. **Community submissions**: Low-friction form, no login required, IP rate-limited
+6. **Admin dashboard**: Simple, functional. Approval queue, scraper monitoring, company management
+7. **Saved searches / alerts**: Optional, email notifications (phase 2)
+8. **Responsive**: Mobile-first, must work well on phone (most job seekers browse on mobile)
 
 ## Deployment
 

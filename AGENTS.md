@@ -10,9 +10,12 @@ directory, and an interview prep guide.
 ## Key Files
 - `ARCHITECTURE.md` — full architecture plan, database schema, API design, build order
 - `data/audio_companies_final.json` — 1,385 companies with careers URLs (source of truth)
+- `data/audio_job_categories.json` — 14 audio-specific job categories for filtering
 - `data/schema.json` — JSON schema for the company data
 - `data/README.md` — data workflow documentation
-- `requirements.txt` — Python dependencies for data collection tooling
+- `assets/YAP_logo.png` — Young Audio Professionals logo (placeholder)
+- `assets/discord_link.txt` — YAP Discord invite link (currently empty, fill before launch)
+- `requirements.txt` — Python dependencies
 
 ## Tech Stack
 - **Scraper**: Python, Playwright, requests, BeautifulSoup, SQLAlchemy, RQ
@@ -23,12 +26,18 @@ directory, and an interview prep guide.
 - **Hosting**: Hetzner VPS, nginx, Docker
 
 ## Site Sections
-1. **Job Board** — scraped + community-submitted job listings with filters
+1. **Job Board** — scraped + community-submitted jobs with robust filtering/sorting
 2. **Community Job Submissions** — public form, admin approval queue
-3. **Company Directory** — 1,385 audio companies, browseable by category
-4. **Interview Prep Guide** — structured multi-article guide for audio eng interviews
+3. **Company Directory** — 1,385 audio companies, browseable by category (WIP placeholder page first)
+4. **Interview Prep Guide** — structured multi-article guide (WIP placeholder page first)
 5. **Career Resources** — resume, salary, career path, freelancing articles
 6. **Admin Dashboard** — submission approval, scraper monitoring, company management
+
+## Branding
+- **Organization**: Young Audio Professionals (YAP)
+- **Logo**: `assets/YAP_logo.png` (placeholder, replace later)
+- **Discord**: `assets/discord_link.txt` (currently empty — fill before launch)
+- **About page**: Mentions YAP, links to Discord, explains community-driven mission
 
 ## Build Conventions
 
@@ -67,17 +76,22 @@ directory, and an interview prep guide.
 2. Install: `sqlalchemy[asyncio], aiosqlite, psycopg2-binary, rq, redis, requests, beautifulsoup4, playwright, alembic, pydantic, ruff, mypy`
 3. Create `scraper/models.py` with SQLAlchemy models (see ARCHITECTURE.md for schema)
    - Companies, Jobs, JobSubmissions, ScrapeLog, CareerResources tables
+   - Jobs table includes `seniority`, `job_categories` (TEXT[] array), `salary_min/max`
 4. Create `scraper/database.py` with engine + session factory
 5. Create Alembic migration setup
 6. Create `scraper/company_loader.py` — reads `data/audio_companies_final.json`, inserts into companies table
 7. Create `scraper/scrapers/base.py` — abstract BaseScraper with interface:
    - `async def scrape(company) -> list[RawJob]`
    - Handles errors, timeouts, logging
+   - Fallback strategy: ATS API → HTTP → Playwright → Playwright+stealth (see ARCHITECTURE.md)
 8. Create `scraper/scrapers/ats/greenhouse.py` — fetches `boards-api.greenhouse.io/v1/boards/{slug}/jobs`
 9. Create `scraper/scrapers/ats/lever.py` — fetches `api.lever.co/v0/postings/{slug}?mode=json`
 10. Create `scraper/scrapers/http_scraper.py` — generic HTML parser using BeautifulSoup
 11. Create `scraper/scrapers/playwright_scraper.py` — browser-based scraper
-12. Create `scraper/normalizer.py` — standardize job fields
+12. Create `scraper/normalizer.py` — standardize job fields:
+    - Auto-detect seniority from job title (entry/mid/senior/lead)
+    - Auto-classify job_categories by matching keywords against `data/audio_job_categories.json`
+    - Parse salary ranges (min/max/currency)
 13. Create `scraper/deduplicator.py` — dedupe by (company_id, external_id)
 14. Create `scraper/main.py` — orchestrates: load companies → enqueue → workers → normalize → dedupe → insert
 15. Run: `python -m scraper.main --once` and verify jobs are scraped
@@ -102,11 +116,23 @@ directory, and an interview prep guide.
 3. Run `/impeccable init` to capture product vision
 4. Run `/impeccable shape` to design visual system
 5. Create `src/lib/api.ts` — API client functions
-6. Build pages in order: homepage → jobs list → job detail → submit form → companies → company detail → interview prep → resources → admin → about
-7. Add SEO: meta tags, JSON-LD, sitemap.xml, robots.txt
-8. Run `/impeccable audit` for quality check
-9. Run `/impeccable polish` for final pass
-10. Build + preview: `npm run build && npm run preview`
+6. Incorporate `assets/YAP_logo.png` in header/nav
+7. Add Discord link (from `assets/discord_link.txt`) to footer
+8. Build pages in order:
+   a. Homepage with search + featured jobs + submit CTA + YAP branding
+   b. Job listings page with robust filters (category, seniority, job type, salary, company, location, remote, sort)
+   c. Job detail page with SEO + JSON-LD
+   d. Community job submission form (with category dropdown from `audio_job_categories.json`)
+   e. Company directory — WIP placeholder page ("This section is a work in progress")
+   f. Company detail page — WIP placeholder (same message)
+   g. Interview prep guide — WIP placeholder page ("This section is a work in progress")
+   h. Career resources hub — WIP placeholder (same message)
+   i. Admin dashboard (submission queue, scraper monitor, company management)
+   j. About page (mentions YAP, links to Discord)
+9. Add SEO: meta tags, JSON-LD, sitemap.xml, robots.txt
+10. Run `/impeccable audit` for quality check
+11. Run `/impeccable polish` for final pass
+12. Build + preview: `npm run build && npm run preview`
 
 ### Phase 4: Deploy
 1. Write `Dockerfile` (multi-stage: build frontend, install Python deps, run everything)
