@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "asoundjob-scraper"
+version = "0.1.0"
+description = "ASoundJob audio industry job scraper"
+requires-python = ">=3.9"
+dependencies = [
+    "requests==2.32.5",
+    "beautifulsoup4==4.15.0",
+    "playwright==1.60.0",
+    "sqlalchemy[asyncio]==2.0.52",
+    "aiosqlite==0.22.1",
+    "psycopg2-binary==2.9.12",
+    "rq==2.8.0",
+    "redis==7.0.1",
+    "alembic==1.16.5",
+    "pydantic==2.13.4",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff==0.16.4",
+    "mypy==1.19.1",
+]
+
+[tool.setuptools.packages.find]
+include = ["scraper*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "W"]
+
+[tool.mypy]
+python_version = "3.9"
+ignore_missing_imports = true
+check_untyped_defs = true
+warn_unused_ignores = false
