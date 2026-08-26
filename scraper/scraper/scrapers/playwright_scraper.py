@@ -5,7 +5,7 @@ import logging
 from typing import Any
 
 from scraper.scrapers.base import BaseScraper, RawJob, ScrapeError
-from scraper.scrapers.link_extraction import extract_job_links
+from scraper.scrapers.link_extraction import extract_jobs
 
 logger = logging.getLogger(__name__)
 
@@ -74,7 +74,7 @@ class PlaywrightScraper(BaseScraper):
         url = company.careers_url.strip()
         html = await self.fetch_page_html(url)
         self._last_html = html
-        jobs = extract_job_links(html, url)
+        jobs = extract_jobs(html, url)
         if not jobs:
             raise ScrapeError("page loaded but no job links found")
         return jobs

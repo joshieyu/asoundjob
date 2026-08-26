@@ -4,7 +4,7 @@ import asyncio
 
 from scraper.scrapers.base import BaseScraper, RawJob
 from scraper.scrapers.fetch import fetch_html
-from scraper.scrapers.link_extraction import extract_job_links
+from scraper.scrapers.link_extraction import extract_jobs
 
 
 class HttpScraper(BaseScraper):
@@ -17,4 +17,4 @@ class HttpScraper(BaseScraper):
             fetch_html, company.careers_url.strip(), self.settings
         )
         self._last_html = html
-        return extract_job_links(html, company.careers_url.strip())
+        return extract_jobs(html, company.careers_url.strip())
