@@ -8,10 +8,12 @@ from sqlalchemy import update
 from scraper.config import Settings
 from scraper.database import get_session_factory
 from scraper.models import Company
+from scraper.scrapers.ats.apple import AppleScraper
 from scraper.scrapers.ats.ashby import AshbyScraper
 from scraper.scrapers.ats.bamboohr import BambooHRScraper
 from scraper.scrapers.ats.greenhouse import GreenhouseScraper
 from scraper.scrapers.ats.lever import LeverScraper
+from scraper.scrapers.ats.pinpoint import PinpointScraper
 from scraper.scrapers.ats.recruitee import RecruiteeScraper
 from scraper.scrapers.ats.smartrecruiters import SmartRecruitersScraper
 from scraper.scrapers.ats.workable import WorkableScraper
@@ -38,6 +40,8 @@ class ScrapePipeline:
         self.recruitee = RecruiteeScraper(settings)
         self.bamboohr = BambooHRScraper(settings)
         self.workday = WorkdayScraper(settings)
+        self.apple = AppleScraper(settings)
+        self.pinpoint = PinpointScraper(settings)
         self.http = HttpScraper(settings)
         self.playwright: PlaywrightScraper | None = None
         self.stealth: PlaywrightScraper | None = None
@@ -50,6 +54,8 @@ class ScrapePipeline:
             "recruitee": self.recruitee,
             "bamboohr": self.bamboohr,
             "workday": self.workday,
+            "apple": self.apple,
+            "pinpoint": self.pinpoint,
         }
 
     def _playwright_scraper(self) -> PlaywrightScraper:
@@ -133,6 +139,8 @@ class ScrapePipeline:
             self.recruitee,
             self.bamboohr,
             self.workday,
+            self.pinpoint,
+            self.apple,
         )
         for ats in ats_scrapers:
             if ats.can_handle(company):
