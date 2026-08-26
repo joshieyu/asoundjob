@@ -1,0 +1,160 @@
+<script lang="ts">
+	import { clientApi } from '$lib/client';
+
+	interface CompanyRow {
+		id: number;
+		name: string;
+		slug: string;
+		category: string;
+		careers_url: string | null;
+		verified: boolean;
+		source: string;
+		active_jobs_count: number;
+	}
+
+	let companies = $state<CompanyRow[]>([]);
+	let search = $state('');
+	let loading = $state(true);
+	let editingUrl = $state(0);
+	let editValue = $state('');
+	let message = $state('');
+
+	async function load() {
+		loading = true;
+		try {
+			const query = new URLSearchParams({ per_page: '50' });
+			if (search.trim()) query.set('search', search.trim());
+			const result = await clientApi<{ items: CompanyRow[] }>(
+				`/api/admin/companies?${query.toString()}`
+			);
+			companies = result.items;
+		} catch (err) {
+			message = err instanceof Error ? err.message : 'Failed to load';
+		} finally {
+			loading = false;
+		}
+	}
+
+	let searchTimer: ReturnType<typeof setTimeout> | undefined;
+	function onSearch() {
+		clearTimeout(searchTimer);
+		searchTimer = setTimeout(load, 300);
+	}
+
+	$effect(() => {
+		load();
+		return () => clearTimeout(searchTimer);
+	});
+
+	async function toggleVerified(row: CompanyRow) {
+		message = '';
+		try {
+			await clientApi(`/api/admin/companies/${row.id}`, {
+				method: 'PUT',
+				body: { verified: !row.verified }
+			});
+			row.verified = !row.verified;
+			row.source = row.verified ? 'manual' : row.source;
+			message = `${row.name} marked ${row.verified ? 'verified' : 'unverified'}.`;
+		} catch (err) {
+			message = err instanceof Error ? err.message : 'Update failed';
+		}
+	}
+
+	function startEdit(row: CompanyRow) {
+		editingUrl = row.id;
+		editValue = row.careers_url ?? '';
+	}
+
+	async function saveUrl(id: number, name: string) {
+		message = '';
+		try {
+			await clientApi(`/api/admin/companies/${id}`, {
+				method: 'PUT',
+				body: { careers_url: editValue }
+			});
+			const row = companies.find((c) => c.id === id);
+			if (row) row.careers_url = editValue;
+			editingUrl = 0;
+			message = `Updated ${name}.`;
+		} catch (err) {
+			message = err instanceof Error ? err.message : 'Update failed';
+		}
+	}
+</script>
+
+<section class="mt-6">
+	<h1 class="legend">COMPANY MANAGEMENT</h1>
+
+	<div class="mt-4 flex flex-wrap items-center gap-3">
+		<label class="sr-only" for="company-search">Search companies</label>
+		<input
+			id="company-search"
+			bind:value={search}
+			oninput={onSearch}
+			placeholder="Search by name…"
+			class="well h-10 w-full max-w-xs px-3 text-sm sm:w-72"
+		/>
+	</div>
+
+	{#if message}<p class="mt-3 font-mono text-xs tracking-wide" role="status">{message}</p>{/if}
+
+	<div class="panel mt-4 overflow-x-auto">
+		<table class="w-full min-w-[48rem] text-left text-sm">
+			<thead>
+				<tr class="border-b border-seam font-mono text-[10px] tracking-[0.12em] text-ink-soft uppercase">
+					<th scope="col" class="px-4 py-2.5">Company</th>
+					<th scope="col" class="px-4 py-2.5">Category</th>
+					<th scope="col" class="px-4 py-2.5">Open jobs</th>
+					<th scope="col" class="px-4 py-2.5">Careers URL</th>
+					<th scope="col" class="px-4 py-2.5">Verified</th>
+				</tr>
+			</thead>
+			<tbody>
+				{#each companies as row (row.id)}
+					<tr class="border-b border-seam/60 align-top last:border-0">
+						<td class="px-4 py-3 font-semibold">{row.name}</td>
+						<td class="px-4 py-3 text-xs text-ink-soft">{row.category}</td>
+						<td class="readout px-4 py-3">{row.active_jobs_count}</td>
+						<td class="px-4 py-3">
+							{#if editingUrl === row.id}
+								<span class="flex gap-1.5">
+									<input bind:value={editValue} class="well h-8 w-64 px-2 font-mono text-xs" />
+									<button type="button" class="btn-latch !py-1" onclick={() => saveUrl(row.id, row.name)}>Save</button>
+								</span>
+							{:else if row.careers_url}
+								<button
+									type="button"
+									class="max-w-[16rem] truncate font-mono text-xs text-fader-deep hover:underline"
+									title="Click to edit"
+									onclick={() => startEdit(row)}
+								>
+									{row.careers_url}
+								</button>
+							{:else}
+								<button type="button" class="btn-latch !py-1" onclick={() => startEdit(row)}>Add URL</button>
+							{/if}
+						</td>
+						<td class="px-4 py-3">
+							<button type="button" class="btn-latch !py-1 {row.verified ? 'is-on' : ''}" onclick={() => toggleVerified(row)}>
+								{row.verified ? 'Yes' : 'No'}
+							</button>
+							{#if row.source === 'manual'}
+								<span class="ml-1.5 font-mono text-[10px] text-fader-deep" title="Manually verified">M</span>
+							{/if}
+						</td>
+					</tr>
+				{:else}
+					<tr>
+						<td colspan="5" class="px-4 py-6 text-center font-mono text-sm text-ink-soft">
+							{loading ? 'Loading…' : 'No companies match.'}
+						</td>
+					</tr>
+				{/each}
+			</tbody>
+		</table>
+	</div>
+	<p class="mt-2 font-mono text-[11px] tracking-wide text-ink-soft">
+		Edits mark the company source=manual — the nightly sync will never overwrite it.
+	</p>
+</section>

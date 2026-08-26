@@ -1,1 +1,240 @@
 @import 'tailwindcss';
+
+@theme {
+	--font-sans: 'Archivo Variable', ui-sans-serif, system-ui, sans-serif;
+	--font-mono: 'Spline Sans Mono Variable', ui-monospace, SFMono-Regular, monospace;
+
+	--color-panel: #e9e7e1;
+	--color-panel-raised: #f5f3ef;
+	--color-panel-recessed: #dedcd4;
+	--color-ink: #23262b;
+	--color-ink-soft: #575b61;
+	--color-seam: #c9c6bd;
+	--color-fader: #d96c2c;
+	--color-fader-deep: #a84e1c;
+	--color-lit: #2f8f57;
+	--color-led-0: #cfcdc6;
+
+	--shadow-cap:
+		inset 0 1px 0 rgb(255 255 255 / 0.75), inset 0 -1px 0 rgb(35 38 43 / 0.08),
+		0 1px 2px rgb(35 38 43 / 0.08);
+	--shadow-recessed:
+		inset 0 2px 4px rgb(35 38 43 / 0.12), inset 0 -1px 0 rgb(255 255 255 / 0.6);
+}
+
+@layer base {
+	html {
+		background-color: var(--color-panel);
+		color: var(--color-ink);
+	}
+
+	body {
+		font-family: var(--font-sans);
+		-webkit-font-smoothing: antialiased;
+	}
+
+	:focus-visible {
+		outline: 2px solid var(--color-ink);
+		outline-offset: 2px;
+		border-radius: 2px;
+	}
+
+	::selection {
+		background: var(--color-fader);
+		color: white;
+	}
+}
+
+@layer components {
+	.panel {
+		background-color: var(--color-panel-raised);
+		box-shadow: var(--shadow-cap);
+		border: 1px solid var(--color-seam);
+		border-radius: 0.375rem;
+	}
+
+	.well {
+		background-color: var(--color-panel-recessed);
+		box-shadow: var(--shadow-recessed);
+		border: 1px solid var(--color-seam);
+		border-radius: 0.375rem;
+	}
+
+	.btn-latch {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.375rem;
+		padding: 0.5rem 0.875rem;
+		font-size: 0.8125rem;
+		font-weight: 600;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		color: var(--color-ink);
+		background: linear-gradient(
+			to bottom,
+			var(--color-panel-raised),
+			var(--color-panel)
+		);
+		border: 1px solid var(--color-seam);
+		border-radius: 0.25rem;
+		box-shadow: var(--shadow-cap);
+		cursor: pointer;
+		transition:
+			background 120ms ease,
+			color 120ms ease,
+			box-shadow 120ms ease;
+	}
+
+	.btn-latch:hover {
+		border-color: var(--color-fader-deep);
+	}
+
+	.btn-latch[aria-pressed='true'],
+	.btn-latch.is-on {
+		background: var(--color-fader);
+		border-color: var(--color-fader-deep);
+		color: #fff;
+		box-shadow: inset 0 1px 3px rgb(0 0 0 / 0.25);
+	}
+
+	.btn-primary {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5rem;
+		padding: 0.625rem 1.25rem;
+		font-weight: 700;
+		font-size: 0.875rem;
+		letter-spacing: 0.05em;
+		text-transform: uppercase;
+		color: #fff;
+		background: var(--color-fader);
+		border: 1px solid var(--color-fader-deep);
+		border-radius: 0.25rem;
+		box-shadow: var(--shadow-cap);
+	}
+
+	.btn-primary:hover {
+		background: var(--color-fader-deep);
+	}
+
+	.legend {
+		display: flex;
+		align-items: center;
+		gap: 0.625rem;
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		font-weight: 600;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		color: var(--color-ink-soft);
+	}
+
+	.legend::before {
+		content: '';
+		width: 0.5rem;
+		height: 0.1875rem;
+		background: var(--color-fader);
+		border-radius: 1px;
+	}
+
+	.legend::after {
+		content: '';
+		flex: 1;
+		height: 1px;
+		background: var(--color-seam);
+	}
+
+	.readout {
+		font-family: var(--font-mono);
+		font-variant-numeric: tabular-nums;
+		letter-spacing: -0.01em;
+	}
+
+	.meter-sweep span {
+		animation: segment-light 600ms ease-out both;
+	}
+
+	.meter-sweep span:nth-child(2) {
+		animation-delay: 40ms;
+	}
+	.meter-sweep span:nth-child(3) {
+		animation-delay: 80ms;
+	}
+	.meter-sweep span:nth-child(4) {
+		animation-delay: 120ms;
+	}
+	.meter-sweep span:nth-child(5) {
+		animation-delay: 160ms;
+	}
+	.meter-sweep span:nth-child(6) {
+		animation-delay: 200ms;
+	}
+	.meter-sweep span:nth-child(7) {
+		animation-delay: 240ms;
+	}
+	.meter-sweep span:nth-child(8) {
+		animation-delay: 280ms;
+	}
+	.meter-sweep span:nth-child(9) {
+		animation-delay: 320ms;
+	}
+	.meter-sweep span:nth-child(10) {
+		animation-delay: 360ms;
+	}
+	.meter-sweep span:nth-child(11) {
+		animation-delay: 400ms;
+	}
+	.meter-sweep span:nth-child(12) {
+		animation-delay: 440ms;
+	}
+	.meter-sweep span:nth-child(13) {
+		animation-delay: 480ms;
+	}
+	.meter-sweep span:nth-child(14) {
+		animation-delay: 520ms;
+	}
+	.meter-sweep span:nth-child(15) {
+		animation-delay: 560ms;
+	}
+	.meter-sweep span:nth-child(16) {
+		animation-delay: 600ms;
+	}
+
+	@keyframes segment-light {
+		from {
+			opacity: 0.25;
+			transform: scaleY(0.4);
+		}
+		to {
+			opacity: 1;
+			transform: scaleY(1);
+		}
+	}
+
+	.readout-power {
+		animation: readout-power 900ms ease-out both;
+	}
+
+	@keyframes readout-power {
+		0% {
+			opacity: 0.2;
+			text-shadow: none;
+		}
+		55% {
+			opacity: 1;
+			text-shadow: 0 0 18px rgb(47 143 87 / 0.6);
+		}
+		100% {
+			opacity: 1;
+			text-shadow: 0 0 12px rgb(47 143 87 / 0.45);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.meter-sweep span,
+		.readout-power {
+			animation: none;
+		}
+	}
+}

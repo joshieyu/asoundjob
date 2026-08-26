@@ -1,0 +1,139 @@
+{
+	"schemaVersion": 2,
+	"generatedAt": "2026-08-26T00:00:00Z",
+	"title": "Design System: ASoundJob",
+	"extensions": {
+		"colorMeta": {
+			"fader": {
+				"role": "primary",
+				"displayName": "Fader Cap Orange",
+				"canonical": "#d96c2c",
+				"tonalRamp": ["#2a1305", "#54260c", "#7e3a12", "#a84e1c", "#d96c2c", "#e58a50", "#efa97b", "#f6c7a8"]
+			},
+			"lit": {
+				"role": "tertiary",
+				"displayName": "Signal Green",
+				"canonical": "#2f8f57",
+				"tonalRamp": ["#0c2a18", "#144025", "#1d5a34", "#2f8f57", "#4daf74", "#74c795", "#9fdcb6", "#c9efd7"]
+			},
+			"panel": {
+				"role": "neutral",
+				"displayName": "Panel Silver",
+				"canonical": "#e9e7e1",
+				"tonalRamp": ["#57534b", "#7a766d", "#a19d93", "#c9c6bd", "#dedcd4", "#e9e7e1", "#f5f3ef", "#fbfaf7"]
+			},
+			"ink": {
+				"role": "neutral",
+				"displayName": "Hardware Ink",
+				"canonical": "#23262b",
+				"tonalRamp": ["#0b0c0e", "#16181c", "#23262b", "#3a3e45", "#575b61", "#7e8288", "#abaeb2", "#d6d8db"]
+			}
+		},
+		"typographyMeta": {
+			"display": { "displayName": "Display", "purpose": "Page titles and the hero job count only." },
+			"readout": { "displayName": "Readout", "purpose": "Every scannable number: counts, salaries, timestamps." },
+			"label": { "displayName": "Legend", "purpose": "Console-style section labels and spec pairs (SAL/TYPE/LVL)." }
+		},
+		"shadows": [
+			{
+				"name": "cap",
+				"value": "inset 0 1px 0 rgb(255 255 255 / 0.75), inset 0 -1px 0 rgb(35 38 43 / 0.08), 0 1px 2px rgb(35 38 43 / 0.08)",
+				"purpose": "Raised controls and panels at rest."
+			},
+			{
+				"name": "recessed",
+				"value": "inset 0 2px 4px rgb(35 38 43 / 0.12), inset 0 -1px 0 rgb(255 255 255 / 0.6)",
+				"purpose": "Inputs and meter bays."
+			}
+		],
+		"motion": [
+			{ "name": "state", "value": "120ms ease", "purpose": "Latch/button state transitions." },
+			{ "name": "meter-sweep", "value": "600ms ease-out, 40ms per-segment stagger", "purpose": "Result-count LED meters light left to right on load." },
+			{ "name": "readout-power", "value": "900ms ease-out", "purpose": "Hero count powers on once; glow settles." },
+			{ "name": "reduced-motion", "value": "prefers-reduced-motion: reduce → animation: none", "purpose": "All authored motion is guarded." }
+		],
+		"breakpoints": [
+			{ "name": "sm", "value": "640px" },
+			{ "name": "md", "value": "768px" },
+			{ "name": "lg", "value": "1024px" },
+			{ "name": "xl", "value": "1280px" }
+		]
+	},
+	"components": [
+		{
+			"name": "Primary Button",
+			"kind": "button",
+			"refersTo": "button-primary",
+			"description": "The one live-orange action per view.",
+			"html": "<button class=\"ds-btn-primary\">FIND JOBS</button>",
+			"css": ".ds-btn-primary{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 20px;font:700 0.875rem/1 'Archivo Variable',system-ui,sans-serif;letter-spacing:0.05em;text-transform:uppercase;color:#fff;background:#d96c2c;border:1px solid #a84e1c;border-radius:2px;box-shadow:inset 0 1px 0 rgb(255 255 255/.75),0 1px 2px rgb(35 38 43/.08);cursor:pointer;transition:background 120ms ease}.ds-btn-primary:hover{background:#a84e1c}.ds-btn-primary:focus-visible{outline:2px solid #23262b;outline-offset:2px}"
+		},
+		{
+			"name": "Latch Button",
+			"kind": "button",
+			"refersTo": "button-latch",
+			"description": "Secondary control; fills orange when active (backlit latch).",
+			"html": "<button class=\"ds-btn-latch\">AUDIO DSP</button> <button class=\"ds-btn-latch is-on\">LATCHED</button>",
+			"css": ".ds-btn-latch{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;font:600 0.8125rem/1 'Archivo Variable',system-ui,sans-serif;letter-spacing:0.04em;text-transform:uppercase;color:#23262b;background:linear-gradient(to bottom,#f5f3ef,#e9e7e1);border:1px solid #c9c6bd;border-radius:2px;box-shadow:inset 0 1px 0 rgb(255 255 255/.75),inset 0 -1px 0 rgb(35 38 43/.08),0 1px 2px rgb(35 38 43/.08);cursor:pointer;transition:all 120ms ease}.ds-btn-latch:hover{border-color:#a84e1c}.ds-btn-latch.is-on{background:#d96c2c;border-color:#a84e1c;color:#fff;box-shadow:inset 0 1px 3px rgb(0 0 0/.25)}.ds-btn-latch:focus-visible{outline:2px solid #23262b;outline-offset:2px}"
+		},
+		{
+			"name": "Well Input",
+			"kind": "input",
+			"refersTo": "input-well",
+			"description": "Recessed field; sinks into the panel.",
+			"html": "<input class=\"ds-input-well\" placeholder=\"Search titles, skills, companies…\" />",
+			"css": ".ds-input-well{height:44px;width:100%;padding:8px 14px;font:400 0.875rem/1.4 'Archivo Variable',system-ui,sans-serif;color:#23262b;background:#dedcd4;border:1px solid #c9c6bd;border-radius:6px;box-shadow:inset 0 2px 4px rgb(35 38 43/.12),inset 0 -1px 0 rgb(255 255 255/.6);outline:none}.ds-input-well::placeholder{color:#575b61}.ds-input-well:focus-visible{outline:2px solid #23262b;outline-offset:2px}"
+		},
+		{
+			"name": "Panel Card",
+			"kind": "card",
+			"refersTo": "card-panel",
+			"description": "Raised surface for strips, forms, sections.",
+			"html": "<div class=\"ds-panel\" style=\"width:280px\"><strong style=\"display:block;margin-bottom:4px\">Senior DSP Engineer</strong><span style=\"font:400 0.8125rem/1.4 'Archivo Variable',system-ui,sans-serif;color:#575b61\">Bose · Boston, MA</span></div>",
+			"css": ".ds-panel{background:#f5f3ef;border:1px solid #c9c6bd;border-radius:6px;box-shadow:inset 0 1px 0 rgb(255 255 255/.75),inset 0 -1px 0 rgb(35 38 43/.08),0 1px 2px rgb(35 38 43/.08);padding:16px;font:400 0.9375rem/1.6 'Archivo Variable',system-ui,sans-serif;color:#23262b}"
+		},
+		{
+			"name": "Legend Label",
+			"kind": "custom",
+			"refersTo": "label",
+			"description": "Console section label: orange tick, tracked mono caps, hairline tail.",
+			"html": "<div class=\"ds-legend\">FILTER RACK</div>",
+			"css": ".ds-legend{display:flex;align-items:center;gap:10px;font:600 0.6875rem/1.4 'Spline Sans Mono Variable',ui-monospace,monospace;letter-spacing:0.14em;text-transform:uppercase;color:#575b61}.ds-legend::before{content:'';width:8px;height:3px;background:#d96c2c;border-radius:1px}.ds-legend::after{content:'';flex:1;height:1px;background:#c9c6bd}"
+		},
+		{
+			"name": "LED Meter",
+			"kind": "custom",
+			"refersTo": "readout",
+			"description": "Segmented level meter; green fills, amber/red crest, gray when dark.",
+			"html": "<div class=\"ds-meter\" style=\"height:48px\"><span></span><span></span><span></span><span></span><span></span><span></span><span class=\"amber\"></span><span class=\"off\"></span><span class=\"off\"></span><span class=\"off\"></span></div>",
+			"css": ".ds-meter{display:flex;flex-direction:column-reverse;gap:2px;width:12px}.ds-meter span{flex:1;border-radius:1px;background:#2f8f57}.ds-meter span.amber{background:#d9a13b}.ds-meter span.off{background:#cdcdc6}.ds-meter span:first-child{border-radius:1px 1px 3px 3px}"
+		}
+	],
+	"narrative": {
+		"northStar": "The Session Console",
+		"overview": "ASoundJob's interface is a light mixing console: warm silver panels, recessed wells for inputs, raised caps for controls, and one fader-cap orange that lights up when something is live. The world is hardware-flat — bevels are single-pixel top highlights, never gradients or gloss. Every scannable number sets in a tabular monospace readout, the way meters and counters do on real gear.",
+		"keyCharacteristics": [
+			"Light hardware world; dark only inside display windows",
+			"One interactive hue; state shown by illumination",
+			"Mono carries data, Archivo carries voice",
+			"Depth = affordance: wells sink, caps rise"
+		],
+		"rules": [
+			{ "name": "The One Fader Rule", "body": "Orange marks interaction and nothing else; under 10% of any screen.", "section": "colors" },
+			{ "name": "The Readout Rule", "body": "Any scanned number sets in Spline Sans Mono tabular figures; body prose never uses mono.", "section": "typography" },
+			{ "name": "The Spec Block Rule", "body": "Job metadata renders as labeled mono pairs, never prose sentences.", "section": "typography" },
+			{ "name": "The Recess Rule", "body": "Things you type into sink; things you press rise.", "section": "elevation" }
+		],
+		"dos": [
+			"Do set every scannable number in Spline Sans Mono tabular figures.",
+			"Do express active state by filling the control orange, paired with aria-pressed or aria-current.",
+			"Do keep dark values inside display windows; pages stay light."
+		],
+		"donts": [
+			"Don't introduce a second interactive hue.",
+			"Don't use gradients, glass, or gloss.",
+			"Don't stack a legend label above a large display heading.",
+			"Don't render meter decoration without real data behind it."
+		]
+	}
+}
