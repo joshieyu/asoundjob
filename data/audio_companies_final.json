@@ -5065,10 +5065,10 @@
   },
   {
     "name": "Keysight Technologies",
-    "careers_url": "https://login.icims.com/u/login/identifier?state=hqFo2SBRNXJqQnE2UW9BVHc2T0lpSjh6SXZOei1mRFlnQXNueaFur3VuaXZlcnNhbC1sb2dpbqN0aWTZIEJaVEIzaFRIWWhnbXdEcGx4R3llaWVraVVMZGlRWVZmo2NpZNkgS0pBOTVEeEhPUE5PNTZVYU5SZFJZNTdwem42Q01IY22lb3JnaWS0b3JnX0xJM1FDVklHOERmdEdxZW-nb3JnbmFtZahrZXlzaWdodA",
+    "careers_url": "https://careers-keysight.icims.com/jobs",
     "category": "Audio Testing & Measurement",
     "verified": true,
-    "source": "auto",
+    "source": "manual",
     "scrape_method": "http"
   },
   {
@@ -5259,8 +5259,8 @@
     "name": "Kush Audio",
     "careers_url": "https://www.hugedomains.com/domain_profile.cfm?d=kushaudio.com",
     "category": "Audio Plugins & Virtual Instruments",
-    "verified": true,
-    "source": "auto",
+    "verified": false,
+    "source": "manual",
     "scrape_method": "http"
   },
   {
@@ -7435,9 +7435,9 @@
     "name": "Powerbass",
     "careers_url": "https://www.hugedomains.com/domain_profile.cfm?d=powerbass.com",
     "category": "Car Audio",
-    "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "verified": false,
+    "source": "manual",
+    "scrape_method": "http"
   },
   {
     "name": "Powersoft",
@@ -8113,10 +8113,10 @@
   },
   {
     "name": "Rivian",
-    "careers_url": "https://login.icims.com/u/login/identifier?state=hqFo2SBSTkxpcGZGVWl0aFFOOVF1bWl6dEZzeHBWY2hzbEdmTqFur3VuaXZlcnNhbC1sb2dpbqN0aWTZIGp0bEM2RnBIc2ZIODVQZmVYeDJLZkx1b1JOc0dXbzUto2NpZNkgS0pBOTVEeEhPUE5PNTZVYU5SZFJZNTdwem42Q01IY22lb3JnaWS0b3JnX3FnY0JQbklubERYQ2dYMVKnb3JnbmFtZalyaXZpYW4tMTc",
+    "careers_url": "https://rivian.com/careers-home/",
     "category": "Automotive OEMs",
     "verified": true,
-    "source": "auto",
+    "source": "manual",
     "scrape_method": "http"
   },
   {
@@ -8641,10 +8641,10 @@
   },
   {
     "name": "SiriusXM",
-    "careers_url": "https://login.icims.com/u/login/identifier?state=hqFo2SB1OEM3WU95VWhDNDd4MFlIRFlxQnlXV2lXUlRCMl9MWaFur3VuaXZlcnNhbC1sb2dpbqN0aWTZIGlwUzZ5cngtUWdsVHJMUTRKazNoR3F5RFZQMFZWNzZao2NpZNkgS0pBOTVEeEhPUE5PNTZVYU5SZFJZNTdwem42Q01IY22lb3JnaWS0b3JnXzByZnZrOFFqRElNc2puY0inb3JnbmFtZbBzaXJpdXN4bXJhZGlvLTE3",
+    "careers_url": "https://careers.siriusxm.com/careers/jobs",
     "category": "Streaming & Music Services",
     "verified": true,
-    "source": "auto",
+    "source": "manual",
     "scrape_method": "http"
   },
   {
@@ -10387,9 +10387,9 @@
     "name": "Vienna Acoustics",
     "careers_url": "https://www.hugedomains.com/domain_profile.cfm?d=viennaacoustics.com",
     "category": "Hi-Fi & Consumer Speakers",
-    "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "verified": false,
+    "source": "manual",
+    "scrape_method": "http"
   },
   {
     "name": "Vienna Symphonic Library",
