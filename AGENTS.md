@@ -8,7 +8,9 @@ a community job submission system (admin-approved), an audio company
 directory, and an interview prep guide.
 
 ## Key Files
-- `ARCHITECTURE.md` — full architecture plan, database schema, API design, build order
+- `ARCHITECTURE.md` — full architecture plan, database schema, API design, scraper design
+- `scraper/BRIEF.md` — ACTIVE WORK: scraper improvement plan (ATS parsers, discovery,
+  JSON-LD extraction). Execute top-to-bottom; update STATUS boxes as phases complete.
 - `data/audio_companies_final.json` — 1,385 companies with careers URLs (source of truth)
 - `data/audio_job_categories.json` — 14 audio-specific job categories for filtering
 - `data/schema.json` — JSON schema for the company data
