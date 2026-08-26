@@ -131,6 +131,11 @@ CREATE TABLE companies (
     description TEXT,                      -- Optional
     headquarters TEXT,                     -- Optional: e.g. "San Francisco, CA"
     founded     INTEGER,                    -- Optional: founding year
+    audio_scope TEXT DEFAULT 'native',      -- 'native' (audio-native company: non-corporate
+                                            --   roles shown by default), 'partial' (conglomerate:
+                                            --   only roles with audio signals shown), 'all'
+                                            --   (show everything). Derived from category by the
+                                            --   loader; admin overrides set source='manual'.
     created_at  TIMESTAMPTZ DEFAULT NOW(),
     updated_at  TIMESTAMPTZ DEFAULT NOW()
 );
@@ -160,8 +165,13 @@ CREATE TABLE jobs (
                                            --   the scraper detecting the job is gone, not by date).
                                            -- For job board jobs: set to now()+14d.
     is_active     BOOLEAN DEFAULT TRUE,     -- Flipped to false by scraper when job disappears
-                                           --   from the source page (scraped jobs) or by
-                                           --   expiration date (community/board jobs).
+                                            --   from the source page (scraped jobs) or by
+                                            --   expiration date (community/board jobs).
+    relevance_score INTEGER DEFAULT 0,      -- Audio-relevance score from the normalizer
+                                            --   (title/description signals + company scope).
+    is_audio_related BOOLEAN DEFAULT TRUE,  -- Score >= scope threshold. Public board filters
+                                            --   on this by default; ?include_unrelated=true
+                                            --   opts into non-audio roles at audio companies.
     external_id   TEXT,                   -- ID from the ATS/board for dedup
     source        TEXT,                   -- 'scraper', 'community', 'manual'
     UNIQUE(company_id, external_id)       -- Prevent duplicate jobs from same source
@@ -454,6 +464,27 @@ The job board (`/jobs`) supports these filters:
 2. **Community submissions**: The submitter selects categories from a
    dropdown populated by `audio_job_categories.json`.
 3. **Admin**: Can edit/add categories on any job during approval.
+
+### Audio Relevance Gating
+
+Big companies in the directory (Automotive OEMs, Consumer Electronics) list
+every corporate role on their careers pages; without gating the board drowns
+in FP&A and help-desk listings. Every job gets a relevance score at normalize
+time:
+
+- **Signals**: strong audio title terms (+50), weak audio title terms (+25),
+  tagged categories (+25), audio terms in description (+15), corporate-role
+  title match (−45), company membership prior (native +35 / partial +0).
+- **Company scope** (`companies.audio_scope`): 'native' for audio-native
+  categories (studios, pro audio, transducers, ...) — non-corporate roles pass
+  on membership; 'partial' for conglomerates/retail/licensing — roles need
+  ~50 points of audio signal. Derived from category by the company loader;
+  admins can override per company (sets source='manual' and re-scores jobs).
+- **Board default**: `is_audio_related = true` only. `?include_unrelated=true`
+  (and a toggle on /jobs) opts into non-audio roles at audio companies.
+- **Never delete**: gating is a query-time filter over a stored flag, so it is
+  reversible and auditable. Re-score everything with
+  `python -m scraper.backfill_relevance`.
 
 ### Seniority Detection
 

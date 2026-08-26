@@ -68,6 +68,7 @@ export type JobQuery = {
 	company_id?: number;
 	location?: string;
 	remote?: boolean;
+	include_unrelated?: boolean;
 	sort?: string;
 	page?: number;
 	per_page?: number;
@@ -84,6 +85,7 @@ export function jobQueryString(query: JobQuery): string {
 	if (query.company_id != null) params.set('company_id', String(query.company_id));
 	if (query.location) params.set('location', query.location);
 	if (query.remote) params.set('remote', 'true');
+	if (query.include_unrelated) params.set('include_unrelated', 'true');
 	if (query.sort) params.set('sort', query.sort);
 	if (query.page && query.page > 1) params.set('page', String(query.page));
 	if (query.per_page) params.set('per_page', String(query.per_page));

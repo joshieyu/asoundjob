@@ -76,7 +76,9 @@ directory, and an interview prep guide.
 2. Install: `sqlalchemy[asyncio], aiosqlite, psycopg2-binary, rq, redis, requests, beautifulsoup4, playwright, alembic, pydantic, ruff, mypy`
 3. Create `scraper/models.py` with SQLAlchemy models (see ARCHITECTURE.md for schema)
    - Companies, Jobs, JobSubmissions, ScrapeLog, CareerResources tables
-   - Jobs table includes `seniority`, `job_categories` (TEXT[] array), `salary_min/max`
+   - Jobs table includes `seniority`, `job_categories` (TEXT[] array), `salary_min/max`,
+     `relevance_score`, `is_audio_related`
+   - Companies table includes `audio_scope` ('native'|'partial'|'all')
 4. Create `scraper/database.py` with engine + session factory
 5. Create Alembic migration setup
 6. Create `scraper/company_loader.py` — reads `data/audio_companies_final.json`, inserts into companies table
@@ -190,6 +192,19 @@ Returns: { offers: [{ id, title, description, location, url, ... }] }
   HTTP workers are cheap. Limit to 50 concurrent.
 - ATS JSON APIs are the fast path — no browser needed, just HTTP GET.
   Always try ATS API first before falling back to HTML/Playwright scraping.
+
+## Audio Relevance Gating
+
+- The public board only shows jobs with `is_audio_related = true`; the API and
+  the /jobs toggle accept `include_unrelated=true` to show non-audio roles at
+  audio companies.
+- Scoring lives in `scraper/normalizer.py::score_relevance` (signals + company
+  `audio_scope`). Companies in conglomerate/retail/licensing categories default
+  to 'partial'; audio-native categories to 'native'.
+- Admins can override a company's scope via `PUT /api/admin/companies/{id}`
+  (`audio_scope`), which marks the company manual and re-scores its jobs.
+- After scoring-logic changes, re-score the existing board with:
+  `python -m scraper.backfill_relevance` (add `--dry-run` to preview).
 
 ## Job Deactivation (critical to get right)
 

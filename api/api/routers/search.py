@@ -23,6 +23,7 @@ def search_jobs(
     category: Optional[str] = None,
     seniority: Optional[str] = None,
     remote: Optional[bool] = None,
+    include_unrelated: bool = False,
     db: Session = Depends(get_db),
 ):
     safe_page, safe_per = paginate_params(page, per_page)
@@ -35,6 +36,7 @@ def search_jobs(
         seniority=seniority,
         remote=remote,
         search=q,
+        include_unrelated=include_unrelated,
     )
     jobs, total = fetch_job_page(db, stmt, safe_page, safe_per, sort)
     return page_envelope(

@@ -32,6 +32,8 @@
 		if (params.location)
 			labels.push({ key: 'location', label: 'Near', value: params.location });
 		if (params.remote) labels.push({ key: 'remote', label: '', value: 'Remote only' });
+		if (params.include_unrelated)
+			labels.push({ key: 'include_unrelated', label: '', value: 'Including non-audio roles' });
 		if (params.salary_min)
 			labels.push({ key: 'salary_min', label: 'Pays at least', value: `$${params.salary_min}` });
 		if (params.company_id) {
@@ -137,6 +139,21 @@
 					class="h-4 w-4 accent-[#d96c2c]"
 				/>
 				Remote only
+			</label>
+			<label class="mt-1.5 flex items-start gap-2 text-sm font-semibold">
+				<input
+					type="checkbox"
+					name="include_unrelated"
+					value="true"
+					checked={params.include_unrelated === 'true'}
+					class="mt-0.5 h-4 w-4 accent-[#d96c2c]"
+				/>
+				<span>
+					Include non-audio roles
+					<span class="block text-xs font-normal text-ink-soft">
+						Show every role at audio companies, not just audio-related ones
+					</span>
+				</span>
 			</label>
 		</fieldset>
 

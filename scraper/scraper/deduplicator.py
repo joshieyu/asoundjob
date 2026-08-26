@@ -92,6 +92,8 @@ def reconcile_company_jobs(
                     salary_currency=normalized.salary_currency,
                     job_categories=normalized.job_categories,
                     posted_date=normalized.posted_date,
+                    relevance_score=normalized.relevance_score,
+                    is_audio_related=normalized.is_audio_related,
                     expires_date=None,
                     is_active=True,
                     external_id=normalized.external_id,
@@ -112,6 +114,8 @@ def reconcile_company_jobs(
         row.salary_max = normalized.salary_max
         row.salary_currency = normalized.salary_currency
         row.job_categories = normalized.job_categories
+        row.relevance_score = normalized.relevance_score
+        row.is_audio_related = normalized.is_audio_related
         if normalized.posted_date is not None:
             row.posted_date = normalized.posted_date
         if not row.is_active:

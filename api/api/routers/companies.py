@@ -52,7 +52,11 @@ def get_company(slug: str, db: Session = Depends(get_db)):
     jobs = (
         db.execute(
             select(Job)
-            .where(Job.company_id == company.id, Job.is_active.is_(True))
+            .where(
+                Job.company_id == company.id,
+                Job.is_active.is_(True),
+                Job.is_audio_related.is_(True),
+            )
             .options(selectinload(Job.company))
             .order_by(Job.posted_date.desc().nullslast(), Job.scraped_at.desc())
             .limit(100)
@@ -68,7 +72,9 @@ def get_company(slug: str, db: Session = Depends(get_db)):
         active_count = int(
             db.execute(
                 select(func.count(Job.id)).where(
-                    Job.company_id == company.id, Job.is_active.is_(True)
+                    Job.company_id == company.id,
+                    Job.is_active.is_(True),
+                    Job.is_audio_related.is_(True),
                 )
             ).scalar_one()
         )

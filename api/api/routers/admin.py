@@ -186,13 +186,37 @@ def admin_update_company(
 
     updates = payload.model_dump(exclude_unset=True, exclude_none=True)
     updates.pop("name", None)
+    scope_changed = "audio_scope" in updates and updates["audio_scope"] != company.audio_scope
     for field, value in updates.items():
         setattr(company, field, value)
-    if updates.get("verified") or updates.get("careers_url"):
+    if updates.get("verified") or updates.get("careers_url") or scope_changed:
         company.source = "manual"
+    if scope_changed:
+        rescore_company_jobs(db, company)
     db.flush()
-    logger.info("admin=%s updated company %s: %s", admin, company.slug, list(updates))
+    logger.info("admin=%s updated company %s: %s", admin, company.slug, list(updates.keys()))
     return {"id": company.id, "updated_fields": sorted(updates.keys())}
+
+
+def rescore_company_jobs(db: Session, company: Company) -> None:
+    normalizer_settings = load_settings()
+    scorer = Normalizer(normalizer_settings)
+    jobs = (
+        db.execute(select(Job).where(Job.company_id == company.id, Job.source == "scraper"))
+        .scalars()
+        .all()
+    )
+    for job in jobs:
+        raw = RawJob(
+            title=job.title,
+            url=job.url,
+            location=job.location,
+            description=job.description,
+            job_type=job.job_type,
+        )
+        normalized = scorer.normalize(raw, audio_scope=company.audio_scope or "native")
+        job.relevance_score = normalized.relevance_score
+        job.is_audio_related = normalized.is_audio_related
 
 
 @router.get("/submissions")
@@ -246,7 +270,13 @@ def approve_submission(
         job_type=submission.job_type,
         remote_hint=submission.remote,
     )
-    normalized = normalizer.normalize(raw)
+
+    scope = "native"
+    if submission.company_id is not None:
+        company = db.get(Company, submission.company_id)
+        if company is not None and company.audio_scope:
+            scope = company.audio_scope
+    normalized = normalizer.normalize(raw, audio_scope=scope)
 
     job = Job(
         company_id=submission.company_id,
@@ -261,6 +291,8 @@ def approve_submission(
         salary_max=normalized.salary_max,
         salary_currency=normalized.salary_currency,
         job_categories=normalized.job_categories,
+        relevance_score=normalized.relevance_score,
+        is_audio_related=normalized.is_audio_related,
         expires_date=date.today() + timedelta(days=COMMUNITY_JOB_TTL_DAYS),
         is_active=True,
         external_id=None,
@@ -328,6 +360,11 @@ def admin_stats(db: Session = Depends(get_db), _: str = Depends(require_admin)):
     total_jobs = db.execute(
         select(func.count(Job.id)).where(Job.is_active.is_(True))
     ).scalar_one()
+    related_jobs = db.execute(
+        select(func.count(Job.id)).where(
+            Job.is_active.is_(True), Job.is_audio_related.is_(True)
+        )
+    ).scalar_one()
     total_companies = db.execute(select(func.count(Company.id))).scalar_one()
     verified = db.execute(
         select(func.count(Company.id)).where(Company.verified.is_(True))
@@ -362,6 +399,7 @@ def admin_stats(db: Session = Depends(get_db), _: str = Depends(require_admin)):
 
     return StatsResponse(
         total_active_jobs=int(total_jobs),
+        audio_related_jobs=int(related_jobs),
         total_companies=int(total_companies),
         verified_companies=int(verified),
         pending_submissions=int(pending),

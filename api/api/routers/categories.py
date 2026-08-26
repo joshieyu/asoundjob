@@ -30,7 +30,11 @@ def load_categories() -> list[dict]:
 def get_categories(db: Session = Depends(get_db)):
     categories = load_categories()
     counts: dict[str, int] = {}
-    rows = db.execute(select(Job.job_categories).where(Job.is_active.is_(True))).all()
+    rows = db.execute(
+        select(Job.job_categories).where(
+            Job.is_active.is_(True), Job.is_audio_related.is_(True)
+        )
+    ).all()
     for (cats,) in rows:
         if not cats:
             continue

@@ -40,6 +40,7 @@ class Company(Base):
     description: Mapped[Optional[str]] = mapped_column(Text)
     headquarters: Mapped[Optional[str]] = mapped_column(Text)
     founded: Mapped[Optional[int]] = mapped_column(Integer)
+    audio_scope: Mapped[str] = mapped_column(Text, default="native")
     last_scraped_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
@@ -74,6 +75,8 @@ class Job(Base):
     )
     expires_date: Mapped[Optional[date]] = mapped_column(Date)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
+    relevance_score: Mapped[int] = mapped_column(Integer, default=0)
+    is_audio_related: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
     external_id: Mapped[Optional[str]] = mapped_column(Text)
     source: Mapped[str] = mapped_column(Text, default="scraper", index=True)
     created_at: Mapped[datetime] = mapped_column(

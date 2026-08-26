@@ -45,6 +45,7 @@ def list_jobs(
     company_id: Optional[int] = None,
     location: Optional[str] = None,
     remote: Optional[bool] = None,
+    include_unrelated: bool = False,
     search: Optional[str] = None,
     sort: str = Query("newest", pattern="^(newest|oldest|salary_desc|salary_asc)$"),
     db: Session = Depends(get_db),
@@ -61,6 +62,7 @@ def list_jobs(
         location=location,
         remote=remote,
         search=search,
+        include_unrelated=include_unrelated,
     )
     jobs, total = fetch_job_page(db, stmt, safe_page, safe_per, sort)
     return page_envelope(

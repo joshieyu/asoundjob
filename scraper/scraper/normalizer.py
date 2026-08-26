@@ -223,6 +223,75 @@ REMOTE_PATTERNS = re.compile(
     re.IGNORECASE,
 )
 
+AUDIO_TITLE_STRONG = re.compile(
+    r"\b(audio|sound|acoustic[s]?|dsp|signal processing|transducer|loudspeaker|"
+    r"microphone|hearing aid|live sound|foh|front of house|mixing|mastering|"
+    r"game audio|sound design|voice|speech|sonar|a/v|audio-?visual)\b",
+    re.IGNORECASE,
+)
+
+AUDIO_TITLE_WEAK = re.compile(
+    r"\b(music|midi|synth(esizer)?|studio|daw|vinyl|guitar|drum|hearing|"
+    r"listening|psychoacoustic)\b",
+    re.IGNORECASE,
+)
+
+AUDIO_DESCRIPTION = re.compile(
+    r"\b(audio|sound|acoustic[s]?|dsp|loudspeaker|microphone|transducer|"
+    r"listening tests|mixing|mastering|daw|studio|music)\b",
+    re.IGNORECASE,
+)
+
+CORPORATE_ROLE = re.compile(
+    r"\b(accountant|accounts? payable|accounts? receivable|paralegal|attorney|"
+    r"counsel|recruiter|human resources|hr generalist|people operations|payroll|"
+    r"barista|warehouse|forklift|delivery driver|truck driver|driver|real estate|"
+    r"facilities|janitor|security guard|receptionist|data entry|call center|"
+    r"insurance underwriter|tax|procurement|logistics|supply chain|help desk|"
+    r"fp&a|financial analyst)\b",
+    re.IGNORECASE,
+)
+
+PARTIAL_SCOPE_CATEGORIES = {
+    "Automotive OEMs",
+    "Consumer Electronics & Tech",
+    "Streaming & Music Services",
+    "Audio IP & Licensing",
+    "Audio Retailers & Distributors",
+}
+
+SCOPE_THRESHOLDS = {"native": 30, "partial": 50, "all": 50}
+
+
+def category_to_scope(category: str) -> str:
+    return "partial" if category in PARTIAL_SCOPE_CATEGORIES else "native"
+
+
+def score_relevance(
+    title: str,
+    description: str | None,
+    job_categories: list[str],
+    audio_scope: str = "native",
+) -> tuple[int, bool]:
+    score = 35 if audio_scope == "native" else 0
+
+    if AUDIO_TITLE_STRONG.search(title):
+        score += 50
+    elif AUDIO_TITLE_WEAK.search(title):
+        score += 25
+
+    if job_categories:
+        score += 25
+
+    if description and AUDIO_DESCRIPTION.search(description[:4000]):
+        score += 15
+
+    if CORPORATE_ROLE.search(title):
+        score -= 45
+
+    threshold = SCOPE_THRESHOLDS.get(audio_scope, 50)
+    return score, score >= threshold
+
 CURRENCY_SYMBOLS = {"$": "USD", "£": "GBP", "€": "EUR"}
 
 SALARY_RANGE_RE = re.compile(
@@ -256,6 +325,8 @@ class NormalizedJob:
     salary_currency: Optional[str] = None
     job_categories: list[str] = field(default_factory=list)
     posted_date: Optional[date] = None
+    relevance_score: int = 0
+    is_audio_related: bool = True
 
 
 def detect_seniority(title: str) -> Optional[str]:
@@ -406,7 +477,7 @@ class Normalizer:
         except OSError:
             logger.warning("categories file missing at %s", categories_path)
 
-    def normalize(self, raw: RawJob) -> NormalizedJob:
+    def normalize(self, raw: RawJob, audio_scope: str = "native") -> NormalizedJob:
         salary_text = " ".join(
             part for part in (raw.title, raw.description) if part
         )
@@ -415,6 +486,10 @@ class Normalizer:
         categories = classify_categories(raw.title, raw.description)
         if self.valid_ids is not None:
             categories = [c for c in categories if c in self.valid_ids]
+
+        relevance_score, is_audio_related = score_relevance(
+            raw.title, raw.description, categories, audio_scope
+        )
 
         job_type = normalize_job_type(raw.job_type)
         if job_type is None:
@@ -436,4 +511,6 @@ class Normalizer:
             salary_currency=salary_currency,
             job_categories=categories,
             posted_date=raw.posted_date,
+            relevance_score=relevance_score,
+            is_audio_related=is_audio_related,
         )

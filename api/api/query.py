@@ -37,8 +37,11 @@ def apply_job_filters(
     location: Optional[str] = None,
     remote: Optional[bool] = None,
     search: Optional[str] = None,
+    include_unrelated: bool = False,
 ):
     stmt = stmt.where(Job.is_active.is_(True))
+    if not include_unrelated:
+        stmt = stmt.where(Job.is_audio_related.is_(True))
     if seniority:
         stmt = stmt.where(Job.seniority == seniority.lower())
     if job_type:

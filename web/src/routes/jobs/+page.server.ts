@@ -8,6 +8,7 @@ const ALLOWED = [
 	'job_type',
 	'location',
 	'remote',
+	'include_unrelated',
 	'salary_min',
 	'salary_max',
 	'sort',

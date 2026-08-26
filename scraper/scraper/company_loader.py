@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 from scraper.config import load_settings
 from scraper.database import get_session_factory, session_scope
 from scraper.models import Company
+from scraper.normalizer import category_to_scope
 
 
 @dataclass
@@ -77,6 +78,7 @@ def load_companies(session: Session, companies: list[dict[str, Any]]) -> LoadSta
                     verified=verified,
                     source=source,
                     scrape_method=scrape_method,
+                    audio_scope=category_to_scope(category),
                 )
             )
             stats.inserted += 1
@@ -92,12 +94,15 @@ def load_companies(session: Session, companies: list[dict[str, Any]]) -> LoadSta
                 or existing.scrape_method != scrape_method
             )
             if changed:
+                category_changed = existing.category != category
                 existing.name = name
                 existing.category = category
                 existing.careers_url = careers_url
                 existing.verified = verified
                 existing.source = source
                 existing.scrape_method = scrape_method
+                if category_changed:
+                    existing.audio_scope = category_to_scope(category)
                 stats.updated += 1
             else:
                 stats.unchanged += 1

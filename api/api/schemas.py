@@ -163,6 +163,7 @@ class AdminCompanyUpdate(BaseModel):
     website_url: Optional[str] = Field(default=None, max_length=1000)
     verified: Optional[bool] = None
     scrape_method: Optional[str] = None
+    audio_scope: Optional[str] = Field(default=None, pattern="^(native|partial|all)$")
     logo_url: Optional[str] = None
     description: Optional[str] = None
     headquarters: Optional[str] = None
@@ -221,6 +222,7 @@ class ScrapeLogEntry(BaseModel):
 
 class StatsResponse(BaseModel):
     total_active_jobs: int
+    audio_related_jobs: int
     total_companies: int
     verified_companies: int
     pending_submissions: int
