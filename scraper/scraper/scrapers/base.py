@@ -34,6 +34,7 @@ class ScrapeResult:
     error: Optional[str] = None
     duration: float = 0.0
     trust_empty: bool = False
+    html: Optional[str] = None
 
 
 class ScrapeError(Exception):
@@ -52,6 +53,7 @@ class BaseScraper(ABC):
 
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
+        self._last_html: Optional[str] = None
 
     def can_handle(self, company: Company) -> bool:
         return True
@@ -63,11 +65,13 @@ class BaseScraper(ABC):
     async def scrape(self, company: Company) -> ScrapeResult:
         import time
 
+        self._last_html = None
         result = ScrapeResult(company_id=company.id, method=self.name)
         started = time.monotonic()
         try:
             result.jobs = await self.fetch_jobs(company)
             result.success = True
+            result.html = self._last_html
         except Exception as exc:
             logger.warning(
                 "scraper=%s company=%s failed: %s", self.name, company.name, exc

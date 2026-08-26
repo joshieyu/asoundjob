@@ -5,7 +5,7 @@
 
 ## STATUS
 
-- [ ] Phase A: JSON ATS parsers (Workable, Ashby, SmartRecruiters, Recruitee, BambooHR)
+- [x] Phase A: JSON ATS parsers (Workable, Ashby, SmartRecruiters, Recruitee, BambooHR)
 - [ ] Phase B: ATS discovery (detect embeds in HTML, persist ats_type/ats_slug, route first)
 - [ ] Phase C: Workday API handler (18 companies incl. Samsung/Sonos/Jabra/Logitech)
 - [ ] Phase D: JSON-LD JobPosting extraction on generic pages

@@ -43,7 +43,7 @@ class WorkableScraper(BaseScraper):
         return slug.rstrip("/") if slug else None
 
     async def fetch_jobs(self, company: Company) -> list[RawJob]:
-        slug = self.extract_slug(company.careers_url or "")
+        slug = company.ats_slug or self.extract_slug(company.careers_url or "")
         if not slug:
             raise ValueError(f"No workable slug in {company.careers_url}")
         md = await asyncio.to_thread(

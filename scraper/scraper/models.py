@@ -41,6 +41,8 @@ class Company(Base):
     headquarters: Mapped[Optional[str]] = mapped_column(Text)
     founded: Mapped[Optional[int]] = mapped_column(Integer)
     audio_scope: Mapped[str] = mapped_column(Text, default="native")
+    ats_type: Mapped[Optional[str]] = mapped_column(Text)
+    ats_slug: Mapped[Optional[str]] = mapped_column(Text)
     last_scraped_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()

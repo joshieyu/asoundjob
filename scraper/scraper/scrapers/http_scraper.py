@@ -16,4 +16,5 @@ class HttpScraper(BaseScraper):
         html = await asyncio.to_thread(
             fetch_html, company.careers_url.strip(), self.settings
         )
+        self._last_html = html
         return extract_job_links(html, company.careers_url.strip())

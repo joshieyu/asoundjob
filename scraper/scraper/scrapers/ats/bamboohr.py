@@ -33,7 +33,7 @@ class BambooHRScraper(BaseScraper):
         return match.group("sub") if match else None
 
     async def fetch_jobs(self, company: Company) -> list[RawJob]:
-        sub = self.extract_slug(company.careers_url or "")
+        sub = company.ats_slug or self.extract_slug(company.careers_url or "")
         if not sub:
             raise ValueError(f"No bamboohr subdomain in {company.careers_url}")
         data = await asyncio.to_thread(

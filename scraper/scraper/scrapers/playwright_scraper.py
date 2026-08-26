@@ -73,6 +73,7 @@ class PlaywrightScraper(BaseScraper):
             raise ValueError(f"Company {company.name} has no careers_url")
         url = company.careers_url.strip()
         html = await self.fetch_page_html(url)
+        self._last_html = html
         jobs = extract_job_links(html, url)
         if not jobs:
             raise ScrapeError("page loaded but no job links found")

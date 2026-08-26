@@ -3,7 +3,10 @@ from __future__ import annotations
 import asyncio
 import logging
 
+from sqlalchemy import update
+
 from scraper.config import Settings
+from scraper.database import get_session_factory
 from scraper.models import Company
 from scraper.scrapers.ats.ashby import AshbyScraper
 from scraper.scrapers.ats.bamboohr import BambooHRScraper
@@ -12,6 +15,7 @@ from scraper.scrapers.ats.lever import LeverScraper
 from scraper.scrapers.ats.recruitee import RecruiteeScraper
 from scraper.scrapers.ats.smartrecruiters import SmartRecruitersScraper
 from scraper.scrapers.ats.workable import WorkableScraper
+from scraper.scrapers.ats_discovery import discover
 from scraper.scrapers.base import ScrapeResult
 from scraper.scrapers.http_scraper import HttpScraper
 from scraper.scrapers.playwright_scraper import PlaywrightScraper
@@ -35,6 +39,15 @@ class ScrapePipeline:
         self.http = HttpScraper(settings)
         self.playwright: PlaywrightScraper | None = None
         self.stealth: PlaywrightScraper | None = None
+        self._ats_map: dict[str, object] = {
+            "greenhouse": self.greenhouse,
+            "lever": self.lever,
+            "workable": self.workable,
+            "ashby": self.ashby,
+            "smartrecruiters": self.smartrecruiters,
+            "recruitee": self.recruitee,
+            "bamboohr": self.bamboohr,
+        }
 
     def _playwright_scraper(self) -> PlaywrightScraper:
         if self.playwright is None:
@@ -71,11 +84,42 @@ class ScrapePipeline:
         self.attempts.append((label, "ok" if result.success else f"fail ({result.error})"))
         return result
 
+    def _persist_ats_discovery(
+        self, company_id: int, ats_type: str, ats_slug: str
+    ) -> None:
+        try:
+            factory = get_session_factory()
+            with factory() as session:
+                session.execute(
+                    update(Company)
+                    .where(Company.id == company_id)
+                    .where(Company.ats_type.is_(None))
+                    .values(ats_type=ats_type, ats_slug=ats_slug)
+                )
+                session.commit()
+            logger.info(
+                "discovered ATS %s slug=%s for company_id=%s",
+                ats_type,
+                ats_slug,
+                company_id,
+            )
+        except Exception as exc:
+            logger.warning("failed to persist ATS discovery: %s", exc)
+
     async def scrape_company(self, company: Company) -> ScrapeResult:
         if not company.careers_url:
             return ScrapeResult(
                 company_id=company.id, method="none", error="no careers_url"
             )
+
+        if company.ats_type and company.ats_type in self._ats_map:
+            scraper = self._ats_map[company.ats_type]
+            result = await self._attempt(
+                scraper, company, self.http_semaphore, company.ats_type
+            )
+            if result.success:
+                result.trust_empty = True
+                return result
 
         ats_scrapers = (
             self.greenhouse,
@@ -98,22 +142,33 @@ class ScrapePipeline:
         if not skip_http:
             result = await self._attempt(self.http, company, self.http_semaphore, "http")
             if result.success:
+                self._try_discovery(company, result.html)
                 return result
 
         result = await self._attempt(
             self._playwright_scraper(), company, self.playwright_semaphore, "playwright"
         )
         if result.success:
+            self._try_discovery(company, result.html)
             return result
 
         result = await self._attempt(
             self._stealth_scraper(), company, self.playwright_semaphore, "stealth"
         )
         if result.success:
+            self._try_discovery(company, result.html)
             return result
 
         last_error = result.error or "all methods failed"
         return ScrapeResult(company_id=company.id, method="none", error=last_error)
+
+    def _try_discovery(self, company: Company, html: str | None) -> None:
+        if not html:
+            return
+        findings = discover(html, company.careers_url or "")
+        if findings:
+            ats_type, ats_slug = findings[0]
+            self._persist_ats_discovery(company.id, ats_type, ats_slug)
 
     async def close(self) -> None:
         if self.playwright is not None:

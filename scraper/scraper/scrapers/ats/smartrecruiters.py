@@ -42,7 +42,7 @@ class SmartRecruitersScraper(BaseScraper):
         return match.group("slug") if match else None
 
     async def fetch_jobs(self, company: Company) -> list[RawJob]:
-        slug = self.extract_slug(company.careers_url or "")
+        slug = company.ats_slug or self.extract_slug(company.careers_url or "")
         if not slug:
             raise ValueError(f"No smartrecruiters slug in {company.careers_url}")
         jobs = await self._fetch_all(slug)
