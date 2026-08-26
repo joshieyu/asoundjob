@@ -5,8 +5,13 @@ import logging
 
 from scraper.config import Settings
 from scraper.models import Company
+from scraper.scrapers.ats.ashby import AshbyScraper
+from scraper.scrapers.ats.bamboohr import BambooHRScraper
 from scraper.scrapers.ats.greenhouse import GreenhouseScraper
 from scraper.scrapers.ats.lever import LeverScraper
+from scraper.scrapers.ats.recruitee import RecruiteeScraper
+from scraper.scrapers.ats.smartrecruiters import SmartRecruitersScraper
+from scraper.scrapers.ats.workable import WorkableScraper
 from scraper.scrapers.base import ScrapeResult
 from scraper.scrapers.http_scraper import HttpScraper
 from scraper.scrapers.playwright_scraper import PlaywrightScraper
@@ -22,6 +27,11 @@ class ScrapePipeline:
         self.attempts: list[tuple[str, str]] = []
         self.greenhouse = GreenhouseScraper(settings)
         self.lever = LeverScraper(settings)
+        self.workable = WorkableScraper(settings)
+        self.ashby = AshbyScraper(settings)
+        self.smartrecruiters = SmartRecruitersScraper(settings)
+        self.recruitee = RecruiteeScraper(settings)
+        self.bamboohr = BambooHRScraper(settings)
         self.http = HttpScraper(settings)
         self.playwright: PlaywrightScraper | None = None
         self.stealth: PlaywrightScraper | None = None
@@ -67,7 +77,16 @@ class ScrapePipeline:
                 company_id=company.id, method="none", error="no careers_url"
             )
 
-        for ats in (self.greenhouse, self.lever):
+        ats_scrapers = (
+            self.greenhouse,
+            self.lever,
+            self.workable,
+            self.ashby,
+            self.smartrecruiters,
+            self.recruitee,
+            self.bamboohr,
+        )
+        for ats in ats_scrapers:
             if ats.can_handle(company):
                 result = await self._attempt(ats, company, self.http_semaphore, ats.name)
                 if result.success:
