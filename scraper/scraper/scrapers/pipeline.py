@@ -15,6 +15,7 @@ from scraper.scrapers.ats.lever import LeverScraper
 from scraper.scrapers.ats.recruitee import RecruiteeScraper
 from scraper.scrapers.ats.smartrecruiters import SmartRecruitersScraper
 from scraper.scrapers.ats.workable import WorkableScraper
+from scraper.scrapers.ats.workday import WorkdayScraper
 from scraper.scrapers.ats_discovery import discover
 from scraper.scrapers.base import ScrapeResult
 from scraper.scrapers.http_scraper import HttpScraper
@@ -36,6 +37,7 @@ class ScrapePipeline:
         self.smartrecruiters = SmartRecruitersScraper(settings)
         self.recruitee = RecruiteeScraper(settings)
         self.bamboohr = BambooHRScraper(settings)
+        self.workday = WorkdayScraper(settings)
         self.http = HttpScraper(settings)
         self.playwright: PlaywrightScraper | None = None
         self.stealth: PlaywrightScraper | None = None
@@ -47,6 +49,7 @@ class ScrapePipeline:
             "smartrecruiters": self.smartrecruiters,
             "recruitee": self.recruitee,
             "bamboohr": self.bamboohr,
+            "workday": self.workday,
         }
 
     def _playwright_scraper(self) -> PlaywrightScraper:
@@ -129,6 +132,7 @@ class ScrapePipeline:
             self.smartrecruiters,
             self.recruitee,
             self.bamboohr,
+            self.workday,
         )
         for ats in ats_scrapers:
             if ats.can_handle(company):
