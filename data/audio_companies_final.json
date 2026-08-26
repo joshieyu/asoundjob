@@ -617,10 +617,10 @@
   },
   {
     "name": "Apple",
-    "careers_url": "https://www.apple.com/careers/",
+    "careers_url": "https://jobs.apple.com/en-us/search",
     "category": "Consumer Electronics & Tech",
     "verified": true,
-    "source": "auto",
+    "source": "manual",
     "scrape_method": "http"
   },
   {
