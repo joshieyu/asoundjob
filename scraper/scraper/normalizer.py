@@ -76,6 +76,7 @@ CATEGORY_KEYWORDS: dict[str, tuple[str, ...]] = {
         "mic array",
     ),
     "audio_software": (
+        "automation"
         "audio software",
         "audio programmer",
         "audio developer",
@@ -96,6 +97,7 @@ CATEGORY_KEYWORDS: dict[str, tuple[str, ...]] = {
         "audio flinger",
         "audio driver",
         "audio software engineer",
+        "python"
     ),
     "music_technology": (
         "synthesizer",
@@ -116,6 +118,7 @@ CATEGORY_KEYWORDS: dict[str, tuple[str, ...]] = {
         "system integration audio",
         "audio tuning",
         "acoustic tuning",
+        "acoustic engineer"
         "tuning engineer",
         "audio validation",
         "audio test engineer",
@@ -153,8 +156,6 @@ CATEGORY_KEYWORDS: dict[str, tuple[str, ...]] = {
         "codec",
         "audio algorithm",
         "spatial audio",
-        "3d audio",
-        "equalization",
         "noise cancellation",
         "active noise cancelling",
         "echo cancellation",
@@ -273,8 +274,6 @@ CATEGORY_KEYWORDS: dict[str, tuple[str, ...]] = {
     "game_audio_interactive": (
         "game audio",
         "video game audio",
-        "sound designer",
-        "sound design",
         "interactive audio",
         "adaptive audio",
         "wwise",
@@ -283,6 +282,37 @@ CATEGORY_KEYWORDS: dict[str, tuple[str, ...]] = {
         "vr audio",
         "ar audio",
         "dialogue implementation",
+    ),
+    "sound_design": (
+        "sound designer",
+        "sound design",
+        "foley",
+        "audio designer",
+        "sound artist",
+        "sound creator",
+        "audio identity",
+        "sonic branding",
+        "sound effects",
+        "soundscapes",
+        "sound design engineer",
+    ),
+    "sales_marketing_cs": (
+        "partnerships manager",
+        "customer success",
+        "account executive",
+        "brand strategy",
+        "brand manager",
+        "sales director",
+        "product marketing",
+        "demand generation",
+        "go-to-market",
+        "go to market",
+        "channel partnerships",
+        "creator program",
+        "artist partnerships",
+        "songwriting camp",
+        "emerging creator",
+        "editorial & curation",
     ),
 }
 
@@ -354,7 +384,7 @@ CORPORATE_ROLE = re.compile(
     r"facilities|janitor|security guard|receptionist|data entry|call center|"
     r"insurance underwriter|tax|procurement|logistics|supply chain|help desk|"
     r"fp&a|financial analyst|revenue manager|revenue analyst|revenue analytics|"
-    r"internal audit|legal counsel|legal innovation|creative operations|"
+    r"internal audit|legal counsel|legal innovation|"
     r"office assistant|administrative|library|plumber|electrician|carpenter|"
     r"groundskeeper|custodian|housekeeper|mailroom|switchboard|"
     r"volleyball|athletic|coach|sports|intramural|"
@@ -365,15 +395,12 @@ CORPORATE_ROLE = re.compile(
     r"network engineer|linux administrator|systems administrator|"
     r"database administrator|network architect|it support|it assistant|"
     r"desktop support|helpdesk|soc analyst|security analyst|"
-    r"marketing manager|brand manager|social media|content manager|"
-    r"event coordinator|community manager|partnerships manager|"
+    r"event coordinator|"
     r"talent acquisition|talent sourcer|onboarding specialist|"
     r"compensation|benefits manager|hr business partner|"
-    r"sales operations|sales enablement|channel manager|"
-    r"account management|account manager|"
     r"project manager|project lead|program manager|"
     r"business analyst|real time analyst|"
-    r"product designer|product manager|"
+    r"product designer|"
     r"it security|information security|"
     r"course technician|animal care|veterinary|"
     r"ecommerce|merchandising|commercial finance|"
@@ -382,8 +409,18 @@ CORPORATE_ROLE = re.compile(
     r"portfolio strategy|contact center|"
     r"customer enablement|strategic transformation|"
     r"vertical ai|alliances|"
-    r"digital marketing|growth manager|"
-    r"workforce management|pooling)\b",
+    r"workforce management|pooling|"
+    r"business development|"
+    r"account manager|account management|"
+    r"sales operations|sales enablement|sales manager|"
+    r"marketing manager|marketing director|"
+    r"growth manager|digital marketing|"
+    r"community manager|"
+    r"social media|content manager|"
+    r"creative operations|"
+    r"creative director|"
+    r"conversion rate|"
+    r"office coordinator)\b",
     re.IGNORECASE,
 )
 
@@ -510,6 +547,7 @@ CATEGORY_DOMINANCE: dict[str, tuple[str, ...]] = {
         "music_production_recording",
         "music_technology",
         "audio_systems",
+        "sound_design",
     ),
     "audio_dsp_embedded": (
         "music_production_recording",

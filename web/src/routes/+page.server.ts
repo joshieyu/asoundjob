@@ -17,7 +17,9 @@ const ALL_CATEGORY_IDS = [
 	'nvh',
 	'psychoacoustics_perception',
 	'game_audio_interactive',
-	'music_production_recording'
+	'music_production_recording',
+	'sound_design',
+	'sales_marketing_cs'
 ].join(',');
 
 export const load: PageServerLoad = async ({ fetch }) => {

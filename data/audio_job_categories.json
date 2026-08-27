@@ -73,7 +73,17 @@
     {
       "id": "game_audio_interactive",
       "name": "Game Audio & Interactive Sound",
-      "description": "Creating and implementing non-linear sound for video games and XR environments. Requires proficiency in sound design and interactive middleware like Wwise or FMOD."
+      "description": "Creating and implementing non-linear sound for video games and XR environments. Requires proficiency in interactive middleware like Wwise or FMOD."
+    },
+    {
+      "id": "sound_design",
+      "name": "Sound Design",
+      "description": "Creative design of sound for film, television, products, installations, and interactive media. Includes foley, sound effects creation, soundscapes, audio identity, and sonic branding. Distinct from game audio implementation — this is the creative craft of designing what sounds are heard, not the technical integration."
+    },
+    {
+      "id": "sales_marketing_cs",
+      "name": "Sales, Marketing & Customer Success",
+      "description": "Commercial roles at audio companies — partnerships, business development, account management, customer success, marketing, and brand strategy for audio products and services. These are industry-specific commercial roles, not generic corporate functions."
     }
   ],
   "schema_usage_example": {
