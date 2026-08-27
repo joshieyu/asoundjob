@@ -125,8 +125,6 @@ CATEGORY_KEYWORDS: dict[str, tuple[str, ...]] = {
         "audio quality",
         "audio subsystem",
         "audio subsystems",
-        "audio system",
-        "audio systems",
         "acoustic system",
         "acoustic systems",
         "acoustic solutions",
@@ -142,7 +140,6 @@ CATEGORY_KEYWORDS: dict[str, tuple[str, ...]] = {
         "i2c",
         "audio architecture",
         "audio ee architecture",
-        "product audio",
         "audio product",
         "end-to-end",
         "product concept through production",
@@ -225,7 +222,6 @@ CATEGORY_KEYWORDS: dict[str, tuple[str, ...]] = {
         "genai",
     ),
     "audio_research": (
-        "research",
         "research engineer",
         "research scientist",
         "research acoustic",
@@ -234,14 +230,9 @@ CATEGORY_KEYWORDS: dict[str, tuple[str, ...]] = {
         "novel acoustic",
         "research hardware",
         "research platforms",
-        "publishing",
-        "publications",
         "original research",
-        "technical direction",
-        "long-term technical",
         "acoustic architecture",
         "research and development",
-        "r&d",
         "applied scientist",
         "reality labs",
     ),
@@ -341,20 +332,33 @@ REMOTE_PATTERNS = re.compile(
 
 AUDIO_TITLE_STRONG = re.compile(
     r"\b(audio|sound|acoustic[s]?|dsp|signal processing|transducer|loudspeaker|"
-    r"microphone|hearing aid|live sound|foh|front of house|mixing|mastering|"
-    r"game audio|sound design|voice|speech|sonar|a/v|audio-?visual)\b",
+    r"microphone|hearing aid|audiolog\w*|audiologist|live sound|foh|"
+    r"front of house|mixing|mastering|game audio|sound design|voice|speech|"
+    r"sonar|a/v|audio-?visual)\b",
     re.IGNORECASE,
 )
 
 AUDIO_TITLE_WEAK = re.compile(
-    r"\b(music|midi|synth(esizer)?|studio|daw|vinyl|guitar|drum|hearing|"
-    r"listening|psychoacoustic)\b",
+    r"\b(music\w*|midi|synth\w*|studio\w*|daw|vinyl|guitar\w*|drum\w*|hearing|"
+    r"listening|psychoacoustic|speaker\w*|noise|vibration|nvh)\b",
     re.IGNORECASE,
 )
 
-AUDIO_DESCRIPTION = re.compile(
-    r"\b(audio|sound|acoustic[s]?|dsp|loudspeaker|microphone|transducer|"
-    r"listening tests|mixing|mastering|daw|studio|music)\b",
+AUDIO_DESC_STRONG = re.compile(
+    r"\b(audio|acoustic[s]?|dsp|loudspeaker|microphone|transducer|"
+    r"audiolog\w*|audiologist|hearing aid|hearing instrument|hearing science|"
+    r"beamforming|noise cancellation|echo cancellation|active noise|"
+    r"spatial audio|spatial sound|psychoacoustic|hrtf|audio signal|"
+    r"audio system|audio processing|audio quality|audio performance|"
+    r"audio hardware|audio firmware|audio software|audio algorithm|"
+    r"audio measurement|audio test|audio tuning|audio capture|"
+    r"audio product|audio device|audio engineering|audio design)\b",
+    re.IGNORECASE,
+)
+
+AUDIO_DESC_WEAK = re.compile(
+    r"\b(sound|voice|speech|hearing|listening|music\w*|studio|mixing|mastering|"
+    r"daw|noisy|noise|vibration|nvh|speaker)\b",
     re.IGNORECASE,
 )
 
@@ -364,7 +368,37 @@ CORPORATE_ROLE = re.compile(
     r"barista|warehouse|forklift|delivery driver|truck driver|driver|real estate|"
     r"facilities|janitor|security guard|receptionist|data entry|call center|"
     r"insurance underwriter|tax|procurement|logistics|supply chain|help desk|"
-    r"fp&a|financial analyst)\b",
+    r"fp&a|financial analyst|revenue manager|revenue analyst|revenue analytics|"
+    r"internal audit|legal counsel|legal innovation|creative operations|"
+    r"office assistant|administrative|library|plumber|electrician|carpenter|"
+    r"groundskeeper|custodian|housekeeper|mailroom|switchboard|"
+    r"volleyball|athletic|coach|sports|intramural|"
+    r"lecturer|instructor|teaching assistant|adjunct|professor of|"
+    r"director of development|director of admissions|financial aid|"
+    r"student affairs|student engagement|registrar|enrollment|"
+    r"admissions|bursar|treasurer|controller|"
+    r"network engineer|linux administrator|systems administrator|"
+    r"database administrator|network architect|it support|it assistant|"
+    r"desktop support|helpdesk|soc analyst|security analyst|"
+    r"marketing manager|brand manager|social media|content manager|"
+    r"event coordinator|community manager|partnerships manager|"
+    r"talent acquisition|talent sourcer|onboarding specialist|"
+    r"compensation|benefits manager|hr business partner|"
+    r"sales operations|sales enablement|channel manager|"
+    r"account management|account manager|"
+    r"project manager|project lead|program manager|"
+    r"business analyst|real time analyst|"
+    r"product designer|product manager|"
+    r"it security|information security|"
+    r"course technician|animal care|veterinary|"
+    r"ecommerce|merchandising|commercial finance|"
+    r"communications lead|corporate communications|"
+    r"infrastructure architect|sourcing manager|"
+    r"portfolio strategy|contact center|"
+    r"customer enablement|strategic transformation|"
+    r"vertical ai|alliances|"
+    r"digital marketing|growth manager|"
+    r"workforce management|pooling)\b",
     re.IGNORECASE,
 )
 
@@ -374,9 +408,10 @@ PARTIAL_SCOPE_CATEGORIES = {
     "Streaming & Music Services",
     "Audio IP & Licensing",
     "Audio Retailers & Distributors",
+    "Music Education Technology",
 }
 
-SCOPE_THRESHOLDS = {"native": 30, "partial": 50, "all": 50}
+SCOPE_THRESHOLDS = {"native": 45, "partial": 50, "all": 55}
 
 
 def category_to_scope(category: str) -> str:
@@ -389,23 +424,44 @@ def score_relevance(
     job_categories: list[str],
     audio_scope: str = "native",
 ) -> tuple[int, bool]:
-    score = 35 if audio_scope == "native" else 0
+    score = 0
 
-    if AUDIO_TITLE_STRONG.search(title):
-        score += 50
-    elif AUDIO_TITLE_WEAK.search(title):
-        score += 25
+    title_strong = bool(AUDIO_TITLE_STRONG.search(title))
+    title_weak = bool(AUDIO_TITLE_WEAK.search(title))
 
-    if job_categories:
-        score += 25
+    if title_strong:
+        score += 60
+    elif title_weak:
+        score += 30
 
-    if description and AUDIO_DESCRIPTION.search(description[:4000]):
+    desc_text = (description or "").lower()[:8000]
+    strong_mentions = len(AUDIO_DESC_STRONG.findall(desc_text))
+    weak_mentions = len(AUDIO_DESC_WEAK.findall(desc_text))
+    if strong_mentions >= 3:
+        score += 35
+    elif strong_mentions >= 1:
+        score += 20
+    elif weak_mentions >= 3:
         score += 15
 
-    if CORPORATE_ROLE.search(title):
-        score -= 45
+    if job_categories:
+        if audio_scope == "native":
+            score += 35
+        else:
+            score += 25
 
-    threshold = SCOPE_THRESHOLDS.get(audio_scope, 50)
+    if audio_scope == "native" and score > 0:
+        score += 10
+
+    if CORPORATE_ROLE.search(title):
+        score -= 70
+
+    if score <= 0:
+        return 0, False
+
+    threshold = SCOPE_THRESHOLDS.get(audio_scope, 55)
+    if not title_strong and not title_weak and audio_scope != "native":
+        threshold += 15
     return score, score >= threshold
 
 CURRENCY_SYMBOLS = {"$": "USD", "£": "GBP", "€": "EUR"}

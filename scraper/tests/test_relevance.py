@@ -52,8 +52,17 @@ class TestScoreRelevance(unittest.TestCase):
         self.assertFalse(related)
 
     def test_noncorporate_role_at_native_company_passes(self) -> None:
-        _, related = score_relevance("Studio Manager", None, [], "native")
+        _, related = score_relevance(
+            "Studio Manager",
+            "Manage recording studio operations and audio equipment.",
+            [],
+            "native",
+        )
         self.assertTrue(related)
+
+    def test_noncorporate_role_at_native_company_no_desc_hidden(self) -> None:
+        _, related = score_relevance("Studio Manager", None, [], "native")
+        self.assertFalse(related)
 
     def test_corporate_role_at_native_company_hidden(self) -> None:
         _, related = score_relevance("Human Resources", None, [], "native")
@@ -72,6 +81,51 @@ class TestScoreRelevance(unittest.TestCase):
     def test_description_signals_help(self) -> None:
         _, related = score_relevance(
             "Acoustics Researcher", None, [], "partial"
+        )
+        self.assertTrue(related)
+
+    def test_university_lecturer_at_native_company_hidden(self) -> None:
+        _, related = score_relevance(
+            "Lecturer - Department of English Writing",
+            "Teach undergraduate writing courses and evaluate student work.",
+            [],
+            "native",
+        )
+        self.assertFalse(related)
+
+    def test_plumber_at_native_company_hidden(self) -> None:
+        _, related = score_relevance(
+            "Plumber (Downtown)",
+            "Repair plumbing fixtures and pipes across campus buildings.",
+            [],
+            "native",
+        )
+        self.assertFalse(related)
+
+    def test_network_engineer_at_partial_company_hidden(self) -> None:
+        _, related = score_relevance(
+            "Network Engineer / Linux Administrator",
+            "Maintain network infrastructure and Linux servers for cloud communications platform.",
+            [],
+            "partial",
+        )
+        self.assertFalse(related)
+
+    def test_revenue_manager_at_partial_company_hidden(self) -> None:
+        _, related = score_relevance(
+            "Revenue Manager",
+            "Own revenue recognition and monthly close processes.",
+            [],
+            "partial",
+        )
+        self.assertFalse(related)
+
+    def test_strong_audio_role_at_partial_passes(self) -> None:
+        _, related = score_relevance(
+            "Senior DSP Engineer",
+            "Design audio signal processing algorithms for noise cancellation.",
+            ["audio_dsp_embedded"],
+            "partial",
         )
         self.assertTrue(related)
 
