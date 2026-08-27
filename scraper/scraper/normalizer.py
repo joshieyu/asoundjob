@@ -74,7 +74,6 @@ CATEGORY_KEYWORDS: dict[str, tuple[str, ...]] = {
         "audio capture system",
         "beamforming",
         "mic array",
-        "hearing aid",
     ),
     "audio_software": (
         "audio software",
@@ -96,7 +95,6 @@ CATEGORY_KEYWORDS: dict[str, tuple[str, ...]] = {
         "audio hal",
         "audio flinger",
         "audio driver",
-        "c++",
         "audio software engineer",
     ),
     "music_technology": (
@@ -122,18 +120,15 @@ CATEGORY_KEYWORDS: dict[str, tuple[str, ...]] = {
         "audio validation",
         "audio test engineer",
         "audio measurement",
-        "audio quality",
         "audio subsystem",
         "audio subsystems",
         "acoustic system",
         "acoustic systems",
         "audio test plan",
-        "audio performance",
         "system-level audio",
         "audio benchmark",
         "audio architecture",
         "audio ee architecture",
-        "audio product",
         "audio system",
         "audio systems",
     ),
@@ -147,7 +142,6 @@ CATEGORY_KEYWORDS: dict[str, tuple[str, ...]] = {
         "automotive sound",
         "vehicle cabin",
         "automotive acoustic",
-        "car cabin",
     ),
     "audio_dsp_embedded": (
         "dsp",
@@ -160,7 +154,6 @@ CATEGORY_KEYWORDS: dict[str, tuple[str, ...]] = {
         "audio algorithm",
         "spatial audio",
         "3d audio",
-        "surround sound",
         "equalization",
         "noise cancellation",
         "active noise cancelling",
@@ -173,15 +166,11 @@ CATEGORY_KEYWORDS: dict[str, tuple[str, ...]] = {
         "arm",
         "dsp architecture",
         "bare metal",
-        "real-time",
-        "realtime",
         "rtos",
         "bsp",
         "kernel driver",
         "audio sw",
         "alsa",
-        "pulse audio",
-        "dolby",
         "audio processing algorithm",
         "biquad",
         "iir",
@@ -223,15 +212,15 @@ CATEGORY_KEYWORDS: dict[str, tuple[str, ...]] = {
         "research platforms",
         "original research",
         "acoustic architecture",
-        "research and development",
         "applied scientist",
         "reality labs",
         "research staff",
-        "researcher",
         "director of research",
         "member of technical staff",
-        "applied research",
         "machine learning applied researcher",
+        "acoustic research engineer",
+        "research scientist audio",
+        "audio research engineer",
     ),
     "music_production_recording": (
         "mixing engineer",
@@ -274,7 +263,6 @@ CATEGORY_KEYWORDS: dict[str, tuple[str, ...]] = {
         "perceptual audio",
         "sound quality evaluation",
         "hrtf",
-        "audiology",
         "auditory",
         "hearing science",
         "subjective evaluation",
@@ -517,20 +505,76 @@ def _compile_category_patterns() -> dict[str, re.Pattern[str]]:
 
 CATEGORY_PATTERNS = _compile_category_patterns()
 
+CATEGORY_DOMINANCE: dict[str, tuple[str, ...]] = {
+    "audio_software": (
+        "music_production_recording",
+        "music_technology",
+        "audio_systems",
+    ),
+    "audio_dsp_embedded": (
+        "music_production_recording",
+        "audio_systems",
+    ),
+    "audio_ee": (
+        "audio_systems",
+    ),
+    "transducers": (
+        "audio_systems",
+    ),
+    "microphones_recording": (
+        "audio_systems",
+    ),
+    "audio_research": (
+        "audio_systems",
+    ),
+    "audio_aiml": (
+        "audio_research",
+    ),
+}
+
 
 def classify_categories(title: str, description: str | None) -> list[str]:
-    text_parts = [title.lower()]
-    if description:
-        text_parts.append(description[:6000].lower())
-    matched: list[str] = []
+    title_lower = title.lower()
+    desc_lower = (description or "")[:6000].lower()
+
+    title_matched: set[str] = set()
+    desc_matched: set[str] = set()
+
     for category_id in CATEGORY_KEYWORDS:
         pattern = CATEGORY_PATTERNS[category_id]
-        if pattern.search(text_parts[0]):
-            matched.append(category_id)
-            continue
-        if len(text_parts) > 1 and pattern.search(text_parts[1]):
-            matched.append(category_id)
-    return matched
+        if pattern.search(title_lower):
+            title_matched.add(category_id)
+        elif pattern.search(desc_lower):
+            desc_matched.add(category_id)
+
+    _apply_software_override(title_lower, title_matched, desc_matched)
+
+    for dominant, subordinates in CATEGORY_DOMINANCE.items():
+        if dominant in title_matched:
+            for sub in subordinates:
+                desc_matched.discard(sub)
+
+    return sorted(title_matched | desc_matched)
+
+
+SOFTWARE_TITLE_RE = re.compile(
+    r"\b(software engineer|software development|software developer|"
+    r"software programming|firmware engineer)\b",
+    re.IGNORECASE,
+)
+
+
+def _apply_software_override(
+    title_lower: str, title_matched: set[str], desc_matched: set[str]
+) -> None:
+    if not SOFTWARE_TITLE_RE.search(title_lower):
+        return
+    for cat in ("music_production_recording", "music_technology"):
+        if cat in title_matched or cat in desc_matched:
+            title_matched.discard(cat)
+            desc_matched.discard(cat)
+            title_matched.add("audio_software")
+            return
 
 
 def _parse_number(raw: str) -> int:
