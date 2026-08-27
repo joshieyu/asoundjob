@@ -480,6 +480,14 @@
     "scrape_method": "playwright"
   },
   {
+    "name": "Amplify Labs",
+    "careers_url": "https://www.amplifylabs.com/careers",
+    "category": "Acoustic Consulting & Engineering",
+    "verified": true,
+    "source": "manual",
+    "scrape_method": "http"
+  },
+  {
     "name": "Amplitude",
     "careers_url": "https://job-boards.greenhouse.io/amplitude",
     "category": "Streaming & Music Services",

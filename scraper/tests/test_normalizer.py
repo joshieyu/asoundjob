@@ -48,7 +48,7 @@ class TestSeniority(unittest.TestCase):
 class TestCategories(unittest.TestCase):
     def test_dsp_title(self) -> None:
         cats = classify_categories("Senior DSP Engineer", "Design filters and EQs")
-        self.assertIn("audio_dsp", cats)
+        self.assertIn("audio_dsp_embedded", cats)
 
     def test_multiple_categories(self) -> None:
         cats = classify_categories(
@@ -118,10 +118,12 @@ class TestJobType(unittest.TestCase):
         self.assertEqual(normalize_job_type("Full-time"), "full-time")
         self.assertEqual(normalize_job_type("permanent full time"), "full-time")
         self.assertEqual(normalize_job_type("Part-Time"), "part-time")
-        self.assertEqual(normalize_job_type("Contract"), "contract")
+        self.assertEqual(normalize_job_type("Contract position"), "contract")
+        self.assertEqual(normalize_job_type("Contractor"), "contract")
         self.assertEqual(normalize_job_type("Freelance"), "contract")
         self.assertEqual(normalize_job_type("Internship"), "internship")
         self.assertIsNone(normalize_job_type("Mystery"))
+        self.assertIsNone(normalize_job_type("Internal communication"))
 
 
 class TestRemote(unittest.TestCase):
@@ -158,7 +160,7 @@ class TestNormalizerPipeline(unittest.TestCase):
         self.assertEqual(job.salary_min, 150000)
         self.assertEqual(job.salary_max, 190000)
         self.assertEqual(job.job_type, "full-time")
-        self.assertIn("audio_dsp", job.job_categories)
+        self.assertIn("audio_dsp_embedded", job.job_categories)
 
 
 if __name__ == "__main__":

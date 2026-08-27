@@ -3,16 +3,17 @@ import { api, getJobs, getCategories } from '$lib/server/api';
 import type { Paginated, Job } from '$lib/types';
 
 const ALL_CATEGORY_IDS = [
-	'audio_dsp',
+	'audio_dsp_embedded',
 	'audio_software',
 	'audio_ee',
-	'transducers_microphones',
-	'acoustics_architectural',
+	'transducers',
+	'microphones_recording',
 	'live_sound_events',
 	'music_technology',
 	'audio_systems',
 	'automotive_audio',
 	'audio_aiml',
+	'audio_research',
 	'nvh',
 	'psychoacoustics_perception',
 	'game_audio_interactive',

@@ -13,7 +13,7 @@ from sqlalchemy import select
 from scraper.config import Settings, load_settings
 from scraper.database import dispose_engine, init_db, session_scope
 from scraper.deduplicator import ReconcileStats, reconcile_company_jobs
-from scraper.models import Company, ScrapeLog
+from scraper.models import Company, Job, ScrapeLog
 from scraper.normalizer import Normalizer
 from scraper.scrapers.base import ScrapeResult
 from scraper.scrapers.pipeline import ScrapePipeline
@@ -135,24 +135,36 @@ async def run_cycle(
                 verified=c.verified,
                 source=c.source,
                 scrape_method=c.scrape_method,
+                audio_scope=c.audio_scope,
+                ats_type=c.ats_type,
+                ats_slug=c.ats_slug,
             )
             for c in companies
         ]
     if limit:
         detached = detached[:limit]
 
-    cycle = CycleStats(companies_attempted=len(detached))
-    if not detached:
+    scrape_list, skip_list = _dedupe_shared_urls(detached)
+    if skip_list:
+        _deactivate_duplicate_jobs(skip_list)
+        logger.info(
+            "dedup: %d companies share URLs with already-scraped companies, "
+            "deactivated their jobs",
+            len(skip_list),
+        )
+
+    cycle = CycleStats(companies_attempted=len(scrape_list))
+    if not scrape_list:
         return cycle
 
     normalizer = Normalizer(settings)
     pipeline = ScrapePipeline(settings)
-    total = len(detached)
+    total = len(scrape_list)
     completed = 0
     started = time.monotonic()
 
     try:
-        tasks = [_scrape_with_company(pipeline, c) for c in detached]
+        tasks = [_scrape_with_company(pipeline, c) for c in scrape_list]
         for fut in asyncio.as_completed(tasks):
             company, result = await fut
             completed += 1
@@ -198,6 +210,41 @@ async def run_cycle(
         await pipeline.close()
 
     return cycle
+
+
+def _dedupe_shared_urls(
+    companies: list[Company],
+) -> tuple[list[Company], list[Company]]:
+    seen_urls: set[str] = set()
+    scrape_list: list[Company] = []
+    skip_list: list[Company] = []
+    for c in companies:
+        url = (c.careers_url or "").strip().lower()
+        if url in seen_urls:
+            skip_list.append(c)
+        else:
+            seen_urls.add(url)
+            scrape_list.append(c)
+    return scrape_list, skip_list
+
+
+def _deactivate_duplicate_jobs(companies: list[Company]) -> None:
+    if not companies:
+        return
+    from sqlalchemy import update as sa_update
+
+    company_ids = [c.id for c in companies]
+    with session_scope() as session:
+        session.execute(
+            sa_update(Company)
+            .where(Company.id.in_(company_ids))
+            .values(last_scraped_at=datetime.now(timezone.utc))
+        )
+        session.execute(
+            sa_update(Job)
+            .where(Job.company_id.in_(company_ids))
+            .values(is_active=False)
+        )
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
