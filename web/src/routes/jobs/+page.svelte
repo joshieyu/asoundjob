@@ -9,6 +9,12 @@
 	const jobs: Paginated<Job> | null = $derived(data.jobs);
 	const params = $derived(data.params as Record<string, string>);
 
+	const categoryNames = $derived.by(() => {
+		const map = new Map<string, string>();
+		for (const c of data.categories?.categories ?? []) map.set(c.id, c.name);
+		return map;
+	});
+
 	function href(overrides: Record<string, string | undefined>): string {
 		const next = new URLSearchParams(page.url.searchParams);
 		for (const [key, value] of Object.entries(overrides)) {
@@ -25,7 +31,7 @@
 		if (params.q) labels.push({ key: 'q', label: 'Search', value: `“${params.q}”` });
 		if (params.category)
 			for (const c of params.category.split(','))
-				labels.push({ key: 'category', label: 'Specialty', value: c });
+				labels.push({ key: 'category', label: 'Specialty', value: categoryNames.get(c) ?? c });
 		if (params.seniority)
 			labels.push({ key: 'seniority', label: 'Level', value: params.seniority });
 		if (params.job_type) labels.push({ key: 'job_type', label: 'Type', value: params.job_type });
@@ -136,7 +142,7 @@
 					name="remote"
 					value="true"
 					checked={params.remote === 'true'}
-					class="h-4 w-4 accent-[#d96c2c]"
+					class="h-4 w-4 accent-fader"
 				/>
 				Remote only
 			</label>
@@ -257,7 +263,7 @@
 
 		<div class="mt-4 grid gap-3 xl:grid-cols-2">
 			{#each jobs?.items ?? [] as job (job.id)}
-				<JobStrip {job} />
+				<JobStrip {job} {categoryNames} />
 			{:else}
 				<div class="panel col-span-full p-8 text-center">
 					<p class="font-mono text-sm text-ink-soft">

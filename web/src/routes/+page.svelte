@@ -1,23 +1,23 @@
 <script lang="ts">
 	import JobStrip from '$lib/components/JobStrip.svelte';
-	import jobCategories from '$lib/data/job-categories.json';
 
 	let { data } = $props();
 
 	const total = $derived(data.totalJobs);
 	const featured = $derived(data.featured?.items ?? []);
-	const counts = $derived.by(() => {
-		const map = new Map<string, number>();
-		for (const c of data.categories?.categories ?? []) map.set(c.id, c.job_count);
-		return map;
-	});
-	const categoryMeta = jobCategories.job_categories;
+	const categoryMeta = $derived(data.categories?.categories ?? []);
 	const topCategories = $derived(
 		[...categoryMeta]
-			.map((c) => ({ ...c, count: counts.get(c.id) ?? 0 }))
+			.map((c) => ({ ...c, count: c.job_count }))
 			.sort((a, b) => b.count - a.count)
 	);
 	const maxCount = $derived(topCategories[0]?.count ?? 1);
+
+	const categoryNames = $derived.by(() => {
+		const map = new Map<string, string>();
+		for (const c of categoryMeta) map.set(c.id, c.name);
+		return map;
+	});
 </script>
 
 <svelte:head>
@@ -115,7 +115,7 @@
 
 	<div class="mt-4 grid gap-3 md:grid-cols-2">
 		{#each featured as job (job.id)}
-			<JobStrip {job} />
+			<JobStrip {job} {categoryNames} />
 		{:else}
 			<p class="panel col-span-full p-6 text-sm text-ink-soft">
 				Listings are warming up — the board is syncing with the backend.

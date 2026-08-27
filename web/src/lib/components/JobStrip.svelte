@@ -6,8 +6,9 @@
 
 	let {
 		job,
-		companyMaxSalary = 220000
-	}: { job: Job; companyMaxSalary?: number } = $props();
+		companyMaxSalary = 220000,
+		categoryNames = new Map<string, string>()
+	}: { job: Job; companyMaxSalary?: number; categoryNames?: Map<string, string> } = $props();
 
 	let flagged = $state(false);
 
@@ -83,7 +84,7 @@
 			<ul class="mt-2.5 flex flex-wrap gap-1.5" aria-label="Specialties">
 				{#each job.job_categories.slice(0, 3) as cat (cat)}
 					<li class="rounded-sm border border-seam bg-panel-recessed px-1.5 py-0.5 font-mono text-[10px] tracking-wide text-ink-soft">
-						{cat.replaceAll('_', ' ')}
+						{categoryNames.get(cat) ?? cat.replaceAll('_', ' ')}
 					</li>
 				{/each}
 			</ul>

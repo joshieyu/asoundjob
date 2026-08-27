@@ -5,6 +5,12 @@
 
 	const job = $derived(data.job);
 	const salary = $derived(formatSalary(job.salary_min, job.salary_max, job.salary_currency));
+
+	const categoryNames = $derived.by(() => {
+		const map = new Map<string, string>();
+		for (const c of data.categories ?? []) map.set(c.id, c.name);
+		return map;
+	});
 </script>
 
 <svelte:head>
@@ -64,7 +70,7 @@
 							href="/jobs?category={cat}"
 							class="rounded-sm border border-seam bg-panel-recessed px-1.5 py-0.5 font-mono text-[10px] tracking-wide text-ink-soft hover:border-fader hover:text-fader-deep"
 						>
-							{cat.replaceAll('_', ' ')}
+							{categoryNames.get(cat) ?? cat.replaceAll('_', ' ')}
 						</a>
 					</li>
 				{/each}

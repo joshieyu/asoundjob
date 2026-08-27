@@ -1,9 +1,10 @@
 <script lang="ts">
-	import jobCategories from '$lib/data/job-categories.json';
 	import { submitJob, type SubmitState } from './actions';
 	import type { JobSubmissionRequest } from './types';
 
-	const categories = jobCategories.job_categories;
+	let { data } = $props();
+
+	const categories = $derived(data.categories?.categories ?? []);
 
 	let submitState = $state<SubmitState>({ kind: 'idle' });
 	let form: JobSubmissionRequest = $state({
@@ -118,7 +119,7 @@
 					<span class="mb-1 block font-mono text-[10px] tracking-[0.14em] text-ink-soft uppercase">Type</span>
 					<select bind:value={form.job_type} class="well h-10 w-full px-2 text-sm">
 						<option value="">—</option>
-						{#each ['full-time', 'part-time', 'contract', 'internship'] as t (t)}
+						{#each ['full-time', 'part-time', 'contract', 'internship', 'temporary'] as t (t)}
 							<option value={t}>{t}</option>
 						{/each}
 					</select>
@@ -144,7 +145,7 @@
 			</div>
 
 			<label class="flex items-center gap-2 text-sm font-semibold">
-				<input type="checkbox" bind:checked={form.remote} class="h-4 w-4 accent-[#d96c2c]" />
+				<input type="checkbox" bind:checked={form.remote} class="h-4 w-4 accent-fader" />
 				This role can be done remotely
 			</label>
 

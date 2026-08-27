@@ -1,10 +1,13 @@
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import { getJob, SITE_URL } from '$lib/server/api';
+import { getJob, getCategories, SITE_URL } from '$lib/server/api';
 import { renderDescription } from '$lib/sanitize';
 
 export const load: PageServerLoad = async ({ params }) => {
-	const job = await getJob(Number(params.id)).catch(() => null);
+	const [job, categories] = await Promise.all([
+		getJob(Number(params.id)).catch(() => null),
+		getCategories().catch(() => ({ categories: [] }))
+	]);
 	if (!job) error(404, 'Job not found');
 
 	const rawDescription = job.description ?? '';
@@ -53,6 +56,7 @@ export const load: PageServerLoad = async ({ params }) => {
 		description,
 		plainDescription,
 		jsonLd,
+		categories: categories.categories,
 		meta: {
 			title: `${job.title} at ${job.company?.name ?? 'Unknown company'} | ASoundJob`,
 			description: plainDescription.slice(0, 158)

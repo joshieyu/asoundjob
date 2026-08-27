@@ -25,8 +25,11 @@
 <header class="sticky top-0 z-40 border-b border-seam bg-panel/95 backdrop-blur">
 	<div class="mx-auto flex h-14 max-w-6xl items-center gap-4 px-4 sm:px-6">
 		<a href="/" class="flex items-center gap-2.5" aria-label="ASoundJob home">
-			<img src="/yap-logo.png" alt="" class="h-8 w-8 rounded-sm border border-seam object-cover" />
-			<span class="text-lg font-black tracking-tight">ASOUNDJOB</span>
+			<div class="flex flex-col leading-none">
+				<span class="text-lg font-black tracking-tight">ASoundJob</span>
+				<span class="font-mono text-[10px] tracking-wide text-ink-soft">by Young Audio Professionals</span>
+			</div>
+			<img src="/yap-logo.png" alt="Young Audio Professionals logo" class="h-9 w-9 rounded-sm border border-seam object-cover" />
 		</a>
 
 		<nav aria-label="Primary" class="ml-auto hidden items-center gap-1 md:flex">
