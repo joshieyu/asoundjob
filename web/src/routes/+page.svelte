@@ -12,6 +12,9 @@
 			.sort((a, b) => b.count - a.count)
 	);
 	const maxCount = $derived(topCategories[0]?.count ?? 1);
+	const openCategories = $derived(topCategories.filter((c) => c.count > 0));
+	const visibleSpecialtyChips = $derived(openCategories.slice(0, 12));
+	const moreSpecialtyCount = $derived(Math.max(0, openCategories.length - 12));
 
 	const categoryNames = $derived.by(() => {
 		const map = new Map<string, string>();
@@ -66,7 +69,7 @@
 					Filter by specialty
 				</p>
 				<ul class="flex flex-wrap gap-1.5">
-					{#each topCategories.slice(0, 10) as cat (cat.id)}
+					{#each visibleSpecialtyChips as cat (cat.id)}
 						<li>
 							<a
 								href="/jobs?category={cat.id}"
@@ -75,12 +78,19 @@
 							>
 								{cat.name}
 								<span
-									class="rounded-sm border border-seam bg-panel-recessed px-1 font-mono text-[10px] {''}"
+									class="rounded-sm border border-seam bg-panel-recessed px-1 font-mono text-[10px]"
 									>{cat.count}</span
 								>
 							</a>
 						</li>
 					{/each}
+					{#if moreSpecialtyCount > 0}
+						<li>
+							<a href="/jobs" class="btn-latch !normal-case !tracking-normal">
+								+{moreSpecialtyCount} more →
+							</a>
+						</li>
+					{/if}
 					<li>
 						<a href="/jobs" class="btn-latch is-on !normal-case !tracking-normal">All jobs →</a>
 					</li>

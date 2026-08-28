@@ -1,5 +1,6 @@
 import type { PageServerLoad } from './$types';
-import { getCategories, getCompanies, getJobs } from '$lib/server/api';
+import { api, getCategories, getCompanies, getJobs } from '$lib/server/api';
+import type { Paginated, Job } from '$lib/types';
 
 const ALLOWED = [
 	'q',
@@ -25,10 +26,11 @@ export const load: PageServerLoad = async ({ url }) => {
 	params['page'] = String(page);
 	if (!params.per_page) params.per_page = '20';
 
-	const [jobs, categories, companies] = await Promise.all([
+	const [jobs, categories, companies, totalResult] = await Promise.all([
 		getJobs(params).catch(() => null),
 		getCategories().catch(() => null),
-		getCompanies({ verified_only: 'true', per_page: '100' }).catch(() => null)
+		getCompanies({ verified_only: 'true', per_page: '100' }).catch(() => null),
+		api<Paginated<Job>>('/api/jobs?per_page=1').catch(() => null)
 	]);
 
 	return {
@@ -36,6 +38,7 @@ export const load: PageServerLoad = async ({ url }) => {
 		categories,
 		companies,
 		params,
-		page
+		page,
+		totalJobs: totalResult?.total ?? 0
 	};
 };

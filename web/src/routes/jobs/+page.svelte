@@ -15,6 +15,35 @@
 		return map;
 	});
 
+	let selectedCategories = $state<string[]>(params.category ? params.category.split(',') : []);
+	let showZeroCategories = $state(false);
+
+	$effect(() => {
+		selectedCategories = params.category ? params.category.split(',') : [];
+	});
+
+	function toggleCategory(id: string, checked: boolean) {
+		if (checked) {
+			if (!selectedCategories.includes(id)) selectedCategories = [...selectedCategories, id];
+		} else {
+			selectedCategories = selectedCategories.filter((c) => c !== id);
+		}
+	}
+
+	const categoryFieldValue = $derived(selectedCategories.join(','));
+
+	const unselectedZeroCategories = $derived(
+		(data.categories?.categories ?? []).filter(
+			(c) => c.job_count === 0 && !selectedCategories.includes(c.id)
+		)
+	);
+
+	const visibleCategories = $derived(
+		(data.categories?.categories ?? []).filter(
+			(c) => c.job_count > 0 || showZeroCategories || selectedCategories.includes(c.id)
+		)
+	);
+
 	function href(overrides: Record<string, string | undefined>): string {
 		const next = new URLSearchParams(page.url.searchParams);
 		for (const [key, value] of Object.entries(overrides)) {
@@ -27,11 +56,16 @@
 	}
 
 	const activeFilters = $derived.by(() => {
-		const labels: { key: string; label: string; value: string }[] = [];
+		const labels: { key: string; label: string; value: string; id?: string }[] = [];
 		if (params.q) labels.push({ key: 'q', label: 'Search', value: `“${params.q}”` });
 		if (params.category)
 			for (const c of params.category.split(','))
-				labels.push({ key: 'category', label: 'Specialty', value: categoryNames.get(c) ?? c });
+				labels.push({
+					key: 'category',
+					label: 'Specialty',
+					value: categoryNames.get(c) ?? c,
+					id: c
+				});
 		if (params.seniority)
 			labels.push({ key: 'seniority', label: 'Level', value: params.seniority });
 		if (params.job_type) labels.push({ key: 'job_type', label: 'Type', value: params.job_type });
@@ -62,7 +96,10 @@
 		return out;
 	}
 
-	const totalSegments = $derived(Math.round(((jobs?.total ?? 0) / 3200) * 16));
+	const boardTotal = $derived(data.totalJobs || 1);
+	const totalSegments = $derived(
+		Math.min(16, Math.max(0, Math.round(((jobs?.total ?? 0) / boardTotal) * 16)))
+	);
 
 	function pageHref(p: number): string {
 		const next = new URLSearchParams(page.url.searchParams);
@@ -92,14 +129,32 @@
 			<legend class="mb-1.5 font-mono text-[10px] tracking-[0.14em] text-ink-soft uppercase">
 				Specialty
 			</legend>
-			<select name="category" class="well h-9 w-full px-2 text-sm">
-				<option value="">All specialties</option>
-				{#each data.categories?.categories ?? [] as cat (cat.id)}
-					<option value={cat.id} selected={params.category === cat.id}>
-						{cat.name} ({cat.job_count})
-					</option>
+			<input type="hidden" name="category" value={categoryFieldValue} />
+			<div class="well max-h-64 overflow-y-auto p-1.5">
+				{#each visibleCategories as cat (cat.id)}
+					<label class="flex items-center gap-2 rounded-sm px-1.5 py-1 text-sm hover:bg-panel-recessed">
+						<input
+							type="checkbox"
+							checked={selectedCategories.includes(cat.id)}
+							onchange={(e) => toggleCategory(cat.id, e.currentTarget.checked)}
+							class="h-4 w-4 shrink-0 accent-fader"
+						/>
+						<span class="min-w-0 flex-1 truncate">{cat.name}</span>
+						<span class="shrink-0 font-mono text-[10px] text-ink-soft">({cat.job_count})</span>
+					</label>
 				{/each}
-			</select>
+				{#if unselectedZeroCategories.length > 0}
+					<button
+						type="button"
+						class="mt-1 w-full rounded-sm px-1.5 py-1 text-left font-mono text-[10px] tracking-wide text-ink-soft hover:text-fader-deep"
+						onclick={() => (showZeroCategories = !showZeroCategories)}
+					>
+						{showZeroCategories
+							? 'Hide specialties with no open roles'
+							: `Show ${unselectedZeroCategories.length} specialties with no open roles`}
+					</button>
+				{/if}
+			</div>
 		</fieldset>
 
 		<fieldset class="mt-3">
@@ -250,7 +305,7 @@
 				{#each activeFilters as f (f.key + f.value)}
 					<li>
 						<a
-							href={href(removeFilter(f.key, f.value))}
+							href={href(removeFilter(f.key, f.id ?? f.value))}
 							class="btn-latch !normal-case !tracking-normal is-on !py-1 !text-xs"
 						>
 							{#if f.label}<span class="opacity-70">{f.label}:</span>{/if}
