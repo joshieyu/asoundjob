@@ -214,7 +214,11 @@ def rescore_company_jobs(db: Session, company: Company) -> None:
             description=job.description,
             job_type=job.job_type,
         )
-        normalized = scorer.normalize(raw, audio_scope=company.audio_scope or "native")
+        normalized = scorer.normalize(
+            raw,
+            audio_scope=company.audio_scope or "native",
+            company_category=company.category,
+        )
         job.relevance_score = normalized.relevance_score
         job.is_audio_related = normalized.is_audio_related
 
@@ -272,11 +276,16 @@ def approve_submission(
     )
 
     scope = "native"
+    company_category: str | None = None
     if submission.company_id is not None:
         company = db.get(Company, submission.company_id)
-        if company is not None and company.audio_scope:
-            scope = company.audio_scope
-    normalized = normalizer.normalize(raw, audio_scope=scope)
+        if company is not None:
+            if company.audio_scope:
+                scope = company.audio_scope
+            company_category = company.category
+    normalized = normalizer.normalize(
+        raw, audio_scope=scope, company_category=company_category
+    )
 
     job = Job(
         company_id=submission.company_id,

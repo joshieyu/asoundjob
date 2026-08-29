@@ -82,7 +82,11 @@ def persist_result(
         if managed is None:
             return 0, None
         normalized_jobs = [
-            normalizer.normalize(raw, audio_scope=managed.audio_scope or "native")
+            normalizer.normalize(
+                raw,
+                audio_scope=managed.audio_scope or "native",
+                company_category=managed.category,
+            )
             for raw in result.jobs
         ]
         stats = reconcile_company_jobs(session, managed, normalized_jobs, result.trust_empty)

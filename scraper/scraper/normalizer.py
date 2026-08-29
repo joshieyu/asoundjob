@@ -992,6 +992,119 @@ CATEGORY_DOMINANCE: dict[str, tuple[str, ...]] = {
     ),
 }
 
+COMPANY_FALLBACK_HARDWARE = "hardware"
+COMPANY_FALLBACK_SOFTWARE = "software"
+
+COMPANY_CATEGORY_FALLBACK: dict[str, tuple[frozenset, Optional[str]]] = {
+    "Professional Audio & Live Sound": (frozenset({COMPANY_FALLBACK_HARDWARE}), None),
+    "Headphones & Personal Audio": (frozenset({COMPANY_FALLBACK_HARDWARE}), None),
+    "Hi-Fi & Consumer Speakers": (frozenset({COMPANY_FALLBACK_HARDWARE}), None),
+    "Transducer & Driver Manufacturers": (
+        frozenset({COMPANY_FALLBACK_HARDWARE}),
+        "transducers",
+    ),
+    "Electronic Musical Instruments": (
+        frozenset({COMPANY_FALLBACK_HARDWARE, COMPANY_FALLBACK_SOFTWARE}),
+        "music_technology",
+    ),
+    "DJ Equipment": (
+        frozenset({COMPANY_FALLBACK_HARDWARE, COMPANY_FALLBACK_SOFTWARE}),
+        "music_technology",
+    ),
+    "Car Audio": (frozenset({COMPANY_FALLBACK_HARDWARE}), "automotive_audio"),
+    "Audio Interfaces & Converters": (frozenset({COMPANY_FALLBACK_HARDWARE}), None),
+    "Hearing Aid & Hearing Tech": (
+        frozenset({COMPANY_FALLBACK_HARDWARE}),
+        "audiology_hearing",
+    ),
+    "Audio Plugins & Virtual Instruments": (
+        frozenset({COMPANY_FALLBACK_HARDWARE, COMPANY_FALLBACK_SOFTWARE}),
+        None,
+    ),
+    "DAW & Music Production Software": (
+        frozenset({COMPANY_FALLBACK_HARDWARE, COMPANY_FALLBACK_SOFTWARE}),
+        None,
+    ),
+    "Audio Middleware & SDK": (
+        frozenset({COMPANY_FALLBACK_HARDWARE, COMPANY_FALLBACK_SOFTWARE}),
+        None,
+    ),
+    "Smart Home & IoT Audio": (frozenset({COMPANY_FALLBACK_HARDWARE}), None),
+}
+
+FALLBACK_ROLE_CATEGORIES: list[tuple[re.Pattern[str], str, str]] = [
+    (
+        re.compile(r"\b(firmware|embedded|dsp|signal processing)\b", re.IGNORECASE),
+        "audio_dsp_embedded",
+        COMPANY_FALLBACK_HARDWARE,
+    ),
+    (
+        re.compile(
+            r"\b(electrical|electronics?|analog|analogue|rf|hardware|pcb)\b",
+            re.IGNORECASE,
+        ),
+        "audio_ee",
+        COMPANY_FALLBACK_HARDWARE,
+    ),
+    (
+        re.compile(
+            r"\b(mechanical|industrial design|manufacturing|tooling|packaging)\b",
+            re.IGNORECASE,
+        ),
+        "audio_product_mechanical",
+        COMPANY_FALLBACK_HARDWARE,
+    ),
+    (
+        re.compile(
+            r"\b(test|testing|validation|verification|quality|reliability|qa)\b",
+            re.IGNORECASE,
+        ),
+        "audio_systems",
+        COMPANY_FALLBACK_HARDWARE,
+    ),
+    (
+        re.compile(r"\b(software|developer|programmer|c\+\+)\b", re.IGNORECASE),
+        "audio_software",
+        COMPANY_FALLBACK_SOFTWARE,
+    ),
+]
+
+FALLBACK_ROLE_HEAD = re.compile(
+    r"\b(engineer|engineering|developer|scientist|technician|technologist|"
+    r"architect|designer)\b",
+    re.IGNORECASE,
+)
+
+FALLBACK_ROLE_EXCLUSIONS = re.compile(
+    r"\b(civil|structural|architectural|building|facade|geotechnical|hvac|plumbing|"
+    r"data|analytics|devops|site reliability|cloud|network|networking|infrastructure|"
+    r"security|web|frontend|front[- ]end|backend|back[- ]end|full[- ]stack|salesforce|"
+    r"sales|solutions|presales|support|field|release|erp|sap|"
+    r"developer relations|developer advocate|evangelist|devrel|"
+    r"machine learning|computer vision|llm|search|growth|marketing|platform|storage)\b",
+    re.IGNORECASE,
+)
+
+
+def _company_fallback_categories(title: str, company_category: str | None) -> list[str]:
+    if not company_category:
+        return []
+    gate = COMPANY_CATEGORY_FALLBACK.get(company_category)
+    if gate is None:
+        return []
+    allowed, domain = gate
+    if not FALLBACK_ROLE_HEAD.search(title):
+        return []
+    if FALLBACK_ROLE_EXCLUSIONS.search(title) or CORPORATE_ROLE.search(title):
+        return []
+    for pattern, category_id, kind in FALLBACK_ROLE_CATEGORIES:
+        if kind in allowed and pattern.search(title):
+            found = {category_id}
+            if domain:
+                found.add(domain)
+            return sorted(found)
+    return []
+
 
 def _distinct_keyword_hits(
     text: str, pattern: Optional[re.Pattern[str]], require_anchor: bool
@@ -1043,7 +1156,9 @@ def _score_category(
     return score, title_hit
 
 
-def classify_categories(title: str, description: str | None) -> list[str]:
+def classify_categories(
+    title: str, description: str | None, company_category: str | None = None
+) -> list[str]:
     title_lower = title.lower()
     role_lower = extract_role_text(description).lower()[:6000]
 
@@ -1070,7 +1185,10 @@ def classify_categories(title: str, description: str | None) -> list[str]:
         key=lambda item: (-item[1], 0 if title_hits.get(item[0]) else 1, item[0]),
     )
     top = ranked[:3]
-    return sorted(category_id for category_id, _ in top)
+    result = sorted(category_id for category_id, _ in top)
+    if result:
+        return result
+    return _company_fallback_categories(title, company_category)
 
 
 SOFTWARE_TITLE_RE = re.compile(
@@ -1209,13 +1327,18 @@ class Normalizer:
         except OSError:
             logger.warning("categories file missing at %s", categories_path)
 
-    def normalize(self, raw: RawJob, audio_scope: str = "native") -> NormalizedJob:
+    def normalize(
+        self,
+        raw: RawJob,
+        audio_scope: str = "native",
+        company_category: str | None = None,
+    ) -> NormalizedJob:
         salary_text = " ".join(
             part for part in (raw.title, raw.description) if part
         )
         salary_min, salary_max, salary_currency = parse_salary(salary_text)
 
-        categories = classify_categories(raw.title, raw.description)
+        categories = classify_categories(raw.title, raw.description, company_category)
         if self.valid_ids is not None:
             categories = [c for c in categories if c in self.valid_ids]
 

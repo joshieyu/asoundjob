@@ -153,6 +153,86 @@ class TestCategories(unittest.TestCase):
         self.assertIn("acoustics_consulting", cats)
 
 
+class TestCompanyCategoryFallback(unittest.TestCase):
+    def test_firmware_engineer_at_pro_audio_company(self) -> None:
+        cats = classify_categories(
+            "Firmware Engineer", None, "Professional Audio & Live Sound"
+        )
+        self.assertEqual(cats, ["audio_dsp_embedded"])
+
+    def test_mechanical_engineer_at_instrument_company(self) -> None:
+        cats = classify_categories(
+            "Mechanical Engineer", None, "Electronic Musical Instruments"
+        )
+        self.assertEqual(cats, ["audio_product_mechanical", "music_technology"])
+
+    def test_electrical_engineer_at_car_audio_company(self) -> None:
+        cats = classify_categories(
+            "Electrical Design Engineer", None, "Car Audio"
+        )
+        self.assertEqual(cats, ["audio_ee", "automotive_audio"])
+
+    def test_ungated_company_category_does_not_fall_back(self) -> None:
+        self.assertEqual(
+            classify_categories(
+                "Electrical Engineer", None, "Acoustic Consulting & Engineering"
+            ),
+            [],
+        )
+        self.assertEqual(
+            classify_categories(
+                "Software Engineer", None, "Recording Studios & Post Houses"
+            ),
+            [],
+        )
+        self.assertEqual(
+            classify_categories(
+                "Software Engineer", None, "Voice & Speech Technology"
+            ),
+            [],
+        )
+
+    def test_excluded_technical_roles_do_not_fall_back(self) -> None:
+        self.assertEqual(
+            classify_categories(
+                "Cloud Infrastructure Engineer",
+                None,
+                "Professional Audio & Live Sound",
+            ),
+            [],
+        )
+        self.assertEqual(
+            classify_categories(
+                "Developer Relations Engineer",
+                None,
+                "Electronic Musical Instruments",
+            ),
+            [],
+        )
+
+    def test_non_role_title_does_not_fall_back(self) -> None:
+        self.assertEqual(
+            classify_categories("Careers", None, "Professional Audio & Live Sound"),
+            [],
+        )
+
+    def test_software_role_not_gated_at_hardware_only_company(self) -> None:
+        self.assertEqual(
+            classify_categories(
+                "Senior Software Engineer", None, "Headphones & Personal Audio"
+            ),
+            [],
+        )
+
+    def test_fallback_never_overrides_keyword_match(self) -> None:
+        cats = classify_categories("Audio Software Engineer", None, "Car Audio")
+        self.assertIn("audio_software", cats)
+        self.assertNotIn("automotive_audio", cats)
+
+    def test_no_company_category_keeps_existing_behaviour(self) -> None:
+        self.assertEqual(classify_categories("Firmware Engineer", None), [])
+
+
 class TestDescriptionCleaning(unittest.TestCase):
     def test_clean_description_handles_double_escaped_html(self) -> None:
         raw = (
