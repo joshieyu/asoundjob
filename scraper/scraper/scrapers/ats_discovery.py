@@ -43,7 +43,7 @@ PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     (
         "recruitee",
         re.compile(
-            r"(?P<slug>[a-z0-9-]+)\.recruitee\.com", re.IGNORECASE
+            r"(?P<slug>[a-z0-9-]{1,63})\.recruitee\.com", re.IGNORECASE
         ),
     ),
     (
@@ -56,19 +56,19 @@ PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     (
         "bamboohr",
         re.compile(
-            r"(?P<slug>[a-z0-9-]+)\.bamboohr\.com/careers", re.IGNORECASE
+            r"(?P<slug>[a-z0-9-]{1,63})\.bamboohr\.com/careers", re.IGNORECASE
         ),
     ),
     (
         "breezy",
         re.compile(
-            r"(?P<slug>[a-z0-9-]+)\.breezy\.hr", re.IGNORECASE
+            r"(?P<slug>[a-z0-9-]{1,63})\.breezy\.hr", re.IGNORECASE
         ),
     ),
     (
         "pinpoint",
         re.compile(
-            r"(?P<slug>[a-z0-9-]+)\.pinpointhq\.com", re.IGNORECASE
+            r"(?P<slug>[a-z0-9-]{1,63})\.pinpointhq\.com", re.IGNORECASE
         ),
     ),
     (

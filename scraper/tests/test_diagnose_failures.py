@@ -1,8 +1,15 @@
 from __future__ import annotations
 
 import unittest
+from dataclasses import asdict
 
-from scraper.diagnose_failures import PageProbe, classify, summarize
+from scraper.diagnose_failures import (
+    PageProbe,
+    classify,
+    is_job_endpoint,
+    probe_from_dict,
+    summarize,
+)
 
 BASE_KWARGS = {"company_id": 1, "company_name": "Acme", "url": "https://acme.example.com/careers"}
 
@@ -88,6 +95,49 @@ class TestClassifyBlockedInterstitial(unittest.TestCase):
         bucket, _detail = classify(probe)
         self.assertEqual(bucket, "blocked")
 
+    def test_small_challenge_platform_page_is_blocked(self) -> None:
+        html = "<html><body>" + ("x" * 400) + "/cdn-cgi/challenge-platform" + "</body></html>"
+        self.assertLess(len(html), 20000)
+        probe = make_probe(status=200, html=html)
+        bucket, _detail = classify(probe)
+        self.assertEqual(bucket, "blocked")
+
+    def test_large_page_with_just_a_moment_is_not_blocked(self) -> None:
+        html = "<html><body>just a moment...</body></html>" + ("z" * 50000)
+        self.assertGreaterEqual(len(html), 50000)
+        probe = make_probe(status=200, html=html)
+        bucket, _detail = classify(probe)
+        self.assertNotEqual(bucket, "blocked")
+
+    def test_normal_page_with_cloudflare_word_is_not_blocked(self) -> None:
+        html = (
+            "<html><body><h1>Careers at Acme</h1>"
+            "<p>We build studio monitors and stage gear. Join our team.</p>"
+            '<script data-cfasync="false" src="/cdn-cgi/l/email-protection">'
+            "[cloudflare email protection]</script>"
+            + ("<!-- padding -->" * 2000)
+            + "</body></html>"
+        )
+        self.assertGreaterEqual(len(html), 30000)
+        probe = make_probe(status=200, html=html)
+        bucket, _detail = classify(probe)
+        self.assertNotEqual(bucket, "blocked")
+
+    def test_recaptcha_widget_on_contact_form_is_not_blocked(self) -> None:
+        html = """
+        <html><body>
+        <h1>Careers at Acme</h1>
+        <p>See our open roles below and get in touch with recruiting.</p>
+        <form>
+        <div class="g-recaptcha" data-sitekey="abc123"></div>
+        <script src="https://www.google.com/recaptcha/api.js"></script>
+        </form>
+        </body></html>
+        """
+        probe = make_probe(status=200, html=html)
+        bucket, _detail = classify(probe)
+        self.assertNotEqual(bucket, "blocked")
+
 
 class TestClassifyAtsDiscoverable(unittest.TestCase):
     def test_greenhouse_embed_is_discoverable(self) -> None:
@@ -143,6 +193,63 @@ class TestClassifyJsonEndpoint(unittest.TestCase):
         bucket, detail = classify(probe)
         self.assertEqual(bucket, "json_endpoint")
         self.assertIn("jobs", detail)
+
+    def test_only_noise_endpoints_falls_through(self) -> None:
+        probe = make_probe(
+            status=200,
+            html="<html><body><h1>Careers at Acme</h1></body></html>",
+            json_endpoints=["https://cdn.cookielaw.org/consent/abc/otBannerSdk.js"],
+        )
+        bucket, _detail = classify(probe)
+        self.assertNotEqual(bucket, "json_endpoint")
+        self.assertEqual(bucket, "unknown")
+
+
+class TestIsJobEndpoint(unittest.TestCase):
+    PAGE_URL = "https://acme.example.com/careers"
+
+    def test_cookielaw_is_noise(self) -> None:
+        self.assertFalse(
+            is_job_endpoint(
+                self.PAGE_URL,
+                "https://cdn.cookielaw.org/consent/abc/otBannerSdk.js",
+            )
+        )
+
+    def test_youtube_is_noise(self) -> None:
+        self.assertFalse(is_job_endpoint(self.PAGE_URL, "https://www.youtube.com/iframe_api"))
+
+    def test_job_vocabulary_in_path(self) -> None:
+        self.assertTrue(
+            is_job_endpoint(
+                "https://anghami.com/careers",
+                "https://anghami.zenats.com/en/api/v1/career_page/live?slug=x",
+            )
+        )
+
+    def test_jobs_json_path(self) -> None:
+        self.assertTrue(
+            is_job_endpoint(
+                "https://www.annapurna.com/careers",
+                "https://www.annapurna.com/_next/data/abc/jobs.json",
+            )
+        )
+
+    def test_same_host_with_no_job_vocabulary_is_true(self) -> None:
+        self.assertTrue(
+            is_job_endpoint(
+                self.PAGE_URL,
+                "https://acme.example.com/api/data.json",
+            )
+        )
+
+    def test_unrelated_third_party_with_no_job_vocabulary_is_false(self) -> None:
+        self.assertFalse(
+            is_job_endpoint(
+                self.PAGE_URL,
+                "https://random-vendor.io/api/data.json",
+            )
+        )
 
 
 class TestClassifyNoOpenings(unittest.TestCase):
@@ -223,6 +330,21 @@ class TestSummarize(unittest.TestCase):
 
     def test_empty_input(self) -> None:
         self.assertEqual(summarize([]), {})
+
+
+class TestProbeFromDict(unittest.TestCase):
+    def test_round_trip(self) -> None:
+        probe = make_probe(
+            status=200,
+            error=None,
+            html="<html><body>Careers</body></html>",
+            final_url="https://acme.example.com/careers/",
+            links=["https://acme.example.com/careers/1"],
+            json_endpoints=["https://acme.example.com/api/jobs"],
+            job_link_count=3,
+        )
+        rebuilt = probe_from_dict(asdict(probe))
+        self.assertEqual(rebuilt, probe)
 
 
 if __name__ == "__main__":

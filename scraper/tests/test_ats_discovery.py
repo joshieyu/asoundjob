@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import time
 import unittest
 
 from scraper.scrapers.ats_discovery import discover, first_discovery
@@ -86,6 +87,12 @@ class TestATSDiscovery(unittest.TestCase):
 
     def test_first_discovery_none(self) -> None:
         self.assertIsNone(first_discovery(NO_ATS))
+
+    def test_long_word_run_is_not_quadratic(self) -> None:
+        page = '<img src="data:image/png;base64,' + "iVBORw0KGgoAAAANSUhEUgAA" * 2000 + '">'
+        started = time.monotonic()
+        self.assertEqual(discover(page), [])
+        self.assertLess(time.monotonic() - started, 2.0)
 
     def test_dedupe(self) -> None:
         html = '<a href="https://jobs.lever.co/acme">1</a><a href="https://jobs.lever.co/acme/123">2</a>'

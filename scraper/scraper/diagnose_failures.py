@@ -3,10 +3,12 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import os
 import re
 import sys
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from typing import Any, Optional
+from urllib.parse import urlparse
 
 from sqlalchemy import func, select
 
@@ -39,6 +41,21 @@ class PageProbe:
     job_link_count: int = 0
 
 
+def probe_from_dict(data: dict) -> PageProbe:
+    return PageProbe(
+        company_id=data["company_id"],
+        company_name=data["company_name"],
+        url=data["url"],
+        status=data.get("status"),
+        error=data.get("error"),
+        html=data.get("html", ""),
+        final_url=data.get("final_url", ""),
+        links=list(data.get("links", [])),
+        json_endpoints=list(data.get("json_endpoints", [])),
+        job_link_count=data.get("job_link_count", 0),
+    )
+
+
 SUPPORTED_ATS = frozenset(
     {
         "greenhouse",
@@ -56,33 +73,33 @@ SUPPORTED_ATS = frozenset(
 
 EXTENDED_ATS_PATTERNS: list[tuple[str, re.Pattern]] = [
     ("jobvite", re.compile(r"jobs\.jobvite\.com", re.IGNORECASE)),
-    ("icims", re.compile(r"\w+\.icims\.com", re.IGNORECASE)),
-    ("taleo", re.compile(r"\w+\.taleo\.net", re.IGNORECASE)),
-    ("successfactors", re.compile(r"\w+\.successfactors\.(?:com|eu)", re.IGNORECASE)),
-    ("teamtailor", re.compile(r"\w+\.teamtailor\.com", re.IGNORECASE)),
-    ("personio", re.compile(r"\w+\.jobs\.personio\.(?:de|com)", re.IGNORECASE)),
-    ("jazzhr", re.compile(r"\w+\.applytojob\.com", re.IGNORECASE)),
+    ("icims", re.compile(r"[\w-]{1,63}\.icims\.com", re.IGNORECASE)),
+    ("taleo", re.compile(r"[\w-]{1,63}\.taleo\.net", re.IGNORECASE)),
+    ("successfactors", re.compile(r"[\w-]{1,63}\.successfactors\.(?:com|eu)", re.IGNORECASE)),
+    ("teamtailor", re.compile(r"[\w-]{1,63}\.teamtailor\.com", re.IGNORECASE)),
+    ("personio", re.compile(r"[\w-]{1,63}\.jobs\.personio\.(?:de|com)", re.IGNORECASE)),
+    ("jazzhr", re.compile(r"[\w-]{1,63}\.applytojob\.com", re.IGNORECASE)),
     ("paylocity", re.compile(r"recruiting\.paylocity\.com", re.IGNORECASE)),
-    ("ukg", re.compile(r"\w+\.ultipro\.com|recruiting\d*\.ultipro\.com", re.IGNORECASE)),
-    ("dayforce", re.compile(r"\w+\.dayforcehcm\.com", re.IGNORECASE)),
-    ("oraclecloud", re.compile(r"\w+\.oraclecloud\.com", re.IGNORECASE)),
-    ("avature", re.compile(r"\w+\.avature\.net", re.IGNORECASE)),
+    ("ukg", re.compile(r"[\w-]{1,63}\.ultipro\.com|recruiting\d*\.ultipro\.com", re.IGNORECASE)),
+    ("dayforce", re.compile(r"[\w-]{1,63}\.dayforcehcm\.com", re.IGNORECASE)),
+    ("oraclecloud", re.compile(r"[\w-]{1,63}\.oraclecloud\.com", re.IGNORECASE)),
+    ("avature", re.compile(r"[\w-]{1,63}\.avature\.net", re.IGNORECASE)),
     ("phenom", re.compile(r"phenompeople\.com", re.IGNORECASE)),
-    ("eightfold", re.compile(r"\w+\.eightfold\.ai", re.IGNORECASE)),
+    ("eightfold", re.compile(r"[\w-]{1,63}\.eightfold\.ai", re.IGNORECASE)),
     ("rippling", re.compile(r"ats\.rippling\.com", re.IGNORECASE)),
     ("jobscore", re.compile(r"careers\.jobscore\.com", re.IGNORECASE)),
     ("join", re.compile(r"join\.com/companies", re.IGNORECASE)),
-    ("softgarden", re.compile(r"\w+\.softgarden\.io", re.IGNORECASE)),
+    ("softgarden", re.compile(r"[\w-]{1,63}\.softgarden\.io", re.IGNORECASE)),
     ("zohorecruit", re.compile(r"zohorecruit\.com", re.IGNORECASE)),
-    ("factorial", re.compile(r"\w+\.factorialhr\.com", re.IGNORECASE)),
-    ("freshteam", re.compile(r"\w+\.freshteam\.com", re.IGNORECASE)),
-    ("darwinbox", re.compile(r"\w+\.darwinbox\.com", re.IGNORECASE)),
-    ("brassring", re.compile(r"\w+\.brassring\.com", re.IGNORECASE)),
-    ("clearcompany", re.compile(r"\w+\.clearcompany\.com", re.IGNORECASE)),
-    ("homerun", re.compile(r"\w+\.homerun\.co", re.IGNORECASE)),
-    ("recruitcrm", re.compile(r"\w+\.recruitcrm\.io", re.IGNORECASE)),
-    ("hirehive", re.compile(r"\w+\.hirehive\.com", re.IGNORECASE)),
-    ("talentlyft", re.compile(r"\w+\.talentlyft\.com", re.IGNORECASE)),
+    ("factorial", re.compile(r"[\w-]{1,63}\.factorialhr\.com", re.IGNORECASE)),
+    ("freshteam", re.compile(r"[\w-]{1,63}\.freshteam\.com", re.IGNORECASE)),
+    ("darwinbox", re.compile(r"[\w-]{1,63}\.darwinbox\.com", re.IGNORECASE)),
+    ("brassring", re.compile(r"[\w-]{1,63}\.brassring\.com", re.IGNORECASE)),
+    ("clearcompany", re.compile(r"[\w-]{1,63}\.clearcompany\.com", re.IGNORECASE)),
+    ("homerun", re.compile(r"[\w-]{1,63}\.homerun\.co", re.IGNORECASE)),
+    ("recruitcrm", re.compile(r"[\w-]{1,63}\.recruitcrm\.io", re.IGNORECASE)),
+    ("hirehive", re.compile(r"[\w-]{1,63}\.hirehive\.com", re.IGNORECASE)),
+    ("talentlyft", re.compile(r"[\w-]{1,63}\.talentlyft\.com", re.IGNORECASE)),
 ]
 
 NO_OPENINGS_MARKERS = (
@@ -105,19 +122,25 @@ NO_OPENINGS_MARKERS = (
 )
 
 BLOCK_MARKERS = (
-    "cloudflare",
-    "just a moment",
-    "checking your browser",
-    "access denied",
-    "captcha",
+    "/cdn-cgi/challenge-platform",
+    "cf-browser-verification",
+    "cf_chl_opt",
+    "attention required! | cloudflare",
+    "just a moment...",
+    "checking your browser before accessing",
+    "enable javascript and cookies to continue",
+    "_incapsula_resource",
+    "incapsula incident id",
+    "px-captcha",
+    "please verify you are a human",
     "are you a robot",
-    "unusual traffic",
-    "request blocked",
-    "enable javascript and cookies",
-    "ddos protection",
-    "perimeterx",
-    "incapsula",
+    "unusual traffic from your computer network",
+    "access to this page has been denied",
+    "request unsuccessful. incapsula incident",
+    "ddos protection by",
 )
+
+BLOCK_PAGE_MAX_LEN = 20000
 
 JS_APP_MARKERS = (
     "__next_data__",
@@ -134,6 +157,43 @@ CAREERS_SIGNAL = re.compile(
     r"career|careers|job|jobs|vacanc|opening|position|recruit|hiring|"
     r"stelle|stellenangebot|karriere|emploi|carriere|empleo|vacature|lavoro|"
     r"採用|募集|求人|招聘",
+    re.IGNORECASE,
+)
+
+NOISE_ENDPOINT_HOST_SUBSTRINGS = (
+    "cookielaw",
+    "onetrust",
+    "cookiebot",
+    "usercentrics",
+    "youtube",
+    "ytimg",
+    "google",
+    "googletagmanager",
+    "doubleclick",
+    "facebook",
+    "linkedin",
+    "twitter",
+    "hotjar",
+    "segment.io",
+    "segment.com",
+    "mixpanel",
+    "amplitude",
+    "sentry",
+    "datadog",
+    "newrelic",
+    "cloudflareinsights",
+    "recaptcha",
+    "gstatic",
+    "algolia",
+    "intercom",
+    "zendesk",
+    "hubspot",
+    ".wp.com",
+    "gravatar",
+)
+
+JOB_ENDPOINT_VOCAB = re.compile(
+    r"job|career|vacan|position|opening|recruit|hiring|stelle|emploi|opportunit",
     re.IGNORECASE,
 )
 
@@ -154,6 +214,34 @@ def _short(text: str, limit: int) -> str:
     return text[:limit].rstrip() + "..."
 
 
+def _registrable_ish(host: str) -> str:
+    labels = host.lower().split(".")
+    if len(labels) >= 2:
+        return ".".join(labels[-2:])
+    return host.lower()
+
+
+def is_job_endpoint(page_url: str, endpoint_url: str) -> bool:
+    endpoint_host = (urlparse(endpoint_url).hostname or "").lower()
+    if any(noise in endpoint_host for noise in NOISE_ENDPOINT_HOST_SUBSTRINGS):
+        return False
+
+    parsed_endpoint = urlparse(endpoint_url)
+    endpoint_target = parsed_endpoint.path + "?" + parsed_endpoint.query
+    if JOB_ENDPOINT_VOCAB.search(endpoint_target):
+        return True
+
+    page_host = (urlparse(page_url).hostname or "").lower()
+    if (
+        endpoint_host
+        and page_host
+        and _registrable_ish(endpoint_host) == _registrable_ish(page_host)
+    ):
+        return True
+
+    return False
+
+
 def classify(probe: PageProbe) -> tuple[str, str]:
     if probe.error:
         lowered_error = probe.error.lower()
@@ -172,9 +260,10 @@ def classify(probe: PageProbe) -> tuple[str, str]:
 
     lowered_html = probe.html.lower()
 
-    for marker in BLOCK_MARKERS:
-        if marker in lowered_html:
-            return ("blocked", marker)
+    if len(probe.html) < BLOCK_PAGE_MAX_LEN:
+        for marker in BLOCK_MARKERS:
+            if marker in lowered_html:
+                return ("blocked", marker)
 
     links_text = "\n".join(probe.links)
     discovered = discover(probe.html) + discover(links_text)
@@ -187,8 +276,9 @@ def classify(probe: PageProbe) -> tuple[str, str]:
         if pattern.search(haystack):
             return ("ats_unsupported", name)
 
-    if probe.json_endpoints:
-        return ("json_endpoint", _short(probe.json_endpoints[0], MAX_ENDPOINT_DETAIL_LEN))
+    for endpoint in probe.json_endpoints:
+        if is_job_endpoint(probe.url, endpoint):
+            return ("json_endpoint", _short(endpoint, MAX_ENDPOINT_DETAIL_LEN))
 
     for marker in NO_OPENINGS_MARKERS:
         if marker in lowered_html:
@@ -245,6 +335,8 @@ async def probe_company(
                     if "json" not in content_type:
                         return
                     if response.url == url:
+                        return
+                    if not is_job_endpoint(url, response.url):
                         return
                     content_length = response.headers.get("content-length")
                     if content_length is not None:
@@ -376,7 +468,66 @@ def _print_summary(rows: list) -> None:
             print(f"  {line}")
 
 
-async def run(limit: Optional[int], concurrency: int, output_path: str) -> None:
+def _rows_from_probes(probes: list) -> list:
+    rows: list = []
+    for probe in probes:
+        bucket, detail = classify(probe)
+        rows.append(
+            {
+                "company_id": probe.company_id,
+                "company": probe.company_name,
+                "url": probe.url,
+                "bucket": bucket,
+                "detail": detail,
+                "status": probe.status,
+                "job_link_count": probe.job_link_count,
+                "json_endpoints": probe.json_endpoints,
+                "final_url": probe.final_url,
+            }
+        )
+    return rows
+
+
+def _write_probe_cache(cache_dir: str, probe: PageProbe) -> None:
+    try:
+        os.makedirs(cache_dir, exist_ok=True)
+        path = os.path.join(cache_dir, f"{probe.company_id}.json")
+        with open(path, "w", encoding="utf-8") as fh:
+            json.dump(asdict(probe), fh)
+    except Exception as exc:
+        print(f"failed to write cache for company {probe.company_id}: {exc}", file=sys.stderr)
+
+
+def _load_cached_probes(cache_dir: str) -> list:
+    probes: list = []
+    for name in sorted(os.listdir(cache_dir)):
+        if not name.endswith(".json"):
+            continue
+        path = os.path.join(cache_dir, name)
+        try:
+            with open(path, "r", encoding="utf-8") as fh:
+                data = json.load(fh)
+            probes.append(probe_from_dict(data))
+        except Exception as exc:
+            print(f"failed to load cache file {path}: {exc}", file=sys.stderr)
+    return probes
+
+
+async def run(
+    limit: Optional[int],
+    concurrency: int,
+    output_path: str,
+    html_cache: Optional[str] = None,
+    from_cache: Optional[str] = None,
+) -> None:
+    if from_cache is not None:
+        cached_probes = _load_cached_probes(from_cache)
+        cached_rows = _rows_from_probes(cached_probes)
+        with open(output_path, "w", encoding="utf-8") as fh:
+            json.dump(cached_rows, fh, indent=2)
+        _print_summary(cached_rows)
+        return
+
     settings = load_settings()
     init_db()
 
@@ -403,6 +554,8 @@ async def run(limit: Optional[int], concurrency: int, output_path: str) -> None:
                     probe = await probe_company(
                         browser, company_id, name, careers_url, settings
                     )
+                if html_cache is not None:
+                    _write_probe_cache(html_cache, probe)
                 async with lock:
                     state["completed"] += 1
                     if state["completed"] % PROGRESS_EVERY == 0:
@@ -417,21 +570,7 @@ async def run(limit: Optional[int], concurrency: int, output_path: str) -> None:
                   for company_id, name, careers_url in companies)
             )
 
-            for probe in probes:
-                bucket, detail = classify(probe)
-                rows.append(
-                    {
-                        "company_id": probe.company_id,
-                        "company": probe.company_name,
-                        "url": probe.url,
-                        "bucket": bucket,
-                        "detail": detail,
-                        "status": probe.status,
-                        "job_link_count": probe.job_link_count,
-                        "json_endpoints": probe.json_endpoints,
-                        "final_url": probe.final_url,
-                    }
-                )
+            rows = _rows_from_probes(probes)
 
         with open(output_path, "w", encoding="utf-8") as fh:
             json.dump(rows, fh, indent=2)
@@ -458,8 +597,18 @@ def main() -> None:
     parser.add_argument("--limit", type=int, default=None)
     parser.add_argument("--concurrency", type=int, default=5)
     parser.add_argument("--output", type=str, default="diagnose_failures.json")
+    parser.add_argument("--html-cache", type=str, default=None)
+    parser.add_argument("--from-cache", type=str, default=None)
     args = parser.parse_args()
-    asyncio.run(run(args.limit, args.concurrency, args.output))
+    asyncio.run(
+        run(
+            args.limit,
+            args.concurrency,
+            args.output,
+            args.html_cache,
+            args.from_cache,
+        )
+    )
 
 
 if __name__ == "__main__":
