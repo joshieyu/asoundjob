@@ -85,16 +85,21 @@ SLUGLESS_ATS = {"apple"}
 
 NON_BOARD_SUBDOMAINS = frozenset(
     {
-        "careers-analytics",
         "analytics",
-        "assets",
         "api",
+        "assets",
         "cdn",
+        "help",
         "static",
         "support",
-        "help",
         "www",
     }
+)
+
+NON_BOARD_SUBDOMAIN_RE = re.compile(
+    r"^(?:assets|static|cdn|img|images|media|files|analytics)[-.]"
+    r"|[-.](?:cdn|assets|analytics)$",
+    re.IGNORECASE,
 )
 
 
@@ -114,7 +119,10 @@ def discover(html: str, base_url: str = "") -> list[tuple[str, str]]:
                 slug = f"{host}/{groups['site'].rstrip('/')}"
             else:
                 slug = (groups.get("slug") or "").strip("/")
-                if slug.lower() in NON_BOARD_SUBDOMAINS:
+                lowered = slug.lower()
+                if lowered in NON_BOARD_SUBDOMAINS:
+                    continue
+                if NON_BOARD_SUBDOMAIN_RE.search(lowered):
                     continue
             key = (ats_type, slug.lower())
             if key not in seen:

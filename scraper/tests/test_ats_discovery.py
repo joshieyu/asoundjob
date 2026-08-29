@@ -112,6 +112,13 @@ class TestATSDiscovery(unittest.TestCase):
         html = '{"analyticsBaseUrl":"https://careers-analytics.recruitee.com"}'
         self.assertIsNone(first_discovery(html))
 
+    def test_cdn_subdomain_is_not_a_board(self) -> None:
+        html = (
+            '<script src="https://assets-cdn.breezy.hr/x.js"></script>'
+            '<a href="https://flowkey.breezy.hr/">Jobs</a>'
+        )
+        self.assertEqual(first_discovery(html), ("breezy", "flowkey"))
+
     def test_long_word_run_is_not_quadratic(self) -> None:
         page = '<img src="data:image/png;base64,' + "iVBORw0KGgoAAAANSUhEUgAA" * 2000 + '">'
         started = time.monotonic()
