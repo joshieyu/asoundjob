@@ -816,6 +816,37 @@ Student Acoustics" at Neumann score zero everywhere. Fixing it means choosing an
 owner among `transducers`, `audio_systems`, `audio_research` and
 `acoustics_consulting` — a judgement call, not a bug.
 
+### Step 1 of the seed plan: the proposal tool found almost nothing
+
+`discover_careers_urls.py --population failing` over 267 companies produced
+**one** replace proposal, and it was wrong (York's student careers service).
+The guards added earlier — requiring an ATS signature or real job links — are
+strict enough that this population yields nothing automatable. **The 82 in
+SEED_WORKLIST.md need human research; there is no tool shortcut.** Do not
+re-run it against this population expecting a different answer.
+
+Its `domain_dead` bucket is a false-positive class and must not be acted on.
+All seven were checked by hand: Theatre Projects and Spitch return HTTP 200
+right now, Audinate returns 403 (bot block, and it has a live Lever board with
+7 postings), and DiGiCo, Take-Two, GAC and Equator Sound are TLS failures —
+expired certs, name mismatches, and protocol versions this machine's LibreSSL
+cannot negotiate. `domain_dead` means *our fetch failed*, not that the company
+is gone. Retiring those seven would have removed live companies.
+
+The `ats_discoverable` bucket was worth more. Seven companies embed a supported
+ATS; five now scrape directly from a seeded board URL, adding 125 jobs:
+Audinate (lever), Fender and Ooma (greenhouse), Full Sail and Bonneville
+(workday). Two do not: DSP Concepts still serves `for=dspconcepts` but
+Greenhouse 404s that board, so it is deactivated on their side, and Fisker's
+Workday returns 422 (the company is defunct). Bonneville runs four regional
+Workday sites and the seed can only name one — BonSaltLake was chosen.
+
+**YAP's audience is audio engineers**, so the categories worth filling are
+audio_ee (12), audio_research (8), transducers (15), acoustics_consulting (4)
+and nvh (2) — not live sound or sound design. The board's engineering half is
+its strong half: DSP 48, audio_systems 47, audio_aiml 41, audio_software 29.
+`SEED_WORKLIST.md` is ordered on that basis.
+
 ## Next steps, in priority order (as of the evening of 2026-08-29)
 
 1. **The generic path is now the whole game.** 264 of 698 companies still fail,
