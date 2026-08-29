@@ -422,6 +422,18 @@ cause a total scrape failure — see the regression note below.
 
 ## Regression to remember
 
+**A discovered `ats_type` is written once and never corrected.**
+`_persist_ats_discovery` guards with `where(Company.ats_type.is_(None))`, and
+every ATS parser prefers `company.ats_slug` over re-deriving it from the URL. So
+a wrong slug is permanent: the company routes to a parser that 404s, falls
+through to the generic path, and is never re-discovered. Verify slug extraction
+against real pages before any change that causes discovery to run on more of
+them. Discovery on the failure path (commit 9303f43) exposed three such bugs at
+once — greenhouse's `/js?for=` embed, workday's tenant-in-host, and a recruitee
+analytics subdomain (commit b15721c). If a bad `ats_type` does get written, it
+has to be cleared in the database; no scrape will fix it.
+
+
 **Never put an unbounded quantifier before a literal in a page-scale regex.**
 `ats_discovery.PATTERNS` had four of the form `(?P<slug>[a-z0-9-]+)\.recruitee\.com`.
 The engine consumes the run, fails the literal, backs off one character, and
