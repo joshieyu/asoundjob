@@ -251,7 +251,7 @@ PR: https://github.com/joshieyu/asoundjob/pull/1 (branch `improve-categorization
 | Uncategorized audio jobs | 58 (20%) |
 | Companies contributing active jobs | 361 |
 | Companies appearing on the board | 42 |
-| Tests | 216 pass; ruff, mypy, `npm run check` clean |
+| Tests | 263 pass; ruff, mypy, `npm run check` clean |
 
 Categories now 20 (added `audiology_hearing`, `audio_product_mechanical`,
 `acoustics_consulting`). At 0: `game_audio_interactive`,
@@ -337,13 +337,70 @@ Elektron's firmware engineer, Shure's embedded systems engineer, SSL's test
 engineers, Kicker's electrical design engineer.
 
 
-### 2. Diagnose the 269 hard failures (cheap, do before #3)
+### 2. Diagnose the hard failures — DONE (commits 57c9e5e, 22a9297, 3d4f58d)
 
-Read-only script: fetch each failing company's careers page and classify why it
-yields nothing — JS-rendered, undetected ATS embed, genuinely no openings, or
-blocked. No production code changes. If many have detectable ATS embeds,
-extending `ats_discovery.py` is far cheaper than #3 and yields full descriptions
-for free. This diagnostic should determine #3's design.
+Tool: `scraper/scraper/diagnose_failures.py`, read-only. Probes each failing
+careers page with Playwright, capturing rendered HTML, navigation status,
+outbound links and job-shaped XHR responses, then classifies the page.
+Classification is pure and unit-tested. `--html-cache DIR` saves every probe;
+`--from-cache DIR` reclassifies offline with no network, which is what makes
+iterating on the heuristics cheap (a live run is ~9 minutes).
+
+Result over all 279 companies whose most recent scrape failed:
+
+    unknown            59  21.1%    dead_url           23   8.2%
+    json_endpoint      41  14.7%    offsite_careers    22   7.9%
+    storefront         32  11.5%    no_openings        19   6.8%
+    careers_landing    18   6.5%    js_rendered        17   6.1%
+    extractor_gap      12   4.3%    blocked            12   4.3%
+    ats_discoverable   10   3.6%    ats_unsupported     9   3.2%
+    unreachable         5   1.8%
+
+**Trust these numbers only after reading the next paragraph.** The first run
+reported 160/279 "blocked" — 154 of which returned HTTP 200. The marker
+"cloudflare" matches any site merely served through Cloudflare's CDN and
+"captcha" matches any embedded reCAPTCHA widget. "wp-content/plugins" likewise
+labelled every WordPress site a JS app, and cookie-consent JSON counted as a job
+endpoint. All fixed. The lesson generalises: **a marker that names a vendor is
+not evidence of that vendor's behaviour.** Require interstitial-specific
+markers on a small page.
+
+#### The cheapest win: run ATS discovery on failure
+
+`pipeline._try_discovery` is only called when `result.success`. A page that
+loads fine but defeats link extraction never gets its `ats_type` recorded, so it
+fails identically on every future run. **10 of the 279 embed an ATS the project
+already parses** and would yield full descriptions immediately: Audinate and
+Stem (lever), Arturia (recruitee), DSP Concepts, Fender Play and Ooma
+(greenhouse), Brüel & Kjær, Bonneville, Fisker, Full Sail University (workday).
+Call `_try_discovery` on the failure path too, before returning.
+
+A further 9 sit on ATS platforms with no parser: icims and dayforce (2 each),
+rippling, personio, teamtailor, oraclecloud, paylocity (1 each) — Pandora
+(SiriusXM), Corsair, Rode Microphones, Slate Digital, EarthQuaker Devices,
+Natus Medical, Navistar, Pelican Cases. icims and dayforce first if anyone
+builds more parsers.
+
+#### What this means for detail-page fetching (#3 below)
+
+The diagnostic reframes it. `careers_landing` (18) plus a large share of
+`unknown` are overview pages whose listings sit one click deeper, so the generic
+path needs a **follow-one-link step before it needs detail-page fetching** — a
+page with no listings to enrich gains nothing from per-job enrichment. Build the
+one-level-deep follow first and re-measure.
+
+`storefront` (32), `offsite_careers` (22), `dead_url` (23) and `unreachable` (5)
+are **82 companies with bad seed data, not scraper limitations** — the URL
+points at a product page, a marketing campaign, a 404, or a board that lives on
+another host entirely. No amount of scraper work fixes these; they need seed URL
+corrections. This is the single largest actionable group and by far the cheapest
+per company.
+
+`extractor_gap` (12) are pages where extraction now finds links but the stored
+failure says none: Songtradr, Audio Ltd, THX, Wheatstone, Bandcamp, Cadence,
+Epic Games, Allen & Heath, Genius and others. These predate the
+`link_extraction.py` fixes — they should simply succeed on the next full scrape.
+
 
 ### 3. Detail-page fetching for the generic path (hardest)
 
@@ -364,6 +421,15 @@ cause a total scrape failure — see the regression note below.
   retailer. Widening keywords will not help — the text isn't there.
 
 ## Regression to remember
+
+**Never put an unbounded quantifier before a literal in a page-scale regex.**
+`ats_discovery.PATTERNS` had four of the form `(?P<slug>[a-z0-9-]+)\.recruitee\.com`.
+The engine consumes the run, fails the literal, backs off one character, and
+retries from every offset — quadratic in page size. A single inline base64
+image took `discover()` **57 seconds**, and it runs on every successful scrape
+against a 90s per-company timeout. Bounding the quantifiers to the 63-character
+DNS label limit preserves every match and takes the same page to 0.15s
+(commit 22a9297). `tests/test_ats_discovery.py` guards it.
 
 Apple's detail fetch nearly shipped a total-failure bug: ~226 detail requests at
 ~2.8s each vs a 90s `per_company_timeout` would have cancelled the whole scrape
