@@ -260,10 +260,10 @@ PR: https://github.com/joshieyu/asoundjob/pull/1 (branch `improve-categorization
 | Active | 4,085 |
 | Audio-related (the public board) | 385 |
 | Board jobs carrying a real description | 328 (85%) |
-| Uncategorized audio jobs | 105 (27%) — see the trade below |
+| Uncategorized audio jobs | 99 (26%) — see the trade below |
 | Companies appearing on the board | 61 |
 | Companies contributing active jobs | 373 |
-| Tests | 362 pass; ruff, mypy clean |
+| Tests | 365 pass; ruff, mypy clean |
 
 The board reads 385 against an earlier 340, and the 340 counted duplicates that
 are now collapsed, so the like-for-like gain is larger than it looks.
@@ -794,6 +794,27 @@ For the restored Shure roles specifically, the lever is
 `FALLBACK_ROLE_CATEGORIES` — it has no pattern for `systems`, `process`,
 `metrology`, `npi` or `maintenance`, so those titles fall through even though
 the company gate admits them.
+
+**Title anchoring (commit cbe38fc) closed part of this.** A weak keyword in the
+title scored 3 against a cutoff of 5, so a title naming its own category via a
+weak term got nothing — Apple's "Embedded Software Engineer, Audio & Media
+Technologies" and Otter.ai's "Senior Applied Scientist, Speech" both sat
+uncategorized. `AUDIO_ANCHOR` already existed for exactly this but was only
+applied to description text. A weak title keyword now scores 6 when the title
+also names audio. Six rows gained categories, three gained a missing second,
+none lost any.
+
+**Do not extend that past `ANCHORED_CATEGORIES`** — it was measured and
+rejected. `audio_systems` has weak keywords generic enough that any "Audio
+Technology" title matches, which turned "Sr. Director of Finance, Audio
+Technology" into an `audio_systems` role. A test pins this.
+
+Remaining known gap: **bare "acoustics" matches no category.** Every acoustics
+keyword in the file is a multi-word phrase ("acoustic engineer", "room
+acoustics"), so "Applications Engineer: Acoustics" at Comsol and "Working
+Student Acoustics" at Neumann score zero everywhere. Fixing it means choosing an
+owner among `transducers`, `audio_systems`, `audio_research` and
+`acoustics_consulting` — a judgement call, not a bug.
 
 ## Next steps, in priority order (as of the evening of 2026-08-29)
 
