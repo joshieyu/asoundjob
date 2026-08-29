@@ -430,8 +430,20 @@ through to the generic path, and is never re-discovered. Verify slug extraction
 against real pages before any change that causes discovery to run on more of
 them. Discovery on the failure path (commit 9303f43) exposed three such bugs at
 once — greenhouse's `/js?for=` embed, workday's tenant-in-host, and a recruitee
-analytics subdomain (commit b15721c). If a bad `ats_type` does get written, it
-has to be cleared in the database; no scrape will fix it.
+analytics subdomain (commit b15721c).
+
+**This now self-heals (commit 50c8e2e), but only under two conditions:** the
+stored route was tried and failed in this run, and a fresh discovery from the
+page disagrees with the stored value. A transient ATS outage therefore cannot
+clobber a good slug, and rediscovering the same value writes nothing. What it
+cannot repair is a slug that is wrong but still *works* — that would need a
+manual database edit. Audit with:
+
+    select name, ats_type, ats_slug from companies where ats_type is not null;
+
+Workday slugs must read `tenant/site`; a bare segment such as `Bose_Careers`,
+`External` or `en` is broken. The audit that prompted this found 9 such rows,
+including all 7 workday ones — Bose had 13 active jobs and zero descriptions.
 
 
 **Never put an unbounded quantifier before a literal in a page-scale regex.**
