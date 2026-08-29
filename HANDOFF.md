@@ -237,6 +237,7 @@ generic scraper still only gets titles + URLs for many companies.
 | `data/audio_job_categories.json` | 20 category definitions (source of truth) |
 | `scraper/scraper/diagnose_failures.py` | Read-only: why a careers page yields no jobs |
 | `scraper/scraper/discover_careers_urls.py` | Read-only: proposes corrected careers URLs |
+| `scraper/scraper/check_url.py` | Read-only: what a candidate careers URL would yield |
 | `scraper/scraper/scrapers/ats/icims.py` | iCIMS; listings only exist under `in_iframe=1` |
 | `scraper/scraper/scrapers/ats/adp.py` | ADP WorkforceNow; public JSON API keyed on `cid` |
 | `api/api/query.py` | Job filtering logic, `is_audio_related` default filter |
@@ -846,6 +847,41 @@ audio_ee (12), audio_research (8), transducers (15), acoustics_consulting (4)
 and nvh (2) — not live sound or sound design. The board's engineering half is
 its strong half: DSP 48, audio_systems 47, audio_aiml 41, audio_software 29.
 `SEED_WORKLIST.md` is ordered on that basis.
+
+### Correcting a careers URL by hand
+
+`SEED_WORKLIST.md` lists the 82, with slugs, ordered by engineering relevance.
+
+Test a candidate before editing anything — this writes nothing:
+
+```bash
+cd scraper && source ../venv/bin/activate
+python -m scraper.check_url "https://job-boards.greenhouse.io/acme" --name "Acme"
+```
+
+It reports the parser that handles the URL, jobs found, how many carry
+descriptions, and how many would reach the board. If it prints
+`ats discovered: greenhouse/acme`, the page embeds a board — **seed that board
+URL directly rather than the company page**, since ATS parsers return full
+descriptions and the generic path usually returns titles only.
+
+Then edit `careers_url` in `data/audio_companies_final.json` (or set
+`verified: false` if the company has no board at all), and:
+
+```bash
+python -m scraper.company_loader
+python -m scraper.main --once --skip-load --company acme
+```
+
+**A run that fails once may succeed on the second attempt.** When the seeded page
+embeds an ATS, the first pass discovers and stores it and the second routes
+through the parser. Nothing, Stability AI and Dice FM all behaved this way. Do
+not conclude the URL is wrong until the second run fails.
+
+Two traps, both hit in practice: confirm the board belongs to *that* company —
+Modal Electronics was pulling Modal Labs' cloud jobs and QSC is seeded with
+`acuityinc.com` — and remember a TLS error or a 403 does not mean the site is
+dead, since Audinate 403s but has a live Lever board.
 
 ## Next steps, in priority order (as of the evening of 2026-08-29)
 
