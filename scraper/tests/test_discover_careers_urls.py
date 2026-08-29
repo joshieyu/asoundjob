@@ -336,5 +336,27 @@ class TestGuessedCandidatesNeedJobs(unittest.TestCase):
         self.assertGreater(score_candidate(c), 0)
 
 
+class TestNoiseLinksRejected(unittest.TestCase):
+    def test_news_and_social_links_are_not_careers_links(self) -> None:
+        from scraper.discover_careers_urls import careers_links_from_html
+
+        html = (
+            '<a href="https://fortune.com/2024/01/31/most-admired-companies/">'
+            "Recognised as a top career employer</a>"
+            '<a href="https://www.linkedin.com/company/acme/jobs/">Jobs on LinkedIn</a>'
+            '<a href="https://www.glassdoor.com/acme">Careers reviews</a>'
+            '<a href="/careers">Careers</a>'
+        )
+        links = careers_links_from_html("https://acme.com", html)
+        self.assertEqual(links, ["https://acme.com/careers"])
+
+    def test_offsite_parent_company_link_is_kept(self) -> None:
+        from scraper.discover_careers_urls import careers_links_from_html
+
+        html = '<a href="https://elettromedia.com/careers">Careers</a>'
+        links = careers_links_from_html("https://audison.eu", html)
+        self.assertEqual(links, ["https://elettromedia.com/careers"])
+
+
 if __name__ == "__main__":
     unittest.main()

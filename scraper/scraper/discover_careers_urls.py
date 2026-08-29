@@ -86,6 +86,29 @@ CAREERS_LINK_VOCAB = re.compile(
     re.IGNORECASE,
 )
 
+NOISE_LINK_HOSTS: tuple[str, ...] = (
+    "linkedin.com",
+    "facebook.com",
+    "twitter.com",
+    "x.com",
+    "instagram.com",
+    "youtube.com",
+    "tiktok.com",
+    "fortune.com",
+    "forbes.com",
+    "bloomberg.com",
+    "reuters.com",
+    "techcrunch.com",
+    "wikipedia.org",
+    "glassdoor.com",
+    "indeed.com",
+    "ziprecruiter.com",
+    "monster.com",
+    "crunchbase.com",
+    "medium.com",
+    "wordpress.org",
+)
+
 ATS_HOST_HINTS: tuple[str, ...] = (
     "greenhouse.io",
     "lever.co",
@@ -303,6 +326,9 @@ def careers_links_from_html(base_url: str, html: str) -> list:
 
         resolved = urljoin(base_url, href)
         if resolved.rstrip("/") == base_norm:
+            continue
+        resolved_host = urlparse(resolved).netloc.lower()
+        if any(noise in resolved_host for noise in NOISE_LINK_HOSTS):
             continue
         if resolved in seen:
             continue
