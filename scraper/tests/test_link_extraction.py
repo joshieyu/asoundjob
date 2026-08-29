@@ -6,6 +6,7 @@ from scraper.scrapers.link_extraction import (
     JOBS_COUNT_RE,
     MAX_TITLE_LEN,
     _clean_job_title_and_type,
+    _looks_like_job_detail_path,
     clean_job_title,
     extract_job_links,
     extract_jobs,
@@ -349,6 +350,54 @@ class TestJsonLdStillWorksAndOverrides(unittest.TestCase):
         self.assertEqual(
             job.url, "https://example.com/careers/mixing-engineer-7712"
         )
+
+
+class TestQueryStringJobIds(unittest.TestCase):
+    def test_job_id_in_query_accepted(self) -> None:
+        self.assertTrue(_looks_like_job_detail_path("/sfcareer/jobreqcareer", "jobId=1234"))
+        self.assertTrue(_looks_like_job_detail_path("/careers/apply", "reqId=99"))
+        self.assertTrue(_looks_like_job_detail_path("/x", "gh_jid=4007"))
+
+    def test_query_without_id_still_rejected(self) -> None:
+        self.assertFalse(_looks_like_job_detail_path("/careers", "page=2"))
+        self.assertFalse(_looks_like_job_detail_path("/jobs", "sort=date"))
+        self.assertFalse(_looks_like_job_detail_path("/sfcareer/jobreqcareer", "jobTitle=abc"))
+
+    def test_shared_path_board_extracts_every_job(self) -> None:
+        html = """
+        <html><body>
+        <a href="/sfcareer/jobreqcareer?jobId=101">Manual Test Engineer</a>
+        <a href="/sfcareer/jobreqcareer?jobId=102">Patient Care Coordinator</a>
+        <a href="/sfcareer/jobreqcareer?jobId=103">Head of Accounting</a>
+        </body></html>
+        """
+        jobs = extract_job_links(html, "https://www.sonova.com/careers/")
+        self.assertEqual(len(jobs), 3)
+
+
+class TestShortTitleAbbreviations(unittest.TestCase):
+    def test_short_title_with_abbreviation_survives(self) -> None:
+        self.assertFalse(is_furniture_title("Leg. Audionom Norrkoping"))
+        self.assertFalse(is_furniture_title("Ing. Acustica Milano"))
+
+    def test_long_prose_still_rejected(self) -> None:
+        self.assertTrue(
+            is_furniture_title(
+                "Contact Us Reach out to discuss licensing options. Keep Reading more"
+            )
+        )
+
+
+class TestTemplatePlaceholders(unittest.TestCase):
+    def test_placeholder_tokens_stripped(self) -> None:
+        raw = (
+            "Senior Product Designer London, GB"
+            "%LABEL_POSITION_TYPE_REMOTE_HYBRID%%LABEL_POSITION_TYPE_F%"
+        )
+        self.assertEqual(clean_job_title(raw), "Senior Product Designer")
+
+    def test_mustache_placeholder_stripped(self) -> None:
+        self.assertEqual(clean_job_title("Audio Engineer {{location}}"), "Audio Engineer")
 
 
 if __name__ == "__main__":

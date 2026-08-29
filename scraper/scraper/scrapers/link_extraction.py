@@ -116,9 +116,16 @@ ABBREVIATIONS = {
 }
 
 
+TEMPLATE_PLACEHOLDER_RE = re.compile(r"%[A-Z0-9_]+%|\{\{[^}]*\}\}|\$\{[^}]*\}")
+
+SENTENCE_BREAK_MIN_WORDS = 7
+
+
 def _has_sentence_break(title: str) -> bool:
     if EXCLAIM_QUESTION_BREAK_RE.search(title):
         return True
+    if len(title.split()) < SENTENCE_BREAK_MIN_WORDS:
+        return False
     for match in SENTENCE_BREAK_WORD_RE.finditer(title):
         word = match.group(1)
         if len(word) <= 2 or word.lower() in ABBREVIATIONS:
@@ -328,7 +335,7 @@ def _clean_text(text: object) -> str:
 
 
 def _clean_job_title_and_type(text: str) -> tuple[str, Optional[str]]:
-    title = _clean_text(text)
+    title = _clean_text(TEMPLATE_PLACEHOLDER_RE.sub(" ", str(text or "")))
     job_type: Optional[str] = None
 
     for _ in range(8):
@@ -407,7 +414,16 @@ def is_furniture_title(title: str) -> bool:
     return False
 
 
-def _looks_like_job_detail_path(path: str) -> bool:
+JOB_ID_QUERY_RE = re.compile(
+    r"(?:^|&)(?:[\w\-]*(?:job|req|posting|vacancy|position|gh_jid|jid))[\w\-]*="
+    r"[^&]*\d",
+    re.IGNORECASE,
+)
+
+
+def _looks_like_job_detail_path(path: str, query: str = "") -> bool:
+    if query and JOB_ID_QUERY_RE.search(query):
+        return True
     segments = [s for s in path.split("/") if s]
     if not segments:
         return False
@@ -448,7 +464,7 @@ def extract_job_links(html: str, base_url: str) -> list[RawJob]:
             continue
 
         looks_like_job = bool(
-            (JOB_HINT.search(path) and _looks_like_job_detail_path(path))
+            (JOB_HINT.search(path) and _looks_like_job_detail_path(path, parsed.query))
             or (text and JOB_HINT.search(text))
             or (title_attr and JOB_HINT.search(title_attr))
         )
