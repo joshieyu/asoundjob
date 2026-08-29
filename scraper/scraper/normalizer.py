@@ -894,8 +894,11 @@ def score_relevance(
         return 0, False
 
     threshold = SCOPE_THRESHOLDS.get(audio_scope, 55)
-    if not title_strong and not title_weak and audio_scope != "native":
-        threshold += 15
+    if not title_strong and not title_weak:
+        if not job_categories:
+            return score, False
+        if audio_scope != "native":
+            threshold += 15
     return score, score >= threshold
 
 

@@ -64,6 +64,26 @@ class TestScoreRelevance(unittest.TestCase):
         _, related = score_relevance("Studio Manager", None, [], "native")
         self.assertFalse(related)
 
+    def test_company_boilerplate_alone_does_not_admit(self) -> None:
+        boilerplate = (
+            "Shure is a leading audio company. Our microphones and wireless "
+            "audio systems are used worldwide. We build audio products."
+        )
+        _, related = score_relevance(
+            "Senior Credit Collections Specialist", boilerplate, [], "native"
+        )
+        self.assertFalse(related)
+
+    def test_boilerplate_plus_category_still_admits(self) -> None:
+        boilerplate = (
+            "Audix builds microphones. Our audio products are used on stage. "
+            "We design audio transducers."
+        )
+        _, related = score_relevance(
+            "Electrical Engineer", boilerplate, ["audio_ee"], "native"
+        )
+        self.assertTrue(related)
+
     def test_corporate_role_at_native_company_hidden(self) -> None:
         _, related = score_relevance("Human Resources", None, [], "native")
         self.assertFalse(related)
