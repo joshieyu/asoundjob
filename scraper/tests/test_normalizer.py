@@ -6,8 +6,10 @@ from scraper.normalizer import (
     NormalizedJob,
     Normalizer,
     classify_categories,
+    clean_description,
     detect_remote,
     detect_seniority,
+    extract_role_text,
     normalize_job_type,
     parse_salary,
 )
@@ -53,7 +55,8 @@ class TestCategories(unittest.TestCase):
     def test_multiple_categories(self) -> None:
         cats = classify_categories(
             "Automotive Audio Tuning Engineer",
-            "NVH measurements and cabin audio system tuning",
+            "Responsibilities: NVH measurements, vibration analysis, and harshness "
+            "evaluation alongside cabin audio system tuning.",
         )
         self.assertIn("automotive_audio", cats)
         self.assertIn("audio_systems", cats)
@@ -62,7 +65,11 @@ class TestCategories(unittest.TestCase):
     def test_description_only_match(self) -> None:
         cats = classify_categories("Software Engineer", None)
         self.assertEqual(cats, [])
-        cats = classify_categories("Software Engineer", "Build JUCE plugins in C++")
+        cats = classify_categories(
+            "Software Engineer",
+            "Responsibilities: build our JUCE-based audio plugin, extend the audio "
+            "engine, and ship new VST integrations for our DAW.",
+        )
         self.assertIn("audio_software", cats)
 
     def test_word_boundary_avoids_substring(self) -> None:
@@ -70,8 +77,125 @@ class TestCategories(unittest.TestCase):
         self.assertNotIn("audio_aiml", cats)
 
     def test_game_audio(self) -> None:
-        cats = classify_categories("Sound Designer II", "Wwise implementation for AAA games")
+        cats = classify_categories(
+            "Sound Designer II",
+            "Responsibilities: Wwise and FMOD implementation for interactive game "
+            "audio design across our AAA titles.",
+        )
         self.assertIn("game_audio_interactive", cats)
+
+    def test_audio_software_keyword_no_longer_concatenated(self) -> None:
+        cats = classify_categories("Audio Software Specialist", None)
+        self.assertIn("audio_software", cats)
+
+    def test_acoustic_engineer_keyword_no_longer_concatenated(self) -> None:
+        cats = classify_categories("Acoustic Engineer", None)
+        self.assertIn("audio_systems", cats)
+
+    def test_boilerplate_description_does_not_leak_category(self) -> None:
+        blurb = (
+            "Company Overview. Acme Voice is the leading platform underpinning "
+            "the emerging trillion-dollar Voice AI economy, providing real-time "
+            "APIs for speech-to-text and text-to-speech. "
+            "What You'll Do: Build a strong sales pipeline of new logos, "
+            "striving to exceed quarterly sales targets. Work closely with "
+            "Partnerships, Account Executives, and fellow SDRs to qualify "
+            "inbound leads, run discovery calls, and hand off opportunities "
+            "ready for a demo to the Account Executive team."
+        )
+        cats = classify_categories("Sales Development Representative", blurb)
+        self.assertNotIn("audio_aiml", cats)
+        self.assertEqual(cats, [])
+
+    def test_anchor_requires_nearby_audio_context(self) -> None:
+        cats = classify_categories(
+            "Machine Learning Engineer",
+            "Responsibilities: apply machine learning to general computer vision "
+            "and robotics perception problems.",
+        )
+        self.assertNotIn("audio_aiml", cats)
+
+    def test_anchor_satisfied_by_nearby_audio_context(self) -> None:
+        cats = classify_categories(
+            "Machine Learning Engineer",
+            "Responsibilities: apply machine learning for audio source "
+            "separation and speech processing pipelines.",
+        )
+        self.assertIn("audio_aiml", cats)
+
+    def test_sales_marketing_cs_ignores_description_matches(self) -> None:
+        cats = classify_categories(
+            "Solutions Engineer",
+            "We are looking for a partnerships manager and customer success "
+            "lead to join our go-to-market team.",
+        )
+        self.assertNotIn("sales_marketing_cs", cats)
+        cats = classify_categories("Partnerships Manager", None)
+        self.assertIn("sales_marketing_cs", cats)
+
+    def test_category_cap_of_three(self) -> None:
+        cats = classify_categories(
+            "Automotive Audio Systems Engineer, DSP, NVH & Acoustic Tuning", None
+        )
+        self.assertEqual(len(cats), 3)
+        self.assertNotIn("nvh", cats)
+
+    def test_audiology_hearing_category(self) -> None:
+        cats = classify_categories("Audiologist", None)
+        self.assertIn("audiology_hearing", cats)
+
+    def test_audio_product_mechanical_category(self) -> None:
+        cats = classify_categories("Audio Product Design Engineer", None)
+        self.assertIn("audio_product_mechanical", cats)
+
+    def test_acoustics_consulting_category(self) -> None:
+        cats = classify_categories("Senior Acoustic Consultant", None)
+        self.assertIn("acoustics_consulting", cats)
+
+
+class TestDescriptionCleaning(unittest.TestCase):
+    def test_clean_description_handles_double_escaped_html(self) -> None:
+        raw = (
+            "&amp;lt;div class=&amp;quot;content-intro&amp;quot;&amp;gt;"
+            "&amp;lt;p&amp;gt;&amp;lt;strong&amp;gt;About Acme&amp;lt;/strong&amp;gt;"
+            "&amp;lt;/p&amp;gt;&amp;lt;p&amp;gt;Acme builds things.&amp;lt;/p&amp;gt;"
+            "&amp;lt;/div&amp;gt;"
+        )
+        cleaned = clean_description(raw)
+        self.assertIsNotNone(cleaned)
+        assert cleaned is not None
+        self.assertNotIn("&", cleaned)
+        self.assertNotIn("<", cleaned)
+        self.assertIn("About Acme", cleaned)
+        self.assertIn("Acme builds things.", cleaned)
+
+    def test_clean_description_handles_empty_input(self) -> None:
+        self.assertIsNone(clean_description(None))
+        self.assertIsNone(clean_description(""))
+
+    def test_extract_role_text_skips_company_intro(self) -> None:
+        intro = (
+            "Acme is a leading company in the widget space, founded in 2010, "
+            "backed by top investors, building the future of widgets for "
+            "everyone everywhere around the globe with a passionate team of "
+            "engineers and designers who love shipping great products."
+        )
+        role_body = (
+            "Design and build audio DSP algorithms for our flagship headphone "
+            "product. Collaborate closely with acoustics and firmware teams to "
+            "ship active noise cancellation, beamforming, and echo cancellation "
+            "features across our audio product line, iterating quickly with "
+            "cross-functional partners."
+        )
+        desc = (
+            f"<p>About Acme</p><p>{intro}</p><p><strong>What You Will Do</strong>"
+            f"</p><p>{role_body}</p><p>Equal Opportunity Employer. We are an "
+            "equal opportunity employer and value diversity in our workplace.</p>"
+        )
+        role_text = extract_role_text(desc)
+        self.assertNotIn("Acme is a leading company", role_text)
+        self.assertNotIn("Equal Opportunity Employer", role_text)
+        self.assertIn("audio DSP algorithms", role_text)
 
 
 class TestSalary(unittest.TestCase):
@@ -111,6 +235,16 @@ class TestSalary(unittest.TestCase):
     def test_none(self) -> None:
         self.assertEqual(parse_salary(None), (None, None, None))
         self.assertEqual(parse_salary("Great team culture"), (None, None, None))
+
+    def test_between_and_range(self) -> None:
+        low, high, cur = parse_salary(
+            "The base pay range for this role is between $195,700 and $338,400"
+        )
+        self.assertEqual((low, high, cur), (195700, 338400, "USD"))
+
+    def test_and_separator_without_currency_is_not_a_salary(self) -> None:
+        low, high, cur = parse_salary("5 and 10 years of experience required")
+        self.assertEqual((low, high, cur), (None, None, None))
 
 
 class TestJobType(unittest.TestCase):

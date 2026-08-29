@@ -29,18 +29,22 @@ def backfill(dry_run: bool = False) -> None:
         ).all()
 
         related = 0
+        recategorized = 0
         for job, scope in rows:
             categories = classify_categories(job.title, job.description)
             score, is_related = score_relevance(
                 job.title, job.description, categories, scope or "native"
             )
+            if list(job.job_categories or []) != categories:
+                job.job_categories = categories
+                recategorized += 1
             job.relevance_score = score
             job.is_audio_related = is_related
             related += is_related
 
         print(
             f"scored {len(rows)} scraped jobs: {related} audio-related, "
-            f"{len(rows) - related} filtered out"
+            f"{len(rows) - related} filtered out, {recategorized} recategorized"
         )
 
         if dry_run:

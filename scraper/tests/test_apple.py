@@ -288,6 +288,7 @@ class TestAppleParser(unittest.TestCase):
         assert description is not None
         low, high, currency = parse_salary(description)
         self.assertEqual(low, 195700)
+        self.assertEqual(high, 338400)
         self.assertEqual(currency, "USD")
         self.assertIn("195,700", description)
         self.assertIn("338,400", description)

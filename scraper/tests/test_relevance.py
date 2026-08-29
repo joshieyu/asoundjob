@@ -129,6 +129,25 @@ class TestScoreRelevance(unittest.TestCase):
         )
         self.assertTrue(related)
 
+    def test_corporate_role_exempted_by_strong_audio_title(self) -> None:
+        _, related = score_relevance("Audio Project Manager", None, [], "native")
+        self.assertTrue(related)
+
+    def test_studio_leader_at_architecture_firm_not_related(self) -> None:
+        desc = (
+            "DLR Group is an integrated design firm delivering architecture, "
+            "engineering, interiors, and planning for clients nationwide. "
+            "About K-12 Education at DLR Group: our team of architects, "
+            "engineers, and interior designers draw from evidence-based design "
+            "to help schools improve outcomes for students. Position Summary: "
+            "as a Studio Leader you will lead business development and manage "
+            "client relationships across our K-12 Education practice."
+        )
+        _, related = score_relevance(
+            "Studio Leader, K-12 Education", desc, [], "native"
+        )
+        self.assertFalse(related)
+
 
 if __name__ == "__main__":
     unittest.main()
