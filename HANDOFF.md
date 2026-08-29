@@ -54,7 +54,7 @@ cd ../web && npm run dev -- --port 5173
 - `scraper/scraper/normalizer.py` — **THE most important file**: category keywords,
   relevance scoring, seniority detection, job type parsing, salary parsing
 - `scraper/scraper/scrapers/ats/` — ATS parsers (greenhouse, lever, workable, ashby,
-  smartrecruiters, recruitee, bamboohr, workday, pinpoint, apple)
+  smartrecruiters, recruitee, bamboohr, workday, pinpoint, apple, icims, adp)
 - `scraper/scraper/scrapers/ats_discovery.py` — detects ATS embeds in HTML
 - `scraper/scraper/scrapers/pipeline.py` — fallback chain: ATS → HTTP → Playwright → stealth
 - `data/audio_companies_final.json` — 1,385 companies (seed truth, never modify from scraper)
@@ -237,6 +237,8 @@ generic scraper still only gets titles + URLs for many companies.
 | `data/audio_job_categories.json` | 20 category definitions (source of truth) |
 | `scraper/scraper/diagnose_failures.py` | Read-only: why a careers page yields no jobs |
 | `scraper/scraper/discover_careers_urls.py` | Read-only: proposes corrected careers URLs |
+| `scraper/scraper/scrapers/ats/icims.py` | iCIMS; listings only exist under `in_iframe=1` |
+| `scraper/scraper/scrapers/ats/adp.py` | ADP WorkforceNow; public JSON API keyed on `cid` |
 | `api/api/query.py` | Job filtering logic, `is_audio_related` default filter |
 | `api/api/routers/categories.py` | API endpoint for categories + counts |
 | `web/src/routes/jobs/+page.svelte` | Job board filter UI |
@@ -250,18 +252,24 @@ generic scraper still only gets titles + URLs for many companies.
 
 PR: https://github.com/joshieyu/asoundjob/pull/1 (branch `improve-categorization-and-parsing`, 5 commits, open)
 
-## Current metrics (after two full scrapes, 2026-08-29)
+## Current metrics (after the 2026-08-29 evening full scrape)
 
 | Metric | Value |
 |---|---|
-| Total job rows | 6,859 |
-| Active | 5,052 |
-| Audio-related (the public board) | 340 (see duplicates below) |
-| Board jobs carrying a real description | 272 (80%) |
-| Uncategorized audio jobs | 71 (21%) |
-| Companies appearing on the board | 61 |
-| Companies contributing active jobs | 364 |
-| Tests | 328 pass; ruff, mypy, `npm run check` clean |
+| Total job rows | 7,198 |
+| Active | 4,085 |
+| Audio-related (the public board) | 330 |
+| Board jobs carrying a real description | 273 (83%) |
+| Uncategorized audio jobs | 50 (15%) |
+| Companies appearing on the board | 60 |
+| Companies contributing active jobs | 373 |
+| Tests | 362 pass; ruff, mypy clean |
+
+The board reads 330 against an earlier 340, but that 340 counted duplicates and
+61 rows admitted on company boilerplate alone. Like for like the board grew:
+duplicates are gone, description coverage rose 80% -> 83% and the uncategorized
+share fell 21% -> 15%. **The duplicate rows described in the paragraph below are
+now collapsed** — Apple/Beats, TrueFire and the Sega trio no longer double-count.
 
 Two consecutive full scrapes were needed: the first discovers or corrects
 `ats_type`, the second routes through the ATS parser and gets descriptions.
@@ -658,28 +666,114 @@ The full scrape also caught three live-only bugs in `link_extraction.py` that
 fixtures missed (query-string job ids, non-English abbreviations, template
 placeholders). **Run a full scrape before merging changes to that file.**
 
-## Next steps, in priority order (as of the end of 2026-08-29)
+## Session update (2026-08-29, evening)
 
-1. **Run a full scrape.** It collapses the duplicate rows described above and
-   applies the seed corrections everywhere. Nothing else depends on it, but the
-   stored numbers stay inflated until it runs.
+Items 1-4 of the previous priority list are all done. What changed:
 
-2. **BMG Production Music points at Bertelsmann's whole corporate job board**
-   (`careers.smartrecruiters.com/Bertelsmann-Jobs`) and scrapes 954 warehouse,
-   SAP and logistics roles — 19% of every active row. Relevance scoring keeps
-   all but 3 off the board, so this is wasted effort and a misleading active
-   count rather than a polluted board. Find BMG's own board or drop the company.
-   This is the single largest data problem remaining.
+**BMG Production Music (was the largest data problem).** It pointed at
+`careers.smartrecruiters.com/Bertelsmann-Jobs`, Bertelsmann's entire corporate
+board. Verified rather than assumed: all 955 postings were pulled and exactly 3
+mention BMG. The reporting units are Arvato (395), Riverty (123), Arvato Systems
+(143), RTL and Penguin Random House. BMG's own SmartRecruiters site
+(`careers.smartrecruiters.com/BMG`, title "Careers at BMG") exists and currently
+has **no open postings**, which is the honest count. The seed now points there.
+A SmartRecruiters board with zero postings returns success with `trust_empty`,
+so the 951 stale rows deactivated cleanly.
 
-3. **Write icims and dayforce parsers.** Nine companies sit on unsupported ATS
-   platforms — icims and dayforce two each, then rippling, personio, teamtailor,
-   oraclecloud, paylocity. That covers Pandora (SiriusXM), Corsair, Rode
-   Microphones, Slate Digital, EarthQuaker Devices, Natus Medical, Navistar and
-   Pelican Cases. Bounded, well-understood work, and ATS parsers return full
-   descriptions, which is what the board is short of.
+**Powersoft and Cross DJ (Mixvibes)** have no scrapable board at all. Powersoft's
+own site links out to LinkedIn as its careers destination, and it is already
+`verified: false` so it costs nothing. Mixvibes has no careers page; its LinkedIn
+seed produced browse furniture ("Offres d'emploi Analyste 3 411 postes"). Cross
+DJ is now `verified: false`.
 
-4. **Powersoft and Cross DJ (Mixvibes)** are seeded with LinkedIn company pages.
-   Both need a real careers URL found by hand.
+That exposed a real gap: **demoting a company to unverified left its jobs active
+forever**, because the scrape query filters on `verified` and never revisits
+them. `company_loader` now deactivates them and reports
+`deactivated_unverified`.
+
+### icims and adp parsers — BUILT (commit a4944e2)
+
+The previous list said "icims and dayforce". Two corrections, both from reading
+the seed rather than the diagnostic's classifier:
+
+- **There is no dayforce company in the seed at all.**
+- **ADP WorkforceNow is the largest unsupported platform at 8 companies**, not
+  icims at 3. It covers Meyer Sound and IAC Acoustics.
+
+**Why iCIMS boards were failing.** The careers page is an empty shell: every
+listing lives in an iframe and only appears under `in_iframe=1`. Without it the
+page yields zero job links, which is exactly the "page loaded but no job links
+found" error these companies logged. Listings are at
+`https://{slug}.icims.com/jobs/search?ss=1&in_iframe=1&pr={page}`, 20 per page.
+Job links may point at a **different subdomain** than the one requested
+(`careershub-shure` returns links on `careers-shure`); use the href as given.
+Detail pages carry JSON-LD, so `extract_jsonld_jobs` supplies descriptions.
+
+**ADP** serves a public JSON API needing no auth, keyed on the `cid` GUID from
+the careers URL's query string, with `requisitionDescription` on the per-job
+endpoint. A bogus cid 404s and a real empty board returns
+`{"jobRequisitions":[]}`, so empty is distinguishable from broken. ADP truncates
+`requisitionTitle` to ~45 characters; that is a platform limit, not a bug.
+
+Measured live: Shure 64 jobs / 64 descriptions, IAC Acoustics 19/19, Meyer Sound
+4/4, Harley-Davidson 5/5, LiveWire 5/5, Triumph 4/4. HTC Vive's board is
+genuinely empty and returns cleanly. **Keysight has migrated off iCIMS** — its
+board answers with a 142-byte script redirecting to `jobs.keysight.com`, which
+runs iCIMS's Jibe product; its API at `/api/jobs?page=1&limit=N` returns titles
+and full descriptions inline, so a `jibe` parser is feasible if more companies
+turn up on it. The seed now points at the new board.
+
+**An unrecognised iCIMS page must not look like an empty board.** Zero parsed
+links returns success with `trust_empty`, which would deactivate every job the
+company has — a markup change would have silently wiped all 64 Shure rows and
+looked like a clean run. Page 0 now demands an explicit empty-board marker or
+raises. Apply the same reasoning to any future HTML-scraping ATS parser.
+
+### The precision bug the descriptions exposed (commit c7e70d8)
+
+Giving Shure real descriptions put **60 of its 64 jobs on the board**, including
+Senior Credit Collections Specialist, Buyer I Tactical, Auditor Incoming
+Inspection and Associate Director Trade Compliance.
+
+Every one scored exactly 45:
+
+    title (no audio word)  +0
+    description mentions   +35
+    native scope bonus     +10
+    ---------------------------
+                            45   = the native threshold
+
+The +15 threshold bump for a title with no audio signal was explicitly waived
+for native scope, so **company boilerplate alone was sufficient** — Shure's
+blurb mentions microphones in every posting. It stayed hidden for as long as
+those companies produced title-only rows, which score zero.
+
+Raising the native threshold was measured first and **rejected**: it dropped 135
+of 391 rows, 74 of them real, including Electrical Engineer at Audix and Senior
+PCB Layout Designer at Lectrosonics. At a microphone company those *are* audio
+jobs. **Categories, not the title, are the discriminator.** A job with neither a
+title signal nor a category has no role-level evidence; all 61 rows the final
+rule drops scored exactly 45. This is the same provenance principle as
+elsewhere in this document: a signal is only evidence in context.
+
+## Next steps, in priority order (as of the evening of 2026-08-29)
+
+1. **The generic path is now the whole game.** 264 of 698 companies still fail,
+   overwhelmingly with "page loaded but no job links found", and `last_scraped_at`
+   is written **only on success** — so a company showing "never scraped" has
+   actually failed every attempt, it was not skipped. Do not read that column as
+   omission.
+
+2. **`json_endpoint` is the largest untried technical bucket** (41 of 279 in the
+   diagnostic, ~15%). These are pages where a job-shaped XHR was actually
+   observed, so the endpoint is already identified per company. That is a much
+   better-evidenced starting point than the remaining ATS platforms, which are
+   now down to 1-2 companies each (jobvite 2, oraclecloud 2, then ukg, paylocity,
+   breezy, teamtailor, jazzhr at 1 apiece). Note `breezy` has 3 companies with a
+   stored `ats_type` but **no parser exists**, so they fall through to HTTP.
+
+3. **Seed URL quality remains the cheapest lever** — see 3b and 3e. Keysight is a
+   worked example: the board had moved and no scraper change could have fixed it.
 
 Explicitly NOT worth doing, both measured rather than assumed: follow-one-link
 (section 3 above) and further sweeps of the unverified population (3d and 3e).
