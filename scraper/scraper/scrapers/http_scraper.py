@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 
-from scraper.scrapers.base import BaseScraper, RawJob
+from scraper.scrapers.base import BaseScraper, RawJob, ScrapeError
 from scraper.scrapers.fetch import fetch_html
 from scraper.scrapers.link_extraction import extract_jobs
 
@@ -17,4 +17,7 @@ class HttpScraper(BaseScraper):
             fetch_html, company.careers_url.strip(), self.settings
         )
         self._last_html = html
-        return extract_jobs(html, company.careers_url.strip())
+        jobs = extract_jobs(html, company.careers_url.strip())
+        if not jobs:
+            raise ScrapeError("page loaded but no job links found")
+        return jobs
