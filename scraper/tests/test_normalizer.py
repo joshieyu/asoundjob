@@ -47,6 +47,27 @@ class TestSeniority(unittest.TestCase):
         self.assertEqual(detect_seniority("DSP Developer"), "mid")
 
 
+class TestTitleAnchoring(unittest.TestCase):
+    def test_weak_title_keyword_counts_when_title_names_audio(self) -> None:
+        self.assertIn(
+            "audio_dsp_embedded",
+            classify_categories("Embedded Software Engineer, Audio & Media", ""),
+        )
+        self.assertIn(
+            "audio_research",
+            classify_categories("Senior Applied Scientist, Speech", ""),
+        )
+
+    def test_weak_title_keyword_alone_is_not_enough(self) -> None:
+        self.assertEqual(
+            classify_categories("Embedded Software Engineer, Networking", ""), []
+        )
+
+    def test_anchoring_does_not_make_audio_systems_a_catch_all(self) -> None:
+        cats = classify_categories("Sr. Director of Finance, Audio Technology", "")
+        self.assertNotIn("audio_systems", cats)
+
+
 class TestCategories(unittest.TestCase):
     def test_dsp_title(self) -> None:
         cats = classify_categories("Senior DSP Engineer", "Design filters and EQs")

@@ -1139,11 +1139,13 @@ def _score_category(
     score = 0
     title_hit = False
 
+    title_anchored = anchored and bool(AUDIO_ANCHOR.search(title_lower))
+
     if strong_pattern is not None and strong_pattern.search(title_lower):
         score += 6
         title_hit = True
     if weak_pattern is not None and weak_pattern.search(title_lower):
-        score += 3
+        score += 6 if title_anchored else 3
         title_hit = True
 
     if not title_only:
