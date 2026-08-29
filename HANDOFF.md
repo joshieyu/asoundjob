@@ -835,13 +835,42 @@ owner among `transducers`, `audio_systems`, `audio_research` and
 3. **Seed URL quality remains the cheapest lever** — see 3b and 3e. Keysight is a
    worked example: the board had moved and no scraper change could have fixed it.
 
-4. **Categorization, the original pain point #1.** 105 board rows carry no
+4. **Categorization, the original pain point #1.** 99 board rows carry no
    category. Two separable causes: titles with an obvious audio word that match
-   no keyword (Apple, Comsol, Otter.ai, Focusrite — a `CATEGORY_KEYWORDS` gap),
-   and technical titles admitted by company context whose role word is missing
-   from `FALLBACK_ROLE_CATEGORIES` (`systems`, `process`, `metrology`, `npi`,
-   `maintenance`). Worth doing because categories are how a reader filters past
-   the junk the board now deliberately admits.
+   no keyword (Comsol, Neumann, Focusrite — a `CATEGORY_KEYWORDS` gap, of which
+   bare "acoustics" is the known one), and technical titles admitted by company
+   context whose role word is missing from `FALLBACK_ROLE_CATEGORIES`
+   (`systems`, `process`, `metrology`, `npi`, `maintenance`). Worth doing
+   because categories are how a reader filters past the junk the board now
+   deliberately admits.
+
+5. **User feedback on parsing quality — REQUESTED, NOT STARTED.** Let readers
+   report a bad row rather than chasing every keyword gap by hand: "not an audio
+   job", "wrong category", "suggested category", and a free-text note for the
+   admin. Admin approves before anything changes, mirroring the existing
+   `job_submissions` flow.
+
+   Reuse that pattern rather than inventing one: a `job_feedback` table keyed on
+   `job_id` with `kind`, `suggested_categories` (JSON), `comment`, optional
+   submitter email, and the same `status` / `reviewed_at` / `reviewed_by` /
+   `reject_reason` columns. Public POST needs no auth (rate-limit it); the admin
+   list/approve/reject endpoints sit alongside `admin_list_submissions` in
+   `api/api/routers/admin.py`, which already has `rescore_company_jobs` for
+   re-running scoring after an edit.
+
+   **The trap: an approved correction will be silently reverted.** Every scrape
+   cycle re-normalizes and re-scores each job, and `backfill_relevance` rewrites
+   `job_categories` and `is_audio_related` wholesale — so a hand-approved fix
+   lives only until the next run. The correction has to be sticky. Cleanest is
+   override columns on `Job` (`categories_override`, `is_audio_related_override`,
+   both nullable) that the normalizer and backfill treat as authoritative when
+   set; anything else means re-applying feedback after every cycle.
+
+   Second, larger payoff: **approved feedback is a measurement set.** Aggregated
+   "wrong category" reports point straight at systematic keyword gaps — the
+   acoustics gap is exactly the kind of thing a handful of reports would have
+   surfaced without anyone reading 99 rows by hand. Worth reviewing periodically
+   rather than only acting on individual rows.
 
 Explicitly NOT worth doing, both measured rather than assumed: follow-one-link
 (section 3 above) and further sweeps of the unverified population (3d and 3e).
