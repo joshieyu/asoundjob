@@ -6177,9 +6177,9 @@
   },
   {
     "name": "Modal Electronics",
-    "careers_url": "https://modal.com/company#careers",
+    "careers_url": "https://modalelectronics.com",
     "category": "Electronic Musical Instruments",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "playwright"
   },
