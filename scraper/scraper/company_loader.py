@@ -7,12 +7,12 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 
 from scraper.config import load_settings
 from scraper.database import get_session_factory, session_scope
-from scraper.models import Company
+from scraper.models import Company, Job
 from scraper.normalizer import category_to_scope
 
 
@@ -23,12 +23,14 @@ class LoadStats:
     unchanged: int = 0
     skipped_manual: int = 0
     duplicates_in_json: int = 0
+    deactivated_unverified: int = 0
 
     def summary(self) -> str:
         return (
             f"inserted={self.inserted} updated={self.updated} "
             f"unchanged={self.unchanged} skipped_manual={self.skipped_manual} "
-            f"duplicates_in_json={self.duplicates_in_json}"
+            f"duplicates_in_json={self.duplicates_in_json} "
+            f"deactivated_unverified={self.deactivated_unverified}"
         )
 
 
@@ -107,7 +109,23 @@ def load_companies(session: Session, companies: list[dict[str, Any]]) -> LoadSta
             else:
                 stats.unchanged += 1
 
+    stats.deactivated_unverified = _deactivate_unverified_jobs(session)
     return stats
+
+
+def _deactivate_unverified_jobs(session: Session) -> int:
+    unverified = select(Company.id).where(Company.verified.is_(False))
+    stale = select(func.count()).where(
+        Job.company_id.in_(unverified), Job.is_active.is_(True)
+    )
+    count = int(session.execute(stale).scalar_one())
+    if count:
+        session.execute(
+            update(Job)
+            .where(Job.company_id.in_(unverified), Job.is_active.is_(True))
+            .values(is_active=False)
+        )
+    return count
 
 
 def read_companies_file(path: Path) -> list[dict[str, Any]]:

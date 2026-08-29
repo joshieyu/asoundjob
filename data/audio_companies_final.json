@@ -1601,7 +1601,7 @@
   },
   {
     "name": "BMG Production Music",
-    "careers_url": "https://careers.smartrecruiters.com/Bertelsmann-Jobs",
+    "careers_url": "https://careers.smartrecruiters.com/BMG",
     "category": "Recording Studios & Post Houses",
     "verified": true,
     "source": "auto",
@@ -2475,7 +2475,7 @@
     "name": "Cross DJ (Mixvibes)",
     "careers_url": "https://fr.linkedin.com/company/mixvibes",
     "category": "DJ Equipment",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "http"
   },
