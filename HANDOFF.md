@@ -247,15 +247,15 @@ PR: https://github.com/joshieyu/asoundjob/pull/1 (branch `improve-categorization
 |---|---|
 | Total job rows | 6,230 |
 | Active | 3,645 |
-| Audio-related (the public board) | 259 |
-| Uncategorized audio jobs | 61 (24%) |
+| Audio-related (the public board) | 291 (was 259 before company-category fallback) |
+| Uncategorized audio jobs | 58 (20%) |
 | Companies contributing active jobs | 361 |
 | Companies appearing on the board | 42 |
-| Tests | 207 pass; ruff, mypy, `npm run check` clean |
+| Tests | 216 pass; ruff, mypy, `npm run check` clean |
 
 Categories now 20 (added `audiology_hearing`, `audio_product_mechanical`,
-`acoustics_consulting`). At 0: `music_technology`, `automotive_audio`,
-`game_audio_interactive`, `psychoacoustics_perception`.
+`acoustics_consulting`). At 0: `game_audio_interactive`,
+`psychoacoustics_perception`.
 
 ## What the board size is actually limited by
 
@@ -292,29 +292,50 @@ this shape. The correct fix is company-category threading (below).
 
 ## Next steps, in order
 
-### 1. Company-category threading (do first)
+### 1. Company-category threading — DONE (commit 2407b62)
 
-Thread `company.category` into `classify_categories` so a firmware role at a
-microphone company can land in `microphones_recording` from company context
-rather than needing the word "audio" in its own text. Use it as a **fallback
-only** — when keyword matching yields no category and the title is technical —
-so it cannot reopen the boilerplate false positives.
+`classify_categories(title, description, company_category=None)`. Fires only
+when keyword matching returns nothing, so it cannot reopen boilerplate false
+positives. Threaded through all 5 call sites.
 
-Blast radius is 5 call sites:
-- `scraper/scraper/normalizer.py:1218` (`Normalizer.normalize`)
-- `scraper/scraper/backfill_relevance.py:34`
-- `scraper/scraper/main.py:85`
-- `api/api/routers/admin.py:217` and `:279`
+The shape that works: **the company category gates whether the role counts as
+audio work; the role title decides which category.** Mapping a company category
+straight to a job category (as originally sketched below) was measured and
+rejected — it labelled every SSL test engineer `live_sound_events` and every
+Suno platform engineer `audio_aiml`.
 
-The seed categories map cleanly, and notably onto the categories now at 0:
+Gate is restricted to manufacturers whose entire product is audio:
+Professional Audio & Live Sound, Headphones & Personal Audio, Hi-Fi & Consumer
+Speakers, Transducer & Driver Manufacturers, Electronic Musical Instruments,
+DJ Equipment, Car Audio, Audio Interfaces & Converters, Hearing Aid & Hearing
+Tech, Audio Plugins & Virtual Instruments, DAW & Music Production Software,
+Audio Middleware & SDK, Smart Home & IoT Audio. Three of those also contribute
+a domain category (Car Audio -> `automotive_audio`, Hearing Aid ->
+`audiology_hearing`, instruments/DJ -> `music_technology`).
 
-    Hearing Aid & Hearing Tech (54)        -> audiology_hearing
-    Acoustic Consulting & Engineering (66) -> acoustics_consulting
-    Audio Plugins & Virtual Instruments (91) -> audio_software / music_technology
-    Hi-Fi & Consumer Speakers (134)        -> transducers
-    Gaming, VR & Immersive Audio (73)      -> game_audio_interactive
-    Car Audio (46) + Automotive OEMs (75)  -> automotive_audio
-    Professional Audio & Live Sound (152)  -> live_sound_events
+**DO NOT add the broad categories to the gate.** Measured against the live
+corpus, the first draft included them and admitted 125 jobs at roughly 50%
+precision: Valve's Steam engineer and Niantic's Pokemon GO team
+(Gaming, VR & Immersive Audio), Suno's Trust & Safety and Hugging Face's Xet
+Storage engineers (AI/ML Audio), Cisco Webex RTL design and Otter.ai search
+(Voice & Speech Technology), Sky Studios' software engineer and Warner
+Chappell's distribution team (Recording Studios & Post Houses), and DLR Group's
+building services engineers (Acoustic Consulting & Engineering). Restricting
+the gate cut it to 32 admitted at near-100% precision.
+
+Software roles are only allowed where the company's product is software
+(plugins, DAWs, middleware, instruments). At hardware companies a
+"Senior Software Engineer" is ambiguous (Bose mobile apps, Razer's Golang
+roles), so hardware categories accept only hardware-flavoured titles.
+
+Result on the active corpus: **259 -> 291 audio-related, 61 -> 58
+uncategorized.** `music_technology` (4) and `automotive_audio` (1) are off
+zero; `game_audio_interactive` and `psychoacoustics_perception` remain at 0 by
+design. Recovers exactly the roles this was built for — Audix and Blue
+Microphones firmware/EE/mechanical, Teenage Engineering's mechanical engineer,
+Elektron's firmware engineer, Shure's embedded systems engineer, SSL's test
+engineers, Kicker's electrical design engineer.
+
 
 ### 2. Diagnose the 269 hard failures (cheap, do before #3)
 
