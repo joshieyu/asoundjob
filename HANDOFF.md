@@ -258,17 +258,17 @@ PR: https://github.com/joshieyu/asoundjob/pull/1 (branch `improve-categorization
 |---|---|
 | Total job rows | 7,198 |
 | Active | 4,085 |
-| Audio-related (the public board) | 330 |
-| Board jobs carrying a real description | 273 (83%) |
-| Uncategorized audio jobs | 50 (15%) |
-| Companies appearing on the board | 60 |
+| Audio-related (the public board) | 385 |
+| Board jobs carrying a real description | 328 (85%) |
+| Uncategorized audio jobs | 105 (27%) — see the trade below |
+| Companies appearing on the board | 61 |
 | Companies contributing active jobs | 373 |
 | Tests | 362 pass; ruff, mypy clean |
 
-The board reads 330 against an earlier 340, but that 340 counted duplicates and
-61 rows admitted on company boilerplate alone. Like for like the board grew:
-duplicates are gone, description coverage rose 80% -> 83% and the uncategorized
-share fell 21% -> 15%. **The duplicate rows described in the paragraph below are
+The board reads 385 against an earlier 340, and the 340 counted duplicates that
+are now collapsed, so the like-for-like gain is larger than it looks.
+Description coverage rose 80% -> 85%. The uncategorized share rose 21% -> 27%
+as a deliberate trade in favour of recall; see the section on it below. **The duplicate rows described in the paragraph below are
 now collapsed** — Apple/Beats, TrueFire and the Sega trio no longer double-count.
 
 Two consecutive full scrapes were needed: the first discovers or corrects
@@ -729,7 +729,7 @@ company has — a markup change would have silently wiped all 64 Shure rows and
 looked like a clean run. Page 0 now demands an explicit empty-board marker or
 raises. Apply the same reasoning to any future HTML-scraping ATS parser.
 
-### The precision bug the descriptions exposed (commit c7e70d8)
+### The precision bug the descriptions exposed (commits c7e70d8, cc63fc6)
 
 Giving Shure real descriptions put **60 of its 64 jobs on the board**, including
 Senior Credit Collections Specialist, Buyer I Tactical, Auditor Incoming
@@ -748,13 +748,52 @@ for native scope, so **company boilerplate alone was sufficient** — Shure's
 blurb mentions microphones in every posting. It stayed hidden for as long as
 those companies produced title-only rows, which score zero.
 
-Raising the native threshold was measured first and **rejected**: it dropped 135
-of 391 rows, 74 of them real, including Electrical Engineer at Audix and Senior
-PCB Layout Designer at Lectrosonics. At a microphone company those *are* audio
-jobs. **Categories, not the title, are the discriminator.** A job with neither a
-title signal nor a category has no role-level evidence; all 61 rows the final
-rule drops scored exactly 45. This is the same provenance principle as
-elsewhere in this document: a signal is only evidence in context.
+**The project's stated preference is recall over precision:** a junk listing a
+reader skips past in a second is cheaper than a real job that never appears.
+Two candidate fixes were measured against the live board and both rejected:
+
+- Raising the native threshold dropped 135 of 391 rows, 74 of them real,
+  including Electrical Engineer at Audix and Senior PCB Layout Designer at
+  Lectrosonics. At a microphone company those *are* audio jobs.
+- Requiring a category or a title signal (the first attempt, c7e70d8) dropped
+  61. Only a minority were junk — Senior Systems Engineer at Bose, Sr. NPI
+  Engineer, Metrology and Process Engineer at Shure, Field Sales Engineer at
+  Brüel & Kjær all belong on the board.
+
+The lever that worked is **`CORPORATE_ROLE`**, which already exists to demote
+corporate-function titles and carries a -70 penalty. It gained credit
+collections, trade compliance, customs broker, buyer, incoming inspection,
+incoming auditor and incentive plan. Every term was checked against the live
+board first: **zero currently-listed jobs lost their place.**
+
+Terms were deliberately left out where the role is arguable rather than clearly
+non-audio — demand generation, marketing operations, sales development, market
+development and event management would each have cost real listings. Three
+Demand Generation roles at WellSaid, Otter.ai and Deepgram sit on the board
+under `sales_marketing_cs`, and event management at a pro-audio company can mean
+live sound. **When extending `CORPORATE_ROLE`, measure the collateral against
+the live board before committing; the bar is zero legitimate losses.**
+
+Two tests in `test_relevance.py` pin both directions so this cannot drift:
+back-office titles stay out, technical titles carried only by company context
+stay in.
+
+### Uncategorized is now 27%, and that is the accepted trade
+
+All 55 restored rows lack categories, which is the entire 15% -> 27% move; no
+categorization logic changed. Categories are how a reader filters past the junk,
+so closing this gap is worthwhile — but note that **a large share of the 105 is
+a pre-existing keyword gap, not a consequence of the recall change**: "Embedded
+Software Engineer, Audio & Media Tech" at Apple, "Applications Engineer:
+Acoustics" at Comsol, "Senior Applied Scientist, Speech" at Otter.ai and
+"Project Manager - Audio Technology" at Focusrite all carry an obvious audio
+word and still match nothing. That is the original pain point #1 and it is
+independent of scoring.
+
+For the restored Shure roles specifically, the lever is
+`FALLBACK_ROLE_CATEGORIES` — it has no pattern for `systems`, `process`,
+`metrology`, `npi` or `maintenance`, so those titles fall through even though
+the company gate admits them.
 
 ## Next steps, in priority order (as of the evening of 2026-08-29)
 
@@ -774,6 +813,14 @@ elsewhere in this document: a signal is only evidence in context.
 
 3. **Seed URL quality remains the cheapest lever** — see 3b and 3e. Keysight is a
    worked example: the board had moved and no scraper change could have fixed it.
+
+4. **Categorization, the original pain point #1.** 105 board rows carry no
+   category. Two separable causes: titles with an obvious audio word that match
+   no keyword (Apple, Comsol, Otter.ai, Focusrite — a `CATEGORY_KEYWORDS` gap),
+   and technical titles admitted by company context whose role word is missing
+   from `FALLBACK_ROLE_CATEGORIES` (`systems`, `process`, `metrology`, `npi`,
+   `maintenance`). Worth doing because categories are how a reader filters past
+   the junk the board now deliberately admits.
 
 Explicitly NOT worth doing, both measured rather than assumed: follow-one-link
 (section 3 above) and further sweeps of the unverified population (3d and 3e).
