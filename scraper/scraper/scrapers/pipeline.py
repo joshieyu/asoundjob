@@ -8,10 +8,12 @@ from sqlalchemy import select, update
 from scraper.config import Settings
 from scraper.database import get_session_factory
 from scraper.models import Company
+from scraper.scrapers.ats.adp import AdpScraper
 from scraper.scrapers.ats.apple import AppleScraper
 from scraper.scrapers.ats.ashby import AshbyScraper
 from scraper.scrapers.ats.bamboohr import BambooHRScraper
 from scraper.scrapers.ats.greenhouse import GreenhouseScraper
+from scraper.scrapers.ats.icims import IcimsScraper
 from scraper.scrapers.ats.lever import LeverScraper
 from scraper.scrapers.ats.pinpoint import PinpointScraper
 from scraper.scrapers.ats.recruitee import RecruiteeScraper
@@ -42,6 +44,8 @@ class ScrapePipeline:
         self.workday = WorkdayScraper(settings)
         self.apple = AppleScraper(settings)
         self.pinpoint = PinpointScraper(settings)
+        self.icims = IcimsScraper(settings)
+        self.adp = AdpScraper(settings)
         self.http = HttpScraper(settings)
         self.playwright: PlaywrightScraper | None = None
         self.stealth: PlaywrightScraper | None = None
@@ -56,6 +60,8 @@ class ScrapePipeline:
             "workday": self.workday,
             "apple": self.apple,
             "pinpoint": self.pinpoint,
+            "icims": self.icims,
+            "adp": self.adp,
         }
 
     def _playwright_scraper(self) -> PlaywrightScraper:
@@ -142,6 +148,8 @@ class ScrapePipeline:
             self.bamboohr,
             self.workday,
             self.pinpoint,
+            self.icims,
+            self.adp,
             self.apple,
         )
         for ats in ats_scrapers:
