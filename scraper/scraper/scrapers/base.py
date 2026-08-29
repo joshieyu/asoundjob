@@ -71,11 +71,11 @@ class BaseScraper(ABC):
         try:
             result.jobs = await self.fetch_jobs(company)
             result.success = True
-            result.html = self._last_html
         except Exception as exc:
             logger.warning(
                 "scraper=%s company=%s failed: %s", self.name, company.name, exc
             )
             result.error = f"{type(exc).__name__}: {exc}"
+        result.html = self._last_html
         result.duration = round(time.monotonic() - started, 2)
         return result

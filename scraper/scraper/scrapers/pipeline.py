@@ -153,22 +153,22 @@ class ScrapePipeline:
         skip_http = company.scrape_method == "playwright"
         if not skip_http:
             result = await self._attempt(self.http, company, self.http_semaphore, "http")
+            self._try_discovery(company, result.html)
             if result.success:
-                self._try_discovery(company, result.html)
                 return result
 
         result = await self._attempt(
             self._playwright_scraper(), company, self.playwright_semaphore, "playwright"
         )
+        self._try_discovery(company, result.html)
         if result.success:
-            self._try_discovery(company, result.html)
             return result
 
         result = await self._attempt(
             self._stealth_scraper(), company, self.playwright_semaphore, "stealth"
         )
+        self._try_discovery(company, result.html)
         if result.success:
-            self._try_discovery(company, result.html)
             return result
 
         last_error = result.error or "all methods failed"
