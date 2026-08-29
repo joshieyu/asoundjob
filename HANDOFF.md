@@ -241,21 +241,31 @@ generic scraper still only gets titles + URLs for many companies.
 
 PR: https://github.com/joshieyu/asoundjob/pull/1 (branch `improve-categorization-and-parsing`, 5 commits, open)
 
-## Current metrics (after full scrape of all 739 companies + backfill)
+## Current metrics (after two full scrapes, 2026-08-29)
 
 | Metric | Value |
 |---|---|
-| Total job rows | 6,230 |
-| Active | 3,645 |
-| Audio-related (the public board) | 291 (was 259 before company-category fallback) |
-| Uncategorized audio jobs | 58 (20%) |
-| Companies contributing active jobs | 361 |
-| Companies appearing on the board | 42 |
-| Tests | 263 pass; ruff, mypy, `npm run check` clean |
+| Total job rows | 6,859 |
+| Active | 5,052 |
+| Audio-related (the public board) | 322 real (459 stored, see duplicates below) |
+| Board jobs carrying a real description | 267 (83%) |
+| Uncategorized audio jobs | 66 (20%) |
+| Companies appearing on the board | 57 |
+| Companies contributing active jobs | 364 |
+| Tests | 279 pass; ruff, mypy, `npm run check` clean |
 
-Categories now 20 (added `audiology_hearing`, `audio_product_mechanical`,
-`acoustics_consulting`). At 0: `game_audio_interactive`,
-`psychoacoustics_perception`.
+Two consecutive full scrapes were needed: the first discovers or corrects
+`ats_type`, the second routes through the ATS parser and gets descriptions.
+Workday routes went 17 to 25 between the runs.
+
+**The stored count of 459 includes 137 duplicates** — Apple and Beats by Dre
+were both scraping the same Apple board through different URLs. Deduplication
+by board identity landed after this scrape (commit 828fa48), so the next run
+deactivates them and the stored number should converge on ~322. Do not compare
+459 against earlier figures; 322 is the like-for-like number against the
+previous 291.
+
+At 0: `game_audio_interactive`, `psychoacoustics_perception`.
 
 ## What the board size is actually limited by
 
