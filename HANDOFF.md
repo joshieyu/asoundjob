@@ -2,6 +2,18 @@
 
 ## Project
 
+> **Read this first.** The document is chronological and some early sections are
+> explicitly marked SUPERSEDED. For the current picture read, in this order:
+> "Current metrics", "Session update (2026-08-29, evening)" and the final
+> "Next steps, in priority order (as of the evening of 2026-08-29)". The earlier
+> "Next steps, in order" section is a record of completed work and rejected
+> experiments — valuable for the reasoning and the DO-NOT-REPEAT entries, but not
+> a to-do list. "Conventions" and "Key Files to Know" are always current.
+>
+> **The audience is audio engineers.** DSP, audio systems, EE, embedded and
+> acoustics roles are the point; live sound and sound design are not the
+> priority. An earlier version of this document assumed otherwise.
+
 ASoundJob is an audio industry job board + career resource site. It scrapes
 audio companies' careers pages, aggregates job listings, and presents them with
 filtering, search, and SEO-optimized detail pages. Built for the Young Audio
@@ -27,6 +39,9 @@ python -m scraper.main --once --skip-load
 
 # Re-score relevance after category/keyword changes
 python -m scraper.backfill_relevance
+
+# What would this careers URL give the board? (read-only, writes nothing)
+python -m scraper.check_url "https://job-boards.greenhouse.io/acme" --name "Acme"
 
 # Tests + lint + typecheck
 python -m unittest discover -s tests && ruff check . && mypy scraper
@@ -257,14 +272,18 @@ PR: https://github.com/joshieyu/asoundjob/pull/1 (branch `improve-categorization
 
 | Metric | Value |
 |---|---|
-| Total job rows | 7,198 |
-| Active | 4,085 |
-| Audio-related (the public board) | 387 |
-| Board jobs carrying a real description | 330 (85%) |
-| Uncategorized audio jobs | 100 (26%) — see the trade below |
-| Companies appearing on the board | 62 |
-| Companies contributing active jobs | 373 |
-| Tests | 367 pass; ruff, mypy clean |
+| Total job rows | 7,363 |
+| Active | 4,207 |
+| Audio-related (the public board) | 390 |
+| Board jobs carrying a real description | 333 (85%) |
+| Uncategorized audio jobs | 104 (27%) — see the trade below |
+| Companies appearing on the board | 64 |
+| Companies contributing active jobs | 380 |
+| Tests | 389 pass; ruff, mypy, `npm run check` clean |
+
+**These predate the HTTP-scraper consistency fix (647b721).** The next full
+scrape will move roughly 101 companies from "success with zero jobs" to failed
+and lengthen the run, because more of them reach Playwright. No jobs are lost.
 
 The board reads 385 against an earlier 340, and the 340 counted duplicates that
 are now collapsed, so the like-for-like gain is larger than it looks.
@@ -290,17 +309,22 @@ At 0: `game_audio_interactive`, `psychoacoustics_perception`.
 
 ## What the board size is actually limited by
 
-Not scoring strictness. **63% of excluded jobs (2,146) have no description at
-all.** The 10 ATS parsers return full descriptions; the generic HTTP/Playwright
-path returns titles and URLs only. With no description the only signal is the
-title, so a job is excluded unless its title literally contains an audio word.
-This is why only 42 of 361 contributing companies reach the board — in practice
-the board is the ATS-covered companies plus anyone whose titles say "audio".
+Not scoring strictness. **Most excluded jobs have no description at all.** The
+ATS parsers return full descriptions; the generic HTTP/Playwright path returns
+titles and URLs only. With no description the only signal is the title, so a job
+is excluded unless its title literally contains an audio word. This is why only
+64 of 380 contributing companies reach the board — in practice the board is the
+ATS-covered companies plus anyone whose titles say "audio".
 
-Last scrape: 696 companies, 427 ok, 269 failed with "page loaded but no job
-links found". Sampling 35 of those failures and comparing the old vs new
-extractor showed only one recovered, so those pages genuinely yield nothing to
-HTML anchor scraping.
+That is the argument for writing ATS parsers over improving generic extraction,
+and it held up: icims and adp (commit a4944e2) added 87 jobs at 100% description
+coverage, and the Lever `lists` fix (8eb7f54) raised existing Lever descriptions
+from ~1,300 characters to 4,500-9,600.
+
+Last full scrape: 698 companies, 434 ok, 264 failed, almost all with "page loaded
+but no job links found". Sampling 35 of those failures and comparing the old vs
+new extractor showed only one recovered, so those pages genuinely yield nothing
+to HTML anchor scraping.
 
 ## DO NOT REPEAT: the reverted company-nativeness experiment
 
@@ -883,13 +907,53 @@ Modal Electronics was pulling Modal Labs' cloud jobs and QSC is seeded with
 `acuityinc.com` — and remember a TLS error or a 403 does not mean the site is
 dead, since Audinate 403s but has a live Lever board.
 
+### The HTTP scraper used to hide its failures (commit 647b721)
+
+Only `PlaywrightScraper` raised when a page yielded no job links. `HttpScraper`
+returned `[]`, which `base.scrape()` counts as success, and the pipeline's
+`if result.success: return result` then short-circuited the rest of the chain.
+**A JS-rendered page answering HTTP 200 never reached Playwright at all**, and
+the company was recorded as a successful scrape holding zero jobs — 101 of them.
+
+Measured before changing anything: Playwright was run by hand against Akustiks,
+Connect Hearing, Blaupunkt and Baidu and found nothing on any. **This recovers no
+jobs.** It is an observability fix — those companies are now honestly failed and
+join the diagnostic's failure population. Expect the success count to fall and
+full scrapes to take longer.
+
+### When a company needs an ATS nobody else uses
+
+Calrec Audio is the worked example. Its real careers site is
+`careers.calrec.com`, a SPA whose job links are routes (`#/job/details/60`), and
+its applications live on `livevacancies.co.uk` — the **hireful** ATS. Neither
+HTTP nor Playwright extracts anything, because the extractor only understands
+anchors. hireful publishes an `apiServerUrl` of
+`http://hg-api.prod.hireful.aws:5250/`, an internal AWS host that does not
+resolve publicly, so there is no clean API to target.
+
+**No other company in the seed uses hireful.** A parser would serve one company
+with one open role, so none was written. The seed points at the correct URL
+anyway: a right URL that yields nothing beats a wrong one, and a future fix to
+SPA link extraction picks it up for free.
+
+Generalise this when working `SEED_WORKLIST.md`: if `check_url` reports
+`ats discovered: none` **and** zero jobs on a SPA, grep the seed for that ATS
+host before building anything. One company is not worth a parser; record the
+correct URL and move on.
+
 ## Next steps, in priority order (as of the evening of 2026-08-29)
 
-1. **The generic path is now the whole game.** 264 of 698 companies still fail,
-   overwhelmingly with "page loaded but no job links found", and `last_scraped_at`
-   is written **only on success** — so a company showing "never scraped" has
-   actually failed every attempt, it was not skipped. Do not read that column as
-   omission.
+1. **Seed URL corrections — the active manual task.** `SEED_WORKLIST.md` holds
+   the 82 companies whose failure is a wrong careers URL rather than a scraper
+   limit, with slugs, ordered by engineering relevance. Test candidates with
+   `python -m scraper.check_url` (see "Correcting a careers URL by hand" above);
+   it writes nothing. The proposal tool cannot help here — see "Step 1 of the
+   seed plan" — so this is human work.
+
+   Note `last_scraped_at` is written **only on success**, so a company showing
+   "never scraped" has actually failed every attempt; it was not skipped. Do not
+   read that column as omission. After commit 647b721 roughly 101 more companies
+   report failure honestly rather than succeeding with zero jobs.
 
 2. **`json_endpoint` is mostly a false-positive bucket — do not build a parser
    for it.** An earlier version of this document called it the largest untried
@@ -921,16 +985,28 @@ dead, since Audinate 403s but has a live Lever board.
 3. **Seed URL quality remains the cheapest lever** — see 3b and 3e. Keysight is a
    worked example: the board had moved and no scraper change could have fixed it.
 
-4. **Categorization, the original pain point #1.** 99 board rows carry no
-   category. Two separable causes: titles with an obvious audio word that match
-   no keyword (Comsol, Neumann, Focusrite — a `CATEGORY_KEYWORDS` gap, of which
-   bare "acoustics" is the known one), and technical titles admitted by company
-   context whose role word is missing from `FALLBACK_ROLE_CATEGORIES`
-   (`systems`, `process`, `metrology`, `npi`, `maintenance`). Worth doing
-   because categories are how a reader filters past the junk the board now
-   deliberately admits.
+4. **Categorization, the original pain point #1.** 104 board rows carry no
+   category. Categories are how a reader filters past the junk the board now
+   deliberately admits, so this is worth doing — but the obvious fix is already
+   ruled out.
 
-5. **User feedback on parsing quality — REQUESTED, NOT STARTED.** Let readers
+   **REJECTED, do not retry:** extending `FALLBACK_ROLE_CATEGORIES` with
+   `systems`, `process`, `metrology` and `npi`. Measured in commit 89ddf50 — it
+   categorized 16 rows and would have put six on the board, four of them Modal
+   Labs cloud jobs arriving through a since-fixed seed error. It also fails to
+   reach the case that motivated it: Audinate's "Principal Engineer" contains no
+   systems or process word either.
+
+   What remains is the `CATEGORY_KEYWORDS` gap, of which **bare "acoustics" is
+   the known one** — every acoustics keyword in the file is a multi-word phrase
+   ("acoustic engineer", "room acoustics"), so "Applications Engineer:
+   Acoustics" at Comsol and "Working Student Acoustics" at Neumann match
+   nothing. Fixing it means choosing an owner among `transducers`,
+   `audio_systems`, `audio_research` and `acoustics_consulting`. **That is a
+   taxonomy decision for the project owner, not a bug fix.**
+
+5. **User feedback on parsing quality — REQUESTED, DEFERRED BY THE OWNER.**
+   Explicitly postponed on 2026-08-29; do not start it without asking. Let readers
    report a bad row rather than chasing every keyword gap by hand: "not an audio
    job", "wrong category", "suggested category", and a free-text note for the
    admin. Admin approves before anything changes, mirroring the existing
