@@ -412,13 +412,66 @@ Epic Games, Allen & Heath, Genius and others. These predate the
 `link_extraction.py` fixes — they should simply succeed on the next full scrape.
 
 
-### 3. Detail-page fetching for the generic path (hardest)
+### 3. Follow-one-link — MEASURED AND REJECTED (do not build)
 
-Generalize what `ats/apple.py` does: fetch each job's detail page for a real
-description. Harder than Apple because it means extracting descriptions from
-arbitrary HTML across ~139 sites, plus ~2,100 extra outbound requests. Reuse the
-Apple deadline-budget pattern (`ENRICHMENT_BUDGET_FRACTION`) so it can never
-cause a total scrape failure — see the regression note below.
+After the two full scrapes the diagnostic was re-run over the 278 still-failing
+companies. Buckets were essentially unchanged, which is the expected result:
+this session's fixes helped companies that were already succeeding but
+returning too little, not the hard failures.
+
+    unknown         58   json_endpoint  42   storefront       32
+    offsite_careers 23   dead_url       23   no_openings      19
+    careers_landing 18   js_rendered    17   blocked          13
+    extractor_gap   12   ats_unsupported 9   ats_discoverable  7
+    unreachable      5
+
+The plan was to follow one link from a careers overview page to its listing
+page, on the theory that discovery would then see an ATS embed and the company
+would convert to full descriptions — the same mechanism that took Bose from 13
+title-only jobs to 40 with descriptions.
+
+**The theory is wrong.** Of the 125 pages in the target buckets
+(careers_landing, unknown, js_rendered, storefront) only 25 have a followable
+link at all. Fetching all 25:
+
+    a supported ATS embed :  0
+    job links, no ATS     :  7
+    still nothing         : 18
+
+and 3 of the 7 are the same Sega board reached from Creative Assembly, Sega and
+Sports Interactive, which board-identity dedup would collapse anyway. Net yield
+is about two distinct boards. Not worth building. The measurement script is
+`followlink.py`; re-run it against a fresh cache before revisiting.
+
+### 3b. Seed URL quality is the dominant remaining lever
+
+Bigger than the 82-company figure suggests, because it is not limited to
+companies that fail. **BMG Production Music's careers_url points at
+`careers.smartrecruiters.com/Bertelsmann-Jobs`** — the whole parent
+conglomerate. It scrapes 954 jobs of warehouse, SAP and logistics roles, which
+is 19% of every active row in the database. Relevance scoring correctly keeps
+all but 3 off the board, so the damage is wasted effort and a misleading active
+count rather than a polluted board. TrueFire serving Toyota's board was the
+same class of problem.
+
+So the work is two-sided: correcting URLs for companies that yield nothing, and
+finding companies that "succeed" against the wrong board. The second kind is
+detectable — an outlier job count against company size, or a board identity
+whose slug bears no relation to the company name.
+
+Proposed approach: generate candidate URLs per company (`/careers`, `/jobs`,
+`/about/careers`, any ATS host linked from the page), fetch each, score whether
+it yields real job links, and emit a ranked shortlist for human approval.
+Corrections belong in `data/audio_companies_final.json`, which is seed truth
+and must never be written by the scraper.
+
+### 3c. Detail-page fetching — population is smaller than it looks
+
+3,215 active jobs carry no real description across 309 companies. But 954 are
+the Bertelsmann mis-seed above, and roughly 300 more are Workday companies at
+partial scope, where `_fetch_descriptions` deliberately fetches details only for
+titles already matching an audio pattern. Re-measure the true target after the
+seed URLs are corrected, not before.
 
 ### Smaller known issues
 
