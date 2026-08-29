@@ -3,9 +3,16 @@
 82 companies fail because the seeded careers URL is wrong, not because the
 scraper cannot read the page. No scraper change fixes these.
 
-Ordered so the board's thinnest categories come first. The live_sound_events
-category currently has 2 jobs on the board, and 21 of these fixable companies
-sit in Professional Audio & Live Sound.
+YAP's audience is audio engineers, so this is ordered by which company
+categories feed the hard-engineering job categories that are thinnest on the
+board: audio_ee (12 jobs), audio_research (8), transducers (15),
+acoustics_consulting (4) and nvh (2).
+
+Professional Audio & Live Sound leads at 21 companies. Those firms - Calrec,
+DiGiCo, QSC, Lab.gruppen, Peavey, Extron - hire DSP, audio systems and EE
+engineers, so they feed the categories that matter here, not just live sound.
+Consumer speaker and headphone makers follow because they are where transducer
+and audio_ee roles live. Streaming, retail and education are last.
 
 For each: find the real careers page, then edit careers_url in
 data/audio_companies_final.json. If a company genuinely has no job board, set
@@ -37,29 +44,68 @@ verified: false instead - the loader now deactivates its stale rows.
 | Wisycom | points at a product or shop page | https://wisycom.com/products/careers/ |
 | Xilica | board is on another host; page links to it | https://www.xilica.com/careers/ |
 
-## Recording Studios & Post Houses  (2)
+## Acoustic Consulting & Engineering  (4)
 
 | Company | Why it fails | Seeded URL |
 |---|---|---|
-| ESPN Audio | 404 / gone | https://www.espn.com/careers |
-| KPM Music | points at a product or shop page | https://jobs.kpmmusic.com/en/ |
+| Auralex Acoustics | points at a product or shop page | https://auralex.com/careers/ |
+| Kinetics Noise Control | board is on another host; page links to it | https://kineticsnoise.com/resources/careers |
+| Talaske Acoustics | 404 / gone | https://www.talaske.com/careers |
+| WSDG (Walters-Storyk Design Group) | points at a product or shop page | https://wsdg.com/careers/ |
 
-## Electronic Musical Instruments  (4)
-
-| Company | Why it fails | Seeded URL |
-|---|---|---|
-| Expressive E | board is on another host; page links to it | https://www.expressivee.com/category/3-careers |
-| Kurzweil Music Systems | 404 / gone | https://kurzweil.com/careers/ |
-| Sequential | points at a product or shop page | https://sequential.com/about/careers/ |
-| Waldorf Music | points at a product or shop page | https://waldorfmusic.com/de/jobs/ |
-
-## DAW & Music Production Software  (3)
+## Audio Testing & Measurement  (1)
 
 | Company | Why it fails | Seeded URL |
 |---|---|---|
-| Audiotool | 404 / gone | https://www.audiotool.com/careers |
-| DaVinci Resolve Audio (Blackmagic) | 404 / gone | https://www.blackmagicdesign.com/careers |
-| Native Instruments | points at a product or shop page | https://www.native-instruments.com/pages/careers |
+| data physics | board is on another host; page links to it | https://dataphysics.com/resources/careers/ |
+
+## Automotive OEMs  (4)
+
+| Company | Why it fails | Seeded URL |
+|---|---|---|
+| GAC Group | TLS or DNS failure | https://www.gac-motor.com/en/careers |
+| General Motors | board is on another host; page links to it | https://search-careers.gm.com/ |
+| Mercedes-Benz | board is on another host; page links to it | https://jobs.mercedes-benz.com/enUS |
+| Volvo Trucks | board is on another host; page links to it | https://www.volvotrucks.com/en-en/about-us/who-we-are/career.html |
+
+## Hi-Fi & Consumer Speakers  (8)
+
+| Company | Why it fails | Seeded URL |
+|---|---|---|
+| Cabasse | points at a product or shop page | https://www.cabasse.com/carriere/ |
+| Micromega | points at a product or shop page | https://micromega.com/pages/notices-et-modes-demploi |
+| Peachtree Audio | points at a product or shop page | https://www.peachtreeaudio.com/pages/carina-phase-2-trade-opportunity |
+| Pro-Ject Audio | points at a product or shop page | https://www.project-audio.com/de/jobs/ |
+| Simaudio (Moon) | points at a product or shop page | https://simaudio.com/en/careers/ |
+| Tannoy | 404 / gone | https://www.musictribe.com/careers |
+| Thorens | 404 / gone | https://www.thorens.com/en/careers/ |
+| Triangle Loudspeakers | points at a product or shop page | https://trianglehifi.us/ |
+
+## Headphones & Personal Audio  (6)
+
+| Company | Why it fails | Seeded URL |
+|---|---|---|
+| Audeze | 404 / gone | https://www.audeze.com/pages/careers |
+| Audio-Technica | board is on another host; page links to it | https://www.audio-technica.com/en-us/careers |
+| Hidizs | points at a product or shop page | https://www.hidizs.net/pages/influencer-recruit |
+| Master & Dynamic | points at a product or shop page | https://www.masterdynamic.com/pages/halliburton-opportunity |
+| Shanling | 404 / gone | https://www.shenzhenaudio.com/pages/careers |
+| Shokz | points at a product or shop page | https://shokz.com/pages/careers |
+
+## Car Audio  (1)
+
+| Company | Why it fails | Seeded URL |
+|---|---|---|
+| Sundown Audio | points at a product or shop page | https://sundownaudio.com/pages/careers |
+
+## Audio Accessories & Cables  (4)
+
+| Company | Why it fails | Seeded URL |
+|---|---|---|
+| Anker Cables | 404 / gone | https://www.anker.com/careers |
+| Gator Cases | points at a product or shop page | https://gatorco.com/careers/ |
+| PS Audio | points at a product or shop page | https://www.psaudio.com/pages/careers |
+| SKB Cases | points at a product or shop page | https://www.skbcases.com/pages/careers |
 
 ## Audio Plugins & Virtual Instruments  (5)
 
@@ -71,6 +117,31 @@ verified: false instead - the loader now deactivates its stale rows.
 | Flux Audio | points at a product or shop page | https://www.flux.audio/2024/05/30/join-flux-at-infocomm-2024-in-las-vega |
 | Spitfire Audio | board is on another host; page links to it | https://www.spitfireaudio.com/en-us/pages/careers |
 
+## DAW & Music Production Software  (3)
+
+| Company | Why it fails | Seeded URL |
+|---|---|---|
+| Audiotool | 404 / gone | https://www.audiotool.com/careers |
+| DaVinci Resolve Audio (Blackmagic) | 404 / gone | https://www.blackmagicdesign.com/careers |
+| Native Instruments | points at a product or shop page | https://www.native-instruments.com/pages/careers |
+
+## Voice & Speech Technology  (3)
+
+| Company | Why it fails | Seeded URL |
+|---|---|---|
+| ReadSpeaker | board is on another host; page links to it | https://www.readspeaker.com/careers/ |
+| Respeecher | board is on another host; page links to it | https://www.respeecher.com/careers |
+| Spitch | board is on another host; page links to it | https://spitch.ai/de/ |
+
+## Electronic Musical Instruments  (4)
+
+| Company | Why it fails | Seeded URL |
+|---|---|---|
+| Expressive E | board is on another host; page links to it | https://www.expressivee.com/category/3-careers |
+| Kurzweil Music Systems | 404 / gone | https://kurzweil.com/careers/ |
+| Sequential | points at a product or shop page | https://sequential.com/about/careers/ |
+| Waldorf Music | points at a product or shop page | https://waldorfmusic.com/de/jobs/ |
+
 ## Gaming, VR & Immersive Audio  (2)
 
 | Company | Why it fails | Seeded URL |
@@ -78,29 +149,11 @@ verified: false instead - the loader now deactivates its stale rows.
 | Embracer Group | board is on another host; page links to it | https://www.embracer.com/about/join-our-team/ |
 | Take-Two Interactive | TLS or DNS failure | https://careers.take2games.com/jobs |
 
-## Acoustic Consulting & Engineering  (4)
-
-| Company | Why it fails | Seeded URL |
-|---|---|---|
-| Auralex Acoustics | points at a product or shop page | https://auralex.com/careers/ |
-| Kinetics Noise Control | board is on another host; page links to it | https://kineticsnoise.com/resources/careers |
-| Talaske Acoustics | 404 / gone | https://www.talaske.com/careers |
-| WSDG (Walters-Storyk Design Group) | points at a product or shop page | https://wsdg.com/careers/ |
-
 ## AI/ML Audio  (1)
 
 | Company | Why it fails | Seeded URL |
 |---|---|---|
 | Tortoise TTS | points at a product or shop page | https://worldturtleday.org/join-the-movement/ |
-
-## Audio Accessories & Cables  (4)
-
-| Company | Why it fails | Seeded URL |
-|---|---|---|
-| Anker Cables | 404 / gone | https://www.anker.com/careers |
-| Gator Cases | points at a product or shop page | https://gatorco.com/careers/ |
-| PS Audio | points at a product or shop page | https://www.psaudio.com/pages/careers |
-| SKB Cases | points at a product or shop page | https://www.skbcases.com/pages/careers |
 
 ## Audio Health & Wellness  (3)
 
@@ -122,27 +175,6 @@ verified: false instead - the loader now deactivates its stale rows.
 |---|---|---|
 | Guitar Center | board is on another host; page links to it | https://www.guitarcenter.com/careers |
 
-## Audio Testing & Measurement  (1)
-
-| Company | Why it fails | Seeded URL |
-|---|---|---|
-| data physics | board is on another host; page links to it | https://dataphysics.com/resources/careers/ |
-
-## Automotive OEMs  (4)
-
-| Company | Why it fails | Seeded URL |
-|---|---|---|
-| GAC Group | TLS or DNS failure | https://www.gac-motor.com/en/careers |
-| General Motors | board is on another host; page links to it | https://search-careers.gm.com/ |
-| Mercedes-Benz | board is on another host; page links to it | https://jobs.mercedes-benz.com/enUS |
-| Volvo Trucks | board is on another host; page links to it | https://www.volvotrucks.com/en-en/about-us/who-we-are/career.html |
-
-## Car Audio  (1)
-
-| Company | Why it fails | Seeded URL |
-|---|---|---|
-| Sundown Audio | points at a product or shop page | https://sundownaudio.com/pages/careers |
-
 ## Consumer Electronics & Tech  (1)
 
 | Company | Why it fails | Seeded URL |
@@ -155,41 +187,24 @@ verified: false instead - the loader now deactivates its stale rows.
 |---|---|---|
 | DJ.Studio | 404 / gone | https://dj.studio/careers |
 
-## Headphones & Personal Audio  (6)
-
-| Company | Why it fails | Seeded URL |
-|---|---|---|
-| Audeze | 404 / gone | https://www.audeze.com/pages/careers |
-| Audio-Technica | board is on another host; page links to it | https://www.audio-technica.com/en-us/careers |
-| Hidizs | points at a product or shop page | https://www.hidizs.net/pages/influencer-recruit |
-| Master & Dynamic | points at a product or shop page | https://www.masterdynamic.com/pages/halliburton-opportunity |
-| Shanling | 404 / gone | https://www.shenzhenaudio.com/pages/careers |
-| Shokz | points at a product or shop page | https://shokz.com/pages/careers |
-
 ## Hearing Aid & Hearing Tech  (1)
 
 | Company | Why it fails | Seeded URL |
 |---|---|---|
 | Olive Union | 404 / gone | https://www.oliveunion.com/pages/careers |
 
-## Hi-Fi & Consumer Speakers  (8)
-
-| Company | Why it fails | Seeded URL |
-|---|---|---|
-| Cabasse | points at a product or shop page | https://www.cabasse.com/carriere/ |
-| Micromega | points at a product or shop page | https://micromega.com/pages/notices-et-modes-demploi |
-| Peachtree Audio | points at a product or shop page | https://www.peachtreeaudio.com/pages/carina-phase-2-trade-opportunity |
-| Pro-Ject Audio | points at a product or shop page | https://www.project-audio.com/de/jobs/ |
-| Simaudio (Moon) | points at a product or shop page | https://simaudio.com/en/careers/ |
-| Tannoy | 404 / gone | https://www.musictribe.com/careers |
-| Thorens | 404 / gone | https://www.thorens.com/en/careers/ |
-| Triangle Loudspeakers | points at a product or shop page | https://trianglehifi.us/ |
-
 ## Music Education Technology  (1)
 
 | Company | Why it fails | Seeded URL |
 |---|---|---|
 | University of York Audio Lab | 404 / gone | https://www.york.ac.uk/study/work/ |
+
+## Recording Studios & Post Houses  (2)
+
+| Company | Why it fails | Seeded URL |
+|---|---|---|
+| ESPN Audio | 404 / gone | https://www.espn.com/careers |
+| KPM Music | points at a product or shop page | https://jobs.kpmmusic.com/en/ |
 
 ## Streaming & Music Services  (4)
 
@@ -199,12 +214,4 @@ verified: false instead - the loader now deactivates its stale rows.
 | Dice FM | board is on another host; page links to it | https://boards.eu.greenhouse.io/dicefm-careers |
 | PRX | board is on another host; page links to it | https://www.prx.org/company/about/#jobs |
 | TuneCore | board is on another host; page links to it | https://www.tunecore.com/careers |
-
-## Voice & Speech Technology  (3)
-
-| Company | Why it fails | Seeded URL |
-|---|---|---|
-| ReadSpeaker | board is on another host; page links to it | https://www.readspeaker.com/careers/ |
-| Respeecher | board is on another host; page links to it | https://www.respeecher.com/careers |
-| Spitch | board is on another host; page links to it | https://spitch.ai/de/ |
 
