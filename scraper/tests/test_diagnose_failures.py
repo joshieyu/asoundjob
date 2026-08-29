@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import time
 import unittest
 from dataclasses import asdict
 
@@ -302,6 +303,124 @@ class TestClassifyJsRendered(unittest.TestCase):
         bucket, _detail = classify(probe)
         self.assertEqual(bucket, "js_rendered")
 
+    def test_wordpress_page_is_not_js_rendered(self) -> None:
+        html = """
+        <html><body>
+        <h1>Careers at Acme</h1>
+        <link rel="stylesheet" href="/wp-content/plugins/some-plugin/style.css">
+        <p>We build studio monitors and stage gear. Join our team.</p>
+        </body></html>
+        """
+        probe = make_probe(status=200, html=html, job_link_count=0)
+        bucket, _detail = classify(probe)
+        self.assertNotEqual(bucket, "js_rendered")
+        self.assertEqual(bucket, "unknown")
+
+
+class TestClassifyCaptchaRedirect(unittest.TestCase):
+    def test_sgcaptcha_final_url_is_blocked(self) -> None:
+        probe = make_probe(
+            status=200,
+            html="<html><body>Careers</body></html>",
+            final_url="https://acme.example.com/.well-known/sgcaptcha/?r=%2Fcareers",
+        )
+        bucket, detail = classify(probe)
+        self.assertEqual((bucket, detail), ("blocked", "captcha redirect"))
+
+
+class TestClassifyOffsiteCareers(unittest.TestCase):
+    def test_offsite_careers_link(self) -> None:
+        probe = make_probe(
+            status=200,
+            html="<html><body><a href='https://acme.peopleforce.io/careers'>Careers</a></body></html>",
+            links=["https://acme.peopleforce.io/careers"],
+        )
+        bucket, detail = classify(probe)
+        self.assertEqual(bucket, "offsite_careers")
+        self.assertIn("peopleforce", detail)
+
+    def test_same_host_link_does_not_count_as_offsite(self) -> None:
+        probe = make_probe(
+            status=200,
+            html="<html><body>Careers at Acme</body></html>",
+            links=["https://acme.example.com/careers/open-positions"],
+        )
+        bucket, _detail = classify(probe)
+        self.assertNotEqual(bucket, "offsite_careers")
+
+    def test_noise_host_does_not_count_as_offsite(self) -> None:
+        probe = make_probe(
+            status=200,
+            html="<html><body>Careers at Acme</body></html>",
+            links=["https://www.linkedin.com/jobs/acme"],
+        )
+        bucket, _detail = classify(probe)
+        self.assertNotEqual(bucket, "offsite_careers")
+
+    def test_ats_discoverable_wins_over_offsite_careers_link(self) -> None:
+        html = """
+        <html><body>
+        <iframe src="https://boards.greenhouse.io/acme"></iframe>
+        </body></html>
+        """
+        probe = make_probe(
+            status=200,
+            html=html,
+            links=["https://acme.peopleforce.io/careers"],
+        )
+        bucket, detail = classify(probe)
+        self.assertEqual((bucket, detail), ("ats_discoverable", "greenhouse"))
+
+
+class TestClassifyStorefront(unittest.TestCase):
+    SHOPIFY_HTML = """
+    <html><body>
+    <h1>Careers at Acme</h1>
+    <script src="https://cdn.shopify.com/s/files/theme.js"></script>
+    </body></html>
+    """
+
+    def test_shopify_page_with_no_job_links_is_storefront(self) -> None:
+        probe = make_probe(status=200, html=self.SHOPIFY_HTML, job_link_count=0)
+        bucket, detail = classify(probe)
+        self.assertEqual(bucket, "storefront")
+        self.assertEqual(detail, "cdn.shopify.com")
+
+    def test_shopify_page_with_job_links_falls_to_extractor_gap(self) -> None:
+        probe = make_probe(status=200, html=self.SHOPIFY_HTML, job_link_count=3)
+        bucket, _detail = classify(probe)
+        self.assertEqual(bucket, "extractor_gap")
+
+
+class TestClassifyCareersLanding(unittest.TestCase):
+    def test_same_host_deeper_link_is_careers_landing(self) -> None:
+        probe = PageProbe(
+            company_id=1,
+            company_name="Acme",
+            url="https://acme.com/careers",
+            status=200,
+            html="<html><body><h1>Careers</h1></body></html>",
+            links=["https://acme.com/careers/open-positions"],
+            job_link_count=0,
+        )
+        bucket, detail = classify(probe)
+        self.assertEqual(bucket, "careers_landing")
+        self.assertIn("open-positions", detail)
+
+    def test_link_that_is_just_the_page_url_is_not_careers_landing(self) -> None:
+        probe = PageProbe(
+            company_id=1,
+            company_name="Acme",
+            url="https://acme.com/careers",
+            status=200,
+            html="<html><body><h1>Careers</h1></body></html>",
+            links=["https://acme.com/careers/"],
+            job_link_count=0,
+        )
+        bucket, _detail = classify(probe)
+        self.assertNotEqual(bucket, "careers_landing")
+        self.assertEqual(bucket, "unknown")
+
 
 class TestClassifyUnknown(unittest.TestCase):
     def test_empty_ish_page_with_careers_vocabulary(self) -> None:
@@ -310,6 +429,16 @@ class TestClassifyUnknown(unittest.TestCase):
         bucket, detail = classify(probe)
         self.assertEqual(bucket, "unknown")
         self.assertEqual(detail, "")
+
+
+class TestClassifyPerformance(unittest.TestCase):
+    def test_large_repeated_char_page_classifies_quickly(self) -> None:
+        html = "z" * 50000
+        probe = make_probe(status=200, html=html, job_link_count=0)
+        start = time.monotonic()
+        classify(probe)
+        elapsed = time.monotonic() - start
+        self.assertLess(elapsed, 1.0)
 
 
 class TestSummarize(unittest.TestCase):

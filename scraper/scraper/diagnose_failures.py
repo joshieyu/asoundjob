@@ -150,7 +150,23 @@ JS_APP_MARKERS = (
     "window.__initial_state__",
     'id="root"',
     'id="app"',
-    "wp-content/plugins",
+)
+
+CAPTCHA_URL_MARKERS = (
+    "sgcaptcha",
+    "/.well-known/captcha",
+    "/cdn-cgi/l/chk_jschl",
+    "/cdn-cgi/challenge",
+    "distil_r_captcha",
+    "px-captcha",
+)
+
+STOREFRONT_MARKERS = (
+    "cdn.shopify.com",
+    "shopify.theme",
+    "woocommerce",
+    "bigcommerce",
+    "magento",
 )
 
 CAREERS_SIGNAL = re.compile(
@@ -242,6 +258,46 @@ def is_job_endpoint(page_url: str, endpoint_url: str) -> bool:
     return False
 
 
+def _normalized_host(url: str) -> str:
+    host = (urlparse(url).hostname or "").lower()
+    if host.startswith("www."):
+        host = host[4:]
+    return host
+
+
+def _normalized_url(url: str) -> str:
+    return url.split("#", 1)[0].rstrip("/")
+
+
+def offsite_careers_link(page_url: str, links: list) -> Optional[str]:
+    page_host = _normalized_host(page_url)
+    for link in links:
+        host = _normalized_host(link)
+        if not host or host == page_host:
+            continue
+        if any(noise in host for noise in NOISE_ENDPOINT_HOST_SUBSTRINGS):
+            continue
+        if JOB_ENDPOINT_VOCAB.search(link):
+            return link
+    return None
+
+
+def has_deeper_careers_link(page_url: str, links: list) -> Optional[str]:
+    page_host = _normalized_host(page_url)
+    normalized_page = _normalized_url(page_url)
+    for link in links:
+        if _normalized_host(link) != page_host:
+            continue
+        parsed = urlparse(link)
+        target = parsed.path + "?" + parsed.query
+        if not JOB_ENDPOINT_VOCAB.search(target):
+            continue
+        if _normalized_url(link) == normalized_page:
+            continue
+        return link
+    return None
+
+
 def classify(probe: PageProbe) -> tuple[str, str]:
     if probe.error:
         lowered_error = probe.error.lower()
@@ -257,6 +313,12 @@ def classify(probe: PageProbe) -> tuple[str, str]:
         if probe.status in BLOCKED_STATUS_CODES:
             return ("blocked", f"http {probe.status}")
         return ("dead_url", f"http {probe.status}")
+
+    lowered_final_url = probe.final_url.lower()
+    lowered_url = probe.url.lower()
+    for marker in CAPTCHA_URL_MARKERS:
+        if marker in lowered_final_url or marker in lowered_url:
+            return ("blocked", "captcha redirect")
 
     lowered_html = probe.html.lower()
 
@@ -276,6 +338,10 @@ def classify(probe: PageProbe) -> tuple[str, str]:
         if pattern.search(haystack):
             return ("ats_unsupported", name)
 
+    offsite_link = offsite_careers_link(probe.url, probe.links)
+    if offsite_link is not None:
+        return ("offsite_careers", _short(offsite_link, MAX_ENDPOINT_DETAIL_LEN))
+
     for endpoint in probe.json_endpoints:
         if is_job_endpoint(probe.url, endpoint):
             return ("json_endpoint", _short(endpoint, MAX_ENDPOINT_DETAIL_LEN))
@@ -287,11 +353,19 @@ def classify(probe: PageProbe) -> tuple[str, str]:
     if not CAREERS_SIGNAL.search(lowered_html):
         return ("not_a_careers_page", "no careers vocabulary")
 
+    for marker in STOREFRONT_MARKERS:
+        if marker in lowered_html and probe.job_link_count == 0:
+            return ("storefront", marker)
+
     if probe.job_link_count > 0:
         return (
             "extractor_gap",
             f"{probe.job_link_count} links extracted but scrape reported none",
         )
+
+    landing_link = has_deeper_careers_link(probe.url, probe.links)
+    if landing_link is not None:
+        return ("careers_landing", _short(landing_link, MAX_ENDPOINT_DETAIL_LEN))
 
     for marker in JS_APP_MARKERS:
         if marker in lowered_html:
