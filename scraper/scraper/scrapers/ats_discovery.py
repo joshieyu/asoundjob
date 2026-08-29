@@ -10,8 +10,8 @@ PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     (
         "greenhouse",
         re.compile(
-            r"(?:job-)?boards\.greenhouse\.io/"
-            r"(?:embed/job_board(?:/js)?\?for=)?(?P<slug>[a-z0-9_-]+)",
+            r"(?:job-)?boards(?:\.[a-z]{2,4})?\.greenhouse\.io/"
+            r"(?:embed/job_board(?:/js)?\?for=)?(?P<slug>[a-z0-9_-]{1,63})",
             re.IGNORECASE,
         ),
     ),

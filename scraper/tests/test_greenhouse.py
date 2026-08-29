@@ -65,8 +65,19 @@ class TestGreenhouseParser(unittest.TestCase):
             GreenhouseScraper.extract_slug("https://boards.greenhouse.io/embed/job_board?for=acme"),
             "embed",
         )
+        self.assertEqual(
+            GreenhouseScraper.extract_slug("https://boards.eu.greenhouse.io/dicefm-careers"),
+            "dicefm-careers",
+        )
+        self.assertEqual(
+            GreenhouseScraper.extract_slug("https://job-boards.eu.greenhouse.io/acme"),
+            "acme",
+        )
         self.assertIsNone(
             GreenhouseScraper.extract_slug("https://example.com/careers")
+        )
+        self.assertIsNone(
+            GreenhouseScraper.extract_slug("https://notgreenhouse.io/acme")
         )
 
     def test_can_handle(self) -> None:

@@ -92,6 +92,14 @@ class TestATSDiscovery(unittest.TestCase):
         html = '<script src="https://boards.greenhouse.io/embed/job_board/js?for=dspconcepts"></script>'
         self.assertEqual(first_discovery(html), ("greenhouse", "dspconcepts"))
 
+    def test_greenhouse_eu_region_host(self) -> None:
+        html = '<script src="https://boards.eu.greenhouse.io/embed/job_board/js?for=nothing"></script>'
+        self.assertEqual(first_discovery(html), ("greenhouse", "nothing"))
+
+    def test_greenhouse_eu_region_direct_board(self) -> None:
+        html = '<a href="https://boards.eu.greenhouse.io/dicefm-careers">Jobs</a>'
+        self.assertEqual(first_discovery(html), ("greenhouse", "dicefm-careers"))
+
     def test_workday_slug_includes_tenant(self) -> None:
         html = '<a href="https://spectris.wd3.myworkdayjobs.com/HBK_Careers">Jobs</a>'
         self.assertEqual(first_discovery(html), ("workday", "spectris.wd3/HBK_Careers"))
