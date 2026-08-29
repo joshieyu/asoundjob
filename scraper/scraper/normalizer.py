@@ -710,6 +710,8 @@ CORPORATE_ROLE = re.compile(
     r"creative operations|"
     r"creative director|"
     r"conversion rate|"
+    r"credit collections?|trade compliance|customs broker|"
+    r"buyer|incoming inspection|incoming auditor|incentive plan|"
     r"office coordinator)\b",
     re.IGNORECASE,
 )
@@ -894,11 +896,8 @@ def score_relevance(
         return 0, False
 
     threshold = SCOPE_THRESHOLDS.get(audio_scope, 55)
-    if not title_strong and not title_weak:
-        if not job_categories:
-            return score, False
-        if audio_scope != "native":
-            threshold += 15
+    if not title_strong and not title_weak and audio_scope != "native":
+        threshold += 15
     return score, score >= threshold
 
 

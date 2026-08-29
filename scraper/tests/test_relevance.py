@@ -64,25 +64,34 @@ class TestScoreRelevance(unittest.TestCase):
         _, related = score_relevance("Studio Manager", None, [], "native")
         self.assertFalse(related)
 
-    def test_company_boilerplate_alone_does_not_admit(self) -> None:
+    def test_back_office_role_at_native_company_hidden(self) -> None:
         boilerplate = (
             "Shure is a leading audio company. Our microphones and wireless "
             "audio systems are used worldwide. We build audio products."
         )
-        _, related = score_relevance(
-            "Senior Credit Collections Specialist", boilerplate, [], "native"
-        )
-        self.assertFalse(related)
+        for title in (
+            "Senior Credit Collections Specialist",
+            "Associate Director, Trade Compliance",
+            "Buyer I, Tactical",
+            "Auditor, Incoming Inspection",
+            "Senior Incentive Plan Administrator",
+        ):
+            _, related = score_relevance(title, boilerplate, [], "native")
+            self.assertFalse(related, title)
 
-    def test_boilerplate_plus_category_still_admits(self) -> None:
+    def test_technical_role_admitted_on_company_context_alone(self) -> None:
         boilerplate = (
-            "Audix builds microphones. Our audio products are used on stage. "
-            "We design audio transducers."
+            "Shure is a leading audio company. Our microphones and wireless "
+            "audio systems are used worldwide. We build audio products."
         )
-        _, related = score_relevance(
-            "Electrical Engineer", boilerplate, ["audio_ee"], "native"
-        )
-        self.assertTrue(related)
+        for title in (
+            "Senior Systems Engineer",
+            "Sr. NPI Engineer",
+            "Engineer Sr, Metrology",
+            "Senior Process Engineer",
+        ):
+            _, related = score_relevance(title, boilerplate, [], "native")
+            self.assertTrue(related, title)
 
     def test_corporate_role_at_native_company_hidden(self) -> None:
         _, related = score_relevance("Human Resources", None, [], "native")
