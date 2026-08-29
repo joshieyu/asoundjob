@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 
-from sqlalchemy import update
+from sqlalchemy import select, update
 
 from scraper.config import Settings
 from scraper.database import get_session_factory
@@ -187,7 +187,33 @@ class ScrapePipeline:
         ats_type, ats_slug = findings[0]
         if overwrite and (ats_type, ats_slug) == (company.ats_type, company.ats_slug):
             return
+        if self._board_claimed_elsewhere(company.id, ats_type, ats_slug):
+            logger.info(
+                "skipping ATS %s slug=%s for company_id=%s: claimed by another company",
+                ats_type,
+                ats_slug,
+                company.id,
+            )
+            return
         self._persist_ats_discovery(company.id, ats_type, ats_slug, overwrite)
+
+    def _board_claimed_elsewhere(
+        self, company_id: int, ats_type: str, ats_slug: str
+    ) -> bool:
+        try:
+            factory = get_session_factory()
+            with factory() as session:
+                found = session.execute(
+                    select(Company.id)
+                    .where(Company.ats_type == ats_type)
+                    .where(Company.ats_slug == ats_slug)
+                    .where(Company.id != company_id)
+                    .limit(1)
+                ).first()
+            return found is not None
+        except Exception as exc:
+            logger.warning("failed to check ATS ownership: %s", exc)
+            return False
 
     async def close(self) -> None:
         if self.playwright is not None:

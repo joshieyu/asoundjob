@@ -220,15 +220,23 @@ def _dedupe_shared_urls(
     companies: list[Company],
 ) -> tuple[list[Company], list[Company]]:
     seen_urls: set[str] = set()
+    seen_boards: set[tuple[str, str]] = set()
     scrape_list: list[Company] = []
     skip_list: list[Company] = []
     for c in companies:
         url = (c.careers_url or "").strip().lower()
-        if url in seen_urls:
+        board = (
+            ((c.ats_type or "").strip().lower(), (c.ats_slug or "").strip().lower())
+            if c.ats_type
+            else None
+        )
+        if url in seen_urls or (board is not None and board in seen_boards):
             skip_list.append(c)
-        else:
-            seen_urls.add(url)
-            scrape_list.append(c)
+            continue
+        seen_urls.add(url)
+        if board is not None:
+            seen_boards.add(board)
+        scrape_list.append(c)
     return scrape_list, skip_list
 
 

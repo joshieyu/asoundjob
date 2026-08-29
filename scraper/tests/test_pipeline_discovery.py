@@ -67,6 +67,9 @@ class TestDiscoveryOnFailure(unittest.TestCase):
                     (company_id, ats_type, ats_slug)
                 )
             )
+            pipeline._board_claimed_elsewhere = (  # type: ignore[method-assign]
+                lambda company_id, ats_type, ats_slug: False
+            )
             failing = RecordingScraper(settings, html, fail=True)
             pipeline.http = failing  # type: ignore[assignment]
             pipeline._playwright_scraper = lambda: failing  # type: ignore[method-assign]
@@ -105,6 +108,9 @@ class TestStoredAtsSelfHealing(unittest.TestCase):
                     (ats_type, ats_slug, overwrite)
                 )
             )
+            pipeline._board_claimed_elsewhere = (  # type: ignore[method-assign]
+                lambda company_id, ats_type, ats_slug: False
+            )
             failing = RecordingScraper(settings, html, fail=True)
             for key in list(pipeline._ats_map):
                 pipeline._ats_map[key] = failing
@@ -135,6 +141,74 @@ class TestStoredAtsSelfHealing(unittest.TestCase):
         persisted = self._run(WORKDAY_PAGE, "", "")
         self.assertTrue(persisted)
         self.assertTrue(all(entry[2] is False for entry in persisted))
+
+
+class TestBoardOwnership(unittest.TestCase):
+    def test_board_claimed_by_another_company_is_not_persisted(self) -> None:
+        persisted: list = []
+
+        async def go():
+            settings = load_settings()
+            pipeline = ScrapePipeline(settings)
+            pipeline._persist_ats_discovery = (  # type: ignore[method-assign]
+                lambda *args, **kwargs: persisted.append(args)
+            )
+            pipeline._board_claimed_elsewhere = (  # type: ignore[method-assign]
+                lambda company_id, ats_type, ats_slug: True
+            )
+            failing = RecordingScraper(settings, GREENHOUSE_PAGE, fail=True)
+            pipeline.http = failing  # type: ignore[assignment]
+            pipeline._playwright_scraper = lambda: failing  # type: ignore[method-assign]
+            pipeline._stealth_scraper = lambda: failing  # type: ignore[method-assign]
+            return await pipeline.scrape_company(make_company())
+
+        asyncio.run(go())
+        self.assertEqual(persisted, [])
+
+
+class TestSharedBoardDedupe(unittest.TestCase):
+    def _companies(self):
+        from scraper.models import Company
+
+        return [
+            Company(
+                id=78, name="Apple", slug="apple", category="Consumer Electronics & Tech",
+                careers_url="https://jobs.apple.com/en-us/search",
+                ats_type="apple", ats_slug="",
+            ),
+            Company(
+                id=166, name="Beats by Dre", slug="beats",
+                category="Headphones & Personal Audio",
+                careers_url="https://www.apple.com/careers/",
+                ats_type="apple", ats_slug="",
+            ),
+            Company(
+                id=900, name="Sonos", slug="sonos", category="Hi-Fi & Consumer Speakers",
+                careers_url="https://sonos.wd1.myworkdayjobs.com/Sonos",
+                ats_type="workday", ats_slug="sonos.wd1/Sonos",
+            ),
+        ]
+
+    def test_same_board_different_urls_is_deduped(self) -> None:
+        from scraper.main import _dedupe_shared_urls
+
+        keep, skip = _dedupe_shared_urls(self._companies())
+        self.assertEqual([c.name for c in keep], ["Apple", "Sonos"])
+        self.assertEqual([c.name for c in skip], ["Beats by Dre"])
+
+    def test_companies_without_ats_are_untouched(self) -> None:
+        from scraper.main import _dedupe_shared_urls
+        from scraper.models import Company
+
+        rows = [
+            Company(id=1, name="A", slug="a", category="x",
+                    careers_url="https://a.example/careers"),
+            Company(id=2, name="B", slug="b", category="x",
+                    careers_url="https://b.example/careers"),
+        ]
+        keep, skip = _dedupe_shared_urls(rows)
+        self.assertEqual(len(keep), 2)
+        self.assertEqual(skip, [])
 
 
 if __name__ == "__main__":
