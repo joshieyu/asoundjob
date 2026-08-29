@@ -234,3 +234,147 @@ generic scraper still only gets titles + URLs for many companies.
 | `web/src/routes/+page.svelte` | Homepage with specialty links |
 | `web/src/lib/components/Header.svelte` | Logo/branding |
 | `web/src/lib/components/JobStrip.svelte` | Job card with category badges |
+
+---
+
+# Session update (2026-08-29) — categorization rewrite
+
+PR: https://github.com/joshieyu/asoundjob/pull/1 (branch `improve-categorization-and-parsing`, 5 commits, open)
+
+## Current metrics (after full scrape of all 739 companies + backfill)
+
+| Metric | Value |
+|---|---|
+| Total job rows | 6,230 |
+| Active | 3,645 |
+| Audio-related (the public board) | 259 |
+| Uncategorized audio jobs | 61 (24%) |
+| Companies contributing active jobs | 361 |
+| Companies appearing on the board | 42 |
+| Tests | 207 pass; ruff, mypy, `npm run check` clean |
+
+Categories now 20 (added `audiology_hearing`, `audio_product_mechanical`,
+`acoustics_consulting`). At 0: `music_technology`, `automotive_audio`,
+`game_audio_interactive`, `psychoacoustics_perception`.
+
+## What the board size is actually limited by
+
+Not scoring strictness. **63% of excluded jobs (2,146) have no description at
+all.** The 10 ATS parsers return full descriptions; the generic HTTP/Playwright
+path returns titles and URLs only. With no description the only signal is the
+title, so a job is excluded unless its title literally contains an audio word.
+This is why only 42 of 361 contributing companies reach the board — in practice
+the board is the ATS-covered companies plus anyone whose titles say "audio".
+
+Last scrape: 696 companies, 427 ok, 269 failed with "page loaded but no job
+links found". Sampling 35 of those failures and comparing the old vs new
+extractor showed only one recovered, so those pages genuinely yield nothing to
+HTML anchor scraping.
+
+## DO NOT REPEAT: the reverted company-nativeness experiment
+
+To recover technical roles at audio companies with generic titles ("Firmware
+Engineer" @ Blue Microphones, "Embedded Software Engineer II" @ Audix), a
+`NATIVE_TECHNICAL_BONUS` was added to `score_relevance` — a flat score bonus for
+native-scope companies whose title matched a TECHNICAL_ROLE pattern. **It was
+tried, measured, and reverted.** Two variants, both bad:
+
+1. Broad TECHNICAL_ROLE regex (included data/analyst/design/ai/ml): 646
+   audio-related, **463 uncategorized**.
+2. Narrowed regex + requiring 2+ audio mentions in the full (unstripped)
+   description: 401 audio-related, **218 uncategorized**, and it readmitted
+   Take-Two's Spark data engineer while still missing Blue Microphones.
+
+Root cause: a blanket per-company bonus cannot distinguish "audio company doing
+audio work" from "audio company doing generic engineering", because ~739
+companies are native scope including Sky Studios and RingCentral. Do not retry
+this shape. The correct fix is company-category threading (below).
+
+## Next steps, in order
+
+### 1. Company-category threading (do first)
+
+Thread `company.category` into `classify_categories` so a firmware role at a
+microphone company can land in `microphones_recording` from company context
+rather than needing the word "audio" in its own text. Use it as a **fallback
+only** — when keyword matching yields no category and the title is technical —
+so it cannot reopen the boilerplate false positives.
+
+Blast radius is 5 call sites:
+- `scraper/scraper/normalizer.py:1218` (`Normalizer.normalize`)
+- `scraper/scraper/backfill_relevance.py:34`
+- `scraper/scraper/main.py:85`
+- `api/api/routers/admin.py:217` and `:279`
+
+The seed categories map cleanly, and notably onto the categories now at 0:
+
+    Hearing Aid & Hearing Tech (54)        -> audiology_hearing
+    Acoustic Consulting & Engineering (66) -> acoustics_consulting
+    Audio Plugins & Virtual Instruments (91) -> audio_software / music_technology
+    Hi-Fi & Consumer Speakers (134)        -> transducers
+    Gaming, VR & Immersive Audio (73)      -> game_audio_interactive
+    Car Audio (46) + Automotive OEMs (75)  -> automotive_audio
+    Professional Audio & Live Sound (152)  -> live_sound_events
+
+### 2. Diagnose the 269 hard failures (cheap, do before #3)
+
+Read-only script: fetch each failing company's careers page and classify why it
+yields nothing — JS-rendered, undetected ATS embed, genuinely no openings, or
+blocked. No production code changes. If many have detectable ATS embeds,
+extending `ats_discovery.py` is far cheaper than #3 and yields full descriptions
+for free. This diagnostic should determine #3's design.
+
+### 3. Detail-page fetching for the generic path (hardest)
+
+Generalize what `ats/apple.py` does: fetch each job's detail page for a real
+description. Harder than Apple because it means extracting descriptions from
+arbitrary HTML across ~139 sites, plus ~2,100 extra outbound requests. Reuse the
+Apple deadline-budget pattern (`ENRICHMENT_BUDGET_FRACTION`) so it can never
+cause a total scrape failure — see the regression note below.
+
+### Smaller known issues
+
+- Native Instruments' 5 "jobs" are language-switcher links (Deutsch, Espanol,
+  Francais, ...) — single short words that slip past the furniture rules.
+- Korg's entire board is Japanese (電子設計, 機構設計, 生産技術). All keyword lists
+  are English-only, so these can never match. Same for other non-English boards.
+- `music_technology` is 0 because no job in the corpus has music-tech vocabulary
+  in its title; the one that does is "High-End Guitar Sales Expert" at a
+  retailer. Widening keywords will not help — the text isn't there.
+
+## Regression to remember
+
+Apple's detail fetch nearly shipped a total-failure bug: ~226 detail requests at
+~2.8s each vs a 90s `per_company_timeout` would have cancelled the whole scrape
+and dropped Apple to zero jobs. Any per-job enrichment MUST be time-bounded.
+
+The full scrape also caught three live-only bugs in `link_extraction.py` that
+fixtures missed (query-string job ids, non-English abbreviations, template
+placeholders). **Run a full scrape before merging changes to that file.**
+
+## How to measure changes
+
+Run the new logic over the live DB rather than trusting unit tests alone:
+
+```python
+import sqlite3, sys, collections
+sys.path.insert(0, 'scraper')
+from scraper.normalizer import classify_categories, score_relevance
+db = sqlite3.connect('asoundjob.db')
+rows = db.execute("""select j.title, j.description, c.name, c.audio_scope
+                     from jobs j left join companies c on c.id=j.company_id
+                     where j.is_active=1""").fetchall()
+```
+
+Regression set that must keep passing:
+
+- MUST be categorized: `Audio Software Engineer` @ Valve -> audio_software;
+  `Core Audio Software Engineer` @ Apple -> audio_software;
+  `Audio Machine Learning Engineer` @ Apple -> audio_aiml;
+  `DSP Developer` @ Softube -> audio_dsp_embedded
+- MUST NOT be audio-related: DLR Group "Studio Leader" jobs; Sky Studios
+  "CDN Engineer"; RingCentral "Senior Finance Analyst"
+- MUST NOT carry the listed category: Deepgram "Sales Development
+  Representative" (not audio_aiml); Suno "Songwriting Camp Manager" (not
+  audio_dsp_embedded); Akai "Copywriter" (not music_technology); Razer
+  "Computer Vision Intern" (not audio_aiml)
