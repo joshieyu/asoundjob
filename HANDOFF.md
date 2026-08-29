@@ -258,12 +258,12 @@ PR: https://github.com/joshieyu/asoundjob/pull/1 (branch `improve-categorization
 |---|---|
 | Total job rows | 7,198 |
 | Active | 4,085 |
-| Audio-related (the public board) | 385 |
-| Board jobs carrying a real description | 328 (85%) |
-| Uncategorized audio jobs | 99 (26%) — see the trade below |
-| Companies appearing on the board | 61 |
+| Audio-related (the public board) | 387 |
+| Board jobs carrying a real description | 330 (85%) |
+| Uncategorized audio jobs | 100 (26%) — see the trade below |
+| Companies appearing on the board | 62 |
 | Companies contributing active jobs | 373 |
-| Tests | 365 pass; ruff, mypy clean |
+| Tests | 367 pass; ruff, mypy clean |
 
 The board reads 385 against an earlier 340, and the 340 counted duplicates that
 are now collapsed, so the like-for-like gain is larger than it looks.
@@ -824,13 +824,32 @@ owner among `transducers`, `audio_systems`, `audio_research` and
    actually failed every attempt, it was not skipped. Do not read that column as
    omission.
 
-2. **`json_endpoint` is the largest untried technical bucket** (41 of 279 in the
-   diagnostic, ~15%). These are pages where a job-shaped XHR was actually
-   observed, so the endpoint is already identified per company. That is a much
-   better-evidenced starting point than the remaining ATS platforms, which are
-   now down to 1-2 companies each (jobvite 2, oraclecloud 2, then ukg, paylocity,
-   breezy, teamtailor, jazzhr at 1 apiece). Note `breezy` has 3 companies with a
-   stored `ats_type` but **no parser exists**, so they fall through to HTTP.
+2. **`json_endpoint` is mostly a false-positive bucket — do not build a parser
+   for it.** An earlier version of this document called it the largest untried
+   technical lever at 42 companies. That was wrong, and reading the endpoints
+   settles it. They are WooCommerce cart fragments (`?wc-ajax=get_refreshed_
+   fragments` at Celestion, Make Noise, Tempo Semiconductor), a localisation CDN
+   (Antares), an ad network (Last.fm/revcontent), product pages (iFi's
+   `zen-dac-3.json`, Cycling '74's `products/max.json`), Wix tag manager (Geneva
+   Lab, VPI), VK's help hints, Fox's DRM keygen, generic `wp-json` and
+   `admin-ajax.php`. Roughly six look like real career APIs: Anghami (ZenATS),
+   Neural DSP (Revolut People), Oppo, Smilegate, Firaxis (Nuxt `_payload.json`)
+   and DALI (Gatsby `page-data.json`) — each a different vendor, so there is no
+   shared parser to write.
+
+   `is_job_endpoint` is firing on any JSON request from a page with careers
+   vocabulary. This is the same failure the "cloudflare"/"captcha" markers had:
+   **a request is not evidence of its content.** Tightening it is worthwhile so
+   the bucket stops overstating itself, but the opportunity behind it is not
+   there. The remaining ATS platforms are down to 1-2 companies each (jobvite 2,
+   oraclecloud 2, then ukg, paylocity, breezy, teamtailor, jazzhr at 1 apiece).
+   Note `breezy` has 3 companies with a stored `ats_type` but **no parser
+   exists**, so they fall through to HTTP.
+
+   The audit was not wasted: two of the 42 were classified there because the page
+   fetched a *localisation file from greenhouse's CDN*, which exposed that
+   Greenhouse's EU region hosts were undetectable (commit 88b498d). Worth
+   re-reading the bucket for that kind of side evidence rather than for endpoints.
 
 3. **Seed URL quality remains the cheapest lever** — see 3b and 3e. Keysight is a
    worked example: the board had moved and no scraper change could have fixed it.
