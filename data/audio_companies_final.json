@@ -97,9 +97,9 @@
   },
   {
     "name": "Acer",
-    "careers_url": "https://careers.acer.com/",
+    "careers_url": "https://careers.acer.com/go/All-Jobs/7865610/",
     "category": "Consumer Electronics & Tech",
-    "verified": false,
+    "verified": true,
     "source": "auto",
     "scrape_method": "http"
   },
@@ -1073,9 +1073,9 @@
   },
   {
     "name": "Audison",
-    "careers_url": "https://www.audison.eu/en/careers",
+    "careers_url": "https://elettromedia.com/careers",
     "category": "Car Audio",
-    "verified": false,
+    "verified": true,
     "source": "auto",
     "scrape_method": "http"
   },
@@ -1705,7 +1705,7 @@
   },
   {
     "name": "Brain.fm",
-    "careers_url": "https://www.brain.fm/jobs",
+    "careers_url": "https://brain.recruitee.com",
     "category": "Streaming & Music Services",
     "verified": true,
     "source": "auto",
@@ -1841,9 +1841,9 @@
   },
   {
     "name": "BYD",
-    "careers_url": "https://www.bydauto.com/en/careers",
+    "careers_url": "https://boards.greenhouse.io/byd",
     "category": "Automotive OEMs",
-    "verified": false,
+    "verified": true,
     "source": "auto",
     "scrape_method": "http"
   },
@@ -2417,11 +2417,11 @@
   },
   {
     "name": "Creative Assembly",
-    "careers_url": "https://careers.sega.co.uk/",
+    "careers_url": "https://careers.sega.co.uk/vacancies",
     "category": "Gaming, VR & Immersive Audio",
     "verified": true,
     "source": "auto",
-    "scrape_method": "playwright"
+    "scrape_method": "http"
   },
   {
     "name": "Creative Technology",
@@ -3993,7 +3993,7 @@
   },
   {
     "name": "Genius",
-    "careers_url": "https://genius.com/Careers",
+    "careers_url": "https://job-boards.greenhouse.io/geniusjobs",
     "category": "Streaming & Music Services",
     "verified": true,
     "source": "auto",
@@ -4769,9 +4769,9 @@
   },
   {
     "name": "Integra",
-    "careers_url": "https://www.integrahometheater.com/us/careers",
+    "careers_url": "https://boards.greenhouse.io/integra",
     "category": "Hi-Fi & Consumer Speakers",
-    "verified": false,
+    "verified": true,
     "source": "auto",
     "scrape_method": "http"
   },
@@ -8465,11 +8465,11 @@
   },
   {
     "name": "Sega",
-    "careers_url": "https://careers.sega.co.uk/",
+    "careers_url": "https://careers.sega.co.uk/vacancies",
     "category": "Gaming, VR & Immersive Audio",
     "verified": true,
     "source": "auto",
-    "scrape_method": "playwright"
+    "scrape_method": "http"
   },
   {
     "name": "Sennheiser",
@@ -9217,11 +9217,11 @@
   },
   {
     "name": "Sports Interactive",
-    "careers_url": "https://careers.sega.co.uk/",
+    "careers_url": "https://careers.sega.co.uk/vacancies",
     "category": "Gaming, VR & Immersive Audio",
     "verified": true,
     "source": "auto",
-    "scrape_method": "playwright"
+    "scrape_method": "http"
   },
   {
     "name": "Spotify",
@@ -10593,9 +10593,9 @@
   },
   {
     "name": "Vonage",
-    "careers_url": "https://www.vonage.com/careers",
+    "careers_url": "https://boards.greenhouse.io/vonage",
     "category": "Voice & Speech Technology",
-    "verified": false,
+    "verified": true,
     "source": "auto",
     "scrape_method": "http"
   },
@@ -11057,7 +11057,7 @@
   },
   {
     "name": "Zoom",
-    "careers_url": "https://careers.zoom.us/home",
+    "careers_url": "https://careers.zoom.us/jobs/search",
     "category": "Voice & Speech Technology",
     "verified": true,
     "source": "auto",
