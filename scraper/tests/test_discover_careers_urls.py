@@ -358,5 +358,20 @@ class TestNoiseLinksRejected(unittest.TestCase):
         self.assertEqual(links, ["https://elettromedia.com/careers"])
 
 
+class TestSlugsIgnoreThirdPartyHosts(unittest.TestCase):
+    def test_linkedin_careers_url_does_not_yield_linkedin_slug(self) -> None:
+        slugs = slug_candidates(
+            "Powersoft", "https://www.linkedin.com/company/powersoft/jobs/", None
+        )
+        self.assertNotIn("linkedin", slugs)
+        self.assertIn("powersoft", slugs)
+
+    def test_ordinary_host_still_yields_its_label(self) -> None:
+        slugs = slug_candidates(
+            "Westone Audio", "https://www.westoneaudio.com/careers", None
+        )
+        self.assertIn("westoneaudio", slugs)
+
+
 if __name__ == "__main__":
     unittest.main()

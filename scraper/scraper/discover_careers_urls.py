@@ -236,6 +236,9 @@ def slug_candidates(name: str, careers_url: str, website_url: Optional[str]) -> 
     for url in (website_url, careers_url):
         if not url:
             continue
+        host = urlparse(url).netloc.lower()
+        if any(noise in host for noise in NOISE_LINK_HOSTS):
+            continue
         label = _registrable_label(url)
         if label:
             candidates.append(label)
