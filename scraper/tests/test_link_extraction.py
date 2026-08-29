@@ -400,5 +400,147 @@ class TestTemplatePlaceholders(unittest.TestCase):
         self.assertEqual(clean_job_title("Audio Engineer {{location}}"), "Audio Engineer")
 
 
+class TestStructuralTitleFallback(unittest.TestCase):
+    def test_heading_inside_anchor_used_when_flat_text_too_long(self) -> None:
+        flat_text = (
+            "Audio Systems Engineer Location Menlo Park California Corporate "
+            "Headquarters Building Twenty Two"
+        )
+        self.assertGreater(len(flat_text), MAX_TITLE_LEN)
+        self.assertLessEqual(len(flat_text.split()), 12)
+        html = """
+        <html><body>
+        <a href="/jobs/98765-audio-systems-engineer">
+          <h3>Audio Systems Engineer</h3>
+          <span>Location Menlo Park California Corporate Headquarters Building
+          Twenty Two</span>
+        </a>
+        </body></html>
+        """
+        jobs = extract_job_links(html, "https://example.com/jobs")
+        self.assertEqual(len(jobs), 1)
+        self.assertEqual(jobs[0].title, "Audio Systems Engineer")
+
+    def test_heading_inside_anchor_used_when_flat_text_has_too_many_words(self) -> None:
+        flat_text = (
+            "Audio Systems Engineer Team Berlin Remote Full Time Senior Level "
+            "Great Culture Fun"
+        )
+        self.assertLessEqual(len(flat_text), MAX_TITLE_LEN)
+        self.assertGreater(len(flat_text.split()), 12)
+        html = """
+        <html><body>
+        <a href="/jobs/22222-audio-systems-engineer">
+          <h3>Audio Systems Engineer</h3>
+          <span>Team Berlin Remote Full Time Senior Level Great Culture Fun</span>
+        </a>
+        </body></html>
+        """
+        jobs = extract_job_links(html, "https://example.com/jobs")
+        self.assertEqual(len(jobs), 1)
+        self.assertEqual(jobs[0].title, "Audio Systems Engineer")
+
+    def test_card_heading_used_when_anchor_text_is_cta(self) -> None:
+        html = """
+        <html><body>
+        <div class="card">
+          <div class="card-body">
+            <h5>Audio Systems Engineer</h5>
+            <h6>Based in San Jose, CA</h6>
+          </div>
+          <div class="card-footer">
+            <a class="btn" href="/audio_systems_engineer">Learn More</a>
+          </div>
+        </div>
+        </body></html>
+        """
+        jobs = extract_job_links(html, "https://example.com/careers")
+        self.assertEqual(len(jobs), 1)
+        self.assertEqual(jobs[0].title, "Audio Systems Engineer")
+        self.assertEqual(jobs[0].url, "https://example.com/audio_systems_engineer")
+
+    def test_card_heading_not_applied_with_multiple_job_anchors(self) -> None:
+        html = """
+        <html><body>
+        <div class="card">
+          <div class="card-body">
+            <h5>Audio Systems Engineer</h5>
+          </div>
+          <div class="card-footer">
+            <a class="btn" href="/audio_systems_engineer">Learn More</a>
+            <a class="btn" href="/audio_systems_engineer/apply">Apply Now</a>
+          </div>
+        </div>
+        </body></html>
+        """
+        jobs = extract_job_links(html, "https://example.com/careers")
+        self.assertEqual(len(jobs), 0)
+
+    def test_structural_title_still_rejected_when_furniture(self) -> None:
+        html = """
+        <html><body>
+        <div class="card">
+          <div class="card-body">
+            <h5>Benefits</h5>
+          </div>
+          <div class="card-footer">
+            <a class="btn" href="/benefits-overview">Learn More</a>
+          </div>
+        </div>
+        </body></html>
+        """
+        jobs = extract_job_links(html, "https://example.com/careers")
+        self.assertEqual(len(jobs), 0)
+
+    def test_structural_fallback_does_not_fire_without_job_hint_page(self) -> None:
+        html = """
+        <html><body>
+        <div class="card">
+          <div class="card-body">
+            <h5>Audio Systems Engineer</h5>
+            <h6>Based in San Jose, CA</h6>
+          </div>
+          <div class="card-footer">
+            <a class="btn" href="/audio_systems_engineer">Learn More</a>
+          </div>
+        </div>
+        </body></html>
+        """
+        jobs = extract_job_links(html, "https://example.com/company")
+        self.assertEqual(len(jobs), 0)
+
+    def test_flat_text_already_good_title_is_unchanged(self) -> None:
+        html = """
+        <html><body>
+        <a href="/careers/senior-audio-engineer-9911">Senior Audio Engineer</a>
+        </body></html>
+        """
+        jobs = extract_job_links(html, "https://example.com/careers")
+        self.assertEqual(len(jobs), 1)
+        self.assertEqual(jobs[0].title, "Senior Audio Engineer")
+
+
+class TestCookieBannerRejected(unittest.TestCase):
+    def test_cookie_notice_is_not_a_job_title(self) -> None:
+        html = """
+        <div class="cookie-bar">
+          <h4>This website uses cookies to ensure you get the best experience.</h4>
+          <a href="/careers/privacy-and-cookies">Learn More</a>
+        </div>
+        """
+        jobs = extract_jobs(html, "https://example.com/careers")
+        self.assertEqual(jobs, [])
+
+    def test_cookie_preferences_link_is_not_a_job_title(self) -> None:
+        html = """
+        <div class="cookie-bar">
+          <h4>Select which cookies you accept</h4>
+          <a href="/careers/cookie-preferences">Learn More</a>
+        </div>
+        """
+        jobs = extract_jobs(html, "https://example.com/careers")
+        self.assertEqual(jobs, [])
+
+
 if __name__ == "__main__":
     unittest.main()

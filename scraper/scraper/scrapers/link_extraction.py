@@ -6,7 +6,7 @@ from datetime import date
 from typing import Optional
 from urllib.parse import urljoin, urlparse
 
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 
 from scraper.scrapers.base import RawJob
 
@@ -80,7 +80,10 @@ FURNITURE_PHRASES = (
     "see all job",
     "browse all job",
     "search all job",
+    "cookie settings",
 )
+
+COOKIE_NOTICE_RE = re.compile(r"\bcookies?\b", re.IGNORECASE)
 
 JOBS_COUNT_RE = re.compile(r"\b\d{1,3}\s+jobs?\b", re.IGNORECASE)
 SENTENCE_BREAK_WORD_RE = re.compile(r"([A-Za-z]+)\.\s+(\S)")
@@ -411,6 +414,8 @@ def is_furniture_title(title: str) -> bool:
         return True
     if any(phrase in lowered for phrase in FURNITURE_PHRASES):
         return True
+    if COOKIE_NOTICE_RE.search(lowered):
+        return True
     return False
 
 
@@ -419,6 +424,46 @@ JOB_ID_QUERY_RE = re.compile(
     r"[^&]*\d",
     re.IGNORECASE,
 )
+
+
+HEADING_TAGS = ("h1", "h2", "h3", "h4", "h5", "h6")
+
+MAX_ANCESTOR_WALK = 3
+
+
+def _heading_text(node: Tag) -> Optional[str]:
+    heading = node.find(HEADING_TAGS)
+    if heading is None:
+        return None
+    text = _clean_text(heading.get_text(" ", strip=True))
+    return text or None
+
+
+def _has_single_job_anchor(node: Tag, anchor: Tag) -> bool:
+    candidates = [
+        candidate
+        for candidate in node.find_all("a", href=True)
+        if _clean_text(candidate.get("href"))
+        and not _clean_text(candidate.get("href")).startswith("#")
+    ]
+    return len(candidates) == 1 and candidates[0] is anchor
+
+
+def _structural_title(anchor: Tag) -> Optional[str]:
+    inside = _heading_text(anchor)
+    if inside:
+        return inside
+
+    node: Tag = anchor
+    for _ in range(MAX_ANCESTOR_WALK):
+        parent = node.parent
+        if not isinstance(parent, Tag) or parent.name in ("body", "html"):
+            break
+        node = parent
+        heading = _heading_text(node)
+        if heading and _has_single_job_anchor(node, anchor):
+            return heading
+    return None
 
 
 def _looks_like_job_detail_path(path: str, query: str = "") -> bool:
@@ -436,7 +481,10 @@ def _looks_like_job_detail_path(path: str, query: str = "") -> bool:
 def extract_job_links(html: str, base_url: str) -> list[RawJob]:
     soup = BeautifulSoup(html, "html.parser")
     best_by_url: dict[str, tuple[str, str, Optional[str]]] = {}
-    base_path = urlparse(base_url).path.rstrip("/").lower()
+    base_parsed = urlparse(base_url)
+    base_path = base_parsed.path.rstrip("/").lower()
+    base_netloc = base_parsed.netloc.lower()
+    base_has_job_hint = bool(JOB_HINT.search(base_path))
 
     for anchor in soup.find_all("a", href=True):
         href = _clean_text(anchor.get("href"))
@@ -453,9 +501,24 @@ def extract_job_links(html: str, base_url: str) -> list[RawJob]:
         text = _clean_text(anchor.get_text(" ", strip=True))
         title_attr = _clean_text(anchor.get("title"))
         raw_candidate = text or title_attr
-        if not raw_candidate:
-            continue
-        candidate_title, job_type = _clean_job_title_and_type(raw_candidate)
+        if raw_candidate:
+            candidate_title, job_type = _clean_job_title_and_type(raw_candidate)
+        else:
+            candidate_title, job_type = "", None
+
+        came_from_structure = False
+        flat_unusable = (
+            not candidate_title
+            or candidate_title.lower() in NON_JOB_TEXT
+            or len(candidate_title) > MAX_TITLE_LEN
+            or is_furniture_title(candidate_title)
+        )
+        if flat_unusable:
+            structural_raw = _structural_title(anchor)
+            if structural_raw:
+                candidate_title, job_type = _clean_job_title_and_type(structural_raw)
+                came_from_structure = True
+
         if len(candidate_title) < MIN_TITLE_LEN or len(candidate_title) > MAX_TITLE_LEN:
             continue
         if candidate_title.lower() in NON_JOB_TEXT:
@@ -463,10 +526,14 @@ def extract_job_links(html: str, base_url: str) -> list[RawJob]:
         if is_furniture_title(candidate_title):
             continue
 
+        same_host = bool(base_netloc) and parsed.netloc.lower() == base_netloc
+        structural_job_hint = came_from_structure and base_has_job_hint and same_host
+
         looks_like_job = bool(
             (JOB_HINT.search(path) and _looks_like_job_detail_path(path, parsed.query))
             or (text and JOB_HINT.search(text))
             or (title_attr and JOB_HINT.search(title_attr))
+            or structural_job_hint
         )
         if not looks_like_job:
             continue
