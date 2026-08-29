@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import re
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Optional
 
 from scraper.scrapers.base import BaseScraper, RawJob
 from scraper.scrapers.fetch import fetch_json, parse_date
@@ -41,6 +41,22 @@ class LeverScraper(BaseScraper):
         return parse_postings(data)
 
 
+def _full_description(item: dict) -> Optional[str]:
+    parts = [item.get("description") or item.get("descriptionPlain") or ""]
+    for section in item.get("lists") or []:
+        if not isinstance(section, dict):
+            continue
+        heading = (section.get("text") or "").strip()
+        content = (section.get("content") or "").strip()
+        if heading:
+            parts.append(f"<h3>{heading}</h3>")
+        if content:
+            parts.append(content)
+    parts.append(item.get("additional") or "")
+    joined = "\n".join(p for p in parts if p)
+    return joined or None
+
+
 def parse_postings(data: Any) -> list[RawJob]:
     if not isinstance(data, list):
         raise ValueError("Unexpected lever payload: expected a list")
@@ -59,7 +75,7 @@ def parse_postings(data: Any) -> list[RawJob]:
                 url=url,
                 external_id=str(item["id"]) if item.get("id") is not None else None,
                 location=categories.get("location"),
-                description=item.get("descriptionPlain"),
+                description=_full_description(item),
                 job_type=job_type,
                 posted_date=parse_date(item.get("createdAt")),
             )

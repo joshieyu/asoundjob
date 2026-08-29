@@ -36,6 +36,42 @@ class TestLeverParser(unittest.TestCase):
         self.assertEqual(job.description, "Work on audio engines.")
         self.assertEqual(job.posted_date, date(2025, 8, 1))
 
+    def test_lists_sections_are_kept(self) -> None:
+        payload = [
+            {
+                "id": "x1",
+                "text": "Principal Engineer",
+                "hostedUrl": "https://jobs.lever.co/testco/x1",
+                "description": "<p>We lead the world in AV networking.</p>",
+                "descriptionPlain": "We lead the world in AV networking.",
+                "lists": [
+                    {
+                        "text": "What you'll be working on",
+                        "content": "<li>Low latency audio transport</li>",
+                    },
+                    {"text": "What we're looking for", "content": "<li>C++ and DSP</li>"},
+                ],
+                "additional": "<p>Equal opportunity employer.</p>",
+            }
+        ]
+        description = parse_postings(payload)[0].description or ""
+        self.assertIn("AV networking", description)
+        self.assertIn("What you&#39;ll be working on".replace("&#39;", "'"), description)
+        self.assertIn("Low latency audio transport", description)
+        self.assertIn("C++ and DSP", description)
+        self.assertIn("Equal opportunity employer", description)
+
+    def test_description_falls_back_to_plain(self) -> None:
+        payload = [
+            {
+                "id": "x2",
+                "text": "Audio Engineer",
+                "hostedUrl": "https://jobs.lever.co/testco/x2",
+                "descriptionPlain": "Only plain text here.",
+            }
+        ]
+        self.assertEqual(parse_postings(payload)[0].description, "Only plain text here.")
+
     def test_parse_postings_rejects_non_list(self) -> None:
         with self.assertRaises(ValueError):
             parse_postings({"error": "not found"})
