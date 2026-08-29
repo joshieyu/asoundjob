@@ -65,7 +65,7 @@ class TestATSDiscovery(unittest.TestCase):
 
     def test_workday_link(self) -> None:
         results = discover(WORKDAY_LINK)
-        self.assertEqual(results[0], ("workday", "Acme_Careers"))
+        self.assertEqual(results[0], ("workday", "acme/Acme_Careers"))
 
     def test_multiple_ats(self) -> None:
         results = discover(MULTIPLE_ATS)
@@ -87,6 +87,30 @@ class TestATSDiscovery(unittest.TestCase):
 
     def test_first_discovery_none(self) -> None:
         self.assertIsNone(first_discovery(NO_ATS))
+
+    def test_greenhouse_js_embed_variant(self) -> None:
+        html = '<script src="https://boards.greenhouse.io/embed/job_board/js?for=dspconcepts"></script>'
+        self.assertEqual(first_discovery(html), ("greenhouse", "dspconcepts"))
+
+    def test_workday_slug_includes_tenant(self) -> None:
+        html = '<a href="https://spectris.wd3.myworkdayjobs.com/HBK_Careers">Jobs</a>'
+        self.assertEqual(first_discovery(html), ("workday", "spectris/HBK_Careers"))
+
+    def test_workday_slug_skips_locale_segment(self) -> None:
+        html = '<a href="https://fullsail.wd1.myworkdayjobs.com/en-US/External/">Jobs</a>'
+        self.assertEqual(first_discovery(html), ("workday", "fullsail/External"))
+
+    def test_workday_slug_matches_parser_expectation(self) -> None:
+        from scraper.scrapers.ats.workday import WorkdayScraper
+
+        url = "https://deseretmanagement.wd1.myworkdayjobs.com/BonSaltLake"
+        discovered = first_discovery(f'<a href="{url}">Jobs</a>')
+        assert discovered is not None
+        self.assertEqual(discovered[1], WorkdayScraper.extract_slug(url))
+
+    def test_recruitee_analytics_host_is_not_a_board(self) -> None:
+        html = '{"analyticsBaseUrl":"https://careers-analytics.recruitee.com"}'
+        self.assertIsNone(first_discovery(html))
 
     def test_long_word_run_is_not_quadratic(self) -> None:
         page = '<img src="data:image/png;base64,' + "iVBORw0KGgoAAAANSUhEUgAA" * 2000 + '">'

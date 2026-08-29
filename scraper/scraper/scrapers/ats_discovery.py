@@ -11,7 +11,7 @@ PATTERNS: list[tuple[str, re.Pattern[str]]] = [
         "greenhouse",
         re.compile(
             r"(?:job-)?boards\.greenhouse\.io/"
-            r"(?:embed/job_board\?for=)?(?P<slug>[a-z0-9_-]+)",
+            r"(?:embed/job_board(?:/js)?\?for=)?(?P<slug>[a-z0-9_-]+)",
             re.IGNORECASE,
         ),
     ),
@@ -49,7 +49,8 @@ PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     (
         "workday",
         re.compile(
-            r"(?:wd\d+\.)?myworkdayjobs\.com/(?P<slug>[a-z0-9_]+)",
+            r"(?P<tenant>[a-z0-9]{1,63})\.wd\d+\.myworkdayjobs\.com"
+            r"(?:/[a-z]{2}-[a-z]{2})?/(?P<site>[a-z0-9_-]{1,80})",
             re.IGNORECASE,
         ),
     ),
@@ -82,6 +83,20 @@ PATTERNS: list[tuple[str, re.Pattern[str]]] = [
 
 SLUGLESS_ATS = {"apple"}
 
+NON_BOARD_SUBDOMAINS = frozenset(
+    {
+        "careers-analytics",
+        "analytics",
+        "assets",
+        "api",
+        "cdn",
+        "static",
+        "support",
+        "help",
+        "www",
+    }
+)
+
 
 def discover(html: str, base_url: str = "") -> list[tuple[str, str]]:
     results: list[tuple[str, str]] = []
@@ -89,10 +104,15 @@ def discover(html: str, base_url: str = "") -> list[tuple[str, str]]:
 
     for ats_type, pattern in PATTERNS:
         for m in pattern.finditer(html):
+            groups = m.groupdict()
             if ats_type in SLUGLESS_ATS:
                 slug = ""
+            elif groups.get("tenant") and groups.get("site"):
+                slug = f"{groups['tenant']}/{groups['site'].rstrip('/')}"
             else:
-                slug = (m.groupdict().get("slug") or "").strip("/")
+                slug = (groups.get("slug") or "").strip("/")
+                if slug.lower() in NON_BOARD_SUBDOMAINS:
+                    continue
             key = (ats_type, slug.lower())
             if key not in seen:
                 seen.add(key)
