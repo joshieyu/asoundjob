@@ -71,7 +71,14 @@ cd ../web && npm run dev -- --port 5173
   (bool — only true jobs show on public board), `relevance_score`, `seniority`,
   `salary_min/max/currency`, `job_type`
 
-## Current State (as of 2026-08-28)
+## Current State (as of 2026-08-28) — SUPERSEDED
+
+> **This section and "Pain Points Still to Fix" below are the original brief and
+> are now out of date.** They predate the full scrapes and describe a 64-company
+> partial scrape, 406 audio-related jobs, 17 categories and "full scrape not yet
+> run". Read "Session update (2026-08-29)" for the current picture; these are
+> kept only for the original diagnosis and intent. **"Conventions" and "Key
+> Files to Know" further down are still current.**
 
 ### What works
 - 10 ATS parsers covering 64 companies, all scraping successfully
@@ -108,7 +115,7 @@ cd ../web && npm run dev -- --port 5173
 | psychoacoustics_perception | 1 |
 | microphones_recording | 1 |
 
-## Pain Points Still to Fix
+## Pain Points Still to Fix (2026-08-28) — SUPERSEDED, see session update
 
 ### 1. Category parsing still has false positives/negatives (HIGHEST PRIORITY)
 
@@ -227,7 +234,9 @@ generic scraper still only gets titles + URLs for many companies.
 | `scraper/scraper/scrapers/ats_discovery.py` | Detects ATS embeds in HTML |
 | `scraper/scraper/main.py` | Orchestrator, dedup by shared URL, persist |
 | `scraper/scraper/backfill_relevance.py` | Re-score all jobs after changes |
-| `data/audio_job_categories.json` | 17 category definitions (source of truth) |
+| `data/audio_job_categories.json` | 20 category definitions (source of truth) |
+| `scraper/scraper/diagnose_failures.py` | Read-only: why a careers page yields no jobs |
+| `scraper/scraper/discover_careers_urls.py` | Read-only: proposes corrected careers URLs |
 | `api/api/query.py` | Job filtering logic, `is_audio_related` default filter |
 | `api/api/routers/categories.py` | API endpoint for categories + counts |
 | `web/src/routes/jobs/+page.svelte` | Job board filter UI |
@@ -247,23 +256,26 @@ PR: https://github.com/joshieyu/asoundjob/pull/1 (branch `improve-categorization
 |---|---|
 | Total job rows | 6,859 |
 | Active | 5,052 |
-| Audio-related (the public board) | 322 real (459 stored, see duplicates below) |
-| Board jobs carrying a real description | 267 (83%) |
-| Uncategorized audio jobs | 66 (20%) |
-| Companies appearing on the board | 57 |
+| Audio-related (the public board) | 340 (see duplicates below) |
+| Board jobs carrying a real description | 272 (80%) |
+| Uncategorized audio jobs | 71 (21%) |
+| Companies appearing on the board | 61 |
 | Companies contributing active jobs | 364 |
-| Tests | 279 pass; ruff, mypy, `npm run check` clean |
+| Tests | 328 pass; ruff, mypy, `npm run check` clean |
 
 Two consecutive full scrapes were needed: the first discovers or corrects
 `ats_type`, the second routes through the ATS parser and gets descriptions.
 Workday routes went 17 to 25 between the runs.
 
-**The stored count of 459 includes 137 duplicates** — Apple and Beats by Dre
-were both scraping the same Apple board through different URLs. Deduplication
-by board identity landed after this scrape (commit 828fa48), so the next run
-deactivates them and the stored number should converge on ~322. Do not compare
-459 against earlier figures; 322 is the like-for-like number against the
-previous 291.
+**Duplicate rows are still stored and clear on the next full scrape.**
+Apple and Beats by Dre both scraped the same Apple board through different URLs
+(137 duplicate board entries); TrueFire served Toyota's board; Creative Assembly
+and Sports Interactive each hold a copy of Sega's 25 jobs, because a
+single-company run bypasses deduplication. Board-identity deduplication
+(commit 828fa48) collapses all of these on the next full run. The 340 figure
+already excludes them; the raw stored count is higher.
+
+The like-for-like progression this session is **291 -> 322 -> 340**.
 
 At 0: `game_audio_interactive`, `psychoacoustics_perception`.
 
@@ -505,6 +517,79 @@ Temper the expectation: coverage will improve more than job count. Many of
 these are small firms with no current openings. The board currently shows 57
 companies, so the coverage gain is the point.
 
+### 3e. Careers URL rediscovery tool — BUILT (commits 662889c..e4b8652)
+
+`scraper/scraper/discover_careers_urls.py`. Read-only; proposes a corrected
+careers_url per company with evidence and writes a review markdown for a human.
+It never touches the database or `data/audio_companies_final.json`.
+
+    python -m scraper.discover_careers_urls --population both \
+        --output-json careers_url_proposals.json \
+        --output-review careers_url_proposals.md
+
+Candidates are tried in yield order: current URL, links harvested from the
+company home page, ATS board URLs built from plausible slugs, guessed paths
+last. Guessed paths were the original strategy and are worthless — every guess
+404s.
+
+**Result over 922 companies: 13 actionable proposals.** 250 domain dead, 334
+live sites with no careers link anywhere on them, 86 blocked, 160 already
+pointing at the best URL found. The population is mostly companies that do not
+publish jobs, not companies we are failing to reach.
+
+#### The lesson: a signal is only evidence in context
+
+This tool produced four rounds of plausible-looking garbage — 532 proposals,
+then 27, then 13 — and every round failed the same way, by treating a signal as
+evidence without asking how it was obtained. All four are now guarded by tests.
+
+1. **Recruitee 301s any nonexistent subdomain** to its marketing page, which
+   reads as a recruitee board with six job links, scores 84 and short-circuits.
+   Guard: reject a candidate when a redirect drops the identity token requested
+   (`8x8.recruitee.com` -> `recruitee.com`), while allowing
+   `boards.greenhouse.io/acme` -> `job-boards.greenhouse.io/acme`.
+2. **Ashby answers 200 with careers vocabulary for any slug**, and Workable's
+   unknown-slug page carries Workable branding that `discover()` reads as a
+   workable embed. This produced 436 ashby and 42 workable proposals including
+   Best Buy, AMD and Bioware. Guard: candidates carry provenance, and a
+   **guessed** URL must produce real job links to score at all. An ATS signature
+   is evidence only on a page the company actually published.
+3. **Home-page harvesting followed off-site links** to news and social sites —
+   Zoom was proposed as a fortune.com article, scoring high because the page
+   mentions Workday. Guard: a noise-host denylist. Off-site links are still
+   allowed, since Audison's real board is at its parent Elettromedia.
+4. **Slugs derived from a third-party careers_url.** Powersoft is seeded with a
+   LinkedIn page, so the slug became "linkedin" and the tool proposed
+   `jobs.lever.co/linkedin` — LinkedIn's own board, real, six jobs, high
+   confidence. Guard: never derive a slug from a noise host.
+
+Also: careers vocabulary alone is not evidence. A proposal now requires an ATS
+signature or real job links, which removed fifteen matches that were a Discord
+invite, a Telegram group, four affiliate signup pages, a Patreon and a mailing
+list.
+
+#### Corrections applied (commit 319ca7c)
+
+Eleven URLs corrected in the seed file. Five companies (Vonage, BYD, Integra,
+Acer, Audison) were also `verified: false` and were flipped — the scraper only
+queries verified rows, so the URL change alone would have done nothing.
+
+Scraping the nine boards found two things the tool could not see:
+
+- **Sega, Creative Assembly and Sports Interactive were pinned to
+  `scrape_method: "playwright"`**, which makes the pipeline skip the HTTP path,
+  and the HTTP path is where all 25 jobs are. Set to `http`. **When a page loads
+  but yields nothing, check `scrape_method` before blaming extraction.**
+- **Genius was a bad proposal.** `genius.com/jobs` is a landing page whose only
+  "job link" is labelled "our open roles". Real board:
+  `job-boards.greenhouse.io/geniusjobs`.
+
+Yield: 173 jobs across nine companies, 18 audio-related. Vonage, BYD, Integra,
+Brain.fm and Genius arrive through ATS parsers with full descriptions.
+
+Still needing a manual careers URL: **Powersoft** and **Cross DJ (Mixvibes)**,
+both seeded with a LinkedIn company page.
+
 ### Smaller known issues
 
 - Native Instruments' 5 "jobs" are language-switcher links (Deutsch, Espanol,
@@ -536,9 +621,24 @@ manual database edit. Audit with:
 
     select name, ats_type, ats_slug from companies where ats_type is not null;
 
-Workday slugs must read `tenant/site`; a bare segment such as `Bose_Careers`,
-`External` or `en` is broken. The audit that prompted this found 9 such rows,
-including all 7 workday ones — Bose had 13 active jobs and zero descriptions.
+**Workday slugs must read `tenant.wdN/site`** — for example
+`boseallaboutme.wd503/Bose_Careers`. A bare segment such as `Bose_Careers`,
+`External` or `en` is broken, and so is `tenant/site` without the data centre.
+The audit that prompted this found 9 broken rows including all 7 workday ones;
+Bose had 13 active jobs and zero descriptions.
+
+The data centre matters and is not derivable (commit 3070091). A Workday tenant
+answers only at its own numbered host — Bose is on wd503, Adobe and GoTo on wd5,
+Nissan on `alliance.wd3`, Toyota on `toyota.wd503`. Requesting
+`boseallaboutme.wd1.myworkdayjobs.com` returns HTTP 422; wd503 returns 200 with
+76 jobs. `_build_base` still falls back to wd1 when a slug carries no data
+centre, so legacy values resolve to something, fail, and get corrected by
+discovery.
+
+End to end on Bose from a cleared `ats_type`: run one discovers
+`boseallaboutme.wd503/Bose_Careers`, run two routes through Workday and returns
+40 jobs, all 40 with full descriptions, 21 audio-related — against 13
+title-only jobs before.
 
 
 **Never put an unbounded quantifier before a literal in a page-scale regex.**
@@ -557,6 +657,32 @@ and dropped Apple to zero jobs. Any per-job enrichment MUST be time-bounded.
 The full scrape also caught three live-only bugs in `link_extraction.py` that
 fixtures missed (query-string job ids, non-English abbreviations, template
 placeholders). **Run a full scrape before merging changes to that file.**
+
+## Next steps, in priority order (as of the end of 2026-08-29)
+
+1. **Run a full scrape.** It collapses the duplicate rows described above and
+   applies the seed corrections everywhere. Nothing else depends on it, but the
+   stored numbers stay inflated until it runs.
+
+2. **BMG Production Music points at Bertelsmann's whole corporate job board**
+   (`careers.smartrecruiters.com/Bertelsmann-Jobs`) and scrapes 954 warehouse,
+   SAP and logistics roles — 19% of every active row. Relevance scoring keeps
+   all but 3 off the board, so this is wasted effort and a misleading active
+   count rather than a polluted board. Find BMG's own board or drop the company.
+   This is the single largest data problem remaining.
+
+3. **Write icims and dayforce parsers.** Nine companies sit on unsupported ATS
+   platforms — icims and dayforce two each, then rippling, personio, teamtailor,
+   oraclecloud, paylocity. That covers Pandora (SiriusXM), Corsair, Rode
+   Microphones, Slate Digital, EarthQuaker Devices, Natus Medical, Navistar and
+   Pelican Cases. Bounded, well-understood work, and ATS parsers return full
+   descriptions, which is what the board is short of.
+
+4. **Powersoft and Cross DJ (Mixvibes)** are seeded with LinkedIn company pages.
+   Both need a real careers URL found by hand.
+
+Explicitly NOT worth doing, both measured rather than assumed: follow-one-link
+(section 3 above) and further sweeps of the unverified population (3d and 3e).
 
 ## How to measure changes
 
