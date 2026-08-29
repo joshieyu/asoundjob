@@ -94,16 +94,16 @@ class ScrapePipeline:
         return result
 
     def _persist_ats_discovery(
-        self, company_id: int, ats_type: str, ats_slug: str
+        self, company_id: int, ats_type: str, ats_slug: str, overwrite: bool = False
     ) -> None:
         try:
             factory = get_session_factory()
             with factory() as session:
+                statement = update(Company).where(Company.id == company_id)
+                if not overwrite:
+                    statement = statement.where(Company.ats_type.is_(None))
                 session.execute(
-                    update(Company)
-                    .where(Company.id == company_id)
-                    .where(Company.ats_type.is_(None))
-                    .values(ats_type=ats_type, ats_slug=ats_slug)
+                    statement.values(ats_type=ats_type, ats_slug=ats_slug)
                 )
                 session.commit()
             logger.info(
@@ -121,6 +121,7 @@ class ScrapePipeline:
                 company_id=company.id, method="none", error="no careers_url"
             )
 
+        stored_ats_failed = False
         if company.ats_type and company.ats_type in self._ats_map:
             scraper = self._ats_map[company.ats_type]
             result = await self._attempt(
@@ -129,6 +130,7 @@ class ScrapePipeline:
             if result.success:
                 result.trust_empty = True
                 return result
+            stored_ats_failed = True
 
         ats_scrapers = (
             self.greenhouse,
@@ -153,34 +155,39 @@ class ScrapePipeline:
         skip_http = company.scrape_method == "playwright"
         if not skip_http:
             result = await self._attempt(self.http, company, self.http_semaphore, "http")
-            self._try_discovery(company, result.html)
+            self._try_discovery(company, result.html, stored_ats_failed)
             if result.success:
                 return result
 
         result = await self._attempt(
             self._playwright_scraper(), company, self.playwright_semaphore, "playwright"
         )
-        self._try_discovery(company, result.html)
+        self._try_discovery(company, result.html, stored_ats_failed)
         if result.success:
             return result
 
         result = await self._attempt(
             self._stealth_scraper(), company, self.playwright_semaphore, "stealth"
         )
-        self._try_discovery(company, result.html)
+        self._try_discovery(company, result.html, stored_ats_failed)
         if result.success:
             return result
 
         last_error = result.error or "all methods failed"
         return ScrapeResult(company_id=company.id, method="none", error=last_error)
 
-    def _try_discovery(self, company: Company, html: str | None) -> None:
+    def _try_discovery(
+        self, company: Company, html: str | None, overwrite: bool = False
+    ) -> None:
         if not html:
             return
         findings = discover(html, company.careers_url or "")
-        if findings:
-            ats_type, ats_slug = findings[0]
-            self._persist_ats_discovery(company.id, ats_type, ats_slug)
+        if not findings:
+            return
+        ats_type, ats_slug = findings[0]
+        if overwrite and (ats_type, ats_slug) == (company.ats_type, company.ats_slug):
+            return
+        self._persist_ats_discovery(company.id, ats_type, ats_slug, overwrite)
 
     async def close(self) -> None:
         if self.playwright is not None:

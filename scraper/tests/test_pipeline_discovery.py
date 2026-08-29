@@ -63,7 +63,7 @@ class TestDiscoveryOnFailure(unittest.TestCase):
             settings = load_settings()
             pipeline = ScrapePipeline(settings)
             pipeline._persist_ats_discovery = (  # type: ignore[method-assign]
-                lambda company_id, ats_type, ats_slug: persisted.append(
+                lambda company_id, ats_type, ats_slug, overwrite=False: persisted.append(
                     (company_id, ats_type, ats_slug)
                 )
             )
@@ -84,6 +84,57 @@ class TestDiscoveryOnFailure(unittest.TestCase):
         result, persisted = self._run("<html><body>No openings</body></html>")
         self.assertFalse(result.success)
         self.assertEqual(persisted, [])
+
+
+WORKDAY_PAGE = (
+    "<html><body>"
+    '<a href="https://boseallaboutme.wd503.myworkdayjobs.com/Bose_Careers">Jobs</a>'
+    "</body></html>"
+)
+
+
+class TestStoredAtsSelfHealing(unittest.TestCase):
+    def _run(self, html: str, stored_type: str, stored_slug: str) -> list:
+        persisted: list = []
+
+        async def go():
+            settings = load_settings()
+            pipeline = ScrapePipeline(settings)
+            pipeline._persist_ats_discovery = (  # type: ignore[method-assign]
+                lambda company_id, ats_type, ats_slug, overwrite=False: persisted.append(
+                    (ats_type, ats_slug, overwrite)
+                )
+            )
+            failing = RecordingScraper(settings, html, fail=True)
+            for key in list(pipeline._ats_map):
+                pipeline._ats_map[key] = failing
+            pipeline.http = failing  # type: ignore[assignment]
+            pipeline._playwright_scraper = lambda: failing  # type: ignore[method-assign]
+            pipeline._stealth_scraper = lambda: failing  # type: ignore[method-assign]
+            company = make_company()
+            company.ats_type = stored_type
+            company.ats_slug = stored_slug
+            return await pipeline.scrape_company(company)
+
+        asyncio.run(go())
+        return persisted
+
+    def test_failed_stored_route_is_corrected(self) -> None:
+        persisted = self._run(WORKDAY_PAGE, "workday", "Bose_Careers")
+        self.assertIn(
+            ("workday", "boseallaboutme/Bose_Careers", True), persisted
+        )
+
+    def test_unchanged_slug_is_not_rewritten(self) -> None:
+        persisted = self._run(
+            WORKDAY_PAGE, "workday", "boseallaboutme/Bose_Careers"
+        )
+        self.assertEqual(persisted, [])
+
+    def test_no_overwrite_when_no_stored_ats(self) -> None:
+        persisted = self._run(WORKDAY_PAGE, "", "")
+        self.assertTrue(persisted)
+        self.assertTrue(all(entry[2] is False for entry in persisted))
 
 
 if __name__ == "__main__":
