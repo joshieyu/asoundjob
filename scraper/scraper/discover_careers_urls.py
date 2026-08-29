@@ -135,6 +135,7 @@ DOMAIN_ERROR_HINTS = (
 @dataclass
 class CandidateResult:
     url: str
+    source: str = "current"
     status: Optional[int] = None
     error: Optional[str] = None
     ats_type: Optional[str] = None
@@ -148,8 +149,13 @@ class CandidateResult:
     final_url: str = ""
 
 
+GUESSED_SOURCES = frozenset({"ats_guess", "path_guess"})
+
+
 def score_candidate(c: CandidateResult) -> int:
     if c.error is not None or c.status != 200:
+        return 0
+    if c.source in GUESSED_SOURCES and c.job_links <= 0:
         return 0
     score = 0
     if c.ats_type in SUPPORTED_ATS:
@@ -318,28 +324,29 @@ def build_candidates(
     ordered: list = []
 
     if careers_url:
-        ordered.append(careers_url)
+        ordered.append((careers_url, "current"))
 
     if root_links:
-        ordered.extend(root_links)
+        for link in root_links:
+            ordered.append((link, "home_link"))
 
     slugs = slug_candidates(name, careers_url or "", website_url)
     for slug in slugs:
         for _ats_name, template in ATS_URL_TEMPLATES:
-            ordered.append(template.format(slug=slug))
+            ordered.append((template.format(slug=slug), "ats_guess"))
 
     root = _root_origin(careers_url or "") or _root_origin(website_url or "")
     if root:
         for path in CANDIDATE_PATHS:
-            ordered.append(urljoin(root + "/", path.lstrip("/")))
+            ordered.append((urljoin(root + "/", path.lstrip("/")), "path_guess"))
 
     deduped: list = []
     seen: set = set()
-    for url in ordered:
+    for url, source in ordered:
         if url in seen:
             continue
         seen.add(url)
-        deduped.append(url)
+        deduped.append((url, source))
         if len(deduped) >= MAX_CANDIDATES:
             break
     return deduped
@@ -375,8 +382,10 @@ def _session(user_agent: str) -> requests.Session:
     return session
 
 
-def evaluate_candidate(url: str, company_name: str, settings_ua: str) -> CandidateResult:
-    result = CandidateResult(url=url)
+def evaluate_candidate(
+    url: str, company_name: str, settings_ua: str, source: str = "current"
+) -> CandidateResult:
+    result = CandidateResult(url=url, source=source)
     try:
         response = _session(settings_ua).get(
             url, timeout=REQUEST_TIMEOUT, allow_redirects=True
@@ -437,7 +446,7 @@ def evaluate_company(
     root_links: list = []
     root_blocked = False
     if root:
-        root_probe = evaluate_candidate(root, name, settings_ua)
+        root_probe = evaluate_candidate(root, name, settings_ua, "root")
         if root_probe.error is not None and _is_domain_dead_error(root_probe.error):
             return {
                 "company_id": company_id,
@@ -463,8 +472,8 @@ def evaluate_company(
     best: Optional[CandidateResult] = None
     best_score = -1
 
-    for url in candidates[:MAX_EVALUATED_CANDIDATES]:
-        candidate = evaluate_candidate(url, name, settings_ua)
+    for url, source in candidates[:MAX_EVALUATED_CANDIDATES]:
+        candidate = evaluate_candidate(url, name, settings_ua, source)
         score = score_candidate(candidate)
         tried.append(
             {
@@ -475,6 +484,7 @@ def evaluate_company(
                 "ats_type": candidate.ats_type,
                 "ats_slug": candidate.ats_slug,
                 "job_links": candidate.job_links,
+                "source": candidate.source,
             }
         )
         if score > best_score:

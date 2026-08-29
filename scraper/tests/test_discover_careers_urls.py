@@ -105,40 +105,44 @@ class TestSlugCandidates(unittest.TestCase):
         self.assertEqual(len(slugs), len(set(slugs)))
 
 
+def _urls(pairs):
+    return [u for u, _ in pairs]
+
+
 class TestBuildCandidates(unittest.TestCase):
     def test_existing_careers_url_first(self) -> None:
-        candidates = build_candidates(
+        candidates = _urls(build_candidates(
             "Acme", "https://acme.com/jobs-old", "https://acme.com", None
-        )
+        ))
         self.assertEqual(candidates[0], "https://acme.com/jobs-old")
 
     def test_includes_root_careers_path(self) -> None:
-        candidates = build_candidates("Acme", None, "https://acme.com", None)
+        candidates = _urls(build_candidates("Acme", None, "https://acme.com", None))
         self.assertIn("https://acme.com/careers", candidates)
 
     def test_includes_ats_template_urls(self) -> None:
-        candidates = build_candidates("Acme", None, "https://acme.com", None)
+        candidates = _urls(build_candidates("Acme", None, "https://acme.com", None))
         self.assertTrue(any("boards.greenhouse.io/acme" in c for c in candidates))
         self.assertTrue(any("jobs.lever.co/acme" in c for c in candidates))
 
     def test_deduped_and_capped(self) -> None:
-        candidates = build_candidates(
+        candidates = _urls(build_candidates(
             "Acme Corporation International Holdings",
             "https://acme.com/careers",
             "https://acme.com",
             None,
-        )
+        ))
         self.assertEqual(len(candidates), len(set(candidates)))
         self.assertLessEqual(len(candidates), 24)
 
     def test_root_links_ordered_before_ats_and_guessed_paths(self) -> None:
-        candidates = build_candidates(
+        candidates = _urls(build_candidates(
             "Acme",
             "https://acme.com/jobs-old",
             "https://acme.com",
             None,
             root_links=["https://acme.com/join-our-team"],
-        )
+        ))
         self.assertEqual(
             candidates[:2],
             ["https://acme.com/jobs-old", "https://acme.com/join-our-team"],
@@ -278,6 +282,58 @@ class TestDeadCurrentUrlIsReplaced(unittest.TestCase):
         modest_score = score_candidate(modest)
         self.assertGreater(modest_score, 0)
         self.assertLess(modest_score, REPLACE_MARGIN)
+
+
+class TestGuessedCandidatesNeedJobs(unittest.TestCase):
+    def test_guessed_ats_url_without_jobs_scores_zero(self) -> None:
+        c = CandidateResult(
+            url="https://jobs.ashbyhq.com/acme",
+            source="ats_guess",
+            status=200,
+            ats_type="ashby",
+            has_careers_vocab=True,
+        )
+        self.assertEqual(score_candidate(c), 0)
+
+    def test_guessed_ats_url_with_jobs_scores(self) -> None:
+        c = CandidateResult(
+            url="https://boards.greenhouse.io/byd",
+            source="ats_guess",
+            status=200,
+            ats_type="greenhouse",
+            job_links=23,
+            has_careers_vocab=True,
+        )
+        self.assertGreaterEqual(score_candidate(c), 70)
+
+    def test_guessed_path_without_jobs_scores_zero(self) -> None:
+        c = CandidateResult(
+            url="https://acme.com/careers",
+            source="path_guess",
+            status=200,
+            has_careers_vocab=True,
+            mentions_company=True,
+        )
+        self.assertEqual(score_candidate(c), 0)
+
+    def test_home_page_link_is_trusted_without_jobs(self) -> None:
+        c = CandidateResult(
+            url="https://acme.com/join-us",
+            source="home_link",
+            status=200,
+            ats_type="greenhouse",
+            has_careers_vocab=True,
+        )
+        self.assertGreater(score_candidate(c), 0)
+
+    def test_current_url_is_trusted_without_jobs(self) -> None:
+        c = CandidateResult(
+            url="https://acme.com/careers",
+            source="current",
+            status=200,
+            has_careers_vocab=True,
+        )
+        self.assertGreater(score_candidate(c), 0)
 
 
 if __name__ == "__main__":
