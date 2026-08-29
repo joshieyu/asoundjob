@@ -561,6 +561,21 @@ def evaluate_company(
         evidence_parts.append("careers vocabulary")
     evidence = ", ".join(evidence_parts) if evidence_parts else "matched, no strong signal"
 
+    if not best.ats_type and best.job_links <= 0:
+        return {
+            "company_id": company_id,
+            "company": name,
+            "verified": bool(verified),
+            "current_url": careers_url,
+            "best_url": None,
+            "best_score": 0,
+            "confidence": "none",
+            "outcome": "no_candidate",
+            "evidence": "no ATS and no job links on any candidate",
+            "candidates": tried,
+            "reason": "weak_signal_only",
+        }
+
     outcome: str
     if careers_url and best.url == careers_url:
         outcome = "keep_current"
@@ -655,9 +670,12 @@ def _write_review_markdown(results: list, output_review: str) -> None:
 
     by_confidence: dict = {"high": [], "medium": [], "low": []}
     inert: list = []
+    confirmed = 0
     for r in results:
         if r["outcome"] in ("domain_dead", "no_candidate"):
             inert.append(r)
+        elif r["outcome"] == "keep_current":
+            confirmed += 1
         elif r["confidence"] in by_confidence:
             by_confidence[r["confidence"]].append(r)
 
@@ -672,6 +690,11 @@ def _write_review_markdown(results: list, output_review: str) -> None:
     lines.append("Outcome counts:")
     for outcome, count in sorted(outcome_counts.items(), key=lambda kv: -kv[1]):
         lines.append(f"- {outcome}: {count}")
+    lines.append("")
+    lines.append(
+        f"{confirmed} companies already point at the best URL found "
+        "and need no change."
+    )
     lines.append("")
     lines.append("Reason breakdown (why nothing was found):")
     for reason, count in sorted(reason_counts.items(), key=lambda kv: -kv[1]):

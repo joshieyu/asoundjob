@@ -373,5 +373,19 @@ class TestSlugsIgnoreThirdPartyHosts(unittest.TestCase):
         self.assertIn("westoneaudio", slugs)
 
 
+class TestVocabularyOnlyIsNotAProposal(unittest.TestCase):
+    def test_careers_vocabulary_alone_scores_but_is_not_evidence(self) -> None:
+        c = CandidateResult(
+            url="https://acme.com/affiliates/join",
+            source="home_link",
+            status=200,
+            has_careers_vocab=True,
+            mentions_company=True,
+        )
+        self.assertGreater(score_candidate(c), 0)
+        self.assertFalse(c.ats_type)
+        self.assertEqual(c.job_links, 0)
+
+
 if __name__ == "__main__":
     unittest.main()
