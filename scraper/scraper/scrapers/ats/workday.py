@@ -15,10 +15,12 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 URL_PATTERN = re.compile(
-    r"^https?://(?P<tenant>[a-z0-9]+)\.wd\d+\.myworkdayjobs\.com"
+    r"^https?://(?P<tenant>[a-z0-9]+)\.(?P<dc>wd\d+)\.myworkdayjobs\.com"
     r"(?:/[a-z]{2}-[a-z]{2})?/(?P<site>[^/?#]+)",
     re.IGNORECASE,
 )
+
+HOST_WITH_DC_RE = re.compile(r"^[a-z0-9]{1,63}\.wd\d+$", re.IGNORECASE)
 
 LIST_BODY = {"appliedFacets": {}, "limit": 20, "offset": 0, "searchText": ""}
 PAGE_SIZE = 20
@@ -57,14 +59,15 @@ class WorkdayScraper(BaseScraper):
         site = match.group("site").rstrip("/")
         if site.lower() == "jobs":
             return None
-        return f"{tenant}/{site}"
+        return f"{tenant}.{match.group('dc')}/{site}"
 
     async def fetch_jobs(self, company: Company) -> list[RawJob]:
         slug = company.ats_slug or self.extract_slug(company.careers_url or "")
         if not slug:
             raise ValueError(f"No workday slug in {company.careers_url}")
-        tenant, site = slug.split("/", 1)
-        base = _build_base(company.careers_url or "", tenant, site)
+        host, site = slug.split("/", 1)
+        tenant = host.split(".")[0]
+        base = _build_base(company.careers_url or "", host)
         jobs = await self._fetch_all(base, tenant, site)
         should_fetch_details = company.audio_scope == "native"
         await self._fetch_descriptions(
@@ -123,7 +126,7 @@ class WorkdayScraper(BaseScraper):
         await asyncio.gather(*(fetch_one(j) for j in fetch_list))
 
 
-def _build_base(url: str, tenant: str, site: str) -> str:
+def _build_base(url: str, host: str) -> str:
     m = re.match(
         r"^(https?://[a-z0-9]+\.wd\d+\.myworkdayjobs\.com)",
         url.strip(),
@@ -131,7 +134,9 @@ def _build_base(url: str, tenant: str, site: str) -> str:
     )
     if m:
         return m.group(1)
-    return f"https://{tenant}.wd1.myworkdayjobs.com"
+    if HOST_WITH_DC_RE.match(host):
+        return f"https://{host}.myworkdayjobs.com"
+    return f"https://{host}.wd1.myworkdayjobs.com"
 
 
 def _post_json(url: str, body: dict, settings) -> Any:

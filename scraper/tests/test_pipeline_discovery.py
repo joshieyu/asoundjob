@@ -122,12 +122,12 @@ class TestStoredAtsSelfHealing(unittest.TestCase):
     def test_failed_stored_route_is_corrected(self) -> None:
         persisted = self._run(WORKDAY_PAGE, "workday", "Bose_Careers")
         self.assertIn(
-            ("workday", "boseallaboutme/Bose_Careers", True), persisted
+            ("workday", "boseallaboutme.wd503/Bose_Careers", True), persisted
         )
 
     def test_unchanged_slug_is_not_rewritten(self) -> None:
         persisted = self._run(
-            WORKDAY_PAGE, "workday", "boseallaboutme/Bose_Careers"
+            WORKDAY_PAGE, "workday", "boseallaboutme.wd503/Bose_Careers"
         )
         self.assertEqual(persisted, [])
 

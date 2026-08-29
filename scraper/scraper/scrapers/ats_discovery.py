@@ -49,7 +49,7 @@ PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     (
         "workday",
         re.compile(
-            r"(?P<tenant>[a-z0-9]{1,63})\.wd\d+\.myworkdayjobs\.com"
+            r"(?P<tenant>[a-z0-9]{1,63})\.(?P<dc>wd\d+)\.myworkdayjobs\.com"
             r"(?:/[a-z]{2}-[a-z]{2})?/(?P<site>[a-z0-9_-]{1,80})",
             re.IGNORECASE,
         ),
@@ -108,7 +108,10 @@ def discover(html: str, base_url: str = "") -> list[tuple[str, str]]:
             if ats_type in SLUGLESS_ATS:
                 slug = ""
             elif groups.get("tenant") and groups.get("site"):
-                slug = f"{groups['tenant']}/{groups['site'].rstrip('/')}"
+                host = groups["tenant"]
+                if groups.get("dc"):
+                    host = f"{host}.{groups['dc']}"
+                slug = f"{host}/{groups['site'].rstrip('/')}"
             else:
                 slug = (groups.get("slug") or "").strip("/")
                 if slug.lower() in NON_BOARD_SUBDOMAINS:

@@ -98,25 +98,25 @@ class TestWorkdayParser(unittest.TestCase):
     def test_extract_slug(self) -> None:
         self.assertEqual(
             WorkdayScraper.extract_slug("https://sonos.wd1.myworkdayjobs.com/Sonos"),
-            "sonos/Sonos",
+            "sonos.wd1/Sonos",
         )
         self.assertEqual(
             WorkdayScraper.extract_slug(
                 "https://sec.wd3.myworkdayjobs.com/Samsung_Careers"
             ),
-            "sec/Samsung_Careers",
+            "sec.wd3/Samsung_Careers",
         )
         self.assertEqual(
             WorkdayScraper.extract_slug(
                 "https://sky.wd3.myworkdayjobs.com/en-US/sky_careers"
             ),
-            "sky/sky_careers",
+            "sky.wd3/sky_careers",
         )
         self.assertEqual(
             WorkdayScraper.extract_slug(
                 "https://belkin.wd5.myworkdayjobs.com/belkin_careers/jobs"
             ),
-            "belkin/belkin_careers",
+            "belkin.wd5/belkin_careers",
         )
         self.assertIsNone(
             WorkdayScraper.extract_slug("https://example.com/careers")
@@ -126,10 +126,17 @@ class TestWorkdayParser(unittest.TestCase):
         self.assertEqual(
             _build_base(
                 "https://sonos.wd1.myworkdayjobs.com/Sonos",
-                "sonos",
-                "Sonos",
+                "sonos.wd1",
             ),
             "https://sonos.wd1.myworkdayjobs.com",
+        )
+        self.assertEqual(
+            _build_base("https://careers.bose.com/us/en", "boseallaboutme.wd503"),
+            "https://boseallaboutme.wd503.myworkdayjobs.com",
+        )
+        self.assertEqual(
+            _build_base("https://careers.example.com", "acme"),
+            "https://acme.wd1.myworkdayjobs.com",
         )
 
     def test_can_handle(self) -> None:

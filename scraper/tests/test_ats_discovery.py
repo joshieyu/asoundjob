@@ -65,7 +65,7 @@ class TestATSDiscovery(unittest.TestCase):
 
     def test_workday_link(self) -> None:
         results = discover(WORKDAY_LINK)
-        self.assertEqual(results[0], ("workday", "acme/Acme_Careers"))
+        self.assertEqual(results[0], ("workday", "acme.wd1/Acme_Careers"))
 
     def test_multiple_ats(self) -> None:
         results = discover(MULTIPLE_ATS)
@@ -94,11 +94,11 @@ class TestATSDiscovery(unittest.TestCase):
 
     def test_workday_slug_includes_tenant(self) -> None:
         html = '<a href="https://spectris.wd3.myworkdayjobs.com/HBK_Careers">Jobs</a>'
-        self.assertEqual(first_discovery(html), ("workday", "spectris/HBK_Careers"))
+        self.assertEqual(first_discovery(html), ("workday", "spectris.wd3/HBK_Careers"))
 
     def test_workday_slug_skips_locale_segment(self) -> None:
         html = '<a href="https://fullsail.wd1.myworkdayjobs.com/en-US/External/">Jobs</a>'
-        self.assertEqual(first_discovery(html), ("workday", "fullsail/External"))
+        self.assertEqual(first_discovery(html), ("workday", "fullsail.wd1/External"))
 
     def test_workday_slug_matches_parser_expectation(self) -> None:
         from scraper.scrapers.ats.workday import WorkdayScraper
