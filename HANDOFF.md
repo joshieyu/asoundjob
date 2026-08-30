@@ -4,17 +4,17 @@
 
 > **Read this first.** The document is chronological and some early sections are
 > explicitly marked SUPERSEDED. For the current picture read, in this order:
-> "Current metrics", "Session update (2026-08-29, evening)", "Session update
-> (2026-08-29, late)" and the final "Next steps, in priority order (as of the
-> late session, 2026-08-29)". Earlier "Next steps" sections are a record of
+> "Session update (2026-08-29, night)", "Session update (2026-08-29, late)",
+> "Session update (2026-08-29, evening)" and the final "Next steps, in priority
+> order (as of the night session, 2026-08-29)". Earlier "Next steps" sections are a record of
 > completed work and rejected experiments — valuable for the reasoning and the
 > DO-NOT-REPEAT entries, but not a to-do list. "Conventions" and "Key Files to
 > Know" are always current.
 >
-> **Nothing from the late session is on the board yet.** Six commits changed the
-> extractor, the categorizer and the seed, and none of it reaches the live board
-> until someone runs the loader and a full scrape. See "The database is behind
-> the code" below before trusting any number in this file.
+> **The board is current as of the 2026-08-29 night scrape.** The late session's
+> six commits are live; so is the Test, Measurement & QA category. Read
+> "Session update (2026-08-29, night)" for the numbers that supersede the
+> metrics table.
 >
 > **The audience is audio engineers.** DSP, audio systems, EE, embedded and
 > acoustics roles are the point; live sound and sound design are not the
@@ -255,7 +255,7 @@ generic scraper still only gets titles + URLs for many companies.
 | `scraper/scraper/scrapers/ats_discovery.py` | Detects ATS embeds in HTML |
 | `scraper/scraper/main.py` | Orchestrator, dedup by shared URL, persist |
 | `scraper/scraper/backfill_relevance.py` | Re-score all jobs after changes |
-| `data/audio_job_categories.json` | 20 category definitions (source of truth) |
+| `data/audio_job_categories.json` | 21 category definitions (source of truth) |
 | `scraper/scraper/diagnose_failures.py` | Read-only: why a careers page yields no jobs |
 | `scraper/scraper/discover_careers_urls.py` | Read-only: proposes corrected careers URLs |
 | `scraper/scraper/check_url.py` | Read-only: what a candidate careers URL would yield |
@@ -274,7 +274,10 @@ generic scraper still only gets titles + URLs for many companies.
 
 PR: https://github.com/joshieyu/asoundjob/pull/1 (branch `improve-categorization-and-parsing`, 5 commits, open)
 
-## Current metrics (after the 2026-08-29 evening full scrape)
+## Current metrics (after the 2026-08-29 evening full scrape) — SUPERSEDED
+
+> Superseded by the table in "Session update (2026-08-29, night)". Kept for the
+> reasoning underneath it, which is still current.
 
 | Metric | Value |
 |---|---|
@@ -1101,13 +1104,104 @@ furniture rows. Expect the scrape to be slower than the last one for two
 compounding reasons: commit 647b721 pushes ~101 companies through to Playwright,
 and pagination adds pages for ~3% of the generic path.
 
-## Next steps, in priority order (as of the late session, 2026-08-29)
+## Session update (2026-08-29, night) — the scrape landed, and a new category
 
-0. **Run the loader and a full scrape — nothing else here is meaningful until
-   this happens.** Six commits from the late session are code and seed only; the
-   board still reflects the previous scrape. Commands and expected effects are in
-   "The database is behind the code" above. Re-read the metrics table afterwards,
-   because every figure in it predates this work.
+Two things happened: next-step 0 finally ran, and Test, Measurement & QA was
+carved out of `audio_systems`.
+
+### The full scrape ran (no commit — this is database state)
+
+`python -m scraper.main --once` then `python -m scraper.backfill_relevance`.
+698 companies, 384 ok, 314 failed, 4,546 jobs found, 1,556s. **Note the command
+is `--once`, not the `--all` an earlier version of this document invented, and
+the loader module is `scraper.company_loader`, not `scraper.load_companies`.**
+The loader inserted Harman, updated five entries and deactivated six unverified.
+
+| Metric | Before | After |
+|---|---|---|
+| Total job rows | 7,363 | 7,851 |
+| Active | 4,207 | 4,693 |
+| Audio-related (the public board) | 390 | **468** |
+| Board jobs carrying a real description | 333 | 331 |
+| Uncategorized board rows | 104 | 107 |
+| Companies appearing on the board | 64 | 72 |
+| Companies contributing active jobs | 380 | 399 |
+
+**All four late-session case studies landed exactly as projected**: Harman 16,
+Google 10, Meta 3, Amplify Labs 2. The projections from `check_url` were
+accurate to the job, which is worth knowing next time a decision rests on one.
+
+### Test, Measurement & QA (commits 56afbed, 41f3967)
+
+The owner asked for it: audio measurement and QA roles were filing as
+`audio_systems`. Two things were sending them there — measurement vocabulary in
+`audio_systems`'s own keyword list, and a rule in `FALLBACK_ROLE_CATEGORIES`
+mapping any test/validation/quality/QA title at a hardware company straight to
+`audio_systems`. Both now point at `test_measurement_qa`, and that fallback rule
+moved to the front of the list, so a title that says QA files as QA rather than
+as the domain it happens to test ("Hardware QA Engineer" was `audio_ee`).
+
+Three routes reach the category:
+
+1. **Keywords**, strong and weak, in the new `CATEGORY_KEYWORDS` entry. Strong
+   terms are all audio-specific compounds ("acoustic measurement", "anechoic
+   chamber", "real ear", "ear simulator", "klippel"). Generic test vocabulary
+   ("test engineer", "quality assurance", "metrology", "calibration") is **weak
+   only** and the category is in `ANCHORED_CATEGORIES`, so description hits need
+   an audio anchor within 200 characters.
+2. **The company fallback**, for test-shaped titles at hardware companies.
+3. **`_apply_test_override`**, a title-shape regex (`TEST_ROLE_TITLE_RE`) that
+   files an already-audio row as test when the title reads as test, QA,
+   metrology or verification. It matches the subject and the role word in either
+   order, so "Technician II, Metrology" and "Test Engineer" both hit.
+
+**The safety property that matters: the override returns early unless `scored`
+is already non-empty.** Categorizing a row adds +35 to its relevance
+(`score_relevance`), which is exactly how the rejected `FALLBACK_ROLE_CATEGORIES`
+experiment in next-step 4 pulled junk onto the board. Requiring the row to
+already be an audio job by other evidence means the override can re-file a row
+but can never admit one.
+
+Measured old against new over all 4,196 then-active rows: **35 rows re-filed, 32
+of them on the board, `audio_systems` 47 -> 26, zero board jobs gained or
+lost.** Live after the scrape and backfill: 34 board rows in the new category,
+`audio_systems` down to 30. Bare "Test Engineer" / "QA Engineer" / "Metrology
+Technician" with no audio context still score 0 and stay off the board — there
+is a test asserting this.
+
+The owner supplied a real listing (contract Acoustic Test Engineer II, wearable
+audio, Redmond) as a fixture. It scores 19 against the cutoff of 5, files
+`test_measurement_qa` alone, and reaches the board under every scope. It also
+exposed lab vocabulary the first pass missed — real ear, insertion gain, ear
+simulator, acoustic coupler, acoustic calibrator, measurement microphone — now
+in the keyword list. A condensed version of it is the fixture in
+`TestMeasurementAndQaCategory.test_measurement_description_carries_a_vague_title`.
+
+**Two judgment calls made without the owner**, both worth revisiting if they
+grate: putting the QA fallback rule first (so firmware and hardware QA roles
+leave `audio_dsp_embedded` and `audio_ee`), and letting Shure's "Senior
+Engineer, IT Quality Assurance" file here — it is IT QA, not audio test, but it
+was `audio_systems` before, and it is on the board either way.
+
+One thing deliberately **not** changed: that fixture does not also pick up
+`audiology_hearing` despite its real-ear and hearing-device content. It scores 3
+against the cutoff of 5. Moving it means touching the shared scoring curve,
+which would ripple through every category.
+
+### The About page was showing invented numbers (commit c59b976)
+
+It hardcoded "1,385 companies" and "14 specialty categories". The company count
+had drifted and the category count was six short before this branch made it
+seven. Both now come from `/api/companies` and `/api/categories` through a new
+`web/src/routes/about/+page.server.ts`. Nothing else in the frontend hardcodes a
+category — the board, the homepage specialty picker and the sitemap are all
+driven by the API, so **adding a category needs no frontend change at all.**
+
+## Next steps, in priority order (as of the night session, 2026-08-29)
+
+0. **DONE — the scrape ran on the night of 2026-08-29.** The board is 468. See
+   "Session update (2026-08-29, night)" for what landed. The database is current
+   with the code as of commit 41f3967.
 
 1. **Seed URL corrections — the active manual task.** `SEED_WORKLIST.md` holds
    the 82 companies whose failure is a wrong careers URL rather than a scraper
@@ -1151,12 +1245,20 @@ and pagination adds pages for ~3% of the generic path.
 3. **Seed URL quality remains the cheapest lever** — see 3b and 3e. Keysight is a
    worked example: the board had moved and no scraper change could have fixed it.
 
-4. **Categorization, the original pain point #1.** 104 board rows carry no
-   category (a figure that predates the late session; the inverted-title fix in
-   commit 4dca4f0 accounts for only 2 of them, and a full scrape will move the
-   number in both directions). Categories are how a reader filters past the junk the board now
-   deliberately admits, so this is worth doing — but the obvious fix is already
-   ruled out.
+4. **Categorization, the original pain point #1.** 107 board rows carry no
+   category, measured after the night scrape. Categories are how a reader filters
+   past the junk the board now deliberately admits, so this is worth doing — but
+   the obvious fix is already ruled out.
+
+   **Shure alone accounts for 34 of the 107**, then Bose 8, Suno AI 7, Apple 7.
+   That concentration is the lead worth pulling: four companies hold half of
+   them, so reading their titles is a bounded task, not a sweep of 107 unrelated
+   rows.
+
+   Note the Test, Measurement & QA work (night session) shows the shape of a
+   safe fix here: gate any new categorization on the row **already** having
+   scored an audio category, so it re-files rather than admits. That is what
+   separates it from the rejected experiment below.
 
    **REJECTED, do not retry:** extending `FALLBACK_ROLE_CATEGORIES` with
    `systems`, `process`, `metrology` and `npi`. Measured in commit 89ddf50 — it
@@ -1205,10 +1307,12 @@ and pagination adds pages for ~3% of the generic path.
 6. **Known and deliberately not fixed.** XR audio roles at Google file as
    `game_audio_interactive`, which is wrong for headset platform work — it does
    not affect whether they reach the board, only how they are filed, and fixing
-   it is the same taxonomy decision as bare "acoustics" in item 4. There is also
-   a stray 0-byte `scraper/asoundjob.db`; the live database is `asoundjob.db` at
-   the repo root, and the empty one will confuse anyone who runs a command from
-   the wrong directory.
+   it is the same taxonomy decision as bare "acoustics" in item 4. Hearing-device
+   *measurement* roles score `audiology_hearing` at 3 against a cutoff of 5 and
+   so file as test only; raising that means touching the shared scoring curve.
+   There is also a stray 0-byte `scraper/asoundjob.db`; the live database is
+   `asoundjob.db` at the repo root, and the empty one will confuse anyone who
+   runs a command from the wrong directory.
 
 7. **Harman is only two-thirds covered.** `?search=audio` returns 16 of the 24
    audio-relevant roles. Harman's search matches tokens exactly, so no single
@@ -1244,7 +1348,11 @@ Regression set that must keep passing:
 - MUST be categorized: `Audio Software Engineer` @ Valve -> audio_software;
   `Core Audio Software Engineer` @ Apple -> audio_software;
   `Audio Machine Learning Engineer` @ Apple -> audio_aiml;
-  `DSP Developer` @ Softube -> audio_dsp_embedded
+  `DSP Developer` @ Softube -> audio_dsp_embedded;
+  `Acoustic Test Engineer II` -> test_measurement_qa;
+  `Test Engineer UK` @ SSL -> test_measurement_qa
+- MUST stay uncategorized and off the board: bare `Test Engineer`, `QA
+  Engineer`, `Quality Engineer`, `Metrology Technician` with no audio context
 - MUST NOT be audio-related: DLR Group "Studio Leader" jobs; Sky Studios
   "CDN Engineer"; RingCentral "Senior Finance Analyst"
 - MUST NOT carry the listed category: Deepgram "Sales Development
