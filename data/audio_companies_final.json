@@ -1699,7 +1699,7 @@
     "name": "Bowers & Wilkins",
     "careers_url": "https://jobs.harman.com/",
     "category": "Consumer Electronics & Tech",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "playwright"
   },
@@ -2787,7 +2787,7 @@
     "name": "Denon",
     "careers_url": "https://jobs.harman.com/",
     "category": "Hi-Fi & Consumer Speakers",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "playwright"
   },
@@ -4261,6 +4261,14 @@
     "category": "Automotive OEMs",
     "verified": true,
     "source": "auto",
+    "scrape_method": "http"
+  },
+  {
+    "name": "Harman",
+    "careers_url": "https://jobsearch.harman.com/en_US/careers/SearchJobs/?search=audio",
+    "category": "Professional Audio & Live Sound",
+    "verified": true,
+    "source": "manual",
     "scrape_method": "http"
   },
   {
@@ -5811,7 +5819,7 @@
     "name": "Marantz",
     "careers_url": "https://jobs.harman.com/",
     "category": "Hi-Fi & Consumer Speakers",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "playwright"
   },
@@ -6037,7 +6045,7 @@
     "category": "Consumer Electronics & Tech",
     "verified": true,
     "source": "auto",
-    "scrape_method": "http"
+    "scrape_method": "playwright"
   },
   {
     "name": "Metric Halo",
