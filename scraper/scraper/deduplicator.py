@@ -84,6 +84,7 @@ def reconcile_company_jobs(
                     description=normalized.description,
                     url=normalized.url,
                     location=normalized.location,
+                    country=normalized.country,
                     remote=normalized.remote,
                     job_type=normalized.job_type,
                     seniority=normalized.seniority,
@@ -107,6 +108,7 @@ def reconcile_company_jobs(
         row.description = normalized.description
         row.url = normalized.url
         row.location = normalized.location
+        row.country = normalized.country
         row.remote = normalized.remote
         row.job_type = normalized.job_type
         row.seniority = normalized.seniority

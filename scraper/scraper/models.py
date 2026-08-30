@@ -64,6 +64,7 @@ class Job(Base):
     description: Mapped[Optional[str]] = mapped_column(Text)
     url: Mapped[str] = mapped_column(Text)
     location: Mapped[Optional[str]] = mapped_column(Text)
+    country: Mapped[Optional[str]] = mapped_column(Text, index=True)
     remote: Mapped[bool] = mapped_column(Boolean, default=False)
     job_type: Mapped[Optional[str]] = mapped_column(Text)
     seniority: Mapped[Optional[str]] = mapped_column(Text)

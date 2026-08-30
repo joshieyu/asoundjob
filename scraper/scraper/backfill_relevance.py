@@ -4,6 +4,7 @@ import argparse
 
 from sqlalchemy import select
 
+from scraper.countries import detect_country
 from scraper.database import dispose_engine, init_db, session_scope
 from scraper.models import Company, Job
 from scraper.normalizer import category_to_scope, classify_categories, score_relevance
@@ -30,7 +31,12 @@ def backfill(dry_run: bool = False) -> None:
 
         related = 0
         recategorized = 0
+        relocated = 0
         for job, scope, company_category in rows:
+            country = detect_country(job.location)
+            if job.country != country:
+                job.country = country
+                relocated += 1
             categories = classify_categories(job.title, job.description, company_category)
             score, is_related = score_relevance(
                 job.title, job.description, categories, scope or "native"
@@ -44,7 +50,8 @@ def backfill(dry_run: bool = False) -> None:
 
         print(
             f"scored {len(rows)} scraped jobs: {related} audio-related, "
-            f"{len(rows) - related} filtered out, {recategorized} recategorized"
+            f"{len(rows) - related} filtered out, {recategorized} recategorized, "
+            f"{relocated} country changed"
         )
 
         if dry_run:

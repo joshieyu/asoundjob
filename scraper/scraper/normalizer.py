@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Optional
 
 from scraper.config import Settings
+from scraper.countries import detect_country
 from scraper.scrapers.base import RawJob
 
 logger = logging.getLogger(__name__)
@@ -989,6 +990,7 @@ class NormalizedJob:
     url: str
     external_id: Optional[str] = None
     location: Optional[str] = None
+    country: Optional[str] = None
     description: Optional[str] = None
     remote: bool = False
     job_type: Optional[str] = None
@@ -1453,11 +1455,13 @@ class Normalizer:
         if job_type is None and raw.description:
             job_type = normalize_job_type(raw.description[:500])
 
+        location = clean_location(raw.location)
         return NormalizedJob(
             title=raw.title.strip(),
             url=raw.url.strip(),
             external_id=raw.external_id,
-            location=clean_location(raw.location),
+            location=location,
+            country=detect_country(location),
             description=raw.description,
             remote=detect_remote(raw.location, raw.title, raw.description) or raw.remote_hint,
             job_type=job_type,
