@@ -487,6 +487,14 @@ class TestMeasurementAndQaCategory(unittest.TestCase):
                     ["test_measurement_qa"],
                 )
 
+    def test_metrology_titles_reach_the_hardware_fallback(self) -> None:
+        for title in ("Engineer Sr, Metrology", "Technician II, Metrology"):
+            with self.subTest(title=title):
+                self.assertEqual(
+                    classify_categories(title, None, "Professional Audio & Live Sound"),
+                    ["test_measurement_qa"],
+                )
+
     def test_title_override_needs_an_audio_role_to_attach_to(self) -> None:
         self.assertEqual(
             classify_categories("Test Engineer", None, "Streaming & Music Services"), []

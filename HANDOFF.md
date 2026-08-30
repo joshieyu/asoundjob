@@ -1123,7 +1123,7 @@ The loader inserted Harman, updated five entries and deactivated six unverified.
 | Active | 4,207 | 4,693 |
 | Audio-related (the public board) | 390 | **468** |
 | Board jobs carrying a real description | 333 | 331 |
-| Uncategorized board rows | 104 | 107 |
+| Uncategorized board rows | 104 | 105 |
 | Companies appearing on the board | 64 | 72 |
 | Companies contributing active jobs | 380 | 399 |
 
@@ -1245,20 +1245,35 @@ driven by the API, so **adding a category needs no frontend change at all.**
 3. **Seed URL quality remains the cheapest lever** — see 3b and 3e. Keysight is a
    worked example: the board had moved and no scraper change could have fixed it.
 
-4. **Categorization, the original pain point #1.** 107 board rows carry no
+4. **Categorization, the original pain point #1.** 105 board rows carry no
    category, measured after the night scrape. Categories are how a reader filters
    past the junk the board now deliberately admits, so this is worth doing — but
    the obvious fix is already ruled out.
 
-   **Shure alone accounts for 34 of the 107**, then Bose 8, Suno AI 7, Apple 7.
-   That concentration is the lead worth pulling: four companies hold half of
-   them, so reading their titles is a bounded task, not a sweep of 107 unrelated
-   rows.
+   **Shure alone accounts for 32 of the 105**, then Bose 8, Suno AI 7, Apple 7 —
+   four companies hold half. But read the next paragraph before spending time on
+   them.
 
    Note the Test, Measurement & QA work (night session) shows the shape of a
    safe fix here: gate any new categorization on the row **already** having
    scored an audio category, so it re-files rather than admits. That is what
    separates it from the rejected experiment below.
+
+   **`metrology` alone was re-tested and shipped (commit below) — the rejection
+   applies to the bundle, not to every word in it.** Adding `metrology` and
+   `calibration` to the fallback rule re-categorized exactly 2 rows (Shure's two
+   metrology roles), both already on the board, **0 newly admitted**. `systems`
+   and `process` are the words that pulled junk in; they stay rejected. Measure
+   words individually before treating the whole list as poisoned.
+
+   **Also: "uncategorized" at a native-scope audio company is mostly a relevance
+   symptom, not a categorization gap.** Of Shure's 34, the bulk are Security
+   Operations, Market Development, Sales Development, Cloud Operations, Event
+   Management and Pre-sales — roles with no audio category because none applies.
+   They reach the board on 7,000-character descriptions saturated with audio
+   words at a native-scope company. Reading them hunting for missing keywords is
+   work in the wrong direction; the lever is relevance, or `CORPORATE_ROLE`
+   coverage. Same at Suno AI and Bose.
 
    **REJECTED, do not retry:** extending `FALLBACK_ROLE_CATEGORIES` with
    `systems`, `process`, `metrology` and `npi`. Measured in commit 89ddf50 — it

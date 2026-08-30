@@ -1104,7 +1104,8 @@ COMPANY_CATEGORY_FALLBACK: dict[str, tuple[frozenset, Optional[str]]] = {
 FALLBACK_ROLE_CATEGORIES: list[tuple[re.Pattern[str], str, str]] = [
     (
         re.compile(
-            r"\b(test|testing|validation|verification|quality|reliability|qa)\b",
+            r"\b(test|testing|validation|verification|quality|reliability|qa|"
+            r"metrology|calibration)\b",
             re.IGNORECASE,
         ),
         "test_measurement_qa",
