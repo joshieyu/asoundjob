@@ -32,6 +32,16 @@
 
 	const categoryFieldValue = $derived(selectedCategories.join(','));
 
+	const countryOptions = $derived(data.countries?.countries ?? []);
+	const unknownCountryCount = $derived(data.countries?.unknown_count ?? 0);
+	const unplacedStartIndex = $derived.by(() => {
+		if (!params.country) return -1;
+		return data.jobs?.items.findIndex((job) => job.country === null) ?? -1;
+	});
+	const selectedCountryName = $derived(
+		countryOptions.find((c) => c.code === params.country)?.name ?? params.country ?? ''
+	);
+
 	const unselectedZeroCategories = $derived(
 		(data.categories?.categories ?? []).filter(
 			(c) => c.job_count === 0 && !selectedCategories.includes(c.id)
@@ -69,6 +79,8 @@
 		if (params.seniority)
 			labels.push({ key: 'seniority', label: 'Level', value: params.seniority });
 		if (params.job_type) labels.push({ key: 'job_type', label: 'Type', value: params.job_type });
+		if (params.country)
+			labels.push({ key: 'country', label: 'Country', value: selectedCountryName });
 		if (params.location)
 			labels.push({ key: 'location', label: 'Near', value: params.location });
 		if (params.remote) labels.push({ key: 'remote', label: '', value: 'Remote only' });
@@ -179,6 +191,26 @@
 					<option value={t} selected={params.job_type === t}>{t}</option>
 				{/each}
 			</select>
+		</fieldset>
+
+		<fieldset class="mt-3">
+			<legend class="mb-1.5 font-mono text-[10px] tracking-[0.14em] text-ink-soft uppercase">
+				Country
+			</legend>
+			<select name="country" class="well h-9 w-full px-2 text-sm">
+				<option value="">Anywhere</option>
+				{#each countryOptions as c (c.code)}
+					<option value={c.code} selected={params.country === c.code}>
+						{c.name} ({c.job_count})
+					</option>
+				{/each}
+			</select>
+			{#if params.country && unknownCountryCount > 0}
+				<p class="mt-1.5 text-xs text-ink-soft">
+					Matching roles come first, then {unknownCountryCount} whose location we could not
+					place — so nothing in {selectedCountryName} is hidden.
+				</p>
+			{/if}
 		</fieldset>
 
 		<fieldset class="mt-3">
@@ -317,7 +349,16 @@
 		{/if}
 
 		<div class="mt-4 grid gap-3 xl:grid-cols-2">
-			{#each jobs?.items ?? [] as job (job.id)}
+			{#each jobs?.items ?? [] as job, i (job.id)}
+				{#if i === unplacedStartIndex}
+					<div class="col-span-full mt-2 flex items-center gap-3">
+						<span class="h-px flex-1 bg-ink-soft/25"></span>
+						<span class="font-mono text-[10px] tracking-[0.14em] text-ink-soft uppercase">
+							Location not parsed — may still be in {selectedCountryName}
+						</span>
+						<span class="h-px flex-1 bg-ink-soft/25"></span>
+					</div>
+				{/if}
 				<JobStrip {job} {categoryNames} />
 			{:else}
 				<div class="panel col-span-full p-8 text-center">
