@@ -4,15 +4,16 @@
 
 > **Read this first.** The document is chronological and some early sections are
 > explicitly marked SUPERSEDED. For the current picture read, in this order:
-> "Session update (2026-08-29, night)", "Session update (2026-08-29, late)",
-> "Session update (2026-08-29, evening)" and the final "Next steps, in priority
-> order (as of the night session, 2026-08-29)". Earlier "Next steps" sections are a record of
+> "Session update (2026-08-30)", "Session update (2026-08-29, night)", "Session
+> update (2026-08-29, late)", "Session update (2026-08-29, evening)" and the
+> final "Next steps, in priority order (as of 2026-08-30)". Earlier "Next steps" sections are a record of
 > completed work and rejected experiments — valuable for the reasoning and the
 > DO-NOT-REPEAT entries, but not a to-do list. "Conventions" and "Key Files to
 > Know" are always current.
 >
-> **The board is current as of the 2026-08-29 night scrape.** The late session's
-> six commits are live; so is the Test, Measurement & QA category. Read
+> **The board is current as of the 2026-08-30 scrape.** The late session's six
+> commits are live; so are the Test, Measurement & QA category and country
+> filtering. Read
 > "Session update (2026-08-29, night)" for the numbers that supersede the
 > metrics table.
 >
@@ -256,6 +257,8 @@ generic scraper still only gets titles + URLs for many companies.
 | `scraper/scraper/main.py` | Orchestrator, dedup by shared URL, persist |
 | `scraper/scraper/backfill_relevance.py` | Re-score all jobs after changes |
 | `data/audio_job_categories.json` | 21 category definitions (source of truth) |
+| `scraper/scraper/countries.py` | Location string -> ISO country code |
+| `api/api/routers/countries.py` | Country list + counts for the board filter |
 | `scraper/scraper/diagnose_failures.py` | Read-only: why a careers page yields no jobs |
 | `scraper/scraper/discover_careers_urls.py` | Read-only: proposes corrected careers URLs |
 | `scraper/scraper/check_url.py` | Read-only: what a candidate careers URL would yield |
@@ -1197,7 +1200,122 @@ seven. Both now come from `/api/companies` and `/api/categories` through a new
 category — the board, the homepage specialty picker and the sitemap are all
 driven by the API, so **adding a category needs no frontend change at all.**
 
-## Next steps, in priority order (as of the night session, 2026-08-29)
+## Session update (2026-08-30) — country filtering
+
+The owner asked to sort listings by country and expected that to be a
+parsing problem. It was two problems, and parsing was the smaller one.
+
+### Measure first: 41% of the board had no location at all
+
+Before writing any parser, the split was worth knowing:
+
+| Path | Rows missing a location |
+|---|---|
+| Workday, Apple, Lever, Ashby, Recruitee | 0% |
+| Greenhouse | 5% |
+| BambooHR | 17% |
+| Generic HTTP/Playwright | 64% |
+| iCIMS, ADP, Pinpoint | 100% |
+
+**Every mature ATS parser already extracted location.** So no amount of
+string parsing could reach the missing 41% — that was extraction, and the
+two levers had to be built separately.
+
+### The parser (commit c23f9ba)
+
+`scraper/countries.py`, `detect_country()`, and a `jobs.country` column
+holding an ISO alpha-2 code, set at normalize time and by
+`backfill_relevance`.
+
+**The design rule that matters, and it inverts the usual bias: ambiguity
+resolves to NULL, never to a guess.** The board shows unresolved rows
+under *every* country filter, so a wrong country hides a job from the
+right filter while no country never does. Precision beats recall here,
+which is the opposite of the standing preference everywhere else on this
+project. "Cambridge" (UK or Massachusetts), "2 Locations", and any string
+naming two countries all stay NULL.
+
+Resolution is tiered, and the order was forced by real data:
+
+1. **Country names** — outrank everything, because a two-letter prefix
+   often collides with a US state. `CH - Shanghai, China` is China, not
+   Switzerland. `CA - Canada` is Canada, not California. `IN - Bangalore,
+   India` is India, not Indiana.
+2. **US state names** → US.
+3. **Known cities** — before bare codes, which is what makes
+   `Darmstadt, DE` Germany rather than Delaware.
+4. **US state codes** → US (`San Francisco, CA`).
+5. **Canadian provinces** → CA.
+6. **ISO alpha-2/alpha-3** (`Shanghai, CN`, `CHN, Shenzhen BOC`).
+
+Phrase matching runs over 1-3 word n-grams inside each segment, which is
+what catches `Stockholm HQ`, `Shanghai Metro Area` and `Navi Mumbai, Rupa
+Renaissance`. `:` is a segment separator, which alone fixed every
+`City, ST: street address, zip` row.
+
+Resolves **92% of the 2,186 rows carrying a location**. Every remaining
+miss genuinely names no place: `2 Locations`, `Remote`, `Worldwide`, and
+McGill University building names like `Burnside Hall`.
+
+### The extraction fix, worth more than the parser (commit e1142bf)
+
+Shure had 64 jobs with 3-6k descriptions and **not one location** — the
+single largest gap on the board. It routes through the iCIMS parser,
+which reads location from the detail page's JSON-LD, so the description
+arriving intact while location came back empty pointed at one function.
+
+`schema.org` allows `jobLocation` to be an **array**, iCIMS uses that
+form, and `_parse_jsonld_location` handled only `str` and `dict`. Every
+array-valued posting silently lost its location. Lists are now unwrapped;
+several places are joined with `; ` (and the country parser then
+correctly refuses to guess between them). iCIMS also emits the literal
+string `UNAVAILABLE` for absent address parts, now dropped instead of
+displayed.
+
+Shure went **0 of 64 located to 64, 63 resolving a country.** The fix is
+not iCIMS-specific — it applies anywhere JSON-LD is read.
+
+### The UI ranks, it does not filter (commits 86975fa, d5bf11d)
+
+The owner's design: choosing a country puts those roles first and the
+**unplaced ones after**, so nothing that might be in that country is
+hidden. Implemented as `country=XX` on `/api/jobs`:
+
+- rows in that country first,
+- rows with `country IS NULL` after, behind a labelled divider,
+- rows known to be elsewhere excluded.
+
+`GET /api/countries` lists countries with counts plus `unknown_count`.
+The job board shows a Country select, a chip, and the divider text
+"Location not parsed — may still be in {country}".
+
+**Do not "simplify" this into `WHERE country = ?`.** That drops every
+unplaced row and would silently hide a large share of the board. There
+are tests in `api/tests/` — the first ones in that package — asserting
+the inclusion and the ordering.
+
+Note `api/tests` needed `scraper` declared first-party for isort:
+`api/__init__.py` puts the scraper directory on `sys.path`, so any module
+importing `scraper` before `api` fails at runtime.
+
+### Result after the 2026-08-30 scrape
+
+| Metric | Before | After |
+|---|---|---|
+| Board rows carrying a location | 277 (59%) | **334 (71%)** |
+| Board rows with a resolved country | 261 (56%) | **317 (68%)** |
+| Shure board rows located | 0 of 54 | **54 of 54** |
+| Countries represented on the board | 21 | 21 |
+| Board total | 468 | 469 |
+
+The remaining 152 unplaced board rows are overwhelmingly generic-path
+rows that carry no location string at all, not parse failures. **The next
+lever there is extraction, not the parser**: ADP (7 companies) and
+Pinpoint (1) still return no location, and the generic anchor path can
+only get one by fetching detail pages, which "Detail-page fetching" above
+already measured as a small population.
+
+## Next steps, in priority order (as of 2026-08-30)
 
 0. **DONE — the scrape ran on the night of 2026-08-29.** The board is 468. See
    "Session update (2026-08-29, night)" for what landed. The database is current
@@ -1329,7 +1447,14 @@ driven by the API, so **adding a category needs no frontend change at all.**
    `asoundjob.db` at the repo root, and the empty one will confuse anyone who
    runs a command from the wrong directory.
 
-7. **Harman is only two-thirds covered.** `?search=audio` returns 16 of the 24
+7. **Location extraction is the remaining lever for country coverage.** 152 of
+   469 board rows still have no country, almost all because they carry no
+   location string at all. ADP (7 companies) and Pinpoint (1) return none;
+   the generic anchor path would need detail-page fetching. See "Session update
+   (2026-08-30)". The parser itself is not the constraint — it resolves 92% of
+   what it is given.
+
+8. **Harman is only two-thirds covered.** `?search=audio` returns 16 of the 24
    audio-relevant roles. Harman's search matches tokens exactly, so no single
    query reaches all of them, and its page size is capped at 20 server-side.
    Pagination does not help because the scoped query fits on one page. Getting
