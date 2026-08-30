@@ -4113,11 +4113,11 @@
   },
   {
     "name": "Google",
-    "careers_url": "https://www.google.com/about/careers/applications/",
+    "careers_url": "https://www.google.com/about/careers/applications/jobs/results/?q=audio",
     "category": "Consumer Electronics & Tech",
     "verified": true,
     "source": "auto",
-    "scrape_method": "playwright"
+    "scrape_method": "http"
   },
   {
     "name": "Gotham Audio",
