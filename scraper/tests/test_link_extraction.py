@@ -626,14 +626,20 @@ class TestDocumentBaseTag(unittest.TestCase):
 
     def test_a_non_http_base_is_ignored(self) -> None:
         jobs = extract_job_links(BAD_BASE_HTML, "https://example.com/careers/")
-        self.assertEqual(jobs[0].url, "https://example.com/careers/jobs/12345-audio-dsp-engineer")
+        self.assertEqual(
+            jobs[0].url, "https://example.com/careers/jobs/12345-audio-dsp-engineer"
+        )
 
     def test_pages_without_a_base_tag_are_unchanged(self) -> None:
-        jobs = extract_job_links(
-            '<html><body><a href="jobs/12345-audio-dsp-engineer">Audio DSP Engineer</a></body></html>',
-            "https://example.com/careers/",
+        html = (
+            "<html><body>"
+            '<a href="jobs/12345-audio-dsp-engineer">Audio DSP Engineer</a>'
+            "</body></html>"
         )
-        self.assertEqual(jobs[0].url, "https://example.com/careers/jobs/12345-audio-dsp-engineer")
+        jobs = extract_job_links(html, "https://example.com/careers/")
+        self.assertEqual(
+            jobs[0].url, "https://example.com/careers/jobs/12345-audio-dsp-engineer"
+        )
 
 
 if __name__ == "__main__":
