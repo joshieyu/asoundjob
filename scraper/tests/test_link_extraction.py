@@ -583,5 +583,58 @@ class TestJsonLdListLocations(unittest.TestCase):
         self.assertEqual(jobs[0].location, "Skokie, IL, US; Edinburgh, UK")
 
 
+BASE_TAG_HTML = """
+<html><head><base href="https://example.com/about/careers/applications/"></head>
+<body>
+<a href="jobs/results/12345-audio-dsp-engineer">Audio DSP Engineer</a>
+</body></html>
+"""
+
+RELATIVE_BASE_HTML = """
+<html><head><base href="../"></head>
+<body><a href="jobs/results/12345-audio-dsp-engineer">Audio DSP Engineer</a></body>
+</html>
+"""
+
+BAD_BASE_HTML = """
+<html><head><base href="javascript:void(0)"></head>
+<body><a href="jobs/12345-audio-dsp-engineer">Audio DSP Engineer</a></body>
+</html>
+"""
+
+
+class TestDocumentBaseTag(unittest.TestCase):
+    def test_relative_hrefs_resolve_against_the_base_tag(self) -> None:
+        jobs = extract_job_links(
+            BASE_TAG_HTML,
+            "https://example.com/about/careers/applications/jobs/results/?q=audio",
+        )
+        self.assertEqual(len(jobs), 1)
+        self.assertEqual(
+            jobs[0].url,
+            "https://example.com/about/careers/applications"
+            "/jobs/results/12345-audio-dsp-engineer",
+        )
+
+    def test_a_relative_base_is_resolved_against_the_page(self) -> None:
+        jobs = extract_job_links(
+            RELATIVE_BASE_HTML, "https://example.com/careers/listing/?q=audio"
+        )
+        self.assertEqual(
+            jobs[0].url, "https://example.com/careers/jobs/results/12345-audio-dsp-engineer"
+        )
+
+    def test_a_non_http_base_is_ignored(self) -> None:
+        jobs = extract_job_links(BAD_BASE_HTML, "https://example.com/careers/")
+        self.assertEqual(jobs[0].url, "https://example.com/careers/jobs/12345-audio-dsp-engineer")
+
+    def test_pages_without_a_base_tag_are_unchanged(self) -> None:
+        jobs = extract_job_links(
+            '<html><body><a href="jobs/12345-audio-dsp-engineer">Audio DSP Engineer</a></body></html>',
+            "https://example.com/careers/",
+        )
+        self.assertEqual(jobs[0].url, "https://example.com/careers/jobs/12345-audio-dsp-engineer")
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -478,8 +478,22 @@ def _looks_like_job_detail_path(path: str, query: str = "") -> bool:
     return bool(re.search(r"\d", last) or "-" in last or len(last) > 12)
 
 
+def resolve_document_base(soup: BeautifulSoup, base_url: str) -> str:
+    tag = soup.find("base", href=True)
+    if tag is None:
+        return base_url
+    href = _clean_text(tag.get("href"))
+    if not href:
+        return base_url
+    resolved = urljoin(base_url, href)
+    if urlparse(resolved).scheme not in ("http", "https"):
+        return base_url
+    return resolved
+
+
 def extract_job_links(html: str, base_url: str) -> list[RawJob]:
     soup = BeautifulSoup(html, "html.parser")
+    link_base = resolve_document_base(soup, base_url)
     best_by_url: dict[str, tuple[str, str, Optional[str]]] = {}
     base_parsed = urlparse(base_url)
     base_path = base_parsed.path.rstrip("/").lower()
@@ -490,7 +504,7 @@ def extract_job_links(html: str, base_url: str) -> list[RawJob]:
         href = _clean_text(anchor.get("href"))
         if not href or NON_JOB_URL.search(href):
             continue
-        absolute = urljoin(base_url, href)
+        absolute = urljoin(link_base, href)
         parsed = urlparse(absolute)
         if parsed.scheme not in ("http", "https"):
             continue

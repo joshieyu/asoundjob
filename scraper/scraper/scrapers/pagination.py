@@ -7,7 +7,7 @@ from urllib.parse import urljoin, urlparse
 from bs4 import BeautifulSoup, Tag
 
 from scraper.scrapers.base import RawJob
-from scraper.scrapers.link_extraction import extract_jobs
+from scraper.scrapers.link_extraction import extract_jobs, resolve_document_base
 
 MAX_PAGES = 10
 
@@ -80,6 +80,7 @@ def _page_key(url: str) -> Tuple[str, str, str]:
 
 def find_next_page(html: str, base_url: str) -> Optional[str]:
     soup = BeautifulSoup(html, "html.parser")
+    link_base = resolve_document_base(soup, base_url)
     base_key = _page_key(base_url)
 
     for anchor in soup.find_all("a", href=True):
@@ -88,7 +89,7 @@ def find_next_page(html: str, base_url: str) -> Optional[str]:
         href = anchor.get("href")
         if not href or not isinstance(href, str):
             continue
-        resolved = urljoin(base_url, href)
+        resolved = urljoin(link_base, href)
         parsed = urlparse(resolved)
         if parsed.scheme not in ("http", "https"):
             continue
