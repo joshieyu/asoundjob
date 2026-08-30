@@ -1213,7 +1213,8 @@ def _apply_software_override(
             scored.pop(cat)
             title_hits.pop(cat, None)
             replaced = True
-    if replaced:
+    inverted = not scored and bool(AUDIO_ANCHOR.search(title_lower))
+    if replaced or inverted:
         scored["audio_software"] = max(scored.get("audio_software", 0), 6)
         title_hits["audio_software"] = True
 

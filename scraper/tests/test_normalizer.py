@@ -398,5 +398,31 @@ class TestNormalizerPipeline(unittest.TestCase):
         self.assertIn("audio_dsp_embedded", job.job_categories)
 
 
+class TestInvertedAudioSoftwareTitles(unittest.TestCase):
+    def test_trailing_audio_qualifier_is_audio_software(self) -> None:
+        self.assertEqual(
+            classify_categories("Senior Staff Software Engineer, Audio", None, None),
+            ["audio_software"],
+        )
+
+    def test_non_audio_software_title_stays_uncategorised(self) -> None:
+        self.assertEqual(
+            classify_categories("Software Engineer, Distributed Systems", None, None), []
+        )
+
+    def test_non_software_audio_title_is_not_forced_into_software(self) -> None:
+        self.assertEqual(
+            classify_categories("Supplier Development Engineer, Audio", None, None), []
+        )
+
+    def test_existing_category_is_not_overridden(self) -> None:
+        self.assertEqual(
+            classify_categories(
+                "Software Engineer III, Embedded Systems and Firmware, Audio", None, None
+            ),
+            ["audio_dsp_embedded"],
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
