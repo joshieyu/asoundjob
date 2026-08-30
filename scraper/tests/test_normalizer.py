@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import unittest
+from pathlib import Path
 
 from scraper.normalizer import (
+    CATEGORY_KEYWORDS,
     NormalizedJob,
     Normalizer,
     classify_categories,
@@ -10,8 +12,10 @@ from scraper.normalizer import (
     detect_remote,
     detect_seniority,
     extract_role_text,
+    load_valid_category_ids,
     normalize_job_type,
     parse_salary,
+    score_relevance,
 )
 from scraper.scrapers.base import RawJob
 
@@ -422,6 +426,111 @@ class TestInvertedAudioSoftwareTitles(unittest.TestCase):
             ),
             ["audio_dsp_embedded"],
         )
+
+
+ACOUSTIC_MEASUREMENT_DESCRIPTION = """
+We are seeking an acoustic test engineer to execute hands-on acoustic
+measurements on wearable audio devices and document the results in our quality
+records system. You will run a documented test process on a calibrated acoustic
+measurement bench and produce traceable test reports. Set up and operate the
+measurement bench: ear simulators, acoustic couplers, acoustic calibrators and
+measurement microphones. Execute acoustic test protocols on devices under test,
+covering gain, output level, frequency response and calibration measurements.
+Maintain lab records and equipment calibration status.
+"""
+
+
+class TestMeasurementAndQaCategory(unittest.TestCase):
+    def test_audio_anchored_test_titles_are_filed_here(self) -> None:
+        for title in (
+            "Audio Test Engineer",
+            "Acoustic Test Engineer II",
+            "Audio Validation Engineer",
+            "Audio Quality Engineer",
+            "Acoustic Measurement Engineer",
+        ):
+            with self.subTest(title=title):
+                self.assertIn(
+                    "test_measurement_qa", classify_categories(title, None, None)
+                )
+
+    def test_audio_test_titles_no_longer_land_in_audio_systems(self) -> None:
+        self.assertEqual(
+            classify_categories("Audio Test Engineer", None, None),
+            ["test_measurement_qa"],
+        )
+
+    def test_bare_test_titles_stay_uncategorised_and_off_the_board(self) -> None:
+        for title in (
+            "Test Engineer",
+            "QA Engineer",
+            "Quality Engineer",
+            "Test Technician",
+            "Software Test Engineer",
+            "Reliability Engineer",
+        ):
+            with self.subTest(title=title):
+                categories = classify_categories(title, None, None)
+                self.assertEqual(categories, [])
+                self.assertFalse(score_relevance(title, None, categories, "native")[1])
+
+    def test_hardware_company_test_roles_move_out_of_audio_systems(self) -> None:
+        for title in (
+            "Test Engineer UK",
+            "Junior Functional Test Engineer UK",
+            "Test Technician",
+            "Quality Engineer II",
+        ):
+            with self.subTest(title=title):
+                self.assertEqual(
+                    classify_categories(title, None, "Professional Audio & Live Sound"),
+                    ["test_measurement_qa"],
+                )
+
+    def test_title_override_needs_an_audio_role_to_attach_to(self) -> None:
+        self.assertEqual(
+            classify_categories("Test Engineer", None, "Streaming & Music Services"), []
+        )
+
+    def test_a_test_title_displaces_audio_systems(self) -> None:
+        description = (
+            "Own the audio system integration programme: audio tuning, audio "
+            "subsystem bring-up and acoustic system validation across our "
+            "loudspeaker range."
+        )
+        self.assertEqual(
+            classify_categories("Senior System Test Engineer", description, None),
+            ["test_measurement_qa"],
+        )
+        self.assertEqual(
+            classify_categories("Senior Audio Systems Engineer", description, None),
+            ["audio_systems"],
+        )
+
+    def test_measurement_description_carries_a_vague_title(self) -> None:
+        categories = classify_categories(
+            "Engineer II", ACOUSTIC_MEASUREMENT_DESCRIPTION, None
+        )
+        self.assertEqual(categories, ["test_measurement_qa"])
+        score, on_board = score_relevance(
+            "Engineer II", ACOUSTIC_MEASUREMENT_DESCRIPTION, categories, "native"
+        )
+        self.assertTrue(on_board)
+
+    def test_audio_systems_still_owns_integration_and_tuning(self) -> None:
+        for title in (
+            "Audio Systems Engineer",
+            "Audio Integration Engineer",
+            "Acoustic Tuning Engineer",
+        ):
+            with self.subTest(title=title):
+                self.assertIn("audio_systems", classify_categories(title, None, None))
+
+    def test_every_keyword_category_exists_in_the_categories_file(self) -> None:
+        path = Path(__file__).resolve().parents[2] / "data" / "audio_job_categories.json"
+        valid = load_valid_category_ids(path)
+        self.assertEqual(set(CATEGORY_KEYWORDS) - valid, set())
+        self.assertIn("test_measurement_qa", valid)
 
 
 if __name__ == "__main__":

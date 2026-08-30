@@ -28,7 +28,12 @@
     {
       "id": "audio_systems",
       "name": "Audio Systems",
-      "description": "End-to-end integration, measurement, and tuning of audio subsystems within consumer electronics, wearables, automotive cabins, and smart speakers. Includes acoustic design, system-level performance optimization, audio test plans, and transducer evaluation."
+      "description": "End-to-end integration and tuning of audio subsystems within consumer electronics, wearables, automotive cabins, and smart speakers. Includes acoustic design, system-level performance optimization, and owning how the audio path behaves across a whole product."
+    },
+    {
+      "id": "test_measurement_qa",
+      "name": "Test, Measurement & QA",
+      "description": "Verifying that audio hardware and software actually perform. Roles cover electroacoustic and acoustic measurement, test plan authoring, test automation and fixtures, anechoic chamber and lab work, calibration, reliability and production quality assurance."
     },
     {
       "id": "automotive_audio",

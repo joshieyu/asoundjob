@@ -180,19 +180,12 @@ CATEGORY_KEYWORDS: dict[str, dict[str, tuple[str, ...]]] = {
             "acoustic tuning",
             "acoustic engineer",
             "tuning engineer",
-            "audio validation",
-            "audio validation engineer",
-            "audio test engineer",
-            "audio measurement",
             "audio subsystem",
             "audio subsystems",
             "acoustic system",
             "acoustic systems",
-            "audio test plan",
             "system-level audio",
-            "audio benchmark",
             "audio integration",
-            "audio qualification",
             "av engineer",
             "audio video engineer",
             "acoustics engineer",
@@ -205,7 +198,6 @@ CATEGORY_KEYWORDS: dict[str, dict[str, tuple[str, ...]]] = {
             "program manager, audio",
             "program manager - audio",
             "program manager- audio",
-            "audio quality",
         ),
         "weak": (
             "systems engineering",
@@ -215,6 +207,74 @@ CATEGORY_KEYWORDS: dict[str, dict[str, tuple[str, ...]]] = {
             "audio technology",
             "audio product",
             "audio video",
+        ),
+    },
+    "test_measurement_qa": {
+        "strong": (
+            "audio test",
+            "audio testing",
+            "audio test engineer",
+            "audio test plan",
+            "audio test automation",
+            "audio measurement",
+            "audio metrology",
+            "audio validation",
+            "audio validation engineer",
+            "audio verification",
+            "audio qualification",
+            "audio benchmark",
+            "audio benchmarking",
+            "audio quality engineer",
+            "audio qa",
+            "acoustic test",
+            "acoustic testing",
+            "acoustic measurement",
+            "acoustical measurement",
+            "acoustic validation",
+            "acoustic characterization",
+            "electroacoustic measurement",
+            "electroacoustic test",
+            "electroacoustic testing",
+            "sound quality engineer",
+            "anechoic chamber",
+            "anechoic",
+            "audio precision",
+            "klippel",
+            "real ear",
+            "real-ear",
+            "insertion gain",
+            "ear simulator",
+            "acoustic coupler",
+            "acoustic calibrator",
+            "acoustic test fixture",
+            "measurement microphone",
+            "head and torso simulator",
+            "head-and-torso simulator",
+        ),
+        "weak": (
+            "test engineer",
+            "test engineering",
+            "test automation",
+            "test fixture",
+            "test bench",
+            "test equipment",
+            "measurement engineer",
+            "metrology",
+            "calibration",
+            "validation engineer",
+            "verification engineer",
+            "quality assurance",
+            "quality engineer",
+            "qa engineer",
+            "reliability engineer",
+            "reliability test",
+            "production test",
+            "device under test",
+            "test protocol",
+            "test report",
+            "measurement bench",
+            "design verification",
+            "audio quality",
         ),
     },
     "automotive_audio": {
@@ -581,6 +641,7 @@ CATEGORY_KEYWORDS: dict[str, dict[str, tuple[str, ...]]] = {
 }
 
 ANCHORED_CATEGORIES = {
+    "test_measurement_qa",
     "audio_software",
     "audio_dsp_embedded",
     "audio_aiml",
@@ -992,6 +1053,9 @@ CATEGORY_DOMINANCE: dict[str, tuple[str, ...]] = {
     "audio_aiml": (
         "audio_research",
     ),
+    "test_measurement_qa": (
+        "audio_systems",
+    ),
 }
 
 COMPANY_FALLBACK_HARDWARE = "hardware"
@@ -1036,6 +1100,14 @@ COMPANY_CATEGORY_FALLBACK: dict[str, tuple[frozenset, Optional[str]]] = {
 
 FALLBACK_ROLE_CATEGORIES: list[tuple[re.Pattern[str], str, str]] = [
     (
+        re.compile(
+            r"\b(test|testing|validation|verification|quality|reliability|qa)\b",
+            re.IGNORECASE,
+        ),
+        "test_measurement_qa",
+        COMPANY_FALLBACK_HARDWARE,
+    ),
+    (
         re.compile(r"\b(firmware|embedded|dsp|signal processing)\b", re.IGNORECASE),
         "audio_dsp_embedded",
         COMPANY_FALLBACK_HARDWARE,
@@ -1054,14 +1126,6 @@ FALLBACK_ROLE_CATEGORIES: list[tuple[re.Pattern[str], str, str]] = [
             re.IGNORECASE,
         ),
         "audio_product_mechanical",
-        COMPANY_FALLBACK_HARDWARE,
-    ),
-    (
-        re.compile(
-            r"\b(test|testing|validation|verification|quality|reliability|qa)\b",
-            re.IGNORECASE,
-        ),
-        "audio_systems",
         COMPANY_FALLBACK_HARDWARE,
     ),
     (
@@ -1176,6 +1240,7 @@ def classify_categories(
             title_hits[category_id] = title_hit
 
     _apply_software_override(title_lower, scored, title_hits)
+    _apply_test_override(title_lower, scored, title_hits)
 
     for dominant, subordinates in CATEGORY_DOMINANCE.items():
         if title_hits.get(dominant):
@@ -1217,6 +1282,33 @@ def _apply_software_override(
     if replaced or inverted:
         scored["audio_software"] = max(scored.get("audio_software", 0), 6)
         title_hits["audio_software"] = True
+
+
+TEST_ROLE_SUBJECT = (
+    r"test|testing|qa|quality|validation|verification|metrology|calibration|reliability"
+)
+
+TEST_ROLE_HOLDER = (
+    r"engineer|engineering|technician|manager|specialist|analyst|lead|developer|"
+    r"scientist|architect|director"
+)
+
+TEST_ROLE_TITLE_RE = re.compile(
+    rf"\b(?:{TEST_ROLE_SUBJECT})\b[\w\s/&,()+-]{{0,40}}?\b(?:{TEST_ROLE_HOLDER})\b"
+    rf"|\b(?:{TEST_ROLE_HOLDER})\b[\w\s/&,()+-]{{0,40}}?\b(?:{TEST_ROLE_SUBJECT})\b",
+    re.IGNORECASE,
+)
+
+
+def _apply_test_override(
+    title_lower: str, scored: dict[str, int], title_hits: dict[str, bool]
+) -> None:
+    if not scored:
+        return
+    if not TEST_ROLE_TITLE_RE.search(title_lower):
+        return
+    scored["test_measurement_qa"] = max(scored.get("test_measurement_qa", 0), 6)
+    title_hits["test_measurement_qa"] = True
 
 
 def _parse_number(raw: str) -> int:
