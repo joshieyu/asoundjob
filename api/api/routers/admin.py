@@ -9,10 +9,6 @@ from datetime import date, datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from scraper.config import load_settings
-from scraper.models import Company, Job, JobSubmission, ScrapeLog
-from scraper.normalizer import Normalizer
-from scraper.scrapers.base import RawJob
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
@@ -29,6 +25,10 @@ from api.schemas import (
     ScrapeStatus,
     StatsResponse,
 )
+from scraper.config import load_settings
+from scraper.models import Company, Job, JobSubmission, ScrapeLog
+from scraper.normalizer import Normalizer
+from scraper.scrapers.base import RawJob
 
 logger = logging.getLogger(__name__)
 

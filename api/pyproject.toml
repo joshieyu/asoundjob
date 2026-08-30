@@ -32,6 +32,9 @@ target-version = "py39"
 select = ["E", "F", "I", "B", "W"]
 ignore = ["B008"]
 
+[tool.ruff.lint.isort]
+known-first-party = ["api", "scraper"]
+
 [tool.mypy]
 python_version = "3.9"
 ignore_missing_imports = true

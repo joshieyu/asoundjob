@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from scraper.models import Company, Job
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
@@ -14,6 +13,7 @@ from api.query import (
     paginate_params,
 )
 from api.schemas import CompanyDetail, CompanyResponse, JobSummary, PaginatedCompanies
+from scraper.models import Company, Job
 
 router = APIRouter(prefix="/api/companies", tags=["companies"])
 

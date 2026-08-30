@@ -25,6 +25,8 @@ class JobSummary(BaseModel):
     title: str
     url: str
     location: Optional[str] = None
+    country: Optional[str] = None
+    country_name: Optional[str] = None
     remote: bool
     job_type: Optional[str] = None
     seniority: Optional[str] = None
@@ -88,6 +90,17 @@ class CategoryInfo(BaseModel):
     name: str
     description: str
     job_count: int
+
+
+class CountryInfo(BaseModel):
+    code: str
+    name: str
+    job_count: int
+
+
+class CountriesResponse(BaseModel):
+    countries: list[CountryInfo]
+    unknown_count: int
 
 
 class CategoriesResponse(BaseModel):

@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from typing import Optional
 
-from scraper.models import Company, Job
-from sqlalchemy import String, func, or_, select
+from sqlalchemy import String, case, func, or_, select
 from sqlalchemy.orm import Session, selectinload
 
 from api.config import MAX_PER_PAGE
+from scraper.models import Company, Job
 
 
 def paginate_params(page: int, per_page: int) -> tuple[int, int]:
@@ -35,6 +35,7 @@ def apply_job_filters(
     salary_max: Optional[int] = None,
     company_id: Optional[int] = None,
     location: Optional[str] = None,
+    country: Optional[str] = None,
     remote: Optional[bool] = None,
     search: Optional[str] = None,
     include_unrelated: bool = False,
@@ -52,6 +53,10 @@ def apply_job_filters(
         stmt = stmt.where(Job.remote.is_(remote))
     if location:
         stmt = stmt.where(Job.location.ilike(f"%{location}%"))
+    if country:
+        stmt = stmt.where(
+            or_(Job.country == country.upper(), Job.country.is_(None))
+        )
     if salary_min is not None:
         stmt = stmt.where(or_(Job.salary_max.is_(None), Job.salary_max >= salary_min))
     if salary_max is not None:
@@ -87,8 +92,11 @@ def fetch_job_page(
     page: int,
     per_page: int,
     sort: str = "newest",
+    country_first: Optional[str] = None,
 ):
-    order_by = SORT_OPTIONS.get(sort, SORT_OPTIONS["newest"])
+    order_by = list(SORT_OPTIONS.get(sort, SORT_OPTIONS["newest"]))
+    if country_first:
+        order_by.insert(0, case((Job.country == country_first.upper(), 0), else_=1))
     total = session.execute(
         select(func.count()).select_from(base_stmt.subquery())
     ).scalar_one()

@@ -4,7 +4,6 @@ import logging
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from scraper.models import Company, Job, JobSubmission
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
@@ -18,6 +17,7 @@ from api.schemas import (
     PaginatedJobs,
     SubmissionCreateResponse,
 )
+from scraper.models import Company, Job, JobSubmission
 
 logger = logging.getLogger(__name__)
 
@@ -44,6 +44,7 @@ def list_jobs(
     salary_max: Optional[int] = Query(None, ge=0),
     company_id: Optional[int] = None,
     location: Optional[str] = None,
+    country: Optional[str] = Query(None, min_length=2, max_length=2),
     remote: Optional[bool] = None,
     include_unrelated: bool = False,
     search: Optional[str] = None,
@@ -60,11 +61,14 @@ def list_jobs(
         salary_max=salary_max,
         company_id=company_id,
         location=location,
+        country=country,
         remote=remote,
         search=search,
         include_unrelated=include_unrelated,
     )
-    jobs, total = fetch_job_page(db, stmt, safe_page, safe_per, sort)
+    jobs, total = fetch_job_page(
+        db, stmt, safe_page, safe_per, sort, country_first=country
+    )
     return page_envelope(
         [JobSummary.model_validate(job) for job in jobs], total, safe_page, safe_per
     )
