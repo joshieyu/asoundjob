@@ -48,7 +48,9 @@ DETAIL = {
 
 class TestWorkdayParser(unittest.TestCase):
     def test_parse_list_item(self) -> None:
-        job = _parse_list_item(LIST_ITEM, "https://sonos.wd1.myworkdayjobs.com")
+        job = _parse_list_item(
+            LIST_ITEM, "https://sonos.wd1.myworkdayjobs.com", "Sonos_Careers"
+        )
         assert job is not None
         self.assertEqual(job.title, "Senior DSP Engineer")
         self.assertEqual(
@@ -59,10 +61,28 @@ class TestWorkdayParser(unittest.TestCase):
         expected = date.today() - timedelta(days=3)
         self.assertEqual(job.posted_date, expected)
 
+    def test_url_includes_the_site_segment(self) -> None:
+        job = _parse_list_item(
+            LIST_ITEM, "https://sonos.wd1.myworkdayjobs.com", "Sonos_Careers"
+        )
+        assert job is not None
+        self.assertEqual(
+            job.url,
+            "https://sonos.wd1.myworkdayjobs.com/Sonos_Careers"
+            "/job/Berlin/Senior-DSP-Engineer_R12345",
+        )
+
+    def test_external_id_stays_the_bare_path(self) -> None:
+        job = _parse_list_item(
+            LIST_ITEM, "https://sonos.wd1.myworkdayjobs.com", "Sonos_Careers"
+        )
+        assert job is not None
+        self.assertNotIn("Sonos_Careers", job.external_id or "")
+
     def test_parse_list_item_missing_fields(self) -> None:
-        self.assertIsNone(_parse_list_item({}, "https://example.com"))
+        self.assertIsNone(_parse_list_item({}, "https://example.com", "Site"))
         self.assertIsNone(
-            _parse_list_item({"title": "Engineer"}, "https://example.com")
+            _parse_list_item({"title": "Engineer"}, "https://example.com", "Site")
         )
 
     def test_extract_description(self) -> None:

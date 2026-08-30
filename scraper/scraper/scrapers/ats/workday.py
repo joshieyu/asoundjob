@@ -88,7 +88,7 @@ class WorkdayScraper(BaseScraper):
             if not postings:
                 break
             for item in postings:
-                parsed = _parse_list_item(item, base)
+                parsed = _parse_list_item(item, base, site)
                 if parsed:
                     jobs.append(parsed)
             total = data.get("total", 0)
@@ -179,12 +179,12 @@ def _fetch_detail(
     return response.json()
 
 
-def _parse_list_item(item: dict[str, Any], base: str) -> RawJob | None:
+def _parse_list_item(item: dict[str, Any], base: str, site: str) -> RawJob | None:
     title = (item.get("title") or "").strip()
     external_path = item.get("externalPath") or ""
     if not title or not external_path:
         return None
-    url = f"{base}{external_path}"
+    url = f"{base}/{site}{external_path}"
     job_type = _parse_time_type(item.get("timeType"))
     posted = _parse_relative_date(item.get("postedOn"))
     return RawJob(
