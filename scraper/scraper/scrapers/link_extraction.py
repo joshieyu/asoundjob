@@ -633,7 +633,17 @@ def _parse_jsonld_job(item: dict, base_url: str) -> RawJob | None:
     )
 
 
+MAX_JSONLD_LOCATIONS = 10
+
+
 def _parse_jsonld_location(loc: object) -> str | None:
+    if isinstance(loc, list):
+        seen: list[str] = []
+        for entry in loc[:MAX_JSONLD_LOCATIONS]:
+            parsed = _parse_jsonld_location(entry)
+            if parsed and parsed not in seen:
+                seen.append(parsed)
+        return "; ".join(seen) or None
     if isinstance(loc, str):
         return loc.strip() or None
     if not isinstance(loc, dict):
@@ -645,9 +655,13 @@ def _parse_jsonld_location(loc: object) -> str | None:
         locality = address.get("addressLocality")
         region = address.get("addressRegion")
         country = address.get("addressCountry")
-        parts = [p for p in (locality, region, country) if p]
+        parts = [
+            str(part)
+            for part in (locality, region, country)
+            if part and str(part).strip().upper() != "UNAVAILABLE"
+        ]
         if parts:
-            return ", ".join(str(p) for p in parts)
+            return ", ".join(parts)
     if "addressLocality" in loc:
         return str(loc["addressLocality"])
     return None

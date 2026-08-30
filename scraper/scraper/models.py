@@ -17,6 +17,8 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
+from scraper.countries import country_name as lookup_country_name
+
 JobCategories = JSON().with_variant(ARRAY(Text), "postgresql")
 
 
@@ -90,6 +92,10 @@ class Job(Base):
     )
 
     company: Mapped[Optional[Company]] = relationship()
+
+    @property
+    def country_name(self) -> Optional[str]:
+        return lookup_country_name(self.country)
 
     def identity_key(self) -> tuple:
         return (self.company_id, self.external_id)

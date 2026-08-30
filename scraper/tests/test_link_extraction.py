@@ -10,6 +10,7 @@ from scraper.scrapers.link_extraction import (
     clean_job_title,
     extract_job_links,
     extract_jobs,
+    extract_jsonld_jobs,
     is_furniture_title,
 )
 
@@ -540,6 +541,46 @@ class TestCookieBannerRejected(unittest.TestCase):
         """
         jobs = extract_jobs(html, "https://example.com/careers")
         self.assertEqual(jobs, [])
+
+
+JSONLD_LIST_LOCATION = """
+<html><body><script type="application/ld+json">
+{"@type": "JobPosting", "title": "Audio Test Engineer",
+ "url": "https://example.com/jobs/1",
+ "jobLocation": [{"@type": "Place", "address": {"@type": "PostalAddress",
+   "addressLocality": "Ciudad Juarez", "addressRegion": "CHH",
+   "addressCountry": "MX", "postalCode": "UNAVAILABLE"}}]}
+</script></body></html>
+"""
+
+JSONLD_TWO_LOCATIONS = """
+<html><body><script type="application/ld+json">
+{"@type": "JobPosting", "title": "Audio Test Engineer",
+ "url": "https://example.com/jobs/1",
+ "jobLocation": [
+   {"@type": "Place", "address": {"@type": "PostalAddress",
+     "addressLocality": "Skokie", "addressRegion": "IL", "addressCountry": "US"}},
+   {"@type": "Place", "address": {"@type": "PostalAddress",
+     "addressLocality": "Edinburgh", "addressRegion": "UNAVAILABLE",
+     "addressCountry": "UK"}}]}
+</script></body></html>
+"""
+
+
+class TestJsonLdListLocations(unittest.TestCase):
+    def test_a_single_entry_list_is_unwrapped(self) -> None:
+        jobs = extract_jsonld_jobs(JSONLD_LIST_LOCATION, "https://example.com/jobs")
+        self.assertEqual(len(jobs), 1)
+        self.assertEqual(jobs[0].location, "Ciudad Juarez, CHH, MX")
+
+    def test_unavailable_placeholders_are_dropped(self) -> None:
+        jobs = extract_jsonld_jobs(JSONLD_TWO_LOCATIONS, "https://example.com/jobs")
+        self.assertIn("Edinburgh, UK", jobs[0].location or "")
+        self.assertNotIn("UNAVAILABLE", jobs[0].location or "")
+
+    def test_several_places_are_joined(self) -> None:
+        jobs = extract_jsonld_jobs(JSONLD_TWO_LOCATIONS, "https://example.com/jobs")
+        self.assertEqual(jobs[0].location, "Skokie, IL, US; Edinburgh, UK")
 
 
 if __name__ == "__main__":
