@@ -4,11 +4,17 @@
 
 > **Read this first.** The document is chronological and some early sections are
 > explicitly marked SUPERSEDED. For the current picture read, in this order:
-> "Current metrics", "Session update (2026-08-29, evening)" and the final
-> "Next steps, in priority order (as of the evening of 2026-08-29)". The earlier
-> "Next steps, in order" section is a record of completed work and rejected
-> experiments — valuable for the reasoning and the DO-NOT-REPEAT entries, but not
-> a to-do list. "Conventions" and "Key Files to Know" are always current.
+> "Current metrics", "Session update (2026-08-29, evening)", "Session update
+> (2026-08-29, late)" and the final "Next steps, in priority order (as of the
+> late session, 2026-08-29)". Earlier "Next steps" sections are a record of
+> completed work and rejected experiments — valuable for the reasoning and the
+> DO-NOT-REPEAT entries, but not a to-do list. "Conventions" and "Key Files to
+> Know" are always current.
+>
+> **Nothing from the late session is on the board yet.** Six commits changed the
+> extractor, the categorizer and the seed, and none of it reaches the live board
+> until someone runs the loader and a full scrape. See "The database is behind
+> the code" below before trusting any number in this file.
 >
 > **The audience is audio engineers.** DSP, audio systems, EE, embedded and
 > acoustics roles are the point; live sound and sound design are not the
@@ -941,7 +947,167 @@ Generalise this when working `SEED_WORKLIST.md`: if `check_url` reports
 host before building anything. One company is not worth a parser; record the
 correct URL and move on.
 
-## Next steps, in priority order (as of the evening of 2026-08-29)
+## Session update (2026-08-29, late) — four company case studies
+
+The owner named four companies they expected to see on the board and did not:
+Amplify Labs, Meta, Harman and Google. Diagnosing all four produced one scraper
+fix, one categorizer fix, pagination, and four seed corrections.
+
+| Company | Board before | After | What it needed |
+|---|---|---|---|
+| Amplify Labs | 0 | 2 | extractor fix only |
+| Google | 0 | 10 | seed URL, then pagination |
+| Harman | 0 | 16 | a company entry that did not exist |
+| Meta | 0 | 3 | both, and it is the least reliable |
+
+**The pattern worth remembering: only one of the four was a scraper bug.** The
+other three were pointed at marketing landing pages, which scrape *successfully*
+and return navigation furniture. Meta's seven rows were "Hiring Process" and
+"Career profile"; Google's were a discrimination notice and a privacy link;
+three Harman brands held seventeen category filter links each, stored three
+times over. **A company reporting `success` with a healthy `jobs_found` can
+still hold zero real jobs.** Nothing in the scrape log distinguishes this, and
+counting rows will not find it — only reading titles will.
+
+### Titles now come from structure, not flattened anchor text (commit 03a8d00)
+
+Two layouts defeated the generic extractor. Meta nests the title in an `<h3>`
+inside the anchor along with location and team chrome, giving 176 characters and
+26 words, over both `MAX_TITLE_LEN` and the 12-word furniture rule. Amplify Labs
+puts the title in a card `<h5>` and links from a bare "Learn More" button, which
+is in `NON_JOB_TEXT` and carries no job hint.
+
+Both now fall back to a heading: inside the anchor first, then in an enclosing
+container. The container case only fires when that container holds exactly one
+job anchor, which stops a heading being stamped onto every link in a list.
+Structural titles are revalidated against the same length, furniture and
+`NON_JOB_TEXT` checks as flat text.
+
+Measured old against new over 111 cached careers pages: 498 rows to 518, **no
+board job lost**, seven companies changed. Roughly half the gain is real
+(Televic Conference 3 -> 13, all genuine postings); the rest is marketing cards
+and blog posts that score 0 and never reach the board. Cookie banners were the
+one recurring false positive the wider net introduced, so any title mentioning
+cookies is now furniture — that also correctly dropped Thornton Tomasetti's sole
+row, which was `Career Site Cookie Settings`.
+
+### Pagination (commit 458ebd4) — NOT the rejected follow-one-link
+
+**Do not confuse this with "Follow-one-link — MEASURED AND REJECTED" above.**
+That was following a link from a careers overview *to a listing page*, hoping to
+reach an ATS embed; it yielded about two distinct boards and remains rejected.
+This follows *next-page links within a listing that is already working*, which is
+a different mechanism with different evidence.
+
+The evidence: Google's audio search runs to 132 jobs and we were keeping the
+first alphabetical twenty. Harman's board is 362. Both expose an ordinary
+next-page link.
+
+**The detection rule was built by measurement and the naive version was
+dangerous.** A first pass found next-links on 7 of 111 cached pages, but four
+were false positives that would have made the crawler misbehave: Cary Audio's
+`<link rel=next>` pointed into a WordPress blog archive, Kawasaki's aria-label
+matched a photo carousel, Walrus Audio's "More" pointed at the page it was
+already on. The shipped rule requires same host, same path, a non-empty query
+string, and a URL different from the current page, and **ignores `<link
+rel="next">` entirely** because that is the WordPress next-post convention. That
+keeps all five genuine paginators and drops all four false positives, leaving 3
+of 111 pages paginating — about 3% more requests, not the 10x feared.
+
+Three guards bound the loop: a ten-page cap, a break as soon as a page
+contributes no new job URL, and a visited-page set so cycles terminate. ATS
+discovery still reads page one, not the last page.
+
+Result: Google yields all **132 unique job ids with zero duplicates**, matching
+Google's own counter, and one more board job — an acoustic engineer for
+hearables that sat on a later page. Amplify Labs and Harman fit on one page and
+take exactly one fetch, unchanged. Note 43 of Google's 175 rows are per-page
+navigation furniture; all score 0.
+
+**Meta gains nothing from this.** Its pagination is SPA-driven with no
+next-page link in the DOM.
+
+### Inverted audio software titles (commit 4dca4f0)
+
+`CATEGORY_KEYWORDS` expects "audio software engineer". Google inverts it and
+trails the domain: "Senior Staff Software Engineer, Audio". Nothing matched, so
+those rows reached the board uncategorized. Now a title that reads as software
+engineering, carries an audio anchor and matched **no category at all** is filed
+`audio_software`. Requiring an empty result is what keeps it safe.
+
+Measured over all 4,207 active rows: **2 newly categorized, 0 re-categorized.**
+Both gains genuine. This is a narrow fix, not a solution to the 104 uncategorized
+rows — "Supplier Development Engineer, Audio" and "Audio Experiences Lead" are
+not software roles and were correctly left alone.
+
+### Meta rate-limits hard, and the GitHub crawler does not help
+
+Probing Meta perhaps eight times in twenty minutes earned a **429 that persisted
+for roughly two and a half hours**, across six probes in two independent backoff
+runs at 15/30/50 minutes. It eventually cleared. Treat Meta as the least
+reliable company on the board and **do not iterate against it quickly.**
+
+The pipeline hit Meta three times per run (http, playwright, stealth) and the
+http attempt can only fail, because Meta rejects non-browser requests. Meta's
+`scrape_method` is now `playwright`, which sets `skip_http` and cuts that to two.
+
+The owner found `github.com/anon767/maangcrawler`. Its `Crawlers/Meta.py` uses
+selenium-wire to load `metacareers.com/jobs/`, sleep 10s, then sniff the
+response to `metacareers.com/graphql` and read `data.job_search`. **There is no
+secret endpoint, no auth and no callable API — it still loads the page in a
+browser, so it does nothing about the 429.** Reproduced with Playwright, which
+intercepts responses natively and needs no new dependency: the payload is
+`job_search_with_featured_jobs_v2`, carrying clean `id`/`title`/`locations`/
+`teams`, and it returns **19 jobs where the DOM renders 10** — but the same 3
+board jobs. The extra 9 are non-audio. **Not worth building a Meta-specific
+GraphQL parser for zero board gain.** Revisit only if Meta's audio hiring grows
+past one rendered page.
+
+### Seed corrections (commits 394b5b7, f5d7778, 1313ab7)
+
+- **Meta** -> `metacareers.com/jobs?q=audio`, `scrape_method: playwright`.
+- **Google** -> `.../jobs/results/?q=audio`, `scrape_method: http`. The search
+  page is server-rendered and readable over plain HTTP; Playwright is
+  unnecessary.
+- **Harman added** at `jobsearch.harman.com/en_US/careers/SearchJobs/?search=audio`.
+  It had no entry at all — only 13 brands, ten of them pointing at
+  `careers.harman.com`, **which does not resolve**. Avature, server-rendered,
+  page size capped at 20 server-side. The board is 362 mostly-automotive roles,
+  hence the audio query.
+- **Bowers & Wilkins, Denon, Marantz** set unverified. They are legitimately
+  Harman brands now, but brand-specific searches return nothing and all three
+  shared one URL, tripling the same furniture rows.
+
+**Scoping a huge partial-scope employer's seed to a search query is now the
+established pattern** for Meta, Google and Harman. Caveat: Harman's search
+matches tokens exactly, so `acoustic` and `acoustics` return different sets and
+no single query is complete — the true union is 24 against `?search=audio`'s 16.
+
+### The database is behind the code
+
+**Every number in this section is a `check_url` projection, not a board count.**
+The six commits changed the extractor, the categorizer and the seed; none of it
+reaches the live board until:
+
+```bash
+cd scraper && source ../venv/bin/activate
+python -m scraper.load_companies      # picks up Harman, the URL changes, the unverified three
+python -m scraper.main --all          # long; longer now that pagination follows pages
+python -m scraper.backfill_relevance  # re-score after the categorizer change
+```
+
+Expect the loader alone to deactivate the Bowers & Wilkins / Denon / Marantz
+furniture rows. Expect the scrape to be slower than the last one for two
+compounding reasons: commit 647b721 pushes ~101 companies through to Playwright,
+and pagination adds pages for ~3% of the generic path.
+
+## Next steps, in priority order (as of the late session, 2026-08-29)
+
+0. **Run the loader and a full scrape — nothing else here is meaningful until
+   this happens.** Six commits from the late session are code and seed only; the
+   board still reflects the previous scrape. Commands and expected effects are in
+   "The database is behind the code" above. Re-read the metrics table afterwards,
+   because every figure in it predates this work.
 
 1. **Seed URL corrections — the active manual task.** `SEED_WORKLIST.md` holds
    the 82 companies whose failure is a wrong careers URL rather than a scraper
@@ -986,7 +1152,9 @@ correct URL and move on.
    worked example: the board had moved and no scraper change could have fixed it.
 
 4. **Categorization, the original pain point #1.** 104 board rows carry no
-   category. Categories are how a reader filters past the junk the board now
+   category (a figure that predates the late session; the inverted-title fix in
+   commit 4dca4f0 accounts for only 2 of them, and a full scrape will move the
+   number in both directions). Categories are how a reader filters past the junk the board now
    deliberately admits, so this is worth doing — but the obvious fix is already
    ruled out.
 
@@ -1034,8 +1202,28 @@ correct URL and move on.
    surfaced without anyone reading 99 rows by hand. Worth reviewing periodically
    rather than only acting on individual rows.
 
-Explicitly NOT worth doing, both measured rather than assumed: follow-one-link
-(section 3 above) and further sweeps of the unverified population (3d and 3e).
+6. **Known and deliberately not fixed.** XR audio roles at Google file as
+   `game_audio_interactive`, which is wrong for headset platform work — it does
+   not affect whether they reach the board, only how they are filed, and fixing
+   it is the same taxonomy decision as bare "acoustics" in item 4. There is also
+   a stray 0-byte `scraper/asoundjob.db`; the live database is `asoundjob.db` at
+   the repo root, and the empty one will confuse anyone who runs a command from
+   the wrong directory.
+
+7. **Harman is only two-thirds covered.** `?search=audio` returns 16 of the 24
+   audio-relevant roles. Harman's search matches tokens exactly, so no single
+   query reaches all of them, and its page size is capped at 20 server-side.
+   Pagination does not help because the scoped query fits on one page. Getting
+   the rest means either several seeded queries or an Avature parser — and
+   Avature is a thin bucket (Harman, plus Motorola Mobility's
+   `jobs.lenovo.com/en_US/careers` shares the URL shape). Count the bucket
+   before building anything.
+
+Explicitly NOT worth doing, all measured rather than assumed: follow-one-link
+(section 3 above — note this is *not* the same as the pagination that shipped in
+458ebd4), further sweeps of the unverified population (3d and 3e), a
+`json_endpoint` parser (item 2), and a Meta GraphQL parser (see the late-session
+section — it returns 19 jobs against the DOM's 10 but the same 3 board jobs).
 
 ## How to measure changes
 
