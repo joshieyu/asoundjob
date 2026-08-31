@@ -81,6 +81,68 @@ class TestFindNextPage(unittest.TestCase):
             find_next_page(html, START_URL), "https://example.com/careers?page=2"
         )
 
+    def test_text_next_word_with_trailing_chevrons_is_followed(self) -> None:
+        html = """
+        <a href="/careers?page=2">Next &gt;&gt;</a>
+        """
+        self.assertEqual(
+            find_next_page(html, START_URL), "https://example.com/careers?page=2"
+        )
+
+    def test_text_next_page_with_trailing_guillemet_is_followed(self) -> None:
+        html = """
+        <a href="/careers?page=2">next page &raquo;</a>
+        """
+        self.assertEqual(
+            find_next_page(html, START_URL), "https://example.com/careers?page=2"
+        )
+
+    def test_text_guillemet_before_next_is_followed(self) -> None:
+        html = """
+        <a href="/careers?page=2">&raquo; Next</a>
+        """
+        self.assertEqual(
+            find_next_page(html, START_URL), "https://example.com/careers?page=2"
+        )
+
+    def test_text_single_angle_bracket_guillemet_is_followed(self) -> None:
+        html = """
+        <a href="/careers?page=2">&rsaquo;</a>
+        """
+        self.assertEqual(
+            find_next_page(html, START_URL), "https://example.com/careers?page=2"
+        )
+
+    def test_text_previous_is_rejected(self) -> None:
+        html = """
+        <a href="/careers?page=2">Previous</a>
+        """
+        self.assertIsNone(find_next_page(html, START_URL))
+
+    def test_text_double_chevron_previous_is_rejected(self) -> None:
+        html = """
+        <a href="/careers?page=2">&lt;&lt; Previous</a>
+        """
+        self.assertIsNone(find_next_page(html, START_URL))
+
+    def test_text_next_steps_is_rejected(self) -> None:
+        html = """
+        <a href="/careers?page=2">Next Steps</a>
+        """
+        self.assertIsNone(find_next_page(html, START_URL))
+
+    def test_text_nextcloud_is_rejected(self) -> None:
+        html = """
+        <a href="/careers?page=2">Nextcloud</a>
+        """
+        self.assertIsNone(find_next_page(html, START_URL))
+
+    def test_text_empty_is_rejected(self) -> None:
+        html = """
+        <a href="/careers?page=2"></a>
+        """
+        self.assertIsNone(find_next_page(html, START_URL))
+
 
 def job_anchor(job_id: int) -> str:
     return (

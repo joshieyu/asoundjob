@@ -5,6 +5,7 @@ import unittest
 from scraper.scrapers.link_extraction import (
     JOBS_COUNT_RE,
     MAX_TITLE_LEN,
+    NON_JOB_TEXT,
     _clean_job_title_and_type,
     _looks_like_job_detail_path,
     clean_job_title,
@@ -640,6 +641,78 @@ class TestDocumentBaseTag(unittest.TestCase):
         self.assertEqual(
             jobs[0].url, "https://example.com/careers/jobs/12345-audio-dsp-engineer"
         )
+
+
+class TestPaginationControlRejected(unittest.TestCase):
+    def test_next_with_chevrons_rejected(self) -> None:
+        self.assertTrue(is_furniture_title("Next >>"))
+
+    def test_bare_next_rejected(self) -> None:
+        self.assertTrue(is_furniture_title("next"))
+
+    def test_double_chevron_previous_rejected(self) -> None:
+        self.assertTrue(is_furniture_title("<< Previous"))
+
+    def test_bare_guillemet_rejected(self) -> None:
+        self.assertTrue(is_furniture_title("»"))
+
+    def test_page_number_rejected(self) -> None:
+        self.assertTrue(is_furniture_title("Page 2"))
+
+    def test_bare_number_rejected(self) -> None:
+        self.assertTrue(is_furniture_title("3"))
+
+    def test_bare_last_rejected(self) -> None:
+        self.assertTrue(is_furniture_title("Last"))
+
+    def test_nextjs_engineer_not_rejected(self) -> None:
+        self.assertFalse(is_furniture_title("Next.js Engineer"))
+
+    def test_first_officer_not_rejected(self) -> None:
+        self.assertFalse(is_furniture_title("First Officer"))
+
+    def test_last_mile_operations_manager_not_rejected(self) -> None:
+        self.assertFalse(is_furniture_title("Last Mile Operations Manager"))
+
+    def test_page_layout_designer_not_rejected(self) -> None:
+        self.assertFalse(is_furniture_title("Page Layout Designer"))
+
+    def test_senior_audio_engineer_not_rejected(self) -> None:
+        self.assertFalse(is_furniture_title("Senior Audio Engineer"))
+
+
+class TestBoardChromeRejected(unittest.TestCase):
+    def test_search_jobs_rejected(self) -> None:
+        self.assertIn("search jobs", NON_JOB_TEXT)
+
+    def test_jobs_and_career_rejected(self) -> None:
+        self.assertIn("jobs & career", NON_JOB_TEXT)
+
+    def test_sign_up_for_job_alerts_with_period_rejected(self) -> None:
+        self.assertIn("sign up for job alerts.", NON_JOB_TEXT)
+
+    def test_sign_up_for_job_alerts_without_period_rejected(self) -> None:
+        self.assertIn("sign up for job alerts", NON_JOB_TEXT)
+
+    def test_powered_by_jobvite_rejected(self) -> None:
+        self.assertIn("powered by jobvite", NON_JOB_TEXT)
+
+    def test_job_alerts_rejected(self) -> None:
+        self.assertIn("job alerts", NON_JOB_TEXT)
+
+    def test_pagination_and_chrome_anchors_excluded_alongside_real_job(self) -> None:
+        html = """
+        <html><body>
+        <a href="/careers/senior-audio-engineer-4471">Senior Audio Engineer</a>
+        <a href="/careers?page=2">Next &gt;&gt;</a>
+        <a href="/careers/search">Search jobs</a>
+        <a href="/careers/alerts">Sign up for Job Alerts.</a>
+        <a href="https://www.jobvite.com/">Powered by Jobvite</a>
+        </body></html>
+        """
+        jobs = extract_job_links(html, "https://example.com/careers")
+        self.assertEqual(len(jobs), 1)
+        self.assertEqual(jobs[0].title, "Senior Audio Engineer")
 
 
 if __name__ == "__main__":

@@ -16,8 +16,11 @@ ARIA_NEXT_RE = re.compile(
     re.IGNORECASE,
 )
 
+CHEVRON_RE = r"(?:«|‹|»|›|<<|>>|<|>)"
+
 TEXT_NEXT_RE = re.compile(
-    r"^(?:next|next\s+page|»|›|>>)$",
+    rf"^(?:{CHEVRON_RE}\s+)?next(?:\s+page)?(?:\s+{CHEVRON_RE})?$"
+    rf"|^{CHEVRON_RE}$",
     re.IGNORECASE,
 )
 

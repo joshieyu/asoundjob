@@ -66,6 +66,12 @@ NON_JOB_TEXT = {
     "follow this link",
     "keep reading",
     "0 jobs",
+    "search jobs",
+    "jobs & career",
+    "sign up for job alerts.",
+    "sign up for job alerts",
+    "powered by jobvite",
+    "job alerts",
 }
 
 FURNITURE_PHRASES = (
@@ -84,6 +90,17 @@ FURNITURE_PHRASES = (
 )
 
 COOKIE_NOTICE_RE = re.compile(r"\bcookies?\b", re.IGNORECASE)
+
+PAGINATION_CHEVRON_RE = r"(?:«|‹|»|›|<<|>>|<|>)"
+PAGINATION_WORD_RE = r"(?:next|prev|previous|first|last)"
+
+PAGINATION_CONTROL_RE = re.compile(
+    rf"^(?:{PAGINATION_CHEVRON_RE}\s*)?"
+    rf"(?:{PAGINATION_WORD_RE}|page\s+\d{{1,4}}|\d{{1,4}})"
+    rf"(?:\s*{PAGINATION_CHEVRON_RE})?$"
+    rf"|^{PAGINATION_CHEVRON_RE}$",
+    re.IGNORECASE,
+)
 
 JOBS_COUNT_RE = re.compile(r"\b\d{1,3}\s+jobs?\b", re.IGNORECASE)
 SENTENCE_BREAK_WORD_RE = re.compile(r"([A-Za-z]+)\.\s+(\S)")
@@ -415,6 +432,8 @@ def is_furniture_title(title: str) -> bool:
     if any(phrase in lowered for phrase in FURNITURE_PHRASES):
         return True
     if COOKIE_NOTICE_RE.search(lowered):
+        return True
+    if PAGINATION_CONTROL_RE.match(title):
         return True
     return False
 
