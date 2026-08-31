@@ -4579,7 +4579,7 @@
     "name": "Hulu Post",
     "careers_url": "https://jobs.disneycareers.com/",
     "category": "Recording Studios & Post Houses",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "playwright"
   },
@@ -6379,7 +6379,7 @@
     "name": "Musi",
     "careers_url": "https://mufgub.wd3.myworkdayjobs.com/MUFG-Careers",
     "category": "Streaming & Music Services",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "http"
   },
@@ -6409,9 +6409,9 @@
   },
   {
     "name": "Music Tribe",
-    "careers_url": "https://www.musictribe.com/careers",
+    "careers_url": "https://jobs.jobvite.com/musictribe",
     "category": "Professional Audio & Live Sound",
-    "verified": false,
+    "verified": true,
     "source": "auto",
     "scrape_method": "http"
   },
@@ -8217,7 +8217,7 @@
   },
   {
     "name": "Rohde & Schwarz",
-    "careers_url": "https://www.rohde-schwarz.com/uk/career/jobs/career-jobboard_251573.html",
+    "careers_url": "https://jobs.rohde-schwarz.com/en_US/careers",
     "category": "Professional Audio & Live Sound",
     "verified": true,
     "source": "auto",
@@ -9201,7 +9201,7 @@
   },
   {
     "name": "Spitfire Audio",
-    "careers_url": "https://www.spitfireaudio.com/en-us/pages/careers",
+    "careers_url": "https://apply.workable.com/spitfire-audio/",
     "category": "Audio Plugins & Virtual Instruments",
     "verified": true,
     "source": "auto",
@@ -9627,7 +9627,7 @@
     "name": "Tannoy",
     "careers_url": "https://www.musictribe.com/careers",
     "category": "Hi-Fi & Consumer Speakers",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "http"
   },
@@ -9659,7 +9659,7 @@
     "name": "TC Electronic",
     "careers_url": "https://www.musictribe.com/careers",
     "category": "Professional Audio & Live Sound",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "http"
   },
@@ -9667,7 +9667,7 @@
     "name": "TC Helicon",
     "careers_url": "https://www.musictribe.com/careers",
     "category": "Professional Audio & Live Sound",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "http"
   },
@@ -10107,7 +10107,7 @@
     "name": "Turbosound",
     "careers_url": "https://www.musictribe.com/careers",
     "category": "Professional Audio & Live Sound",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "http"
   },
@@ -11083,7 +11083,7 @@
     "name": "Zynaptiq",
     "careers_url": "https://www.zynaptiq.com/careers/",
     "category": "Professional Audio & Live Sound",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "http"
   },
