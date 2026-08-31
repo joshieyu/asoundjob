@@ -2873,7 +2873,7 @@
   },
   {
     "name": "DiGiCo",
-    "careers_url": "https://www.digico.tv/app.php/About-Us/careers",
+    "careers_url": "https://digico.biz/recruitment/",
     "category": "Professional Audio & Live Sound",
     "verified": true,
     "source": "auto",
@@ -3539,7 +3539,7 @@
     "name": "Extron Electronics",
     "careers_url": "https://www.extron.com/careers",
     "category": "Professional Audio & Live Sound",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "playwright"
   },
@@ -3603,7 +3603,7 @@
     "name": "FBT",
     "careers_url": "https://www.fbt.it/events/join-us-at-infocomm-2025-in-orlando/",
     "category": "Professional Audio & Live Sound",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "playwright"
   },
@@ -9459,7 +9459,7 @@
     "name": "Supro",
     "careers_url": "https://www.suprousa.com/careers/",
     "category": "Professional Audio & Live Sound",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "http"
   },
@@ -10843,7 +10843,7 @@
     "name": "Wisycom",
     "careers_url": "https://wisycom.com/products/careers/",
     "category": "Professional Audio & Live Sound",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "playwright"
   },
