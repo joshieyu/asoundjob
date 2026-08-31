@@ -277,5 +277,32 @@ class TestCollectPaginated(unittest.TestCase):
         self.assertNotEqual(first_html, pages["https://example.com/careers?page=2"])
 
 
+class TestDescendantPathPagination(unittest.TestCase):
+    def test_next_page_may_live_under_the_base_path(self) -> None:
+        html = (
+            '<a href="/en_US/careers/SearchJobs/?jobOffset=6">Next &gt;&gt;</a>'
+        )
+        self.assertEqual(
+            find_next_page(html, "https://jobs.example.com/en_US/careers"),
+            "https://jobs.example.com/en_US/careers/SearchJobs/?jobOffset=6",
+        )
+
+    def test_next_page_on_an_unrelated_path_is_rejected(self) -> None:
+        html = '<a href="/other/section/?page=2">Next &gt;&gt;</a>'
+        self.assertIsNone(
+            find_next_page(html, "https://jobs.example.com/en_US/careers")
+        )
+
+    def test_a_sibling_path_sharing_a_prefix_is_rejected(self) -> None:
+        html = '<a href="/en_US/careersXYZ/?page=2">Next &gt;&gt;</a>'
+        self.assertIsNone(
+            find_next_page(html, "https://jobs.example.com/en_US/careers")
+        )
+
+    def test_a_root_base_does_not_match_every_path(self) -> None:
+        html = '<a href="/anything/?page=2">Next &gt;&gt;</a>'
+        self.assertIsNone(find_next_page(html, "https://jobs.example.com/"))
+
+
 if __name__ == "__main__":
     unittest.main()

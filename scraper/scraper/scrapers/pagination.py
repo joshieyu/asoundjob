@@ -81,6 +81,15 @@ def _page_key(url: str) -> Tuple[str, str, str]:
     return (parsed.netloc.lower(), parsed.path.rstrip("/").lower(), parsed.query)
 
 
+def _same_or_descendant_path(path: str, base_path: str) -> bool:
+    candidate = path.rstrip("/").lower()
+    if candidate == base_path:
+        return True
+    if not base_path:
+        return False
+    return candidate.startswith(base_path + "/")
+
+
 def find_next_page(html: str, base_url: str) -> Optional[str]:
     soup = BeautifulSoup(html, "html.parser")
     link_base = resolve_document_base(soup, base_url)
@@ -98,7 +107,7 @@ def find_next_page(html: str, base_url: str) -> Optional[str]:
             continue
         if parsed.netloc.lower() != base_key[0]:
             continue
-        if parsed.path.rstrip("/").lower() != base_key[1]:
+        if not _same_or_descendant_path(parsed.path, base_key[1]):
             continue
         if not parsed.query:
             continue
