@@ -1412,6 +1412,32 @@ dislikes robots" rather than broken. Worth building as a periodic read-only
 diagnostic alongside `diagnose_failures.py` — roughly 470 requests, a few
 minutes. **Whitelist Meta**, or it will report three false failures forever.
 
+### Uncommitted seed edits found in the working tree (2026-08-31)
+
+`data/audio_companies_final.json` had **uncommitted manual edits** — not made by
+this session, and matching `SEED_WORKLIST.md` entries, so they are the owner's
+own worklist research. They are **still uncommitted and not in the database**;
+the last full scrape predates them and the per-company reruns used
+`--skip-load`. Tested read-only with `check_url`:
+
+| Company | Edit | Result |
+|---|---|---|
+| DiGiCo | `digico.tv/app.php/...` -> `digico.biz/recruitment/` | **works — 5 jobs, 4 reach the board** |
+| QSC | `acuityinc.com/careers` -> `qsccareersemea-qsc.icims.com/jobs/` | routes to iCIMS, **returns 0 jobs** |
+| Arturia | `jobs.arturia.com/` -> `jobs.arturia.com/join-us` | **no job links found**, same as before |
+| Extron, FBT, +2 | `verified: true` -> `false` | deactivates their stale rows, as intended |
+
+**QSC needs care before it is committed.** iCIMS reporting `success` with zero
+jobs sets `trust_empty`, which deactivates existing rows. QSC has none today so
+nothing is lost, but the EMEA board genuinely looks empty — `qsccareers-qsc`
+(no `emea`) also resolves and may be the right tenant.
+
+Arturia's root and `/join-us` both return a page with 30 anchors and no job
+links, so the board is almost certainly JS-rendered; neither URL is an
+improvement yet.
+
+To land these: `python -m scraper.company_loader` then a scrape.
+
 ## Next steps, in priority order (as of 2026-08-31)
 
 0. **The database is current with the code** as of commit 7d76e61. No scrape is
