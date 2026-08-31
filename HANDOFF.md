@@ -1438,10 +1438,147 @@ improvement yet.
 
 To land these: `python -m scraper.company_loader` then a scrape.
 
+## Session update (2026-08-31, later) — the link checker, and what it found
+
+Board 465 jobs, 4,447 active rows, 78 contributing companies, 106 uncategorized,
+321 with a country. All three gates green at 515 tests.
+
+### The link checker exists now (commit f94492f)
+
+`python -m scraper.check_links` sweeps every URL on the board, read-only,
+deduplicating so one request covers every row sharing a page. Buckets are ok,
+broken, bot_defence, server_error, other_status, error. Flags: `--all`,
+`--company`, `--limit`, `--examples`, `--json`. Exit 1 if anything is broken.
+
+**It caught a bug in itself on the first run,** which is the part worth
+remembering. It reported all four Akai Professional rows as broken. They were
+not: Pinpoint answers HEAD with 404 and GET with 200, and the original design
+trusted a non-2xx HEAD as final. HEAD is now only an optimization — anything
+non-2xx is re-verified with a GET before a URL is called broken. A checker
+whose broken bucket cannot be trusted is worse than no checker.
+
+Latest sweep: 459 URLs, 456 ok, 0 broken, 3 bot defence. The 3 are Meta, which
+is whitelisted by host because it returns 400 to every non-browser client.
+
+### Rohde & Schwarz: three bugs stacked behind one symptom
+
+R&S was serving 77 rows of country-selector links and one real job. Unpicking it
+found three separate faults, and the first two are general.
+
+1. **The seed said `scrape_method: playwright`,** and `pipeline.py:163` reads
+   `skip_http = company.scrape_method == "playwright"` — so the HTTP path is
+   skipped outright. HTTP worked and returned real jobs; Playwright rendered the
+   country selector. **When a company returns navigation furniture, check its
+   `scrape_method` before blaming extraction.**
+2. **Pagination could not leave the base path.** `find_next_page` required the
+   next page to share the base URL's exact path. Avature paginates from
+   `/en_US/careers` to `/en_US/careers/SearchJobs/?jobOffset=6`, so every
+   candidate died on the path check. Now the next page may sit at the base path
+   or beneath it, never elsewhere; an empty base path matches nothing, so a site
+   seeded at its root still cannot follow arbitrary links (commit 7fb7be6).
+3. **The next-page control is labelled `Next >>`,** which matched neither
+   "exactly next" nor "exactly >>" in the text pattern, and was itself extracted
+   as a job (commit dd20443).
+
+Measured end to end: 6 jobs to 86, 4 board rows to 7, and `test_measurement_qa`
+37 to 41.
+
+**Note the correction:** dd20443's message claimed the text fix made Avature
+boards paginate. It did not — fault 2 was still in the way, and R&S stopped at
+page one until 7fb7be6. Do not trust that commit message on its own.
+
+### The pagination fix is narrower than it looks
+
+A full scrape after 7fb7be6 moved `jobs_found` 4,376 to 4,369 with 5 rows
+inserted. It is a correctness fix with essentially one measured beneficiary, not
+a coverage lever. **Harman is unchanged at 16 board rows,** which confirms what
+next-step 9 already said: its scoped query fits on one page, so pagination was
+never the constraint there.
+
+### Furniture rejection: audited, zero false positives
+
+`is_furniture_title` now rejects whole titles that are only a pagination
+control, and the exact-match chrome set covers `search jobs`, `jobs & career`,
+`sign up for job alerts`, `powered by jobvite` and `job alerts`. Run against all
+3,710 distinct active titles, the pagination rule rejects **0** legitimate
+titles. `Next.js Engineer`, `First Officer`, `Last Mile Operations Manager` and
+`Page Layout Designer` are regression tests.
+
+Still uncaught, and left deliberately: Crestron Electronics yields 12 rows of
+`career areas`, `Administration & operations` and `CCPA/CPRA Notice`. That is
+the `careers_landing` class, not a furniture-pattern gap — the page is a
+category index, not a board. All score 0, so it costs active rows, not board
+quality.
+
+### Seed batch (commit 8aa4116), all measured with check_url first
+
+Corrected: **Rohde & Schwarz** to the Avature board; **Music Tribe** to
+`jobs.jobvite.com/musictribe` (eight seed entries shared the dead
+`musictribe.com/careers`); **Spitfire Audio** to `apply.workable.com/
+spitfire-audio` — a real Workable account, currently empty, which will now pick
+up postings without another seed edit.
+
+Retired: **Tannoy, TC Electronic, TC Helicon, Turbosound** (Music Tribe brands
+with no separate board; pointing all four at Jobvite would duplicate the same
+ten corporate roles); **Musi**, a music app pointed at **MUFG the bank** by slug
+collision, 40 rows of SAP and banking; **Hulu Post**, pointed at the Disney
+careers root, which returns department names; **Zynaptiq**, whose careers page
+is a product page that put `audio applications` and `audio plug-ins` on the
+public board.
+
+**Niantic and Eventbrite look like the same class and are not.** Both companies'
+own careers pages redirect to an acquirer's board — `nianticlabs.com/careers`
+resolves to `careers.scopely.com`, Eventbrite's to `jobs.bendingspoons.com`. The
+seeded URL is right and the noise is real. Left alone on purpose; do not
+"fix" them.
+
+### Two facts about the database worth knowing
+
+- **`scraped_at` is never re-stamped on update.** A row showing an old
+  `scraped_at` is not stale; it is being re-fetched every cycle and only its
+  scored fields are rewritten. Do not read that column as freshness.
+- Seed-to-database drift is currently **zero**. Verified by comparing every
+  seed `careers_url` and `verified` flag against the companies table.
+
+### Board composition, for the owner
+
+`sales_marketing_cs` is 66 rows, second only to `audiology_hearing` at 67 and
+ahead of every engineering category (`audio_dsp_embedded` 47, `audio_aiml` 42,
+`audio_software` 41, `test_measurement_qa` 41). For an audience of audio
+engineers that is worth a decision.
+
+The obvious lever was measured and **rejected**: remapping
+`Voice & Speech Technology` to partial scope drops 70 board rows, including 28
+at Deepgram, to remove Zoom's 21 Account Executives. Scope is derived from
+`category` in `company_loader`, not stored per company, so it cannot be tuned
+for one company without moving the whole category.
+
+### Leads found but not resolved
+
+- **Calrec**'s real board is `calrecaudioltd.livevacancies.co.uk/jobsIframe`,
+  reached from an iframe on `calrec.com/careers`. It fails TLS negotiation
+  outright (`TLSV1_ALERT_PROTOCOL_VERSION`) and Playwright finds no links. Count
+  how many seeded hosts fail the same way before treating it as one company.
+- **Welcome to the Jungle** (`welcometothejungle.com/en/companies/<slug>/jobs`)
+  is Devialet's board and is common across French audio firms. JS-rendered;
+  yields only furniture. Count the bucket before calling it a lever.
+- **Native Instruments** `/pages/careers` is a JS-rendered SPA with no ATS link
+  in the HTML. `career-center` redirects to it.
+- **Audio Precision** is part of Axiometrix Solutions with GRAS and imc; the
+  board is `axiometrixsolutions.com/about-us/careers`, currently no openings and
+  no extractable job links.
+- **Fostex**'s `careers_url` is a 900-character tracking blob on
+  `studiowatersolutions.com`, an unrelated domain. It yields 0 rows so it costs
+  nothing today, but it is plainly wrong.
+- Jobvite is a **3-company bucket** (Capcom, Devialet, Music Tribe) — no parser
+  worth building. Devialet's seeded URL is a Jobvite *error* page
+  (`?invalid=1`).
+
 ## Next steps, in priority order (as of 2026-08-31)
 
-0. **The database is current with the code** as of commit 7d76e61. No scrape is
-   owed. Board 470.
+0. **The database is current with the code** as of commit 7fb7be6, after two
+   full scrapes and a backfill. No scrape is owed. Board 465, all links
+   reachable.
 
 1. **Company case studies — what the owner is doing next.** The owner works by
    naming companies they expect to see on the board and asking why they are
@@ -1586,13 +1723,11 @@ To land these: `python -m scraper.company_loader` then a scrape.
    `asoundjob.db` at the repo root, and the empty one will confuse anyone who
    runs a command from the wrong directory.
 
-7. **Build a link checker — there is still none.** 851 board rows pointed at
-   404s for an unknown period and **no tracked metric could see it**; the
-   companies all reported `success` with healthy counts and full descriptions.
-   A read-only sweep alongside `diagnose_failures.py` would catch the whole
-   class: ~470 requests, follow redirects, browser User-Agent, treat 403/429/999
-   as bot defence rather than breakage, and **whitelist Meta**, which returns
-   400 to every non-browser client. See "Session update (2026-08-31)".
+7. **Link checker — BUILT (commit f94492f).** `python -m scraper.check_links`.
+   Latest sweep: 459 URLs, 456 ok, 0 broken, 3 bot defence (Meta, whitelisted).
+   Worth re-running after any scrape and after any seed batch; it is read-only
+   and takes about a minute. See the session update above for the HEAD-versus-GET
+   trap it exposed.
 
 8. **Location extraction is the remaining lever for country coverage.** 152 of
    469 board rows still have no country, almost all because they carry no
