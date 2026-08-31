@@ -4,16 +4,17 @@
 
 > **Read this first.** The document is chronological and some early sections are
 > explicitly marked SUPERSEDED. For the current picture read, in this order:
-> "Session update (2026-08-30)", "Session update (2026-08-29, night)", "Session
-> update (2026-08-29, late)", "Session update (2026-08-29, evening)" and the
-> final "Next steps, in priority order (as of 2026-08-30)". Earlier "Next steps" sections are a record of
+> "Session update (2026-08-31)", "Session update (2026-08-30)", "Session update
+> (2026-08-29, night)", "Session update (2026-08-29, late)", "Session update
+> (2026-08-29, evening)" and the final "Next steps, in priority order (as of
+> 2026-08-31)". Earlier "Next steps" sections are a record of
 > completed work and rejected experiments — valuable for the reasoning and the
 > DO-NOT-REPEAT entries, but not a to-do list. "Conventions" and "Key Files to
 > Know" are always current.
 >
-> **The board is current as of the 2026-08-30 scrape.** The late session's six
-> commits are live; so are the Test, Measurement & QA category and country
-> filtering. Read
+> **The board is current as of 2026-08-31.** Live: the Test, Measurement & QA
+> category, country filtering, and the Workday/`<base href>` link repairs.
+> Board is 470 with 0 known-broken links. Read
 > "Session update (2026-08-29, night)" for the numbers that supersede the
 > metrics table.
 >
@@ -1315,18 +1316,130 @@ Pinpoint (1) still return no location, and the generic anchor path can
 only get one by fetching detail pages, which "Detail-page fetching" above
 already measured as a small population.
 
-## Next steps, in priority order (as of 2026-08-30)
+## Session update (2026-08-31) — every Workday and Google link was a 404
 
-0. **DONE — the scrape ran on the night of 2026-08-29.** The board is 468. See
-   "Session update (2026-08-29, night)" for what landed. The database is current
-   with the code as of commit 41f3967.
+### Board as it stands (2026-08-31, commit 7d76e61)
 
-1. **Seed URL corrections — the active manual task.** `SEED_WORKLIST.md` holds
-   the 82 companies whose failure is a wrong careers URL rather than a scraper
-   limit, with slugs, ordered by engineering relevance. Test candidates with
-   `python -m scraper.check_url` (see "Correcting a careers URL by hand" above);
-   it writes nothing. The proposal tool cannot help here — see "Step 1 of the
-   seed plan" — so this is human work.
+| Metric | Value |
+|---|---|
+| Total job rows | 8,060 |
+| Active | 4,704 |
+| Audio-related (the public board) | **470** |
+| Board rows with a real description | 335 (71%) |
+| Board rows with a location | 335 (71%) |
+| Board rows with a resolved country | 318 (68%) |
+| Uncategorized board rows | 106 |
+| Companies appearing on the board | 73 |
+| Companies contributing active jobs | 398 |
+| Board links reachable | **467 of 470** (3 are Meta bot defence) |
+| Tests | 454 scraper + 7 api; ruff, mypy, `npm run check` clean |
+
+The owner reported that Workday links said "invalid link". Diagnosing that
+found two unrelated URL bugs and cleared **851 broken rows**.
+
+### Workday dropped the site segment (commit 667a14e)
+
+The public URL was built as tenant origin + the API's `externalPath`, with
+nothing between them. Workday needs the site:
+
+```
+https://boseallaboutme.wd503.myworkdayjobs.com/job/US-MA---Framingham/...       404
+https://boseallaboutme.wd503.myworkdayjobs.com/Bose_Careers/job/US-MA---...     200
+```
+
+`_parse_list_item` now takes `site` and builds `{base}/{site}{external_path}`.
+**`external_id` deliberately stays the bare `externalPath`**, so existing rows
+update in place instead of being orphaned and reinserted.
+
+**The first repair was incomplete, and this is the part to remember.** Fixing
+the 8 companies with a stored `ats_type='workday'` covered 263 rows and looked
+complete. But `WorkdayScraper.can_handle` also routes on `careers_url`, so **18
+further companies with `ats_type=None` were on the same code path** —
+RingCentral, Samsung, Razer, Sonos, Belkin, Full Sail, the whole GN family
+(Beltone, Jabra, SteelSeries, GN Store Nord). Real total: **851 rows across 26
+companies.**
+
+> **Querying `ats_type` does not tell you which parser ran.** Several parsers
+> route on `careers_url` through `can_handle`, so `ats_type IS NULL` does not
+> mean "generic". To find every company a parser touches, match its
+> `URL_PATTERN` against `careers_url` as well. This is the second time this
+> session that an `ats_type` query understated a population.
+
+### The generic scraper ignored `<base href>` (commit 6386618)
+
+Google's careers page declares
+`<base href="https://www.google.com/about/careers/applications/">` and links
+its jobs relatively, so resolving against the page URL produced
+`.../jobs/results/jobs/results/...` and all 10 Google links 404'd. Browsers
+honour `<base>`; the extractor did not.
+
+`resolve_document_base()` is now applied in **both** places that resolve
+relative URLs — `extract_job_links` and `find_next_page` — because a base tag
+governs the whole document. A relative base resolves against the page; a
+non-http base is ignored. Google's 132 job ids and its pagination are
+unchanged; only the host path is now correct.
+
+Note this re-inserted Google's rows rather than updating them: generic-path
+`external_id` is the URL, so a URL-shape fix is a new identity. 167 inserted,
+175 deactivated. Expect that churn whenever a generic URL shape changes.
+
+### Meta's 400s are bot protection, not broken links
+
+Three Meta links return `400` to curl regardless of URL shape — `/jobs/{id}/`,
+`/profile/job_details/{id}`, all of them. **Opened in a real browser they load
+fine.** This is the same defence as the 429 in the late 2026-08-29 session.
+**Do not "fix" the Meta URL format.** It is correct.
+
+### Board-wide link check: the metric nobody had
+
+Sweeping all 470 board links found the problem and confirmed the repair:
+
+| | Before | After |
+|---|---|---|
+| Reachable (200/202) | 457 | **467** |
+| 404 / 400 | 13 | 3 (all Meta bot protection) |
+| Genuinely broken | **851 rows** | **0** |
+
+**This class of bug is invisible to every metric the project tracks.** All 26
+companies reported `success` with healthy `jobs_found` the whole time, kept
+full descriptions, and scored normally — while every link 404'd. It is the same
+shape as the marketing-landing-page finding: *counting rows cannot see it.*
+
+There is still **no link checker in the repo.** The throwaway used here was a
+`curl -sL -o /dev/null -w '%{http_code}'` sweep over the board at 10 workers,
+following redirects with a browser User-Agent, treating 403/429/999 as "site
+dislikes robots" rather than broken. Worth building as a periodic read-only
+diagnostic alongside `diagnose_failures.py` — roughly 470 requests, a few
+minutes. **Whitelist Meta**, or it will report three false failures forever.
+
+## Next steps, in priority order (as of 2026-08-31)
+
+0. **The database is current with the code** as of commit 7d76e61. No scrape is
+   owed. Board 470.
+
+1. **Company case studies — what the owner is doing next.** The owner works by
+   naming companies they expect to see on the board and asking why they are
+   missing. Four such studies on 2026-08-29 recovered 31 jobs; run the same play:
+
+   - `python -m scraper.check_url "<url>" --name "<Company>"` — read-only,
+     writes nothing, reports method, jobs found, and how many would reach the
+     board. See "Correcting a careers URL by hand" above.
+   - **Read the sample titles it prints; do not just read the counts.** Three of
+     those four companies were reporting `success` with healthy `jobs_found`
+     while holding nothing but navigation furniture.
+   - **The prior is that it is a seed problem, not a scraper bug.** Of four
+     studies, one was a scraper defect and three were wrong careers URLs.
+   - For a huge partial-scope employer, **scope the seed to a search query** —
+     the established pattern for Meta, Google and Harman (`?q=audio`,
+     `?search=audio`).
+   - When a study leads to a fix, check whether it generalises before declaring
+     it done. Both bugs fixed on 2026-08-31 had populations several times larger
+     than the first query suggested.
+
+   `SEED_WORKLIST.md` holds the 82 companies whose failure is a wrong careers
+   URL rather than a scraper limit, with slugs, ordered by engineering
+   relevance. The proposal tool cannot help here — see "Step 1 of the seed
+   plan" — so this is human work.
 
    Note `last_scraped_at` is written **only on success**, so a company showing
    "never scraped" has actually failed every attempt; it was not skipped. Do not
@@ -1363,12 +1476,12 @@ already measured as a small population.
 3. **Seed URL quality remains the cheapest lever** — see 3b and 3e. Keysight is a
    worked example: the board had moved and no scraper change could have fixed it.
 
-4. **Categorization, the original pain point #1.** 105 board rows carry no
-   category, measured after the night scrape. Categories are how a reader filters
+4. **Categorization, the original pain point #1.** 106 board rows carry no
+   category. Categories are how a reader filters
    past the junk the board now deliberately admits, so this is worth doing — but
    the obvious fix is already ruled out.
 
-   **Shure alone accounts for 32 of the 105**, then Bose 8, Suno AI 7, Apple 7 —
+   **Shure alone accounts for roughly a third**, then Bose 8, Suno AI 7, Apple 7 —
    four companies hold half. But read the next paragraph before spending time on
    them.
 
@@ -1447,14 +1560,22 @@ already measured as a small population.
    `asoundjob.db` at the repo root, and the empty one will confuse anyone who
    runs a command from the wrong directory.
 
-7. **Location extraction is the remaining lever for country coverage.** 152 of
+7. **Build a link checker — there is still none.** 851 board rows pointed at
+   404s for an unknown period and **no tracked metric could see it**; the
+   companies all reported `success` with healthy counts and full descriptions.
+   A read-only sweep alongside `diagnose_failures.py` would catch the whole
+   class: ~470 requests, follow redirects, browser User-Agent, treat 403/429/999
+   as bot defence rather than breakage, and **whitelist Meta**, which returns
+   400 to every non-browser client. See "Session update (2026-08-31)".
+
+8. **Location extraction is the remaining lever for country coverage.** 152 of
    469 board rows still have no country, almost all because they carry no
    location string at all. ADP (7 companies) and Pinpoint (1) return none;
    the generic anchor path would need detail-page fetching. See "Session update
    (2026-08-30)". The parser itself is not the constraint — it resolves 92% of
    what it is given.
 
-8. **Harman is only two-thirds covered.** `?search=audio` returns 16 of the 24
+9. **Harman is only two-thirds covered.** `?search=audio` returns 16 of the 24
    audio-relevant roles. Harman's search matches tokens exactly, so no single
    query reaches all of them, and its page size is capped at 20 server-side.
    Pagination does not help because the scoped query fits on one page. Getting
