@@ -6,7 +6,7 @@ import json
 import sys
 import threading
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Mapping, Optional
 from urllib.parse import urlparse
 
 import requests  # type: ignore[import-untyped]
@@ -24,7 +24,18 @@ DEFAULT_EXAMPLES = 5
 BOT_DEFENCE_STATUSES = frozenset({401, 403, 405, 406, 429, 999})
 BOT_DEFENCE_HOSTS = frozenset({"metacareers.com", "www.metacareers.com"})
 BROKEN_STATUSES = frozenset({404, 410})
-BUCKET_ORDER = ["ok", "broken", "bot_defence", "server_error", "other_status", "error"]
+READABLE_CONTENT_TYPES = frozenset(
+    {"text/html", "application/xhtml+xml", "application/pdf"}
+)
+BUCKET_ORDER = [
+    "ok",
+    "broken",
+    "wrong_content",
+    "bot_defence",
+    "server_error",
+    "other_status",
+    "error",
+]
 
 _LOCAL = threading.local()
 
@@ -51,6 +62,7 @@ class UrlCheck:
     error: Optional[str]
     final_url: str
     bucket: str
+    content_type: Optional[str] = None
 
     @property
     def row_count(self) -> int:
@@ -75,7 +87,7 @@ class CompanyBucketSummary:
     company_name: str
     count: int
     total_rows: int
-    examples: list[tuple[str, str]]
+    examples: list[tuple[str, str, Optional[str]]]
 
 
 def _is_bot_defence_host(host: str) -> bool:
@@ -87,10 +99,17 @@ def _is_bot_defence_host(host: str) -> bool:
     return False
 
 
-def classify(status: Optional[int], url: str, error: Optional[str]) -> str:
+def classify(
+    status: Optional[int],
+    url: str,
+    error: Optional[str],
+    content_type: Optional[str] = None,
+) -> str:
     if status is None:
         return "error"
     if 200 <= status < 300:
+        if content_type is not None and content_type not in READABLE_CONTENT_TYPES:
+            return "wrong_content"
         return "ok"
     host = (urlparse(url).hostname or "").lower()
     if _is_bot_defence_host(host):
@@ -104,8 +123,8 @@ def classify(status: Optional[int], url: str, error: Optional[str]) -> str:
     return "other_status"
 
 
-def has_broken_links(report: LinkCheckReport) -> bool:
-    return any(check.bucket == "broken" for check in report.checks)
+def has_bad_links(report: LinkCheckReport) -> bool:
+    return any(check.bucket in ("broken", "wrong_content") for check in report.checks)
 
 
 def bucket_counts(report: LinkCheckReport) -> dict:
@@ -136,7 +155,7 @@ def company_bucket_summaries(
             counts[job.company_name] = counts.get(job.company_name, 0) + 1
             bucket_examples = examples.setdefault(job.company_name, [])
             if len(bucket_examples) < examples_limit:
-                bucket_examples.append((check.url, job.title))
+                bucket_examples.append((check.url, job.title, check.content_type))
     summaries = [
         CompanyBucketSummary(
             company_name=name,
@@ -170,8 +189,20 @@ def format_report(report: LinkCheckReport, examples_limit: int = DEFAULT_EXAMPLE
                 f"  {summary.company_name} — {summary.count} broken / "
                 f"{summary.total_rows} board rows"
             )
-            for url, title in summary.examples:
+            for url, title, _content_type in summary.examples:
                 lines.append(f"      {title} -> {url}")
+
+    wrong_content_summaries = company_bucket_summaries(report, "wrong_content", examples_limit)
+    if wrong_content_summaries:
+        lines.append("")
+        lines.append("companies with wrong content type:")
+        for summary in wrong_content_summaries:
+            lines.append(
+                f"  {summary.company_name} — {summary.count} wrong content type / "
+                f"{summary.total_rows} board rows"
+            )
+            for url, title, content_type in summary.examples:
+                lines.append(f"      {title} -> {url} [{content_type}]")
 
     for bucket in ("error", "server_error"):
         summaries = company_bucket_summaries(report, bucket, examples_limit)
@@ -195,10 +226,23 @@ def report_to_dict(report: LinkCheckReport, examples_limit: int = DEFAULT_EXAMPL
                 "broken_count": summary.count,
                 "total_board_rows": summary.total_rows,
                 "examples": [
-                    {"title": title, "url": url} for url, title in summary.examples
+                    {"title": title, "url": url}
+                    for url, title, _content_type in summary.examples
                 ],
             }
             for summary in company_bucket_summaries(report, "broken", examples_limit)
+        ],
+        "wrong_content_companies": [
+            {
+                "company": summary.company_name,
+                "wrong_content_count": summary.count,
+                "total_board_rows": summary.total_rows,
+                "examples": [
+                    {"title": title, "url": url, "content_type": content_type}
+                    for url, title, content_type in summary.examples
+                ],
+            }
+            for summary in company_bucket_summaries(report, "wrong_content", examples_limit)
         ],
         "error_companies": [
             {"company": summary.company_name, "count": summary.count}
@@ -214,6 +258,7 @@ def report_to_dict(report: LinkCheckReport, examples_limit: int = DEFAULT_EXAMPL
                 "final_url": check.final_url,
                 "status": check.status,
                 "error": check.error,
+                "content_type": check.content_type,
                 "bucket": check.bucket,
                 "job_ids": [job.job_id for job in check.jobs],
             }
@@ -231,12 +276,22 @@ def _get_session(settings: Settings) -> requests.Session:
     return session
 
 
+def _extract_media_type(headers: Mapping[str, str]) -> Optional[str]:
+    value = headers.get("Content-Type")
+    if value is None:
+        return None
+    media_type = value.split(";", 1)[0].strip().lower()
+    return media_type or None
+
+
 def _fetch_status(url: str, settings: Settings) -> tuple:
     session = _get_session(settings)
     try:
         response = session.head(url, allow_redirects=True, timeout=settings.request_timeout)
         if 200 <= response.status_code < 300:
-            return response.status_code, None, response.url
+            content_type = _extract_media_type(response.headers)
+            if content_type == "text/html":
+                return response.status_code, None, response.url, content_type
     except requests.RequestException:
         pass
     try:
@@ -244,24 +299,33 @@ def _fetch_status(url: str, settings: Settings) -> tuple:
             url, allow_redirects=True, timeout=settings.request_timeout, stream=True
         )
         try:
-            return response.status_code, None, response.url
+            return (
+                response.status_code,
+                None,
+                response.url,
+                _extract_media_type(response.headers),
+            )
         finally:
             response.close()
     except requests.RequestException as exc:
-        return None, str(exc), url
+        return None, str(exc), url, None
 
 
 async def _check_url(
     url: str, settings: Settings, semaphore: asyncio.Semaphore
 ) -> tuple:
     async with semaphore:
-        status, error, final_url = await asyncio.to_thread(_fetch_status, url, settings)
+        status, error, final_url, content_type = await asyncio.to_thread(
+            _fetch_status, url, settings
+        )
     needs_retry = error is not None or (status is not None and status >= 500)
     if needs_retry:
         await asyncio.sleep(RETRY_DELAY_SECONDS)
         async with semaphore:
-            status, error, final_url = await asyncio.to_thread(_fetch_status, url, settings)
-    return status, error, final_url
+            status, error, final_url, content_type = await asyncio.to_thread(
+                _fetch_status, url, settings
+            )
+    return status, error, final_url, content_type
 
 
 def _fetch_board_job_refs(include_all: bool, company_filter: Optional[str]) -> list:
@@ -303,8 +367,8 @@ async def run_checks(
     state = {"completed": 0}
 
     async def _run_one(group: UrlGroup) -> UrlCheck:
-        status, error, final_url = await _check_url(group.url, settings, semaphore)
-        bucket = classify(status, final_url or group.url, error)
+        status, error, final_url, content_type = await _check_url(group.url, settings, semaphore)
+        bucket = classify(status, final_url or group.url, error, content_type)
         async with lock:
             state["completed"] += 1
             if state["completed"] % PROGRESS_EVERY == 0:
@@ -316,6 +380,7 @@ async def run_checks(
             error=error,
             final_url=final_url,
             bucket=bucket,
+            content_type=content_type,
         )
 
     checks = await asyncio.gather(*(_run_one(group) for group in groups))
@@ -360,7 +425,7 @@ def main(argv: Optional[list] = None) -> int:
     else:
         print(format_report(report, args.examples))
 
-    return 1 if has_broken_links(report) else 0
+    return 1 if has_bad_links(report) else 0
 
 
 if __name__ == "__main__":
