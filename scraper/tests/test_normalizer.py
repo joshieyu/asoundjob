@@ -177,6 +177,30 @@ class TestCategories(unittest.TestCase):
         cats = classify_categories("Senior Acoustic Consultant", None)
         self.assertIn("acoustics_consulting", cats)
 
+    def test_bare_acoustics_files_under_audio_systems(self) -> None:
+        cats = classify_categories("Applications Engineer: Acoustics", None)
+        self.assertIn("audio_systems", cats)
+        cats = classify_categories("Working Student (m/f/d) Acoustics", None)
+        self.assertIn("audio_systems", cats)
+
+    def test_room_acoustics_still_files_as_consulting(self) -> None:
+        cats = classify_categories("Room Acoustics Consultant", None)
+        self.assertIn("acoustics_consulting", cats)
+
+    def test_loudspeaker_role_carries_transducers_and_systems(self) -> None:
+        cats = classify_categories("Technical Lead (Loudspeakers)", None)
+        self.assertIn("transducers", cats)
+        self.assertIn("audio_systems", cats)
+
+    def test_studio_monitor_role_carries_transducers_and_systems(self) -> None:
+        cats = classify_categories("Product Manager - Studio Monitors", None)
+        self.assertIn("transducers", cats)
+        self.assertIn("audio_systems", cats)
+
+    def test_component_transducer_role_stays_transducers_only(self) -> None:
+        cats = classify_categories("Acoustic Transducer Engineer", None)
+        self.assertEqual(cats, ["transducers"])
+
 
 class TestCompanyCategoryFallback(unittest.TestCase):
     def test_firmware_engineer_at_pro_audio_company(self) -> None:
