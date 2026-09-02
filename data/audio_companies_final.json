@@ -739,7 +739,7 @@
     "name": "Aston Microphones",
     "careers_url": "https://www.astonmics.com/careers",
     "category": "Professional Audio & Live Sound",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "http"
   },
@@ -5323,7 +5323,7 @@
     "name": "Lab.gruppen",
     "careers_url": "https://www.labgruppen.com/careers",
     "category": "Professional Audio & Live Sound",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "http"
   },
