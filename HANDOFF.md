@@ -1870,9 +1870,9 @@ brands as independent employers; the same pattern hid the Audiotonix family
    and takes about a minute. See the session update above for the HEAD-versus-GET
    trap it exposed.
 
-8. **Location extraction is the remaining lever for country coverage.** 152 of
-   469 board rows still have no country, almost all because they carry no
-   location string at all. ADP (7 companies) and Pinpoint (1) return none;
+8. **Location extraction is the remaining lever for country coverage.** 146 of
+   476 board rows still have no country (2026-09-02), and 127 carry no location
+   string at all — so extraction, not parsing, is still the constraint. ADP (7 companies) and Pinpoint (1) return none;
    the generic anchor path would need detail-page fetching. See "Session update
    (2026-08-30)". The parser itself is not the constraint — it resolves 92% of
    what it is given.
@@ -1885,6 +1885,30 @@ brands as independent employers; the same pattern hid the Audiotonix family
    Avature is a thin bucket (Harman, plus Motorola Mobility's
    `jobs.lenovo.com/en_US/careers` shares the URL shape). Count the bucket
    before building anything.
+
+10. **Flattened titles on JS-rendered boards — open, and it degrades the board
+    the reader sees.** On boards whose listings are cards rather than anchors,
+    the extractor pulls the whole card into the title. Live examples:
+
+    - Devialet: `Senior Audio System Engineer Full-Time Shenzhen...` — both of
+      its board rows carry job type and location glued on.
+    - Dolby before the Eightfold parser: `Multimodal AI Researcher, Audio
+      Atlanta, Georgia,United States Hybrid Flexible Location`.
+
+    This is not cosmetic. A mangled title defeats `classify_categories`, so the
+    rows reach the board with **no category at all** — none of Dolby's five
+    Playwright board rows carried one. Categories are how a reader filters, so
+    this costs more than it looks.
+
+    Commit 03a8d00 took titles from structure rather than flattened anchor text
+    and fixed the anchor case. The card case is not covered. Note the Eightfold
+    parser (0bb4344) **routed around this rather than fixing it** — a per-ATS
+    parser sidesteps the generic extractor entirely, so the class survives
+    wherever no parser exists.
+
+    Before building: count the affected population the way the other levers were
+    counted. Query board rows whose title contains a location fragment or an
+    employment-type word, rather than assuming it is widespread.
 
 Explicitly NOT worth doing, all measured rather than assumed: follow-one-link
 (section 3 above — note this is *not* the same as the pagination that shipped in
