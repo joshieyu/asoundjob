@@ -2435,7 +2435,7 @@
     "name": "Creek Audio",
     "careers_url": "https://creekaudio.com/",
     "category": "Hi-Fi & Consumer Speakers",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "http"
   },
@@ -3787,7 +3787,7 @@
     "name": "Fostex",
     "careers_url": "https://898093.studiowatersolutions.com/?mlk=kzzmoibVw0zDfg4SAYjqBFGr9jEpCc8%2BSUgvklbslQS7mssoUbAEzoPTkU61M6lwXNGwnAOVr%2B693%2BZMHek5w4ukCWjQ02S5Ci1%2BpzNilWX3jgcneBFUBcttKcs32tCJlNJW2He1g0TW5fC8BO0f0nsFLume3VQjRqV3dHuiSfGcelfQk20BkEZ5D87CHN%2F1awtgy91gJF12I1dI%2BBnZ7UBOQ96ug%2ByPcpFiwWsIBzje%2FvJqjmN30Vx6PAr7MMeolNGSdbUldzdlnhlw1xW9dJZWBDIGHlo%2BcsljYee4iIeUFK7zqwlhjGlurJJfHqYIhPFy%2F172oZooCuVTdC1SIP40Vu5wpr%2BfK%2FZVWFN47lITJYZzz84aWXtDF66%2FeN81PlaIgPKe9s2tJZmluWbAkGk56WVtM57rUM%2BOt3HcEZoooUDXWDA1xMznsMQ5yxWlLlmJAiRz5uXAfEnZBGraJ8eKrjyFE%2B9GRb5d8Wc7bbzntDUJweRriIw6CnnEayEOajW7jAIAJJ9kHa6SenhInjBIWZSWsGrJBWdixiqzg%2FatYEz6fBMJ%2Bd21egZp6TcJ5QB5Yh5AtsSjxIppWhFdG12bf%2FD9piHwSsKblMd59VT6wE67BmLoriwTfbUTZfJo5QRyNTBixaW73j%2BAWFpLljJl6sKu4RffJdKX2LzqUkH7%2FMfYfqVZwEx1qpsMK9UdtcBWIs%2BRpxjF6%2F8bf67QEmfi9uMprFxV5qdNWUdaHw2d70c95MUT4bpPqbs1CRQGyhz7XojEoDyYdG%2Ffsx5uYEU0ptc%2Bt1rGjVwJCNfmy0%2B%2F5FIoRQ%3D%3D",
     "category": "Headphones & Personal Audio",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "playwright"
   },
