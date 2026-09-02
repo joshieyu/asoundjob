@@ -2976,6 +2976,14 @@
     "scrape_method": "http"
   },
   {
+    "name": "Dolby",
+    "careers_url": "https://jobs.dolby.com/careers?query=audio",
+    "category": "Consumer Electronics & Tech",
+    "verified": true,
+    "source": "manual",
+    "scrape_method": "http"
+  },
+  {
     "name": "Dongfeng Motor",
     "careers_url": "https://www.dfmc.com/en/careers",
     "category": "Automotive OEMs",
