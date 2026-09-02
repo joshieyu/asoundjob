@@ -18,6 +18,7 @@ URL_PATTERN = re.compile(
 
 JOBS_MD_PATH = "https://apply.workable.com/{slug}/jobs.md"
 DETAIL_MD_PATH = "https://apply.workable.com/{slug}/jobs/view/{job_id}.md"
+PUBLIC_JOB_URL = "https://apply.workable.com/{slug}/j/{job_id}"
 
 TABLE_ROW = re.compile(
     r"^\|\s*(?P<title>[^|]+)\|[^|]*\|(?P<location>[^|]*)\|(?P<job_type>[^|]*)\|"
@@ -59,7 +60,7 @@ class WorkableScraper(BaseScraper):
         sem = asyncio.Semaphore(self.settings.http_concurrency)
 
         async def fetch_one(job: RawJob) -> None:
-            job_id = _extract_job_id(job.url)
+            job_id = job.external_id
             if not job_id:
                 return
             async with sem:
@@ -97,7 +98,7 @@ def parse_jobs_md(md: str, slug: str) -> list[RawJob]:
         jobs.append(
             RawJob(
                 title=title,
-                url=url.replace(".md", ""),
+                url=_public_url(slug, job_id, url),
                 external_id=job_id,
                 location=location,
                 description=None,
@@ -108,8 +109,14 @@ def parse_jobs_md(md: str, slug: str) -> list[RawJob]:
     return jobs
 
 
+def _public_url(slug: str, job_id: str | None, fallback: str) -> str:
+    if not job_id:
+        return fallback
+    return PUBLIC_JOB_URL.format(slug=slug, job_id=job_id)
+
+
 def _extract_job_id(url: str) -> str | None:
-    m = re.search(r"/jobs/view/([A-F0-9]+)(?:\.md)?", url, re.IGNORECASE)
+    m = re.search(r"/(?:jobs/view|j)/([A-F0-9]+)(?:\.md)?", url, re.IGNORECASE)
     return m.group(1) if m else None
 
 
