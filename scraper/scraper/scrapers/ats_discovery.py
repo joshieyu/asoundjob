@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import re
 from typing import TYPE_CHECKING
+from urllib.parse import urlparse
+
+from scraper.scrapers.ats.eightfold import registrable_domain
 
 if TYPE_CHECKING:
     pass
@@ -93,9 +96,15 @@ PATTERNS: list[tuple[str, re.Pattern[str]]] = [
         ),
     ),
     ("apple", re.compile(r"jobs\.apple\.com", re.IGNORECASE)),
+    (
+        "eightfold",
+        re.compile(r"(?:app\.)?eightfold\.ai", re.IGNORECASE),
+    ),
 ]
 
 SLUGLESS_ATS = {"apple"}
+
+BASE_URL_SLUG_ATS = {"eightfold"}
 
 NON_BOARD_SUBDOMAINS = frozenset(
     {
@@ -117,6 +126,15 @@ NON_BOARD_SUBDOMAIN_RE = re.compile(
 )
 
 
+def _slug_from_base_url(base_url: str) -> str:
+    if not base_url:
+        return ""
+    host = urlparse(base_url.strip()).netloc
+    if not host:
+        return ""
+    return registrable_domain(host)
+
+
 def discover(html: str, base_url: str = "") -> list[tuple[str, str]]:
     results: list[tuple[str, str]] = []
     seen: set[tuple[str, str]] = set()
@@ -124,7 +142,11 @@ def discover(html: str, base_url: str = "") -> list[tuple[str, str]]:
     for ats_type, pattern in PATTERNS:
         for m in pattern.finditer(html):
             groups = m.groupdict()
-            if ats_type in SLUGLESS_ATS:
+            if ats_type in BASE_URL_SLUG_ATS:
+                slug = _slug_from_base_url(base_url)
+                if not slug:
+                    continue
+            elif ats_type in SLUGLESS_ATS:
                 slug = ""
             elif groups.get("tenant") and groups.get("site"):
                 host = groups["tenant"]

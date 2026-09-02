@@ -12,6 +12,7 @@ from scraper.scrapers.ats.adp import AdpScraper
 from scraper.scrapers.ats.apple import AppleScraper
 from scraper.scrapers.ats.ashby import AshbyScraper
 from scraper.scrapers.ats.bamboohr import BambooHRScraper
+from scraper.scrapers.ats.eightfold import EightfoldScraper
 from scraper.scrapers.ats.greenhouse import GreenhouseScraper
 from scraper.scrapers.ats.icims import IcimsScraper
 from scraper.scrapers.ats.lever import LeverScraper
@@ -43,6 +44,7 @@ class ScrapePipeline:
         self.bamboohr = BambooHRScraper(settings)
         self.workday = WorkdayScraper(settings)
         self.apple = AppleScraper(settings)
+        self.eightfold = EightfoldScraper(settings)
         self.pinpoint = PinpointScraper(settings)
         self.icims = IcimsScraper(settings)
         self.adp = AdpScraper(settings)
@@ -59,6 +61,7 @@ class ScrapePipeline:
             "bamboohr": self.bamboohr,
             "workday": self.workday,
             "apple": self.apple,
+            "eightfold": self.eightfold,
             "pinpoint": self.pinpoint,
             "icims": self.icims,
             "adp": self.adp,
@@ -151,6 +154,7 @@ class ScrapePipeline:
             self.icims,
             self.adp,
             self.apple,
+            self.eightfold,
         )
         for ats in ats_scrapers:
             if ats.can_handle(company):
