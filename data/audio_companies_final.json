@@ -2561,9 +2561,9 @@
   },
   {
     "name": "d&b audiotechnik",
-    "careers_url": "https://www.db-audio.com/en/careers",
+    "careers_url": "https://dbaudio.wd103.myworkdayjobs.com/en-US/dbaudiotechnik-careers-en",
     "category": "Professional Audio & Live Sound",
-    "verified": false,
+    "verified": true,
     "source": "auto",
     "scrape_method": "http"
   },
@@ -2813,7 +2813,7 @@
     "category": "Consumer Electronics & Tech",
     "verified": true,
     "source": "auto",
-    "scrape_method": "http"
+    "scrape_method": "playwright"
   },
   {
     "name": "Devicemarket",
