@@ -847,12 +847,13 @@ rejected. `audio_systems` has weak keywords generic enough that any "Audio
 Technology" title matches, which turned "Sr. Director of Finance, Audio
 Technology" into an `audio_systems` role. A test pins this.
 
-Remaining known gap: **bare "acoustics" matches no category.** Every acoustics
-keyword in the file is a multi-word phrase ("acoustic engineer", "room
-acoustics"), so "Applications Engineer: Acoustics" at Comsol and "Working
-Student Acoustics" at Neumann score zero everywhere. Fixing it means choosing an
-owner among `transducers`, `audio_systems`, `audio_research` and
-`acoustics_consulting` — a judgement call, not a bug.
+**RESOLVED 2026-09-02 (commit 4cabea3): bare "acoustics" belongs to
+`audio_systems`.** The owner made the call. Previously every acoustics keyword
+in the file was a multi-word phrase ("acoustic engineer", "room acoustics"), so
+"Applications Engineer: Acoustics" at Comsol and "Working Student Acoustics" at
+Neumann scored zero everywhere. Longer keywords sort first within a category, so
+`acoustics_consulting` still wins "room acoustics" and "building acoustics" — a
+test pins that.
 
 ### Step 1 of the seed plan: the proposal tool found almost nothing
 
@@ -1714,6 +1715,74 @@ brands as independent employers; the same pattern hid the Audiotonix family
   Playwright), **Calrec**'s `livevacancies.co.uk` TLS failure, and
   **Audio Precision**/Axiometrix all remain as recorded on 2026-08-31.
 
+## Session update (2026-09-02, later) — the acoustics taxonomy call
+
+### Bare "acoustics" now files under audio_systems (commit 4cabea3)
+
+The owner resolved the taxonomy question that had blocked item 4 since
+2026-08-30: bare **"acoustics" belongs to `audio_systems`**, not to
+`transducers`, `audio_research` or `acoustics_consulting`.
+
+`_keyword_pattern` sorts a category's keywords longest-first, so adding the bare
+word does not shadow the phrases: `acoustics_consulting` still wins "room
+acoustics", "building acoustics" and "architectural acoustics". A test pins it.
+
+### Speaker-product roles now carry audio_systems as well as transducers
+
+The owner also reported transducers rows that should carry `audio_systems` —
+job 3461, ADAM Audio's "Technical Lead (Loudspeakers)". **The first hypothesis
+was wrong and measuring killed it in one run.** `CATEGORY_DOMINANCE` lists
+`audio_systems` as subordinate to `transducers`, which looked like the obvious
+cause; removing it changed **zero** rows. `audio_systems` was never scoring on
+these jobs at all, so there was nothing to suppress. Check that a category
+actually scores before blaming dominance for its absence.
+
+The real gap: `loudspeaker` and `studio monitor` lived only in `transducers`.
+Both now sit in `audio_systems` too, so a whole-product speaker role carries
+both tags. Component-level words — `transducer`, `voice coil`, `diaphragm`,
+`driver design` — deliberately stay transducers-only, so Apple's "Acoustic
+Transducer Engineer" is unchanged. A test pins both sides of that line.
+
+This mirrors `acoustic engineer` / `acoustics engineer`, which have always sat
+in both categories. **Dual-listing a keyword is an established move in this
+file, not a hack** — it is how a role that is genuinely both gets filed as both.
+
+### What it measured
+
+Each word was measured on its own before anything was written, per the standing
+rule from the rejected `FALLBACK_ROLE_CATEGORIES` bundle:
+
+| addition | rows changed | from no category | off-board rows gaining |
+| --- | --- | --- | --- |
+| `acoustics` | 5 | 4 | 0 |
+| `loudspeaker` | 6 | 2 | 0 |
+| `studio monitor` | 2 | 0 | 0 |
+| all three | 14 | 6 | 0 |
+
+**No off-board row gained a category, so nothing new was admitted** and the
+board held at 476 across the backfill. Uncategorized board rows 110 -> 104.
+One displacement: Bose's "Acoustical Engineer" hit the 3-category cap and
+dropped `microphones_recording` for `audio_systems`, which is the better filing.
+
+Beneficiaries: Neumann "Working Student Acoustics", Comsol "Applications
+Engineer: Acoustics", two Bose "Systems Engineer" rows, the ADAM Audio
+loudspeaker and studio-monitor roles, Akai's "Senior Product Manager - Alto
+Professional".
+
+### Focusrite and Ampify Music are the same board — 6 duplicated rows
+
+Found while auditing the change, **not fixed** because it is a seed decision.
+Company 59 (Ampify Music, `https://focusrite.workable.com/`) and company 469
+(Focusrite, `https://apply.workable.com/focusrite/`) resolve to the same
+Workable slug, so **all 6 of Focusrite's board rows appear twice** under
+different employer names.
+
+A URL-level sweep across the whole board found **this pair and nothing else** —
+6 identical job URLs under two company ids, no other collisions. So the class is
+bounded at one pair; this is not a general de-duplication problem. Ampify is a
+Focusrite-owned brand, the same relationship as the Music Tribe family
+consolidated earlier today.
+
 ## Next steps, in priority order (as of 2026-08-31)
 
 0. **The database is current with the code** as of commit b6fb339. Board 476.
@@ -1816,13 +1885,12 @@ brands as independent employers; the same pattern hid the Audiotonix family
    reach the case that motivated it: Audinate's "Principal Engineer" contains no
    systems or process word either.
 
-   What remains is the `CATEGORY_KEYWORDS` gap, of which **bare "acoustics" is
-   the known one** — every acoustics keyword in the file is a multi-word phrase
-   ("acoustic engineer", "room acoustics"), so "Applications Engineer:
-   Acoustics" at Comsol and "Working Student Acoustics" at Neumann match
-   nothing. Fixing it means choosing an owner among `transducers`,
-   `audio_systems`, `audio_research` and `acoustics_consulting`. **That is a
-   taxonomy decision for the project owner, not a bug fix.**
+   **The bare "acoustics" gap is closed (commit 4cabea3).** The owner assigned
+   it to `audio_systems`, and the same commit gave `loudspeaker` and
+   `studio monitor` an `audio_systems` entry beside their transducers one. 14
+   board rows changed, 6 of them from no category at all; uncategorized board
+   rows went 110 -> 104. Nothing new was admitted. See the 2026-09-02 session
+   update for the method, which is the one to copy for the rest of this item.
 
 5. **User feedback on parsing quality — REQUESTED, DEFERRED BY THE OWNER.**
    Explicitly postponed on 2026-08-29; do not start it without asking. Let readers
@@ -1909,6 +1977,15 @@ brands as independent employers; the same pattern hid the Audiotonix family
     Before building: count the affected population the way the other levers were
     counted. Query board rows whose title contains a location fragment or an
     employment-type word, rather than assuming it is widespread.
+
+11. **Focusrite and Ampify Music duplicate 6 board rows — seed decision, not a
+    bug.** Both companies point at the same Workable board (slug `focusrite`),
+    so every Focusrite job is listed twice under two employer names. See the
+    2026-09-02 (later) session update. The fix is the Music Tribe move: retire
+    one seed entry, keeping whichever brand name the owner wants readers to see.
+    A board-wide URL collision sweep found no other pair, so this is the whole
+    class. **Do not edit the seed for this without asking** — it is hand-curated
+    truth.
 
 Explicitly NOT worth doing, all measured rather than assumed: follow-one-link
 (section 3 above — note this is *not* the same as the pagination that shipped in
