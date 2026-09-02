@@ -1574,11 +1574,151 @@ for one company without moving the whole category.
   worth building. Devialet's seeded URL is a Jobvite *error* page
   (`?invalid=1`).
 
+## Session update (2026-09-02) — Workable, Eightfold, and seed hygiene
+
+Board 476. All gates green at 551 tests.
+
+### Never run git checkout on data/audio_companies_final.json
+
+A subagent discarded the owner's uncommitted seed edits with
+`git checkout -- data/audio_companies_final.json`, having attributed the
+change to "a test run with network side effects". **That diagnosis was wrong.**
+The suite does not touch the file — verified by md5 across 511 passing tests.
+The edits were the owner's own work, retiring Creek Audio and Fostex, and they
+were unrecoverable because they had never been committed. Restored in 1cc5885.
+
+Seed truth is edited by hand, outside this tooling, between sessions. Treat any
+diff in it as the owner's until proven otherwise. Related: **stage seed edits
+explicitly, never with `git add -A`** — the owner's Devialet correction was
+swept into 905aae6, a commit whose message does not mention it.
+
+### Every Workable link was serving raw markdown (commit 506f558)
+
+The parser reads Workable's markdown index, whose `[View]` links point at
+`/{account}/jobs/view/{code}.md`, and stored that path with `.md` stripped. The
+stripped path is itself a machine-readable endpoint: Workable serves it as
+`text/markdown`. Readers got the source of the page instead of the page. 26 rows
+across 7 companies.
+
+The human URL is `/{account}/j/{code}`, which is also Workable's declared
+canonical. `parse_jobs_md` already took a `slug` it never used.
+
+**The latent trap next to it:** `_fetch_descriptions` recovered the job id by
+re-parsing the job URL, so changing the URL shape would have silently stopped
+every Workable description being fetched — no error, just jobs quietly losing
+descriptions and falling off the board. It reads `external_id` now. Same lesson
+as Workday: **change the URL, never the identity**, or every row orphans.
+
+### check_links now catches a 200 that serves the wrong document (commit 3c386d3)
+
+The Workable bug walked straight past the link checker, because those URLs
+really did return 200. A status-only sweep is blind to a server that returns
+success and hands you the wrong document.
+
+There is now a `wrong_content` bucket. HEAD short-circuits only when it reports
+`text/html` itself; anything else on a 2xx falls through to the GET, so hosts
+that omit or misreport the header are judged on what a reader receives. Content
+type is consulted **only** inside the 2xx branch — a 404 serving JSON is still
+broken, and the Meta whitelist still wins.
+
+`application/pdf` counts as readable. The first sweep flagged Kicker's
+"Electrical Design Engineer (PDF, 123 KB)", a real posting a reader can open.
+The signal worth catching is machine-readable source where a human page was
+expected, not any non-HTML document.
+
+### Eightfold AI parser (commit 0bb4344), added for Dolby
+
+Dolby's board is Eightfold. Playwright reached it but returned 12 rows with the
+whole card flattened into the title — "Multimodal AI Researcher, Audio Atlanta,
+Georgia,United States Hybrid Flexible Location" — and no descriptions, so
+nothing it put on the board carried a category.
+
+Three things to know if another Eightfold company appears:
+
+1. **The obvious endpoint is a decoy.** `/api/apply/v2/jobs` returns 403 "Not
+   authorized for PCSX". `/api/pcsx/search` is open and unauthenticated.
+   `position_details` carries the full description.
+2. **`domain` must be the registrable domain** — `dolby.com`, not the careers
+   host `jobs.dolby.com`, which returns an HTML error page instead of JSON.
+3. **The slug is not in the page markup.** Tenants use vanity hosts and the only
+   marker names eightfold.ai, so discovery derives the slug from `base_url`, the
+   way `SLUGLESS_ATS` handles a missing slug. **This means an Eightfold company
+   needs two scrape cycles** — the first discovers, the second parses. A newly
+   seeded one looking empty is expected, not broken.
+
+Dolby: 62 jobs against the API's own count of 62, all with a description over
+200 chars, a location and a posted date, 61 with a country across 8 countries.
+9 reach the board. Filed as Consumer Electronics & Tech, not Audio IP &
+Licensing — that category holds standards bodies (AES, MPEG, ITU-R, Bluetooth
+SIG), which is why it is partial scope. Dolby's nearest peer is Fraunhofer IIS,
+also Consumer Electronics & Tech. At native scope it would be 26 rather than 9,
+the extra 17 scoring on Dolby's audio-saturated descriptions rather than being
+audio work. **Measured: the `query=audio` scoping costs no recall** — 97 jobs
+unscoped against 62 scoped, and every board-eligible job is inside the scoped
+set at either scope.
+
+### scrape_method is the first thing to check when a company returns navigation
+
+This bit twice in one day, in opposite directions:
+
+- **Rohde & Schwarz** had `playwright`, and `pipeline.py:163` sets
+  `skip_http = company.scrape_method == "playwright"`, so the HTTP path was
+  never tried. HTTP held the real jobs; Playwright rendered a country selector.
+- **Devialet** had `http`, and its JS-rendered welcomekit board returned exactly
+  one row, "Spontaneous Application" — the HTTP scraper reporting success on
+  furniture, so the chain never escalated. Forcing `playwright` took it from
+  1 row to 15, of which 2 reach the board.
+
+### Tesla — blocked, do not re-investigate
+
+**It was never scraped at all**: `verified:false`, and `main.py:125` only selects
+verified companies, so it had no `last_scraped_at` and produced no failure log.
+**An unverified company is silent, not failing** — distinct from the existing
+warning that "never scraped" usually means "failed every attempt".
+
+Fixing that would not help. Tesla sits behind Akamai bot management and refuses
+every automated client: 403 to HTTP, Playwright blocked, Playwright stealth
+blocked, and 403 on `robots.txt` and `sitemap.xml` too. A real browser session
+gets the challenge page. `careers.tesla.com` does not resolve. Same class as
+Meta, same answer: **do not build evasion.** The correct URL is recorded
+(`/careers/search/`) with `verified:false` so one flag flips it if that changes.
+
+### The Music Tribe family is now consolidated (commits 8aa4116, b6fb339)
+
+Aston Microphones, Behringer, Bugera, Coolaudio, Klark Teknik, Lab.gruppen,
+Midas, Tannoy, TC Electronic, TC Helicon and Turbosound are all **Music Tribe**
+brands. Nine were seeded separately, eight of them against the dead
+`musictribe.com/careers`. All are retired; Music Tribe carries the group's
+hiring at `jobs.jobvite.com/musictribe` — 8 jobs, no pagination, of which
+"Hardware Engineering Leader" reaches the board.
+
+Midas and Coolaudio are **deliberately not seeded**. A brand entry can only
+duplicate the same board and inflate the company count without adding a job.
+
+**The umbrella is not discoverable from brand headers or about pages** — it is a
+footer line, "Part of Music Tribe", with privacy and terms links to
+`community.musictribe.com`. Worth checking the footer before treating sibling
+brands as independent employers; the same pattern hid the Audiotonix family
+(Calrec, DiGiCo, Solid State Logic, Sound Devices, Slate Digital).
+
+### Other companies looked at, unresolved
+
+- **d&b audiotechnik — FIXED (8043080).** Seeded at `db-audio.com`, which fails
+  TLS with an invalid certificate authority. The real site is `dbaudio.com`, and
+  its careers page links to a Workday board this project already parses,
+  `dbaudio.wd103.myworkdayjobs.com`. One opening today, correctly filtered.
+- **Eventide** — page loads, no job links. **RME** — Playwright succeeds but
+  returns only "Skip navigation". Both still unverified.
+- **Native Instruments**, **Welcome to the Jungle** (`welcometothejungle.com`,
+  distinct from the `welcomekit.co` hosted boards, which do work under
+  Playwright), **Calrec**'s `livevacancies.co.uk` TLS failure, and
+  **Audio Precision**/Axiometrix all remain as recorded on 2026-08-31.
+
 ## Next steps, in priority order (as of 2026-08-31)
 
-0. **The database is current with the code** as of commit 7fb7be6, after two
-   full scrapes and a backfill. No scrape is owed. Board 465, all links
-   reachable.
+0. **The database is current with the code** as of commit b6fb339. Board 476.
+   Per-company rescrapes have been run for everything touched since the last
+   full scrape; a full cycle is not owed but would be cheap insurance.
 
 1. **Company case studies — what the owner is doing next.** The owner works by
    naming companies they expect to see on the board and asking why they are
@@ -1724,7 +1864,8 @@ for one company without moving the whole category.
    runs a command from the wrong directory.
 
 7. **Link checker — BUILT (commit f94492f).** `python -m scraper.check_links`.
-   Latest sweep: 459 URLs, 456 ok, 0 broken, 3 bot defence (Meta, whitelisted).
+   It also detects a 2xx that serves the wrong document — see the 2026-09-02
+   update. Latest sweep: 459 URLs, 452 ok, 0 broken, 0 wrong content.
    Worth re-running after any scrape and after any seed batch; it is read-only
    and takes about a minute. See the session update above for the HEAD-versus-GET
    trap it exposed.
