@@ -83,5 +83,56 @@ class TestUnverifiedDeactivation(unittest.TestCase):
         self.assertEqual(self.active_titles(company.id), [])
 
 
+class TestRenameMatchedBySlug(unittest.TestCase):
+    def setUp(self) -> None:
+        self.session = make_session()
+
+    def tearDown(self) -> None:
+        self.session.rollback()
+        self.session.close()
+
+    def test_a_renamed_manual_row_is_matched_by_slug_and_skipped(self) -> None:
+        self.session.add(
+            Company(
+                name="New Name",
+                slug="old-name",
+                category="Audio Software",
+                careers_url="https://example.com/careers",
+                verified=True,
+                source="manual",
+            )
+        )
+        self.session.flush()
+
+        stats = load_companies(self.session, [entry("Old Name", verified=False)])
+
+        companies = self.session.execute(select(Company)).scalars().all()
+        self.assertEqual(len(companies), 1)
+        self.assertEqual(stats.matched_by_slug, 1)
+        self.assertEqual(stats.skipped_manual, 1)
+        self.assertEqual(companies[0].name, "New Name")
+        self.assertTrue(companies[0].verified)
+
+    def test_a_renamed_auto_row_still_inserts_as_today(self) -> None:
+        self.session.add(
+            Company(
+                name="New Name",
+                slug="old-name",
+                category="Audio Software",
+                careers_url="https://example.com/careers",
+                verified=True,
+                source="auto",
+            )
+        )
+        self.session.flush()
+
+        stats = load_companies(self.session, [entry("Old Name", verified=False)])
+
+        companies = self.session.execute(select(Company)).scalars().all()
+        self.assertEqual(len(companies), 2)
+        self.assertEqual(stats.matched_by_slug, 0)
+        self.assertEqual(stats.inserted, 1)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -9,7 +9,7 @@ from datetime import date, datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select, update
 from sqlalchemy.orm import Session
 
 from api.auth import LoginRequest, TokenResponse, create_token, require_admin, verify_credentials
@@ -30,6 +30,7 @@ from api.schemas import (
     ScrapeStatus,
     StatsResponse,
 )
+from scraper.company_loader import parse_extra_careers_urls
 from scraper.config import load_settings
 from scraper.models import Company, Job, JobFeedback, JobSubmission, ScrapeLog, SiteFeedback
 from scraper.normalizer import Normalizer
@@ -42,6 +43,18 @@ router = APIRouter(prefix="/api/admin", tags=["admin"])
 
 _scrape_lock = threading.Lock()
 _scrape_process: Optional[subprocess.Popen] = None
+
+LOADER_MANAGED_FIELDS = frozenset(
+    {
+        "name",
+        "category",
+        "careers_url",
+        "extra_careers_urls",
+        "open_application",
+        "verified",
+        "scrape_method",
+    }
+)
 
 
 @router.post("/login", response_model=TokenResponse)
@@ -168,6 +181,9 @@ def admin_create_company(
         slug=slug,
         category=payload.category,
         careers_url=payload.careers_url,
+        extra_careers_urls=parse_extra_careers_urls(
+            payload.extra_careers_urls, payload.careers_url
+        ),
         website_url=payload.website_url,
         verified=bool(payload.verified),
         source="manual",
@@ -195,17 +211,83 @@ def admin_update_company(
         raise HTTPException(status_code=404, detail="Company not found")
 
     updates = payload.model_dump(exclude_unset=True, exclude_none=True)
-    updates.pop("name", None)
+
+    if "name" in updates:
+        new_name = updates["name"].strip()
+        if not new_name:
+            raise HTTPException(status_code=422, detail="Company name cannot be empty")
+        collision = db.execute(
+            select(Company).where(
+                func.lower(Company.name) == new_name.lower(), Company.id != company.id
+            )
+        ).scalar_one_or_none()
+        if collision is not None:
+            raise HTTPException(status_code=409, detail="Company already exists")
+        updates["name"] = new_name
+
+    if "careers_url" in updates:
+        updates["careers_url"] = updates["careers_url"].strip() or None
+
+    if "extra_careers_urls" in updates:
+        primary = updates.get("careers_url", company.careers_url)
+        updates["extra_careers_urls"] = parse_extra_careers_urls(
+            updates["extra_careers_urls"], primary
+        )
+
     scope_changed = "audio_scope" in updates and updates["audio_scope"] != company.audio_scope
     for field, value in updates.items():
         setattr(company, field, value)
-    if updates.get("verified") or updates.get("careers_url") or scope_changed:
+    if (updates.keys() & LOADER_MANAGED_FIELDS) or scope_changed:
         company.source = "manual"
     if scope_changed:
         rescore_company_jobs(db, company)
     db.flush()
     logger.info("admin=%s updated company %s: %s", admin, company.slug, list(updates.keys()))
     return {"id": company.id, "updated_fields": sorted(updates.keys())}
+
+
+@router.delete("/companies/{company_id}")
+def admin_delete_company(
+    company_id: int,
+    db: Session = Depends(get_db),
+    admin: str = Depends(require_admin),
+):
+    company = db.get(Company, company_id)
+    if company is None:
+        raise HTTPException(status_code=404, detail="Company not found")
+
+    jobs_deleted = db.execute(
+        select(func.count(Job.id)).where(Job.company_id == company.id)
+    ).scalar_one()
+    db.execute(delete(Job).where(Job.company_id == company.id))
+
+    scrape_logs_deleted = db.execute(
+        select(func.count(ScrapeLog.id)).where(ScrapeLog.company_id == company.id)
+    ).scalar_one()
+    db.execute(delete(ScrapeLog).where(ScrapeLog.company_id == company.id))
+
+    submissions_detached = db.execute(
+        select(func.count(JobSubmission.id)).where(JobSubmission.company_id == company.id)
+    ).scalar_one()
+    db.execute(
+        update(JobSubmission)
+        .where(JobSubmission.company_id == company.id)
+        .values(company_id=None)
+    )
+
+    name = company.name
+    slug = company.slug
+    db.delete(company)
+    db.flush()
+    logger.info("admin=%s deleted company %s", admin, slug)
+    return {
+        "deleted": {
+            "company": name,
+            "jobs": int(jobs_deleted),
+            "scrape_logs": int(scrape_logs_deleted),
+            "submissions_detached": int(submissions_detached),
+        }
+    }
 
 
 def rescore_company_jobs(db: Session, company: Company) -> None:

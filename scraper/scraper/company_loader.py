@@ -24,13 +24,15 @@ class LoadStats:
     skipped_manual: int = 0
     duplicates_in_json: int = 0
     deactivated_unverified: int = 0
+    matched_by_slug: int = 0
 
     def summary(self) -> str:
         return (
             f"inserted={self.inserted} updated={self.updated} "
             f"unchanged={self.unchanged} skipped_manual={self.skipped_manual} "
             f"duplicates_in_json={self.duplicates_in_json} "
-            f"deactivated_unverified={self.deactivated_unverified}"
+            f"deactivated_unverified={self.deactivated_unverified} "
+            f"matched_by_slug={self.matched_by_slug}"
         )
 
 
@@ -92,16 +94,25 @@ def load_companies(session: Session, companies: list[dict[str, Any]]) -> LoadSta
         seen_names.add(name_key)
 
         base_slug = slugify(name)
-        slug = base_slug
-        suffix = 2
-        while slug in seen_slugs:
-            slug = f"{base_slug}-{suffix}"
-            suffix += 1
-        seen_slugs.add(slug)
 
         existing = session.execute(
             select(Company).where(func.lower(Company.name) == name_key)
         ).scalar_one_or_none()
+        if existing is None:
+            candidate = session.execute(
+                select(Company).where(Company.slug == base_slug)
+            ).scalar_one_or_none()
+            if candidate is not None and candidate.source == "manual":
+                existing = candidate
+                stats.matched_by_slug += 1
+
+        slug = base_slug
+        if existing is None:
+            suffix = 2
+            while slug in seen_slugs:
+                slug = f"{base_slug}-{suffix}"
+                suffix += 1
+            seen_slugs.add(slug)
 
         verified = bool(entry.get("verified", False))
         source = str(entry.get("source", "auto"))

@@ -192,6 +192,7 @@ class AdminCompanyUpdate(BaseModel):
     name: Optional[str] = Field(default=None, min_length=1, max_length=200)
     category: Optional[str] = Field(default=None, min_length=1, max_length=100)
     careers_url: Optional[str] = Field(default=None, max_length=1000)
+    extra_careers_urls: Optional[list[str]] = Field(default=None, max_length=5)
     website_url: Optional[str] = Field(default=None, max_length=1000)
     verified: Optional[bool] = None
     scrape_method: Optional[str] = None
@@ -200,6 +201,21 @@ class AdminCompanyUpdate(BaseModel):
     description: Optional[str] = None
     headquarters: Optional[str] = None
     founded: Optional[int] = None
+
+    @field_validator("extra_careers_urls")
+    @classmethod
+    def extra_careers_urls_items_are_bounded(
+        cls, value: Optional[list[str]]
+    ) -> Optional[list[str]]:
+        if value is None:
+            return value
+        cleaned = []
+        for item in value:
+            stripped = item.strip()
+            if len(stripped) > 1000:
+                raise ValueError("extra_careers_urls items must be at most 1000 characters")
+            cleaned.append(stripped)
+        return cleaned
 
 
 class AdminCompanyCreate(AdminCompanyUpdate):
