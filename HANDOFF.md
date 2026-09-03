@@ -2362,6 +2362,99 @@ exhausts that budget (196/221 last time) costs detail, not the description:
 the search page itself supplies one, and Apple's shortest stored description
 is 489 characters.
 
+## Session update (2026-09-03, night) — the admin UI writes to the database, not the seed
+
+Asked plainly whether the admin UI actually updates the backend JSON. It does
+not, and never did. Nothing in `api/` or `web/` opens
+`data/audio_companies_final.json`. The flow is one-way: seed to database via
+`company_loader.load_companies`, which `run_cycle` calls at the start of every
+scrape unless `--skip-load`. That last fact drove the whole session.
+
+### The silent revert (commit cc7dcdd)
+
+Edits persisted, but only by accident of a truthiness check:
+
+```python
+if updates.get("verified") or updates.get("careers_url") or scope_changed:
+    company.source = "manual"
+```
+
+A row flipped to `manual` is skipped by the loader forever, which is how the
+Analog Devices Workday URL survived. But `updates.get("verified")` is `False`
+when un-verifying, so that edit left the row `auto` and the next load restored
+it from the seed. Measured, not assumed:
+
+```
+after admin un-verify: False auto
+after next seed load : True  auto
+```
+
+The guard now tests membership against `LOADER_MANAGED_FIELDS`, the set of
+columns the loader owns, so the whole class of bug is closed rather than the
+one instance.
+
+### Renaming needed a loader change, not just an endpoint change
+
+`admin_update_company` did `updates.pop("name", None)` — renames were accepted
+and discarded. Allowing them exposed something worse than a revert: the loader
+matches a seed entry to a row by lowercased name, so a renamed row matches
+nothing and the seed's old name gets **inserted as a second company** on the
+next cycle. `load_companies` now falls back to a `slug` lookup when the name
+misses, accepting the row only when its source is `manual`, and counts it as
+`matched_by_slug` in the stats line. The slug is deliberately left unchanged on
+rename so public company URLs keep working and this fallback has a stable key.
+
+Verified against a copy of the live DB and the full 1388-entry seed: renaming
+Analog Devices left the count at 1388, `matched_by_slug=1`, no duplicate.
+
+### The rest of commit cc7dcdd
+
+`extra_careers_urls` is editable and normalized through the loader's own
+`parse_extra_careers_urls`, so `[]` clears it. A cleared primary URL now stores
+NULL rather than `""` — `""` passes `run_cycle`'s `careers_url.is_not(None)`
+filter and would hand the pipeline zero URLs. Deleting a company removes its
+jobs and scrape logs and detaches its submissions, which keep `company_name`.
+
+### The UI (commit ec421bd)
+
+Multi-URL editing is a textarea, one URL per line, first line primary; the read
+state lists the extras under the primary. Before this the page could not show
+that Apple has two extra seeded queries at all. Rename is an inline editor,
+delete is a two-step inline confirm naming the job count.
+
+The footer note used to say edits are "never overwritten," which was half the
+story and the wrong half. It now says the seed still holds the old values and
+that **a deleted company returns on the next cycle** until the seed is edited.
+
+### export_seed_edits (commit 6065759)
+
+```
+cd scraper && python -m scraper.export_seed_edits \
+    --output ../seed_export.json --report ../seed_export.md
+```
+
+Read-only against the database, refuses to run if `--output` resolves to the
+seed, and writes a candidate seed for review — the same shape as
+`discover_careers_urls` and `propose_open_applications`. Four buckets: renamed
+(matched by slug), changed (only from `manual` rows — an `auto` row cannot
+legitimately have drifted, so those are counted, not listed), deleted (in the
+seed, no row) and added (a `manual` row, no seed entry).
+
+Emitted entries keep the seed's own key order, so untouched entries are
+byte-identical. Run live it produced a **7-line diff against 1388 entries** —
+Analog Devices' careers URL, the one real drift in the database.
+
+**Deletions are the case that matters.** An edit or a rename persists on its
+own; a deletion does not, because the loader re-inserts from the seed. Run the
+export after deleting anything.
+
+### Gates
+
+707 scraper tests, 116 API tests, ruff and mypy clean in both packages.
+`npm run check` clean (the 2 warnings are pre-existing, in `jobs/+page.svelte`)
+and `npm run build` succeeds. Not verified in a browser: the admin pages need a
+login, and entering the password is not something this session does.
+
 ## Next steps, in priority order (as of 2026-08-31)
 
 0b. **Run the API with reload, and watch both packages.** Without `--reload`
