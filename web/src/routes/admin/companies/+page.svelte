@@ -19,12 +19,19 @@
 	let editValue = $state('');
 	let message = $state('');
 	let page = $state(1);
+	let sort = $state<'name' | 'jobs' | 'verified'>('name');
+	let direction = $state<'asc' | 'desc'>('asc');
 	let pageData = $state({ total: 0, page: 1, pages: 0 });
 
 	async function load() {
 		loading = true;
 		try {
-			const query = new URLSearchParams({ per_page: '50', page: String(page) });
+			const query = new URLSearchParams({
+				per_page: '50',
+				page: String(page),
+				sort,
+				direction
+			});
 			if (search.trim()) query.set('search', search.trim());
 			const result = await clientApi<{ items: CompanyRow[]; total: number; page: number; pages: number }>(
 				`/api/admin/companies?${query.toString()}`
@@ -36,6 +43,33 @@
 		} finally {
 			loading = false;
 		}
+	}
+
+	const DEFAULT_DIRECTION: Record<string, 'asc' | 'desc'> = {
+		name: 'asc',
+		jobs: 'desc',
+		verified: 'desc'
+	};
+
+	function sortBy(column: 'name' | 'jobs' | 'verified') {
+		if (sort === column) {
+			direction = direction === 'asc' ? 'desc' : 'asc';
+		} else {
+			sort = column;
+			direction = DEFAULT_DIRECTION[column];
+		}
+		page = 1;
+		load();
+	}
+
+	function sortMark(column: 'name' | 'jobs' | 'verified') {
+		if (sort !== column) return '';
+		return direction === 'asc' ? ' ↑' : ' ↓';
+	}
+
+	function ariaSort(column: 'name' | 'jobs' | 'verified') {
+		if (sort !== column) return 'none';
+		return direction === 'asc' ? 'ascending' : 'descending';
 	}
 
 	let searchTimer: ReturnType<typeof setTimeout> | undefined;
@@ -123,11 +157,23 @@
 		<table class="w-full min-w-[48rem] text-left text-sm">
 			<thead>
 				<tr class="border-b border-seam font-mono text-[10px] tracking-[0.12em] text-ink-soft uppercase">
-					<th scope="col" class="px-4 py-2.5">Company</th>
+					<th scope="col" class="px-4 py-2.5" aria-sort={ariaSort('name')}>
+						<button type="button" class="uppercase tracking-[0.12em] hover:underline" onclick={() => sortBy('name')}>
+							Company{sortMark('name')}
+						</button>
+					</th>
 					<th scope="col" class="px-4 py-2.5">Category</th>
-					<th scope="col" class="px-4 py-2.5">Open jobs</th>
+					<th scope="col" class="px-4 py-2.5" aria-sort={ariaSort('jobs')}>
+						<button type="button" class="uppercase tracking-[0.12em] hover:underline" onclick={() => sortBy('jobs')}>
+							Open jobs{sortMark('jobs')}
+						</button>
+					</th>
 					<th scope="col" class="px-4 py-2.5">Careers URL</th>
-					<th scope="col" class="px-4 py-2.5">Verified</th>
+					<th scope="col" class="px-4 py-2.5" aria-sort={ariaSort('verified')}>
+						<button type="button" class="uppercase tracking-[0.12em] hover:underline" onclick={() => sortBy('verified')}>
+							Verified{sortMark('verified')}
+						</button>
+					</th>
 				</tr>
 			</thead>
 			<tbody>

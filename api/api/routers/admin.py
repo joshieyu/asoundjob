@@ -119,6 +119,8 @@ def admin_list_companies(
     per_page: int = Query(25, ge=1, le=100),
     search: Optional[str] = None,
     verified: Optional[bool] = None,
+    sort: str = Query("name", pattern="^(name|jobs|verified)$"),
+    direction: str = Query("asc", pattern="^(asc|desc)$"),
     db: Session = Depends(get_db),
     _: str = Depends(require_admin),
 ):
@@ -131,7 +133,9 @@ def admin_list_companies(
     if search:
         pattern = f"%{search}%"
         stmt = stmt.where(Company.name.ilike(pattern))
-    items, total = companies_with_counts(db, stmt, safe_page, safe_per)
+    items, total = companies_with_counts(
+        db, stmt, safe_page, safe_per, sort=sort, direction=direction
+    )
     return page_envelope(items, total, safe_page, safe_per)
 
 

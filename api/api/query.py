@@ -116,20 +116,49 @@ def fetch_job_page(
     return list(rows), int(total)
 
 
-def companies_with_counts(session: Session, base_stmt, page: int, per_page: int):
+COMPANY_SORTS = ("name", "jobs", "verified")
+SORT_DIRECTIONS = ("asc", "desc")
+
+
+def companies_with_counts(
+    session: Session,
+    base_stmt,
+    page: int,
+    per_page: int,
+    sort: str = "name",
+    direction: str = "asc",
+):
     counts_subq = (
         select(Job.company_id, func.count(Job.id).label("job_count"))
         .where(Job.is_active.is_(True))
         .group_by(Job.company_id)
         .subquery()
     )
+    job_count = func.coalesce(counts_subq.c.job_count, 0)
+    if sort not in COMPANY_SORTS:
+        sort = "name"
+    if direction not in SORT_DIRECTIONS:
+        direction = "asc"
+    descending = direction == "desc"
+    if sort == "jobs":
+        order_by = [
+            job_count.desc() if descending else job_count.asc(),
+            Company.name.asc(),
+        ]
+    elif sort == "verified":
+        order_by = [
+            Company.verified.desc() if descending else Company.verified.asc(),
+            Company.name.asc(),
+        ]
+    else:
+        order_by = [Company.name.desc() if descending else Company.name.asc()]
     total = session.execute(
         select(func.count()).select_from(base_stmt.subquery())
     ).scalar_one()
     rows = session.execute(
-        base_stmt.add_columns(func.coalesce(counts_subq.c.job_count, 0).label("job_count"))
+        base_stmt.add_columns(job_count.label("job_count"))
         .outerjoin(counts_subq, counts_subq.c.company_id == Company.id)
-        .order_by(Company.name)
+        .order_by(*order_by)
         .offset((page - 1) * per_page)
         .limit(per_page)
     ).all()

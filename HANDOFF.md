@@ -2268,6 +2268,21 @@ Community jobs now store `country`, which the insert path never set. The
 Yamaha submission resolves to JP and would have landed with a NULL country
 and no flag on the board.
 
+### Company admin sorts by job count and by verified
+
+`companies_with_counts` takes `sort` (name/jobs/verified) and `direction`.
+The count was already a joined SQL subquery, so this is an ORDER BY, not a
+Python sort — it orders the whole table, not the current page. Every sort
+except name falls back to name for ties, so paging is stable.
+
+The route constrains both with a regex pattern, and the function falls back
+to name/asc for anything unrecognised, so a bad value cannot reach the query
+builder from either direction.
+
+Headers are buttons carrying `aria-sort`. First click on Open jobs and
+Verified sorts descending (most jobs, verified first), name sorts ascending.
+Sorting resets to page 1, and search keeps the sort.
+
 ### Admin console (commit 8a7b9ed)
 
 - The careers URL on `/admin/companies` is a real link that opens in a new
