@@ -10,6 +10,7 @@
 	let { data } = $props();
 
 	const jobs: Paginated<Job> | null = $derived(data.jobs);
+	const openApplications = $derived(data.openApplications);
 	const params = $derived(data.params as Record<string, string>);
 
 	const categoryNames = $derived.by(() => {
@@ -420,6 +421,47 @@
 
 		{#if jobs}
 			<Pagination data={jobs} makeHref={pageHref} />
+		{/if}
+
+		{#if openApplications && openApplications.total > 0}
+			<section class="mt-10" aria-labelledby="open-applications-heading">
+				<div class="flex items-center gap-3">
+					<span class="h-px flex-1 bg-ink-soft/25"></span>
+					<span class="font-mono text-[10px] tracking-[0.14em] text-ink-soft uppercase">
+						Open applications
+					</span>
+					<span class="h-px flex-1 bg-ink-soft/25"></span>
+				</div>
+				<h2 id="open-applications-heading" class="mt-3 text-sm font-bold">
+					{openApplications.total} companies invite speculative applications
+				</h2>
+				<p class="mt-1 text-sm text-ink-soft">
+					These companies have no posted roles right now but say they want to hear from
+					you anyway. Write to them directly.
+				</p>
+				<ul class="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+					{#each openApplications.companies as company (company.id)}
+						<li class="well flex items-center justify-between gap-3 p-3">
+							<span class="min-w-0">
+								<span class="block truncate text-sm font-semibold">{company.name}</span>
+								<span class="block truncate font-mono text-[10px] tracking-wide text-ink-soft uppercase">
+									{company.category}
+								</span>
+							</span>
+							{#if company.careers_url}
+								<a
+									href={company.careers_url}
+									target="_blank"
+									rel="noopener noreferrer"
+									class="btn-latch shrink-0 !px-2 !py-1 text-xs"
+								>
+									Apply
+								</a>
+							{/if}
+						</li>
+					{/each}
+				</ul>
+			</section>
 		{/if}
 	</section>
 </div>
