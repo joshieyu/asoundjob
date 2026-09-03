@@ -1761,6 +1761,7 @@ rule from the rejected `FALLBACK_ROLE_CATEGORIES` bundle:
 
 **No off-board row gained a category, so nothing new was admitted** and the
 board held at 476 across the backfill. Uncategorized board rows 110 -> 104.
+(Both figures predate the 2026-09-02 full cycle, which took the board to 512.)
 One displacement: Bose's "Acoustical Engineer" hit the 3-category cap and
 dropped `microphones_recording` for `audio_systems`, which is the better filing.
 
@@ -1807,9 +1808,11 @@ was to finish the cycle rather than leave it split.
 
 ## Next steps, in priority order (as of 2026-08-31)
 
-0. **The database is current with the code** as of commit b6fb339. Board 476.
-   Per-company rescrapes have been run for everything touched since the last
-   full scrape; a full cycle is not owed but would be cheap insurance.
+0. **The database is current with the code.** A full cycle ran 2026-09-02 after
+   the categorization and seed work: 688 companies, 393 ok / 295 failed,
+   jobs_found 4,524, inserted 82, updated 4,442, reactivated 20, deactivated 94.
+   **Board 512**, 4,615 active, 80 contributing companies. The jump from 476 is
+   real fresh data (+42) net of the six retired Ampify duplicates.
 
 1. **Company case studies — what the owner is doing next.** The owner works by
    naming companies they expect to see on the board and asking why they are
@@ -1962,12 +1965,12 @@ was to finish the cycle rather than leave it split.
    and takes about a minute. See the session update above for the HEAD-versus-GET
    trap it exposed.
 
-8. **Location extraction is the remaining lever for country coverage.** 146 of
-   476 board rows still have no country (2026-09-02), and 127 carry no location
-   string at all — so extraction, not parsing, is still the constraint. ADP (7 companies) and Pinpoint (1) return none;
-   the generic anchor path would need detail-page fetching. See "Session update
-   (2026-08-30)". The parser itself is not the constraint — it resolves 92% of
-   what it is given.
+8. **Location extraction is the remaining lever for country coverage.** 157 of
+   512 board rows have no country (2026-09-02, after the full cycle), and 138
+   carry no location string at all — so extraction, not parsing, is the
+   constraint. ADP (7 companies) and Pinpoint (1) return none; the generic anchor
+   path would need detail-page fetching. See "Session update (2026-08-30)". The
+   parser itself is not the constraint — it resolves 92% of what it is given.
 
 9. **Harman is only two-thirds covered.** `?search=audio` returns 16 of the 24
    audio-relevant roles. Harman's search matches tokens exactly, so no single
