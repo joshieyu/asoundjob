@@ -1861,6 +1861,42 @@ the whole board.** An absent `ids` param means "no id filter", so the UI sends
 `None` for the same reason. Both are pinned by tests; a browser check confirmed
 the empty state rather than 512 rows.
 
+### Neural DSP — two walls, and the second one is fatal (2026-09-02)
+
+Not on the board: **0 jobs, and `last_scraped_at` is NULL**, which means it has
+failed every attempt rather than been skipped. `scrape_log` shows the same
+error on every run back to 2026-08-30: `page loaded but no job links found`.
+
+The seed URL is already correct. The failure is structural, in two layers.
+
+**1. The board lives in an iframe, and the scraper never looks inside one.**
+`https://careers.neuraldsp.com/` is an 8.9 KB shell with **zero anchors**. Its
+only content is `<iframe id="careerWebsite">` — carrying **no `src` attribute at
+all**. Inline JS assigns it at runtime:
+
+    iframe.src = "https://revolutpeople.com" + "/neural-dsp" + "/public/careers/"
+
+That explains why Playwright fails identically to plain HTTP: it renders the
+parent document faithfully, and the parent genuinely has no job links. **Nothing
+in the scraper descends into child frames** — the only `iframe` handling in the
+codebase is iCIMS, which just appends `in_iframe=1` to a URL. So the generic
+path cannot see an iframed board at all. This is a real class, not a Neural DSP
+quirk; worth counting before building, per the usual rule.
+
+**2. The ATS is behind Cloudflare, which kills the workaround.** Pointing the
+seed straight at the iframe URL does not help, and this was measured rather than
+assumed — `check_url` against
+`https://revolutpeople.com/neural-dsp/public/careers/` returns HTTP 403, then
+Playwright and Playwright stealth both land on the interstitial and report no
+job links. **0 / 0 would reach the board.** A browser visit shows the Cloudflare
+"Just a moment..." challenge.
+
+**Do not re-investigate Neural DSP as a seed problem.** Same bucket as Tesla and
+Meta: reachable by a human, not by this scraper. Fixing layer 1 alone buys
+nothing here, though it may be worth doing for other iframed boards. Revisit
+only if Revolut People exposes a JSON endpoint that is not challenged, or if the
+owner decides the Cloudflare tier is worth engineering around.
+
 ## Next steps, in priority order (as of 2026-08-31)
 
 0b. **Restart the API after any change to it.** The dev server runs without
