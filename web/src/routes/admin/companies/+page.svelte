@@ -18,16 +18,19 @@
 	let editingUrl = $state(0);
 	let editValue = $state('');
 	let message = $state('');
+	let page = $state(1);
+	let pageData = $state({ total: 0, page: 1, pages: 0 });
 
 	async function load() {
 		loading = true;
 		try {
-			const query = new URLSearchParams({ per_page: '50' });
+			const query = new URLSearchParams({ per_page: '50', page: String(page) });
 			if (search.trim()) query.set('search', search.trim());
-			const result = await clientApi<{ items: CompanyRow[] }>(
+			const result = await clientApi<{ items: CompanyRow[]; total: number; page: number; pages: number }>(
 				`/api/admin/companies?${query.toString()}`
 			);
 			companies = result.items;
+			pageData = { total: result.total, page: result.page, pages: result.pages };
 		} catch (err) {
 			message = err instanceof Error ? err.message : 'Failed to load';
 		} finally {
@@ -37,8 +40,21 @@
 
 	let searchTimer: ReturnType<typeof setTimeout> | undefined;
 	function onSearch() {
+		page = 1;
 		clearTimeout(searchTimer);
 		searchTimer = setTimeout(load, 300);
+	}
+
+	function prevPage() {
+		if (page <= 1) return;
+		page -= 1;
+		load();
+	}
+
+	function nextPage() {
+		if (page >= pageData.pages) return;
+		page += 1;
+		load();
 	}
 
 	$effect(() => {
@@ -64,6 +80,10 @@
 	function startEdit(row: CompanyRow) {
 		editingUrl = row.id;
 		editValue = row.careers_url ?? '';
+	}
+
+	function cancelEdit() {
+		editingUrl = 0;
 	}
 
 	async function saveUrl(id: number, name: string) {
@@ -121,16 +141,20 @@
 								<span class="flex gap-1.5">
 									<input bind:value={editValue} class="well h-8 w-64 px-2 font-mono text-xs" />
 									<button type="button" class="btn-latch !py-1" onclick={() => saveUrl(row.id, row.name)}>Save</button>
+									<button type="button" class="btn-latch !py-1" onclick={cancelEdit}>Cancel</button>
 								</span>
 							{:else if row.careers_url}
-								<button
-									type="button"
-									class="max-w-[16rem] truncate font-mono text-xs text-fader-deep hover:underline"
-									title="Click to edit"
-									onclick={() => startEdit(row)}
-								>
-									{row.careers_url}
-								</button>
+								<span class="flex items-center gap-1.5">
+									<a
+										href={row.careers_url}
+										target="_blank"
+										rel="noopener noreferrer"
+										class="max-w-[16rem] truncate font-mono text-xs text-fader-deep hover:underline"
+									>
+										{row.careers_url}
+									</a>
+									<button type="button" class="btn-latch !py-1" onclick={() => startEdit(row)}>Edit</button>
+								</span>
 							{:else}
 								<button type="button" class="btn-latch !py-1" onclick={() => startEdit(row)}>Add URL</button>
 							{/if}
@@ -154,6 +178,15 @@
 			</tbody>
 		</table>
 	</div>
+
+	<div class="mt-3 flex items-center justify-center gap-3">
+		<button type="button" class="btn-latch" disabled={page <= 1} onclick={prevPage}>← Prev</button>
+		<span class="font-mono text-xs text-ink-soft">
+			Page {pageData.page} of {pageData.pages} · {pageData.total} companies
+		</span>
+		<button type="button" class="btn-latch" disabled={page >= pageData.pages} onclick={nextPage}>Next →</button>
+	</div>
+
 	<p class="mt-2 font-mono text-[11px] tracking-wide text-ink-soft">
 		Edits mark the company source=manual — the nightly sync will never overwrite it.
 	</p>
