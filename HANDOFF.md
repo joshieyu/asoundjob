@@ -2156,6 +2156,67 @@ when an admin approves it.** Applications open 28 Sept 2026, due 18 Nov
 FastAPI matches in declaration order, so behind the slug route it would be
 read as a company named "open-applications" and 404. A test pins it.
 
+## Session update (2026-09-03, evening) — the cycle, and a duplicate that was hiding
+
+### The full cycle landed all three owed changes
+
+See item 0 for the numbers. Country coverage went 69% -> 83% and the
+prediction made on a copy (434/525) held on the live board (442/535).
+
+### One job reached by two seeded queries was two jobs (commits f4b0115, 21ab204)
+
+A board that answers a search query echoes that query back into every job
+URL it returns, and job identity is the URL. So the same posting fetched
+under `?q=audio` and `?q=dsp` merged as two jobs.
+
+**Harman had this live and nobody had noticed.** Its "Create Account" link
+was stored five times, once per seeded query. Every copy was below the
+relevance cutoff, so no reader ever saw one — which is exactly why it
+survived. Look for defects in the rows the board filters out, not only in
+the rows it shows.
+
+The first fix stripped the query keys that appear in the company's own
+seeded URLs. **It was not enough, and the live database caught it, not the
+tests.** Pagination echoes its own parameter too, so a job on page 1 of
+`?q=audio` and page 2 of `?q=dsp` still merged as two: Google came back at
+18 board rows instead of the measured 16, with two visible duplicates. The
+ignore set now also covers `page`, `pg`, `offset` and `start`.
+
+The stripping is deliberately narrow, because collapsing two real jobs is
+worse than a duplicate:
+
+- it applies only to companies with more than one seed URL, so a single-URL
+  company is untouched;
+- a job id carried in any other parameter still separates two postings
+  (`?gh_jid=111` vs `?gh_jid=222`), and there is a test for exactly that;
+- the tests were sabotage-verified — reverting the pipeline line fails them.
+
+Stale rows self-heal: the next cycle for that company deactivates the
+duplicates, which is what Google (36 deactivated) and Harman (4) did.
+
+### Exact-duplicate stored rows exist but are not worth fixing
+
+Two rows board-wide share a company and URL and are both active — reconcile
+keys existing rows by identity, so a historical duplicate stays alive
+forever. Both are below the relevance cutoff. Measured at 2 surplus rows, 0
+on the board. Do not build anything for this.
+
+### Diagnose can select successful companies (commit e402226)
+
+`--status failed|success|all`. The open-application sweep could only ever
+see the diagnosed failures because selection was hard-wired to the latest
+log being `failed`. The query moved into `select_companies(session, status)`
+so it is testable against an in-memory database.
+
+### The Yamaha submission is still pending
+
+Approve it at `/admin/submissions` in the web admin. Pre-checked with the
+normalizer: it scores 140, files as `audio_aiml` + `audio_dsp_embedded` +
+`audio_systems`, resolves to JP, and will reach the board. Note it gets a
+30-day `expires_date` from `COMMUNITY_JOB_TTL_DAYS`, which is short for a
+2027 internship. A cycle cannot touch it — reconcile only handles rows with
+`source='scraper'`.
+
 ## Next steps, in priority order (as of 2026-08-31)
 
 0b. **Run the API with reload, and watch both packages.** Without `--reload`
@@ -2174,27 +2235,28 @@ read as a company named "open-applications" and 404. A test pins it.
    broke it on 2026-09-03 was in `scraper/scraper/models.py`. Plain `--reload`
    would have looked like it was working and still served stale code.
 
-0. **The database is BEHIND the code — a full cycle is owed (2026-09-03).**
-   The last cycle ran 2026-09-02: 688 companies, 393 ok / 295 failed,
-   jobs_found 4,524, inserted 82, updated 4,442, reactivated 20, deactivated 94.
-   Live right now: **board 512**, 4,615 active, 80 contributing, 157 board rows
-   without a country, Harman at 16.
+0. **The database is current with the code (2026-09-03, evening).** The cycle
+   ran: 690 companies, 394 ok / 296 failed, 1,477s, jobs_found 4,900,
+   inserted 591, updated 4,309, reactivated 21, deactivated 231,
+   deactivation_skips 0. All three owed changes landed and were verified
+   against the live database afterwards:
 
-   Three changes landed after that cycle and **none of them is visible yet**.
-   They are not lost, they are simply unscraped:
-
-   | Change | Measured gain | Where it was verified |
+   | Measure | Before | After |
    |---|---|---|
-   | Card location extraction | board country coverage 355/512 -> 434/525 | copy, all 40 affected companies re-scraped |
-   | Harman's extra queries | 16 -> 26 board rows | copy, targeted scrape |
-   | Flowkey and TrueFire un-skipped | 688 -> 690 companies scraped | simulated against live data |
+   | board rows | 512 | 535 |
+   | board rows with a country | 355 (69%) | 442 (83%) |
+   | distinct countries | 21 | 29 |
+   | Harman | 16 | 26 |
+   | contributing companies | 80 | 82 |
 
-   `backfill_relevance` **cannot** deliver the first of these: it recomputes
-   country from the *stored* location string, and these rows have none. Only a
-   scrape writes location. Run a full cycle to collect all three.
+   Google and Harman were re-scraped individually afterwards for the query
+   identity fix, so their rows are newer than the rest.
 
-   Schema is at `c8e2f0a41b76`; the seed has been synced, so
-   `extra_careers_urls` and `open_application` are already in the database.
+   Two seed edits landed after that cycle and are **already synced** into the
+   database by a `--limit 1` run (the loader syncs every company regardless of
+   limit): Google's `?q=dsp` extra URL and 23 new `open_application` flags.
+   Nothing else is owed.
+
 
 1. **Company case studies — what the owner is doing next.** The owner works by
    naming companies they expect to see on the board and asking why they are
@@ -2514,32 +2576,77 @@ read as a company named "open-applications" and 404. A test pins it.
     it predates that guard) and TrueFire's Toyota tenant. They are now
     harmless, but they are still wrong.
 
-12. **Two new curation levers, both cheap and both needing a human
-    (2026-09-03).** The mechanisms exist; only the seed entries are missing.
+12. **The two curation levers, worked (2026-09-03, evening).** Both were
+    swept. What is left is narrower than this item used to claim.
 
-    **More multi-query companies.** Only Harman uses `extra_careers_urls`
-    today. Any board that answers a search query and matches tokens exactly
-    is a candidate. **Measure before editing the seed** — of the eight
-    queries tried on Harman, `noise` and `signal processing` returned
-    nothing, and `speaker` was redundant with `transducer`. Fetch each
-    candidate, strip the board's navigation anchors, and check the union
-    actually grows. The cap is 6 URLs including the primary.
+    **Multi-query is a three-company lever, and two of the three are
+    rejected.** Only four seed boards are query-scoped at all: Harman,
+    Google, Dolby and Meta (Belden and Canoo carry an empty `q=`, and
+    Switchcraft's keyword board is dead). Measured with the real pipeline,
+    not `check_url` — see the warning below:
 
-    The other case the field was built for is untouched: **a company with
-    separate regional careers sites.** Nobody has swept for those yet.
+    - **Google: seeded `?q=dsp`.** Of audio/acoustic/dsp/sound/speech, only
+      dsp adds anything, and all five additions are DSP or embedded roles.
+      Board 11 -> 16.
+    - **Dolby: rejected.** Every query is a strict subset of `?query=audio`;
+      Eightfold searches full text. acoustic returns 1 job, dsp 3, and both
+      are already in the audio set.
+    - **Meta: rejected, and for a reason worth remembering.** It serves the
+      first query and blocks every one after it. Extra URLs would leave Meta
+      permanently `partial`, and partial suppresses deactivation — so stale
+      rows could never be removed. A silent failure, not a loud one.
 
-    **More open-application companies.** 15 are flagged, from a sweep of the
-    313 diagnosed failures only. The 521 companies that scrape successfully
-    were never examined, and a company can perfectly well post two roles and
-    also invite speculative CVs. Re-run
-    `diagnose_failures --html-cache DIR` then
-    `propose_open_applications --from-cache DIR`; both are read-only.
+    **`check_url` under-measures a company with a stored ATS identity.** It
+    builds its Company from a name lookup that does not copy `ats_type` or
+    `ats_slug`, so Dolby came back with 12 jobs where the live pipeline gets
+    61. Measure query unions by constructing the Company the way `main.py`
+    does, including the ATS columns.
 
-    **Seed bug found and not fixed: Joué.** Its `careers_url` is
-    `https://www.joueclub.fr/contenu/recrutement.html` — JouéClub, a French
-    toy retailer, not Joué the MIDI controller maker (jouemusic.com). Left
-    for the owner because the seed is hand-edited truth. Worth asking how it
-    got there: a name-similarity match of this kind may not be unique.
+    **Open applications: swept, 15 -> 38.** Probing the 438 companies whose
+    last scrape succeeded found 31 pages inviting a speculative CV. 25 of
+    them contribute nothing to the board despite scraping cleanly — those
+    were flagged. The 6 that already show a listing were left alone rather
+    than appear twice. Only 9 of the 31 matched on weak boilerplate, so the
+    strong/weak marker split that looked necessary was not built.
+
+    Audiolab, Quad Electronics and Wharfedale share one IAG Group careers
+    page; only Audiolab is scraped, so it carries the flag for all three.
+
+    **Still untouched: the regional careers site case.** There is no cheap
+    signal for it. `companies.headquarters` is NULL for all 728 verified
+    companies and the seed carries no country field, so a candidate list
+    cannot be built from the database. It needs either the careers URL host
+    TLD or human knowledge of which manufacturers run separate country
+    sites.
+
+13. **Seed careers URLs that are not careers pages — 38 entries, 32 verified
+    (2026-09-03).** Item 12 used to ask whether Joué's wrong URL was unique.
+    It is not. `python -m scraper.audit_seed_urls` (read-only, no network, no
+    database) classifies them:
+
+    - **15 are error, for-sale or press-release pages.** Cadence points at its
+      own `accessdenied.html`, McIntosh at `Page-Not-Found`, Ubisoft and ZTE
+      at `/404`, and Kush Audio, Powerbass and Vienna Acoustics at HugeDomains
+      sale listings.
+    - **23 point at an unrelated host.** Electro-Voice resolves to
+      `ev.com/new-cars`, an electric-vehicle site that won the name collision;
+      Roland points at a YouTube video; Metric Halo at an unrelated
+      `mhsoftware.com` blog post.
+
+    **`check_links` cannot catch these and never will** — they return HTTP
+    200. Spot-checked: flik.com's page is titled "404 - page not found" and
+    returns 200, HugeDomains returns 200 for a sale page. That is why the last
+    link sweep reported 452 ok, 0 broken.
+
+    The tool also reports a fourth bucket it deliberately does not list: 115
+    entries whose host does not match the company name but whose URL is
+    careers-shaped. Those are mostly correct parent-company boards (Beats ->
+    apple.com, Audible -> amazon.jobs), which is why bucket A needs a human
+    eye too — Soundtrap -> lifeatspotify.com is a correct URL the heuristic
+    flags.
+
+    Nothing here is fixed. The seed is hand-edited truth.
+
 
 Explicitly NOT worth doing, all measured rather than assumed: follow-one-link
 (section 3 above — note this is *not* the same as the pagination that shipped in
