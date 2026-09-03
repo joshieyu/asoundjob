@@ -1,5 +1,8 @@
 <script lang="ts">
 	import JobStrip from '$lib/components/JobStrip.svelte';
+	import FeedbackDialog from '$lib/components/FeedbackDialog.svelte';
+	import { JOB_FEEDBACK_KINDS } from '$lib/feedback';
+	import type { Job } from '$lib/types';
 
 	let { data } = $props();
 
@@ -21,6 +24,20 @@
 		for (const c of categoryMeta) map.set(c.id, c.name);
 		return map;
 	});
+
+	const categoryOptions = $derived(categoryMeta.map((c) => ({ id: c.id, name: c.name })));
+
+	const reportKinds = JOB_FEEDBACK_KINDS.filter(
+		(k) => k.value === 'wrong_category' || k.value === 'not_audio'
+	);
+
+	let reportJob = $state<Job | null>(null);
+	let reportOpen = $state(false);
+
+	function onReport(job: Job) {
+		reportJob = job;
+		reportOpen = true;
+	}
 </script>
 
 <svelte:head>
@@ -125,7 +142,7 @@
 
 	<div class="mt-4 grid gap-3 md:grid-cols-2">
 		{#each featured as job (job.id)}
-			<JobStrip {job} {categoryNames} />
+			<JobStrip {job} {categoryNames} {onReport} />
 		{:else}
 			<p class="panel col-span-full p-6 text-sm text-ink-soft">
 				Listings are warming up — the board is syncing with the backend.
@@ -171,3 +188,14 @@
 	</div>
 	<a href="/jobs/submit" class="btn-primary shrink-0">Submit a job</a>
 </section>
+
+{#if reportJob}
+	<FeedbackDialog
+		mode="job"
+		jobId={reportJob.id}
+		jobTitle={reportJob.title}
+		kinds={reportKinds}
+		categories={categoryOptions}
+		bind:open={reportOpen}
+	/>
+{/if}
