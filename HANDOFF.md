@@ -2238,7 +2238,7 @@ Svelte's number binding yields null for an empty input, and the schema is
 `Optional[int]`, so it lands as NULL and falls through to the default. If
 anyone ever makes this field required, that null becomes a 422.
 
-### Re-approving a submission refreshes the live job in place
+### Re-approving a submission refreshes the live job in place (commit 9258321)
 
 The defect: approving a second submission whose URL already had a live
 community job set `duplicate.is_active = False` and, because the insert sat
@@ -2268,12 +2268,12 @@ Community jobs now store `country`, which the insert path never set. The
 Yamaha submission resolves to JP and would have landed with a NULL country
 and no flag on the board.
 
-### The admin company table shows scraped and board counts separately
+### The admin company table shows scraped and board counts separately (commit 8ec51fd)
 
 **The "Open jobs" column never meant what it looked like.** It counted every
 active row the scraper holds, junk included, and readers of that column —
 including me, in this session — read it as board presence. Live numbers:
-4,990 active rows against 540 on the board, and **319 of the 401 companies
+5,057 active rows against 547 on the board, and **319 of the 401 companies
 with any rows contribute nothing to the board at all**. Niantic held 180 rows
 and put 0 on the board; NVIDIA's 6 were "Find Your Next Job", "Applicant
 Privacy Policy", "How We Hire" and three more of the same, because its seed
@@ -2284,7 +2284,7 @@ both ordered in SQL. Sorting by board gives an entirely different top —
 Shure 97, Apple 69, Beltone 38 — and reading the two side by side is the
 fastest way to spot a seed URL pointed at the wrong page.
 
-### Company admin sorts by job count and by verified
+### Company admin sorts by job count and by verified (commit f0b31bc)
 
 `companies_with_counts` takes `sort` (name/jobs/verified) and `direction`.
 The count was already a joined SQL subquery, so this is an ORDER BY, not a
@@ -2318,7 +2318,7 @@ approved and nothing reached the database: a filled field sends
 
 ## Session update (2026-09-03, night) — Apple ignored its own seed URL
 
-### The Apple parser hardcoded its search query
+### The Apple parser hardcoded its search query (commit 66d83df)
 
 `AppleScraper.can_handle` matches on the `jobs.apple.com` host, and the
 parser then fetched `?search=audio` regardless of what the seed said. The
@@ -2394,13 +2394,17 @@ is 489 characters.
    | Harman | 16 | 26 |
    | contributing companies | 80 | 82 |
 
-   Google and Harman were re-scraped individually afterwards for the query
-   identity fix, so their rows are newer than the rest.
+   **The board is at 547 now, not 535.** Google, Harman and Apple were
+   re-scraped individually after that cycle — Google and Harman for the query
+   identity fix, Apple for its seeded queries — so their rows are newer than
+   everyone else's and their counts moved after the table above.
 
-   Two seed edits landed after that cycle and are **already synced** into the
-   database by a `--limit 1` run (the loader syncs every company regardless of
-   limit): Google's `?q=dsp` extra URL and 23 new `open_application` flags.
-   Nothing else is owed.
+   Three seed edits landed after that cycle and are **all synced** into the
+   database: Google's `?q=dsp`, Apple's `?search=speech` and
+   `?search=acoustic`, and 23 new `open_application` flags. A `--company`
+   run syncs the whole seed first, so no separate load is owed.
+
+   Nothing is owed. The next full cycle is routine, not a catch-up.
 
 
 1. **Company case studies — what the owner is doing next.** The owner works by
@@ -2747,7 +2751,7 @@ is 489 characters.
     61. Measure query unions by constructing the Company the way `main.py`
     does, including the ATS columns.
 
-    **Open applications: swept, 15 -> 38.** Probing the 438 companies whose
+    **Open applications: swept, 15 -> 38 (commit b8bea52).** Probing the 438 companies whose
     last scrape succeeded found 31 pages inviting a speculative CV. 25 of
     them contribute nothing to the board despite scraping cleanly — those
     were flagged. The 6 that already show a listing were left alone rather
@@ -2766,7 +2770,7 @@ is 489 characters.
 
 13. **Seed careers URLs that are not careers pages — 38 entries, 32 verified
     (2026-09-03).** Item 12 used to ask whether Joué's wrong URL was unique.
-    It is not. `python -m scraper.audit_seed_urls` (read-only, no network, no
+    It is not. `python -m scraper.audit_seed_urls` (commit b2e7842) (read-only, no network, no
     database) classifies them:
 
     - **15 are error, for-sale or press-release pages.** Cadence points at its
