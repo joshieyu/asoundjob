@@ -8,6 +8,7 @@ from scraper.countries import detect_country
 from scraper.database import dispose_engine, init_db, session_scope
 from scraper.models import Company, Job
 from scraper.normalizer import category_to_scope, classify_categories, score_relevance
+from scraper.overrides import effective_categories, effective_is_audio
 
 
 def backfill(dry_run: bool = False) -> None:
@@ -37,10 +38,13 @@ def backfill(dry_run: bool = False) -> None:
             if job.country != country:
                 job.country = country
                 relocated += 1
-            categories = classify_categories(job.title, job.description, company_category)
-            score, is_related = score_relevance(
+            categories = effective_categories(
+                job, classify_categories(job.title, job.description, company_category)
+            )
+            score, computed_related = score_relevance(
                 job.title, job.description, categories, scope or "native"
             )
+            is_related = effective_is_audio(job, computed_related)
             if list(job.job_categories or []) != categories:
                 job.job_categories = categories
                 recategorized += 1

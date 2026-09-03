@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from scraper.models import Company, Job
 from scraper.normalizer import NormalizedJob
+from scraper.overrides import effective_categories, effective_is_audio
 from scraper.scrapers.base import RawJob
 
 
@@ -115,9 +116,9 @@ def reconcile_company_jobs(
         row.salary_min = normalized.salary_min
         row.salary_max = normalized.salary_max
         row.salary_currency = normalized.salary_currency
-        row.job_categories = normalized.job_categories
+        row.job_categories = effective_categories(row, normalized.job_categories)
         row.relevance_score = normalized.relevance_score
-        row.is_audio_related = normalized.is_audio_related
+        row.is_audio_related = effective_is_audio(row, normalized.is_audio_related)
         if normalized.posted_date is not None:
             row.posted_date = normalized.posted_date
         if not row.is_active:
