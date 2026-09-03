@@ -1988,6 +1988,47 @@ database, never the live one.
 Linear and negligible: 71ms for a synthetic 500-card page, against network
 time measured in seconds.
 
+### A board claim needed corroboration (commit 4023298)
+
+Chasing item 11 turned up a live defect rather than the missing feature.
+
+`_dedupe_shared_urls` collapses two companies that share a stored
+`(ats_type, ats_slug)` and deactivates the loser's jobs. Three companies
+were being skipped that way, and only one was a real duplicate:
+
+| Company | Stored identity | Claimed by | Correct? |
+|---|---|---|---|
+| Beats by Dre | `apple` / `""` | Apple | yes — Apple-owned, same board |
+| Flowkey | `breezy` / `assets-cdn` | Dalet Digital Media | no |
+| TrueFire | `workday` / `toyota.wd503/TMNA` | Toyota | no |
+
+The two bad slugs came from HTML discovery reading things off the page
+that were not the company's board — a CDN host, and Toyota's Workday
+tenant found on a guitar-lesson site. **Their zero active jobs were the
+guard's fingerprint, not an empty board.**
+
+The separating fact is whether the company's own careers URL resolves to
+the identity. `jobs.apple.com` does; `jobs.dalet.com` and
+`careers.toyota.com` do not. A company now claims a board only when
+`discover()` over its own careers URL agrees. An uncorroborated identity
+can still *lose* a collision, which is what keeps Beats deduped.
+
+**The empty slug is deliberate — do not "fix" it.** `apple` is in
+`SLUGLESS_ATS` because its board really is global, and
+`test_same_board_different_urls_is_deduped` pins that. An earlier attempt
+here made blank slugs non-identifying and broke it.
+
+### Two levers measured and closed
+
+**Item 10, flattened titles: 14 rows of 4,615, 2 on the board, 11 of them
+Devialet.** It costs no categories — all 9 uncategorized board rows whose
+titles carry an employment word or trailing place have correct titles. A
+naive strip would destroy "Aerospace, Full-Time Lecturer, Faculty".
+
+**Item 11, `ats_type` persistence: measurement value only.** 81 companies
+would newly resolve, but every real duplicate group already shares a
+careers URL and is caught by the URL half of the guard.
+
 ## Next steps, in priority order (as of 2026-08-31)
 
 0b. **Restart the API after any change to it.** The dev server runs without
@@ -2254,17 +2295,60 @@ time measured in seconds.
     parser sidesteps the generic extractor entirely, so the class survives
     wherever no parser exists.
 
-    Before building: count the affected population the way the other levers were
-    counted. Query board rows whose title contains a location fragment or an
-    employment-type word, rather than assuming it is widespread.
+    **COUNTED 2026-09-03, and the answer closes this item.** The precise
+    signature — an employment-type word mid-title followed by a short tail —
+    matches **14 rows out of 4,615 active, 2 of them on the board**, and 11 of
+    the 14 are Devialet. Dolby, the other example above, was fixed by the
+    Eightfold parser. `job_type` is already set correctly on 13 of the 14, so
+    the parse is not failing, only the title is left dirty.
 
-11. **`ats_type` is stored for only 56 of 728 verified companies**, which makes
-    the board-identity half of `_dedupe_shared_urls` inert for the rest. It is
-    why the Focusrite/Ampify duplicate (commit 69a3495) went unnoticed. Persisting
-    what ATS discovery already resolves at scrape time would arm the existing
-    guard and make the seed's ATS coverage measurable. Count first: a URL-level
-    collision sweep found no second duplicate pair, so the immediate payoff is
-    measurement, not de-duplication.
+    The claim that it costs categories does not survive either. Of the 126
+    uncategorized board rows, 9 have a title carrying an employment word or a
+    trailing place, and **every one of the 9 is a correctly extracted title** —
+    "Senior Pre-sales Solutions Engineer (Pro Audio) - Pennsylvania",
+    "KSL TV Studio Tech / Audio Tech (Part-Time)". They are uncategorized
+    because they are sales and IT roles, which is item 4's relevance point, not
+    a title defect.
+
+    **Do not build a generic repair for this.** A naive strip is actively
+    dangerous: the same pattern matches "Aerospace, Full-Time Lecturer,
+    Faculty" and "EPS PartTime Lecturers", where cutting at the employment word
+    destroys a correct title. Guarding it needs a gazetteer that recognises
+    Chatelet-En-Brie and Courbevoie, which `CITY_COUNTRY` does not. The cost is
+    a real risk to 4,601 correct titles for a cosmetic gain on 14.
+
+11. **`ats_type` is stored for only 56 of 728 verified companies.** The reason
+    is specific and worth knowing: `_try_discovery` is called only on the
+    generic http/playwright/stealth paths in `ScrapePipeline.scrape_company`.
+    When an ATS parser succeeds via `can_handle`, the loop returns immediately
+    and nothing is ever persisted. So the 56 are the ones discovered on the
+    generic path, and every company scraped by a working ATS parser stays NULL.
+
+    **Measured 2026-09-03. Persisting it buys measurement, and nothing else.**
+    Running `discover()` over each careers URL resolves an ATS for 87 of the
+    521 successfully scraped companies and would newly populate 81, taking
+    coverage to about 137 of 728. But every real duplicate group it finds —
+    inMusic's nine Pinpoint brands, Focusrite's three, Logitech's three,
+    Harley/LiveWire on ADP — **shares one careers URL and is already deduped by
+    the URL half of the guard**. Every collision that was not already a URL
+    duplicate turned out to be false. So this is worth doing to make ATS
+    coverage measurable, not to catch duplicates.
+
+    **The guard itself had a defect, now fixed (commit 4023298).** Arming more
+    of it would have made things worse, because a stored identity was trusted
+    without any check that it belonged to the company. Flowkey was being
+    skipped against a CDN host slug and TrueFire against Toyota's Workday
+    tenant — both scraped off the page by HTML discovery. A board claim now
+    requires the company's own careers URL to resolve to that identity.
+    Anything persisted from HTML alone can still lose a collision but can no
+    longer win one. See the 2026-09-03 session update.
+
+    If you do persist from URLs, note it is *safer* than what is stored today:
+    URL-derived slugs cannot pick up a third party's board the way HTML
+    discovery did. Two stale bad rows remain in the database — Flowkey's
+    `breezy/assets-cdn` (today's `NON_BOARD_SUBDOMAIN_RE` would reject it, so
+    it predates that guard) and TrueFire's Toyota tenant. They are now
+    harmless, but they are still wrong.
 
 Explicitly NOT worth doing, all measured rather than assumed: follow-one-link
 (section 3 above — note this is *not* the same as the pagination that shipped in
