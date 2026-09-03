@@ -467,7 +467,7 @@
     "name": "Ampify Music",
     "careers_url": "https://focusrite.workable.com/",
     "category": "DAW & Music Production Software",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "http"
   },
