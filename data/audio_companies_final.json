@@ -4274,6 +4274,12 @@
   {
     "name": "Harman",
     "careers_url": "https://jobsearch.harman.com/en_US/careers/SearchJobs/?search=audio",
+    "extra_careers_urls": [
+      "https://jobsearch.harman.com/en_US/careers/SearchJobs/?search=acoustic",
+      "https://jobsearch.harman.com/en_US/careers/SearchJobs/?search=dsp",
+      "https://jobsearch.harman.com/en_US/careers/SearchJobs/?search=transducer",
+      "https://jobsearch.harman.com/en_US/careers/SearchJobs/?search=sound"
+    ],
     "category": "Professional Audio & Live Sound",
     "verified": true,
     "source": "manual",
