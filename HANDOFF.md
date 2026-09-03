@@ -1769,9 +1769,9 @@ Engineer: Acoustics", two Bose "Systems Engineer" rows, the ADAM Audio
 loudspeaker and studio-monitor roles, Akai's "Senior Product Manager - Alto
 Professional".
 
-### Focusrite and Ampify Music are the same board — 6 duplicated rows
+### Focusrite and Ampify Music were the same board (commit 69a3495)
 
-Found while auditing the change, **not fixed** because it is a seed decision.
+Found while auditing the change; the owner chose to keep Focusrite.
 Company 59 (Ampify Music, `https://focusrite.workable.com/`) and company 469
 (Focusrite, `https://apply.workable.com/focusrite/`) resolve to the same
 Workable slug, so **all 6 of Focusrite's board rows appear twice** under
@@ -1782,6 +1782,28 @@ A URL-level sweep across the whole board found **this pair and nothing else** �
 bounded at one pair; this is not a general de-duplication problem. Ampify is a
 Focusrite-owned brand, the same relationship as the Music Tribe family
 consolidated earlier today.
+
+Retired the established way: `verified` flipped to false, the entry kept so it
+is not rediscovered, and `_deactivate_unverified_jobs` in `company_loader`
+deactivates its jobs on the next sync.
+
+**Why the existing guard missed it, which generalises.** `_dedupe_shared_urls`
+in `main.py` already skips a company whose careers URL or `(ats_type, ats_slug)`
+pair has been scraped, but it caught neither: the two URLs differ textually
+(`focusrite.workable.com/` versus `apply.workable.com/focusrite/`) and **neither
+company has an `ats_type` stored at all**. Only 52 of 728 verified companies do.
+The board-identity half of that guard is therefore inert for 93% of the
+population — discovery resolves the ATS at scrape time but the result is not
+written back to the company row. Worth knowing before trusting the guard, or
+before building anything else on stored `ats_type`.
+
+### --limit 0 is not "load only" — it runs a full cycle
+
+`main.py` tests `if limit:`, so `--limit 0` is falsy and means *no limit*. There
+is no load-only entry point; `--company <slug>` against something cheap is the
+closest thing. Running it by mistake started a real cycle that refreshed 101
+companies before it was killed, leaving the database half-refreshed — the repair
+was to finish the cycle rather than leave it split.
 
 ## Next steps, in priority order (as of 2026-08-31)
 
@@ -1927,9 +1949,11 @@ consolidated earlier today.
    it is the same taxonomy decision as bare "acoustics" in item 4. Hearing-device
    *measurement* roles score `audiology_hearing` at 3 against a cutoff of 5 and
    so file as test only; raising that means touching the shared scoring curve.
-   There is also a stray 0-byte `scraper/asoundjob.db`; the live database is
-   `asoundjob.db` at the repo root, and the empty one will confuse anyone who
-   runs a command from the wrong directory.
+   The stray 0-byte `scraper/asoundjob.db` is **deleted (2026-09-02)**. It could
+   not recur: `resolve_database_url` in `database.py` already anchors a relative
+   sqlite path to `REPO_ROOT`, so the working directory no longer decides which
+   database you get. That behaviour had no test; it has four now
+   (`tests/test_database_url.py`). The file was debris from before the fix.
 
 7. **Link checker — BUILT (commit f94492f).** `python -m scraper.check_links`.
    It also detects a 2xx that serves the wrong document — see the 2026-09-02
@@ -1978,14 +2002,13 @@ consolidated earlier today.
     counted. Query board rows whose title contains a location fragment or an
     employment-type word, rather than assuming it is widespread.
 
-11. **Focusrite and Ampify Music duplicate 6 board rows — seed decision, not a
-    bug.** Both companies point at the same Workable board (slug `focusrite`),
-    so every Focusrite job is listed twice under two employer names. See the
-    2026-09-02 (later) session update. The fix is the Music Tribe move: retire
-    one seed entry, keeping whichever brand name the owner wants readers to see.
-    A board-wide URL collision sweep found no other pair, so this is the whole
-    class. **Do not edit the seed for this without asking** — it is hand-curated
-    truth.
+11. **`ats_type` is stored for only 52 of 728 verified companies**, which makes
+    the board-identity half of `_dedupe_shared_urls` inert for the rest. It is
+    why the Focusrite/Ampify duplicate (commit 69a3495) went unnoticed. Persisting
+    what ATS discovery already resolves at scrape time would arm the existing
+    guard and make the seed's ATS coverage measurable. Count first: a URL-level
+    collision sweep found no second duplicate pair, so the immediate payoff is
+    measurement, not de-duplication.
 
 Explicitly NOT worth doing, all measured rather than assumed: follow-one-link
 (section 3 above — note this is *not* the same as the pagination that shipped in
