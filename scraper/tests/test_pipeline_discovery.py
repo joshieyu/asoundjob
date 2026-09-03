@@ -196,6 +196,80 @@ class TestSharedBoardDedupe(unittest.TestCase):
         self.assertEqual([c.name for c in keep], ["Apple", "Sonos"])
         self.assertEqual([c.name for c in skip], ["Beats by Dre"])
 
+    def test_uncorroborated_board_does_not_claim(self) -> None:
+        from scraper.main import _dedupe_shared_urls
+        from scraper.models import Company
+
+        rows = [
+            Company(
+                id=1, name="Dalet Digital Media", slug="dalet", category="x",
+                careers_url="https://jobs.dalet.com/",
+                ats_type="breezy", ats_slug="assets-cdn",
+            ),
+            Company(
+                id=2, name="Flowkey", slug="flowkey", category="x",
+                careers_url="https://flowkey.breezy.hr/",
+                ats_type="breezy", ats_slug="assets-cdn",
+            ),
+        ]
+        keep, skip = _dedupe_shared_urls(rows)
+        self.assertEqual([c.name for c in keep], ["Dalet Digital Media", "Flowkey"])
+        self.assertEqual(skip, [])
+
+    def test_a_foreign_tenant_does_not_claim_another_company(self) -> None:
+        from scraper.main import _dedupe_shared_urls
+        from scraper.models import Company
+
+        rows = [
+            Company(
+                id=1, name="Toyota", slug="toyota", category="x",
+                careers_url="https://careers.toyota.com/us/en",
+                ats_type="workday", ats_slug="toyota.wd503/TMNA",
+            ),
+            Company(
+                id=2, name="TrueFire", slug="truefire", category="x",
+                careers_url="https://truefire.com/careers",
+                ats_type="workday", ats_slug="toyota.wd503/TMNA",
+            ),
+        ]
+        keep, skip = _dedupe_shared_urls(rows)
+        self.assertEqual([c.name for c in keep], ["Toyota", "TrueFire"])
+        self.assertEqual(skip, [])
+
+    def test_a_corroborated_board_still_claims(self) -> None:
+        from scraper.main import _dedupe_shared_urls
+        from scraper.models import Company
+
+        rows = [
+            Company(
+                id=1, name="Sonos", slug="sonos", category="x",
+                careers_url="https://sonos.wd1.myworkdayjobs.com/Sonos",
+                ats_type="workday", ats_slug="sonos.wd1/Sonos",
+            ),
+            Company(
+                id=2, name="Sonos Europe", slug="sonos-eu", category="x",
+                careers_url="https://www.sonos.com/en/careers",
+                ats_type="workday", ats_slug="sonos.wd1/Sonos",
+            ),
+        ]
+        keep, skip = _dedupe_shared_urls(rows)
+        self.assertEqual([c.name for c in keep], ["Sonos"])
+        self.assertEqual([c.name for c in skip], ["Sonos Europe"])
+
+    def test_url_duplicates_are_still_deduped_without_any_ats(self) -> None:
+        from scraper.main import _dedupe_shared_urls
+        from scraper.models import Company
+
+        rows = [
+            Company(id=1, name="A", slug="a", category="x",
+                    careers_url="https://shared.example/careers"),
+            Company(id=2, name="B", slug="b", category="x",
+                    careers_url="https://shared.example/careers"),
+        ]
+        keep, skip = _dedupe_shared_urls(rows)
+        self.assertEqual([c.name for c in keep], ["A"])
+        self.assertEqual([c.name for c in skip], ["B"])
+
     def test_companies_without_ats_are_untouched(self) -> None:
         from scraper.main import _dedupe_shared_urls
         from scraper.models import Company

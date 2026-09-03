@@ -7,6 +7,7 @@ import sys
 import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from typing import Optional
 
 from sqlalchemy import select
 
@@ -15,6 +16,7 @@ from scraper.database import dispose_engine, init_db, session_scope
 from scraper.deduplicator import ReconcileStats, reconcile_company_jobs
 from scraper.models import Company, Job, ScrapeLog
 from scraper.normalizer import Normalizer
+from scraper.scrapers.ats_discovery import discover
 from scraper.scrapers.base import ScrapeResult
 from scraper.scrapers.pipeline import ScrapePipeline
 
@@ -230,14 +232,33 @@ def _dedupe_shared_urls(
             if c.ats_type
             else None
         )
-        if url in seen_urls or (board is not None and board in seen_boards):
+        if url in seen_urls:
+            skip_list.append(c)
+            continue
+        if board is not None and board in seen_boards:
+            logger.info(
+                "dedup: skipping %s, board %s/%s already claimed",
+                c.name,
+                board[0],
+                board[1],
+            )
             skip_list.append(c)
             continue
         seen_urls.add(url)
-        if board is not None:
+        if board is not None and _url_corroborates_board(c.careers_url, board):
             seen_boards.add(board)
         scrape_list.append(c)
     return scrape_list, skip_list
+
+
+def _url_corroborates_board(careers_url: Optional[str], board: tuple[str, str]) -> bool:
+    url = (careers_url or "").strip()
+    if not url:
+        return False
+    for ats_type, ats_slug in discover(url, url):
+        if (ats_type.strip().lower(), ats_slug.strip().lower()) == board:
+            return True
+    return False
 
 
 def _deactivate_duplicate_jobs(companies: list[Company]) -> None:
