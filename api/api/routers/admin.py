@@ -19,15 +19,19 @@ from api.query import page_envelope, paginate_params
 from api.schemas import (
     AdminCompanyCreate,
     AdminCompanyUpdate,
+    AdminJobFeedback,
+    AdminSiteFeedback,
     AdminSubmission,
+    FeedbackApproveResponse,
     RejectRequest,
     ScrapeLogEntry,
     ScrapeStatus,
     StatsResponse,
 )
 from scraper.config import load_settings
-from scraper.models import Company, Job, JobSubmission, ScrapeLog
+from scraper.models import Company, Job, JobFeedback, JobSubmission, ScrapeLog, SiteFeedback
 from scraper.normalizer import Normalizer
+from scraper.overrides import effective_is_audio
 from scraper.scrapers.base import RawJob
 
 logger = logging.getLogger(__name__)
@@ -220,7 +224,7 @@ def rescore_company_jobs(db: Session, company: Company) -> None:
             company_category=company.category,
         )
         job.relevance_score = normalized.relevance_score
-        job.is_audio_related = normalized.is_audio_related
+        job.is_audio_related = effective_is_audio(job, normalized.is_audio_related)
 
 
 @router.get("/submissions")
@@ -361,6 +365,169 @@ def reject_submission(
     submission.reject_reason = payload.reason or None
     db.flush()
     logger.info("admin=%s rejected submission %s", admin, submission_id)
+    return {"status": "rejected"}
+
+
+@router.get("/job-feedback")
+def admin_list_job_feedback(
+    status: str = Query("pending", pattern="^(pending|approved|rejected|all)$"),
+    page: int = Query(1, ge=1),
+    per_page: int = Query(25, ge=1, le=100),
+    db: Session = Depends(get_db),
+    _: str = Depends(require_admin),
+):
+    safe_page, safe_per = paginate_params(page, per_page)
+    stmt = (
+        select(JobFeedback, Job.title, Company.name)
+        .join(Job, JobFeedback.job_id == Job.id)
+        .outerjoin(Company, Job.company_id == Company.id)
+        .order_by(JobFeedback.submitted_at.desc())
+    )
+    if status != "all":
+        stmt = stmt.where(JobFeedback.status == status)
+    total = db.execute(
+        select(func.count()).select_from(stmt.subquery())
+    ).scalar_one()
+    rows = db.execute(stmt.offset((safe_page - 1) * safe_per).limit(safe_per)).all()
+    items = []
+    for feedback, job_title, company_name in rows:
+        data = {
+            column.name: getattr(feedback, column.name)
+            for column in JobFeedback.__table__.columns
+        }
+        data["job_title"] = job_title
+        data["company_name"] = company_name
+        items.append(AdminJobFeedback.model_validate(data))
+    return page_envelope(items, int(total), safe_page, safe_per)
+
+
+@router.post("/job-feedback/{feedback_id}/approve", response_model=FeedbackApproveResponse)
+def approve_job_feedback(
+    feedback_id: int,
+    db: Session = Depends(get_db),
+    admin: str = Depends(require_admin),
+):
+    feedback = db.get(JobFeedback, feedback_id)
+    if feedback is None:
+        raise HTTPException(status_code=404, detail="Feedback not found")
+    if feedback.status != "pending":
+        raise HTTPException(status_code=409, detail=f"Feedback already {feedback.status}")
+
+    job = db.get(Job, feedback.job_id)
+    applied = "no changes"
+    if feedback.kind == "not_audio":
+        if job is not None:
+            job.is_audio_related_override = False
+            job.is_audio_related = False
+        applied = "marked not audio-related"
+    elif feedback.kind == "wrong_category":
+        if job is not None and feedback.suggested_categories:
+            job.categories_override = feedback.suggested_categories
+            job.job_categories = feedback.suggested_categories
+            applied = f"categories set to {', '.join(feedback.suggested_categories)}"
+        else:
+            applied = "no categories suggested"
+    elif feedback.kind in ("broken_description", "broken_link"):
+        applied = "marked handled, no job changes"
+
+    now = datetime.now(timezone.utc)
+    feedback.status = "approved"
+    feedback.reviewed_at = now
+    feedback.reviewed_by = admin
+    db.flush()
+    logger.info("admin=%s approved job feedback %s: %s", admin, feedback_id, applied)
+    return FeedbackApproveResponse(status="approved", applied=applied)
+
+
+@router.post("/job-feedback/{feedback_id}/reject")
+def reject_job_feedback(
+    feedback_id: int,
+    payload: RejectRequest,
+    db: Session = Depends(get_db),
+    admin: str = Depends(require_admin),
+):
+    feedback = db.get(JobFeedback, feedback_id)
+    if feedback is None:
+        raise HTTPException(status_code=404, detail="Feedback not found")
+    if feedback.status != "pending":
+        raise HTTPException(status_code=409, detail=f"Feedback already {feedback.status}")
+    now = datetime.now(timezone.utc)
+    feedback.status = "rejected"
+    feedback.reviewed_at = now
+    feedback.reviewed_by = admin
+    feedback.reject_reason = payload.reason or None
+    db.flush()
+    logger.info("admin=%s rejected job feedback %s", admin, feedback_id)
+    return {"status": "rejected"}
+
+
+@router.get("/site-feedback")
+def admin_list_site_feedback(
+    status: str = Query("pending", pattern="^(pending|approved|rejected|all)$"),
+    page: int = Query(1, ge=1),
+    per_page: int = Query(25, ge=1, le=100),
+    db: Session = Depends(get_db),
+    _: str = Depends(require_admin),
+):
+    safe_page, safe_per = paginate_params(page, per_page)
+    stmt = select(SiteFeedback).order_by(SiteFeedback.submitted_at.desc())
+    if status != "all":
+        stmt = stmt.where(SiteFeedback.status == status)
+    total = db.execute(
+        select(func.count()).select_from(stmt.subquery())
+    ).scalar_one()
+    rows = (
+        db.execute(stmt.offset((safe_page - 1) * safe_per).limit(safe_per))
+        .scalars()
+        .all()
+    )
+    return page_envelope(
+        [AdminSiteFeedback.model_validate(r) for r in rows],
+        int(total),
+        safe_page,
+        safe_per,
+    )
+
+
+@router.post("/site-feedback/{feedback_id}/resolve")
+def resolve_site_feedback(
+    feedback_id: int,
+    db: Session = Depends(get_db),
+    admin: str = Depends(require_admin),
+):
+    feedback = db.get(SiteFeedback, feedback_id)
+    if feedback is None:
+        raise HTTPException(status_code=404, detail="Feedback not found")
+    if feedback.status != "pending":
+        raise HTTPException(status_code=409, detail=f"Feedback already {feedback.status}")
+    now = datetime.now(timezone.utc)
+    feedback.status = "approved"
+    feedback.reviewed_at = now
+    feedback.reviewed_by = admin
+    db.flush()
+    logger.info("admin=%s resolved site feedback %s", admin, feedback_id)
+    return {"status": "approved"}
+
+
+@router.post("/site-feedback/{feedback_id}/reject")
+def reject_site_feedback(
+    feedback_id: int,
+    payload: RejectRequest,
+    db: Session = Depends(get_db),
+    admin: str = Depends(require_admin),
+):
+    feedback = db.get(SiteFeedback, feedback_id)
+    if feedback is None:
+        raise HTTPException(status_code=404, detail="Feedback not found")
+    if feedback.status != "pending":
+        raise HTTPException(status_code=409, detail=f"Feedback already {feedback.status}")
+    now = datetime.now(timezone.utc)
+    feedback.status = "rejected"
+    feedback.reviewed_at = now
+    feedback.reviewed_by = admin
+    feedback.reject_reason = payload.reason or None
+    db.flush()
+    logger.info("admin=%s rejected site feedback %s", admin, feedback_id)
     return {"status": "rejected"}
 
 

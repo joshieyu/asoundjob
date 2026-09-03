@@ -13,6 +13,7 @@ from api.routers import (
     categories,
     companies,
     countries,
+    feedback,
     jobs,
     resources,
     search,
@@ -47,6 +48,7 @@ app.include_router(categories.router)
 app.include_router(countries.router)
 app.include_router(search.router)
 app.include_router(resources.router)
+app.include_router(feedback.router)
 app.include_router(admin.router)
 
 
