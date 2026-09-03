@@ -121,6 +121,7 @@ class JobSubmission(Base):
     salary_range: Mapped[Optional[str]] = mapped_column(Text)
     experience_level: Mapped[Optional[str]] = mapped_column(Text)
     audio_domain: Mapped[Optional[str]] = mapped_column(Text)
+    requested_days: Mapped[Optional[int]] = mapped_column(Integer)
     submitter_name: Mapped[Optional[str]] = mapped_column(Text)
     submitter_email: Mapped[Optional[str]] = mapped_column(Text)
     status: Mapped[str] = mapped_column(Text, default="pending", index=True)

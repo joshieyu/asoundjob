@@ -128,6 +128,7 @@ def submit_job(
         salary_range=payload.salary_range,
         experience_level=payload.experience_level,
         audio_domain=payload.audio_domain,
+        requested_days=payload.duration_days,
         submitter_name=payload.submitter_name,
         submitter_email=payload.submitter_email,
         status="pending",

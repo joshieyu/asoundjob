@@ -6,6 +6,8 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from api.config import MAX_COMMUNITY_JOB_DAYS
+
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 
@@ -160,6 +162,7 @@ class JobSubmissionRequest(BaseModel):
     salary_range: Optional[str] = Field(default=None, max_length=100)
     experience_level: Optional[str] = Field(default=None, max_length=50)
     audio_domain: Optional[str] = Field(default=None, max_length=50)
+    duration_days: Optional[int] = Field(default=None, ge=1, le=MAX_COMMUNITY_JOB_DAYS)
     submitter_name: Optional[str] = Field(default=None, max_length=200)
     submitter_email: Optional[str] = Field(default=None, max_length=320)
 
@@ -203,6 +206,18 @@ class AdminCompanyCreate(AdminCompanyUpdate):
     category: str = Field(min_length=1, max_length=100)
 
 
+class ApproveRequest(BaseModel):
+    expires_days: Optional[int] = Field(default=None, ge=1, le=MAX_COMMUNITY_JOB_DAYS)
+
+
+class ApproveResponse(BaseModel):
+    status: str
+    job_id: Optional[int] = None
+    expires_date: date
+    expires_days: int
+    expires_source: str
+
+
 class RejectRequest(BaseModel):
     reason: str = Field(default="", max_length=1000)
 
@@ -222,6 +237,7 @@ class AdminSubmission(BaseModel):
     salary_range: Optional[str] = None
     experience_level: Optional[str] = None
     audio_domain: Optional[str] = None
+    requested_days: Optional[int] = None
     status: str
     submitted_at: datetime
     reviewed_at: Optional[datetime] = None

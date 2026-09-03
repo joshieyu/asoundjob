@@ -13,7 +13,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from api.auth import LoginRequest, TokenResponse, create_token, require_admin, verify_credentials
-from api.config import COMMUNITY_JOB_TTL_DAYS, SCRAPER_DIR
+from api.config import COMMUNITY_JOB_TTL_DAYS, MAX_COMMUNITY_JOB_DAYS, SCRAPER_DIR
 from api.database import get_db
 from api.query import page_envelope, paginate_params
 from api.schemas import (
@@ -22,6 +22,8 @@ from api.schemas import (
     AdminJobFeedback,
     AdminSiteFeedback,
     AdminSubmission,
+    ApproveRequest,
+    ApproveResponse,
     FeedbackApproveResponse,
     RejectRequest,
     ScrapeLogEntry,
@@ -255,9 +257,20 @@ def admin_list_submissions(
     )
 
 
-@router.post("/submissions/{submission_id}/approve")
+def resolve_expiry_days(
+    override: Optional[int], requested: Optional[int]
+) -> tuple[int, str]:
+    if override is not None:
+        return max(1, min(override, MAX_COMMUNITY_JOB_DAYS)), "moderator"
+    if requested is not None:
+        return max(1, min(requested, MAX_COMMUNITY_JOB_DAYS)), "submitter"
+    return COMMUNITY_JOB_TTL_DAYS, "default"
+
+
+@router.post("/submissions/{submission_id}/approve", response_model=ApproveResponse)
 def approve_submission(
     submission_id: int,
+    payload: Optional[ApproveRequest] = None,
     db: Session = Depends(get_db),
     admin: str = Depends(require_admin),
 ):
@@ -268,6 +281,12 @@ def approve_submission(
         raise HTTPException(
             status_code=409, detail=f"Submission already {submission.status}"
         )
+
+    expires_days, expires_source = resolve_expiry_days(
+        payload.expires_days if payload is not None else None,
+        submission.requested_days,
+    )
+    expires_date = date.today() + timedelta(days=expires_days)
 
     normalizer = Normalizer(load_settings())
     raw = RawJob(
@@ -306,7 +325,7 @@ def approve_submission(
         job_categories=normalized.job_categories,
         relevance_score=normalized.relevance_score,
         is_audio_related=normalized.is_audio_related,
-        expires_date=date.today() + timedelta(days=COMMUNITY_JOB_TTL_DAYS),
+        expires_date=expires_date,
         is_active=True,
         external_id=None,
         source="community",
@@ -340,8 +359,22 @@ def approve_submission(
 
     db.flush()
     job_id = None if duplicate is not None else job.id
-    logger.info("admin=%s approved submission %s as job %s", admin, submission_id, job_id)
-    return {"status": "approved", "job_id": job_id}
+    logger.info(
+        "admin=%s approved submission %s as job %s, expires %s (%s, %d days)",
+        admin,
+        submission_id,
+        job_id,
+        expires_date,
+        expires_source,
+        expires_days,
+    )
+    return ApproveResponse(
+        status="approved",
+        job_id=job_id,
+        expires_date=expires_date,
+        expires_days=expires_days,
+        expires_source=expires_source,
+    )
 
 
 @router.post("/submissions/{submission_id}/reject")
