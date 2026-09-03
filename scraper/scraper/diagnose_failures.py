@@ -11,6 +11,7 @@ from typing import Any, Optional
 from urllib.parse import urlparse
 
 from sqlalchemy import func, select
+from sqlalchemy.orm import Session
 
 from scraper.config import Settings, load_settings
 from scraper.database import dispose_engine, init_db, session_scope
@@ -483,32 +484,42 @@ async def probe_company(
     return probe
 
 
-def _fetch_failed_companies(limit: Optional[int]) -> list:
-    with session_scope() as session:
-        latest_ids = (
-            select(ScrapeLog.company_id, func.max(ScrapeLog.id).label("max_id"))
-            .group_by(ScrapeLog.company_id)
-            .subquery()
-        )
-        query = (
-            select(Company.id, Company.name, Company.careers_url)
-            .join(ScrapeLog, ScrapeLog.company_id == Company.id)
-            .join(
-                latest_ids,
-                (ScrapeLog.company_id == latest_ids.c.company_id)
-                & (ScrapeLog.id == latest_ids.c.max_id),
-            )
-            .where(ScrapeLog.status == "failed")
-            .order_by(Company.id)
-        )
-        rows = session.execute(query).all()
-        companies = []
-        for row in rows:
-            company_id, name, careers_url = row[0], row[1], row[2]
-            if not careers_url or not careers_url.strip():
-                continue
-            companies.append((company_id, name, careers_url.strip()))
+SCRAPE_STATUS_CHOICES = ("failed", "success", "all")
 
+
+def select_companies(session: Session, status: str = "failed") -> list:
+    if status not in SCRAPE_STATUS_CHOICES:
+        raise ValueError(f"unknown status: {status}")
+    latest_ids = (
+        select(ScrapeLog.company_id, func.max(ScrapeLog.id).label("max_id"))
+        .group_by(ScrapeLog.company_id)
+        .subquery()
+    )
+    query = (
+        select(Company.id, Company.name, Company.careers_url)
+        .join(ScrapeLog, ScrapeLog.company_id == Company.id)
+        .join(
+            latest_ids,
+            (ScrapeLog.company_id == latest_ids.c.company_id)
+            & (ScrapeLog.id == latest_ids.c.max_id),
+        )
+        .order_by(Company.id)
+    )
+    if status != "all":
+        query = query.where(ScrapeLog.status == status)
+    rows = session.execute(query).all()
+    companies = []
+    for row in rows:
+        company_id, name, careers_url = row[0], row[1], row[2]
+        if not careers_url or not careers_url.strip():
+            continue
+        companies.append((company_id, name, careers_url.strip()))
+    return companies
+
+
+def _fetch_companies(limit: Optional[int], status: str = "failed") -> list:
+    with session_scope() as session:
+        companies = select_companies(session, status)
     if limit is not None:
         companies = companies[:limit]
     return companies
@@ -516,7 +527,7 @@ def _fetch_failed_companies(limit: Optional[int]) -> list:
 
 def _print_summary(rows: list) -> None:
     if not rows:
-        print("no failed companies with a careers_url were found")
+        print("no companies with a careers_url matched the selection")
         return
 
     pairs = [(row["bucket"], row["detail"]) for row in rows]
@@ -593,6 +604,7 @@ async def run(
     output_path: str,
     html_cache: Optional[str] = None,
     from_cache: Optional[str] = None,
+    status: str = "failed",
 ) -> None:
     if from_cache is not None:
         cached_probes = _load_cached_probes(from_cache)
@@ -608,7 +620,7 @@ async def run(
     browser = None
     playwright_ctx = None
     try:
-        companies = _fetch_failed_companies(limit)
+        companies = _fetch_companies(limit, status)
         rows: list = []
 
         if companies:
@@ -673,6 +685,13 @@ def main() -> None:
     parser.add_argument("--output", type=str, default="diagnose_failures.json")
     parser.add_argument("--html-cache", type=str, default=None)
     parser.add_argument("--from-cache", type=str, default=None)
+    parser.add_argument(
+        "--status",
+        type=str,
+        default="failed",
+        choices=list(SCRAPE_STATUS_CHOICES),
+        help="Select companies by the status of their most recent scrape",
+    )
     args = parser.parse_args()
     asyncio.run(
         run(
@@ -681,6 +700,7 @@ def main() -> None:
             args.output,
             args.html_cache,
             args.from_cache,
+            args.status,
         )
     )
 
