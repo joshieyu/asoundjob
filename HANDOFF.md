@@ -2158,17 +2158,43 @@ read as a company named "open-applications" and 404. A test pins it.
 
 ## Next steps, in priority order (as of 2026-08-31)
 
-0b. **Restart the API after any change to it.** The dev server runs without
-   `--reload`, so it will happily serve stale code for days — it sat on
-   three-day-old code on 2026-09-02 and the new feedback routes 404'd until it
-   was restarted. `cd api && ../venv/bin/uvicorn api.main:app --port 8000`,
-   or add `--reload` if you want edits picked up automatically.
+0b. **Run the API with reload, and watch both packages.** Without `--reload`
+   the dev server serves stale code for days — it sat on three-day-old code on
+   2026-09-02 and the new feedback routes 404'd until it was restarted.
 
-0. **The database is current with the code.** A full cycle ran 2026-09-02 after
-   the categorization and seed work: 688 companies, 393 ok / 295 failed,
+   ```
+   cd api && ../venv/bin/uvicorn api.main:app --port 8000 \
+       --reload --reload-dir . --reload-dir ../scraper/scraper
+   ```
+
+   **The second `--reload-dir` is the one that matters.** Plain `--reload`
+   watches only the working directory, so running from `api/` it watches
+   `api/` alone. `api/__init__.py` puts the scraper directory on `sys.path`,
+   so the API imports models from outside that tree — and the change that
+   broke it on 2026-09-03 was in `scraper/scraper/models.py`. Plain `--reload`
+   would have looked like it was working and still served stale code.
+
+0. **The database is BEHIND the code — a full cycle is owed (2026-09-03).**
+   The last cycle ran 2026-09-02: 688 companies, 393 ok / 295 failed,
    jobs_found 4,524, inserted 82, updated 4,442, reactivated 20, deactivated 94.
-   **Board 512**, 4,615 active, 80 contributing companies. The jump from 476 is
-   real fresh data (+42) net of the six retired Ampify duplicates.
+   Live right now: **board 512**, 4,615 active, 80 contributing, 157 board rows
+   without a country, Harman at 16.
+
+   Three changes landed after that cycle and **none of them is visible yet**.
+   They are not lost, they are simply unscraped:
+
+   | Change | Measured gain | Where it was verified |
+   |---|---|---|
+   | Card location extraction | board country coverage 355/512 -> 434/525 | copy, all 40 affected companies re-scraped |
+   | Harman's extra queries | 16 -> 26 board rows | copy, targeted scrape |
+   | Flowkey and TrueFire un-skipped | 688 -> 690 companies scraped | simulated against live data |
+
+   `backfill_relevance` **cannot** deliver the first of these: it recomputes
+   country from the *stored* location string, and these rows have none. Only a
+   scrape writes location. Run a full cycle to collect all three.
+
+   Schema is at `c8e2f0a41b76`; the seed has been synced, so
+   `extra_careers_urls` and `open_application` are already in the database.
 
 1. **Company case studies — what the owner is doing next.** The owner works by
    naming companies they expect to see on the board and asking why they are
