@@ -1806,7 +1806,68 @@ closest thing. Running it by mistake started a real cycle that refreshed 101
 companies before it was killed, leaving the database half-refreshed — the repair
 was to finish the cycle rather than leave it split.
 
+## Session update (2026-09-02, evening) — bookmarks, and a regression I caused
+
+### The report button was inert on the home page (commit 4d8dc66)
+
+**Two pages render `JobStrip`: `/jobs` and the home page.** The feedback dialog
+was originally mounted inside the card, which worked everywhere. Lifting it to
+the page — right, since a 20-job board would otherwise mount 20 modals — wired
+only `/jobs`, so on the home page `onReport` was undefined and
+`onReport?.(job)` did nothing. Optional chaining swallowed it silently: no
+console error, no visual change, nothing to notice.
+
+**If you add a third page that renders `JobStrip`, wire `onReport` or the
+button is dead there too.** Grep for `JobStrip` before assuming a card control
+works site-wide.
+
+### The flag was ambiguous and did nothing (commit 2efb590)
+
+The owner reported both the flag and the report button as broken. Only the
+report button was; the flag was a different problem in two parts.
+
+**Ambiguous.** A flag icon sitting next to a report control reads as "flag this
+listing" — the owner read it exactly that way. It is now a bookmark: bookmark
+icon, bookmark wording, `getBookmarks` / `toggleBookmark`.
+
+**Inert.** `toggleFlag` wrote ids to `localStorage` and **the only reader was
+the card itself**, deciding whether to draw the button filled. Nothing surfaced
+the list. The control promised a save-for-later feature that had never been
+built. There is now a "Bookmarked only" toggle in the filter rail with a live
+count.
+
+### Bookmarks are device-local by the owner's decision — do not "fix" this
+
+Bookmark ids live in `localStorage` under `asj:bookmarks` and **never reach the
+server** except as a query param when the reader actually filters. They do not
+follow anyone to another browser or device. **This is deliberate**: the owner
+chose it explicitly on 2026-09-02, in preference to user accounts. Do not treat
+the missing sync as a gap and do not propose accounts to close it.
+
+`getBookmarks` falls back to copying the old `asj:flags` value across on first
+read, so bookmarks saved before the rename survive. That fallback can be
+removed once no reader is plausibly still carrying the old key.
+
+### The ids had to reach the server, and empty had to mean empty
+
+Filtering client-side would only have shown bookmarks that happened to land on
+the current page, so `/api/jobs` takes an `ids` CSV, parsed to ints and bounded
+at 200 (`MAX_ID_FILTER`). It composes with the other filters — bookmarked plus
+remote works — and pagination stays server-side.
+
+**The trap: a bookmarked-only view with zero bookmarks must show nothing, not
+the whole board.** An absent `ids` param means "no id filter", so the UI sends
+`ids=0` instead, which matches no job. `_parse_ids("")` returns `[]` rather than
+`None` for the same reason. Both are pinned by tests; a browser check confirmed
+the empty state rather than 512 rows.
+
 ## Next steps, in priority order (as of 2026-08-31)
+
+0b. **Restart the API after any change to it.** The dev server runs without
+   `--reload`, so it will happily serve stale code for days — it sat on
+   three-day-old code on 2026-09-02 and the new feedback routes 404'd until it
+   was restarted. `cd api && ../venv/bin/uvicorn api.main:app --port 8000`,
+   or add `--reload` if you want edits picked up automatically.
 
 0. **The database is current with the code.** A full cycle ran 2026-09-02 after
    the categorization and seed work: 688 companies, 393 ok / 295 failed,
@@ -1873,8 +1934,9 @@ was to finish the cycle rather than leave it split.
 3. **Seed URL quality remains the cheapest lever** — see 3b and 3e. Keysight is a
    worked example: the board had moved and no scraper change could have fixed it.
 
-4. **Categorization, the original pain point #1.** 106 board rows carry no
-   category. Categories are how a reader filters
+4. **Categorization, the original pain point #1.** 126 board rows carry no
+   category (2026-09-02, after the full cycle took the board to 512; it was 104
+   of 476 before). Categories are how a reader filters
    past the junk the board now deliberately admits, so this is worth doing — but
    the obvious fix is already ruled out.
 
