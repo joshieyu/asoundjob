@@ -485,6 +485,101 @@ def _structural_title(anchor: Tag) -> Optional[str]:
     return None
 
 
+LOCATION_ATTR_KEYS = ("class", "id", "aria-label", "title", "data-label", "itemprop")
+
+LOCATION_ATTR_RE = re.compile(r"(?:^|[-_\s])locations?(?:[-_\s]|$)", re.IGNORECASE)
+
+LOCATION_LABEL_RE = re.compile(r"^\s{0,4}locations?\s{0,4}[:\-–—]?\s{0,4}", re.IGNORECASE)
+
+LOCATION_ICON_TEXT = frozenset(
+    {"place", "location_on", "location_city", "pin_drop", "room"}
+)
+
+LOCATION_SKIP_TAGS = frozenset(
+    {"select", "option", "input", "textarea", "button", "form", "label",
+     "script", "style"}
+)
+
+LOCATION_REJECT_RE = re.compile(
+    r"\b(?:jobs?|careers?|openings?|positions?|vacanc\w{0,4}|apply|browse|"
+    r"filter|search|results?|sort|showing|select|choose|all)\b",
+    re.IGNORECASE,
+)
+
+MIN_LOCATION_LEN = 2
+MAX_LOCATION_LEN = 120
+MAX_LOCATION_WORDS = 12
+LOCATION_SCAN_LIMIT = 400
+LOCATION_FORM_ANCESTOR_WALK = 6
+
+
+def _location_attr_hit(node: Tag) -> bool:
+    for key in LOCATION_ATTR_KEYS:
+        value = node.get(key)
+        if value is None:
+            continue
+        if isinstance(value, list):
+            value = " ".join(value)
+        if LOCATION_ATTR_RE.search(str(value)):
+            return True
+    return False
+
+
+def _inside_form_control(node: Tag) -> bool:
+    current: object = node
+    for _ in range(LOCATION_FORM_ANCESTOR_WALK):
+        if not isinstance(current, Tag):
+            return False
+        if current.name in LOCATION_SKIP_TAGS:
+            return True
+        current = current.parent
+    return False
+
+
+def clean_location_value(text: str) -> Optional[str]:
+    value = _clean_text(LOCATION_LABEL_RE.sub("", text)).strip(EDGE_PUNCT).strip()
+    value = _clean_text(value)
+    if not value or not (MIN_LOCATION_LEN <= len(value) <= MAX_LOCATION_LEN):
+        return None
+    if len(value.split(" ")) > MAX_LOCATION_WORDS:
+        return None
+    if LOCATION_REJECT_RE.search(value):
+        return None
+    return value
+
+
+def card_location(card: Tag) -> Optional[str]:
+    for node in card.find_all(True, limit=LOCATION_SCAN_LIMIT):
+        if node.name in LOCATION_SKIP_TAGS or _inside_form_control(node):
+            continue
+        if _location_attr_hit(node):
+            value = clean_location_value(node.get_text(" ", strip=True))
+            if value:
+                return value
+        elif _clean_text(node.get_text(" ", strip=True)).lower() in LOCATION_ICON_TEXT:
+            sibling = node.find_next_sibling()
+            if isinstance(sibling, Tag):
+                value = clean_location_value(sibling.get_text(" ", strip=True))
+                if value:
+                    return value
+    return None
+
+
+def anchor_location(anchor: Tag) -> Optional[str]:
+    node: Tag = anchor
+    for _ in range(MAX_ANCESTOR_WALK):
+        parent = node.parent
+        if not isinstance(parent, Tag) or parent.name in ("body", "html"):
+            break
+        node = parent
+        if not _has_single_job_anchor(node, anchor):
+            break
+        location = card_location(node)
+        if location:
+            return location
+    return None
+
+
 def _looks_like_job_detail_path(path: str, query: str = "") -> bool:
     if query and JOB_ID_QUERY_RE.search(query):
         return True
@@ -513,7 +608,7 @@ def resolve_document_base(soup: BeautifulSoup, base_url: str) -> str:
 def extract_job_links(html: str, base_url: str) -> list[RawJob]:
     soup = BeautifulSoup(html, "html.parser")
     link_base = resolve_document_base(soup, base_url)
-    best_by_url: dict[str, tuple[str, str, Optional[str]]] = {}
+    best_by_url: dict[str, tuple[str, str, Optional[str], Optional[str]]] = {}
     base_parsed = urlparse(base_url)
     base_path = base_parsed.path.rstrip("/").lower()
     base_netloc = base_parsed.netloc.lower()
@@ -575,11 +670,16 @@ def extract_job_links(html: str, base_url: str) -> list[RawJob]:
 
         existing = best_by_url.get(absolute)
         if existing is None or len(candidate_title) > len(existing[0]):
-            best_by_url[absolute] = (candidate_title, path, job_type)
+            best_by_url[absolute] = (
+                candidate_title,
+                path,
+                job_type,
+                anchor_location(anchor),
+            )
 
     return [
-        RawJob(title=title, url=absolute, job_type=job_type)
-        for absolute, (title, _, job_type) in sorted(best_by_url.items())
+        RawJob(title=title, url=absolute, job_type=job_type, location=location)
+        for absolute, (title, _, job_type, location) in sorted(best_by_url.items())
     ]
 
 
@@ -614,6 +714,9 @@ def extract_jobs(html: str, base_url: str) -> list[RawJob]:
     for job in anchor_jobs:
         by_url[job.url] = job
     for job in jsonld_jobs:
+        existing = by_url.get(job.url)
+        if existing is not None and not job.location:
+            job.location = existing.location
         by_url[job.url] = job
 
     return sorted(by_url.values(), key=lambda j: j.url)
