@@ -54,6 +54,21 @@ class PaginatedJobs(BaseModel):
     pages: int
 
 
+class OpenApplicationCompany(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+    slug: str
+    category: str
+    careers_url: Optional[str] = None
+
+
+class OpenApplicationsResponse(BaseModel):
+    companies: list[OpenApplicationCompany]
+    total: int
+
+
 class CompanyResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

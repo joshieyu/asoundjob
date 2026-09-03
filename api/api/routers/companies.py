@@ -12,7 +12,14 @@ from api.query import (
     page_envelope,
     paginate_params,
 )
-from api.schemas import CompanyDetail, CompanyResponse, JobSummary, PaginatedCompanies
+from api.schemas import (
+    CompanyDetail,
+    CompanyResponse,
+    JobSummary,
+    OpenApplicationCompany,
+    OpenApplicationsResponse,
+    PaginatedCompanies,
+)
 from scraper.models import Company, Job
 
 router = APIRouter(prefix="/api/companies", tags=["companies"])
@@ -40,6 +47,23 @@ def list_companies(
         )
     items, total = companies_with_counts(db, stmt, safe_page, safe_per)
     return page_envelope(items, total, safe_page, safe_per)
+
+
+@router.get("/open-applications", response_model=OpenApplicationsResponse)
+def list_open_applications(db: Session = Depends(get_db)):
+    rows = (
+        db.execute(
+            select(Company)
+            .where(Company.open_application.is_(True), Company.verified.is_(True))
+            .order_by(Company.name)
+        )
+        .scalars()
+        .all()
+    )
+    return OpenApplicationsResponse(
+        companies=[OpenApplicationCompany.model_validate(row) for row in rows],
+        total=len(rows),
+    )
 
 
 @router.get("/{slug}", response_model=CompanyDetail)
