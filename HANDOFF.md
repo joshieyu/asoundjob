@@ -1792,10 +1792,11 @@ deactivates its jobs on the next sync.
 in `main.py` already skips a company whose careers URL or `(ats_type, ats_slug)`
 pair has been scraped, but it caught neither: the two URLs differ textually
 (`focusrite.workable.com/` versus `apply.workable.com/focusrite/`) and **neither
-company has an `ats_type` stored at all**. Only 52 of 728 verified companies do.
-The board-identity half of that guard is therefore inert for 93% of the
-population — discovery resolves the ATS at scrape time but the result is not
-written back to the company row. Worth knowing before trusting the guard, or
+company has an `ats_type` stored at all**. Only 56 of 728 verified companies do
+(2026-09-02, after the full cycle; it was 52 before, so the number creeps up a
+little each run). The board-identity half of that guard is therefore inert for
+roughly 92% of the population — discovery resolves the ATS at scrape time but
+the result is mostly not written back to the company row. Worth knowing before trusting the guard, or
 before building anything else on stored `ats_type`.
 
 ### --limit 0 is not "load only" — it runs a full cycle
@@ -1891,11 +1892,20 @@ Playwright and Playwright stealth both land on the interstitial and report no
 job links. **0 / 0 would reach the board.** A browser visit shows the Cloudflare
 "Just a moment..." challenge.
 
-**Do not re-investigate Neural DSP as a seed problem.** Same bucket as Tesla and
-Meta: reachable by a human, not by this scraper. Fixing layer 1 alone buys
-nothing here, though it may be worth doing for other iframed boards. Revisit
-only if Revolut People exposes a JSON endpoint that is not challenged, or if the
-owner decides the Cloudflare tier is worth engineering around.
+**Do not re-investigate Neural DSP as a seed problem.** Same bucket as Tesla:
+reachable by a human, not by this scraper. Fixing layer 1 alone buys nothing
+here, though it may be worth doing for other iframed boards. Revisit only if
+Revolut People exposes a JSON endpoint that is not challenged, or if the owner
+decides the Cloudflare tier is worth engineering around.
+
+**Meta is NOT in this bucket, despite the bot-defence notes elsewhere in this
+document.** Meta scrapes successfully every cycle and holds 3 board rows (Audio
+Systems Engineer, Audio Software Engineer / Applied Scientist, Research Acoustic
+Systems Engineer — 20 rows total, 15 active, all scoring 85). What is limited at
+Meta is narrower: its links fail the link checker because `metacareers.com` sits
+in `BOT_DEFENCE_HOSTS`, and the rejected GraphQL experiment returned 19 jobs
+against the DOM's 10 but **the same 3 board jobs**. That is a coverage ceiling,
+not a failure. Do not conflate the two.
 
 ## Next steps, in priority order (as of 2026-08-31)
 
@@ -2081,7 +2091,8 @@ owner decides the Cloudflare tier is worth engineering around.
    it is the same taxonomy decision as bare "acoustics" in item 4. Hearing-device
    *measurement* roles score `audiology_hearing` at 3 against a cutoff of 5 and
    so file as test only; raising that means touching the shared scoring curve.
-   The stray 0-byte `scraper/asoundjob.db` is **deleted (2026-09-02)**. It could
+   The stray 0-byte `scraper/asoundjob.db` is **deleted (2026-09-02, commit
+   72633a8)**. It could
    not recur: `resolve_database_url` in `database.py` already anchors a relative
    sqlite path to `REPO_ROOT`, so the working directory no longer decides which
    database you get. That behaviour had no test; it has four now
@@ -2134,7 +2145,7 @@ owner decides the Cloudflare tier is worth engineering around.
     counted. Query board rows whose title contains a location fragment or an
     employment-type word, rather than assuming it is widespread.
 
-11. **`ats_type` is stored for only 52 of 728 verified companies**, which makes
+11. **`ats_type` is stored for only 56 of 728 verified companies**, which makes
     the board-identity half of `_dedupe_shared_urls` inert for the rest. It is
     why the Focusrite/Ampify duplicate (commit 69a3495) went unnoticed. Persisting
     what ATS discovery already resolves at scrape time would arm the existing
