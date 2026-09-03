@@ -56,24 +56,30 @@ export async function clientApi<T>(
 	return response.json() as Promise<T>;
 }
 
-const FLAG_KEY = 'asj:flags';
+const BOOKMARK_KEY = 'asj:bookmarks';
+const LEGACY_BOOKMARK_KEY = 'asj:flags';
 
-export function getFlags(): Set<number> {
+export function getBookmarks(): Set<number> {
 	if (typeof window === 'undefined') return new Set();
 	try {
-		return new Set(JSON.parse(window.localStorage.getItem(FLAG_KEY) ?? '[]') as number[]);
+		const stored = window.localStorage.getItem(BOOKMARK_KEY);
+		if (stored !== null) return new Set(JSON.parse(stored) as number[]);
+		const legacy = window.localStorage.getItem(LEGACY_BOOKMARK_KEY);
+		if (legacy === null) return new Set();
+		window.localStorage.setItem(BOOKMARK_KEY, legacy);
+		return new Set(JSON.parse(legacy) as number[]);
 	} catch {
 		return new Set();
 	}
 }
 
-export function toggleFlag(id: number): boolean {
-	const flags = getFlags();
-	if (flags.has(id)) {
-		flags.delete(id);
+export function toggleBookmark(id: number): boolean {
+	const bookmarks = getBookmarks();
+	if (bookmarks.has(id)) {
+		bookmarks.delete(id);
 	} else {
-		flags.add(id);
+		bookmarks.add(id);
 	}
-	window.localStorage.setItem(FLAG_KEY, JSON.stringify([...flags]));
-	return flags.has(id);
+	window.localStorage.setItem(BOOKMARK_KEY, JSON.stringify([...bookmarks]));
+	return bookmarks.has(id);
 }

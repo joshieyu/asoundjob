@@ -4,6 +4,7 @@
 	import Pagination from '$lib/components/Pagination.svelte';
 	import FeedbackDialog from '$lib/components/FeedbackDialog.svelte';
 	import { JOB_FEEDBACK_KINDS } from '$lib/feedback';
+	import { getBookmarks } from '$lib/client';
 	import type { Paginated, Job } from '$lib/types';
 
 	let { data } = $props();
@@ -27,6 +28,19 @@
 
 	let reportJob = $state<Job | null>(null);
 	let reportOpen = $state(false);
+
+	let bookmarkedOnly = $state(false);
+	let bookmarkIds = $state<number[]>([]);
+
+	$effect(() => {
+		bookmarkedOnly = data.bookmarked;
+	});
+
+	$effect(() => {
+		bookmarkIds = [...getBookmarks()];
+	});
+
+	const bookmarkFieldValue = $derived(bookmarkIds.join(',') || '0');
 
 	function onReport(job: Job) {
 		reportJob = job;
@@ -251,6 +265,22 @@
 				/>
 				Remote only
 			</label>
+			<label class="mt-1.5 flex items-center gap-2 text-sm font-semibold">
+				<input
+					type="checkbox"
+					name="bookmarked"
+					value="true"
+					bind:checked={bookmarkedOnly}
+					class="h-4 w-4 accent-fader"
+				/>
+				Bookmarked only
+				<span class="font-mono text-[11px] font-normal text-ink-soft">
+					({bookmarkIds.length})
+				</span>
+			</label>
+			{#if bookmarkedOnly}
+				<input type="hidden" name="ids" value={bookmarkFieldValue} />
+			{/if}
 			<label class="mt-1.5 flex items-start gap-2 text-sm font-semibold">
 				<input
 					type="checkbox"

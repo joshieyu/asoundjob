@@ -14,7 +14,8 @@ const ALLOWED = [
 	'salary_min',
 	'salary_max',
 	'sort',
-	'company_id'
+	'company_id',
+	'ids'
 ] as const;
 
 export const load: PageServerLoad = async ({ url }) => {
@@ -23,6 +24,7 @@ export const load: PageServerLoad = async ({ url }) => {
 		const value = url.searchParams.get(key);
 		if (value) params[key] = value;
 	}
+	const bookmarked = url.searchParams.get('bookmarked') === 'true';
 	const page = Math.max(1, parseInt(url.searchParams.get('page') ?? '1', 10) || 1);
 	params['page'] = String(page);
 	if (!params.per_page) params.per_page = '20';
@@ -42,6 +44,7 @@ export const load: PageServerLoad = async ({ url }) => {
 		countries,
 		params,
 		page,
+		bookmarked,
 		totalJobs: totalResult?.total ?? 0
 	};
 };

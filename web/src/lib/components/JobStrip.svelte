@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Job } from '$lib/types';
 	import { formatSalary, timeAgo } from '$lib/format';
-	import { getFlags, toggleFlag } from '$lib/client';
+	import { getBookmarks, toggleBookmark } from '$lib/client';
 	import LedMeter from './LedMeter.svelte';
 
 	let {
@@ -16,14 +16,14 @@
 		onReport?: (job: Job) => void;
 	} = $props();
 
-	let flagged = $state(false);
+	let bookmarked = $state(false);
 
 	$effect(() => {
-		flagged = getFlags().has(job.id);
+		bookmarked = getBookmarks().has(job.id);
 	});
 
-	function onFlag() {
-		flagged = toggleFlag(job.id);
+	function onBookmark() {
+		bookmarked = toggleBookmark(job.id);
 	}
 
 	const salary = $derived(formatSalary(job.salary_min, job.salary_max, job.salary_currency));
@@ -99,17 +99,24 @@
 
 	<button
 		type="button"
-		class="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-sm border border-seam transition-colors {flagged
+		class="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-sm border border-seam transition-colors {bookmarked
 			? 'border-fader-deep bg-fader text-white'
 			: 'bg-panel-raised text-ink-soft hover:text-fader-deep'}"
-		aria-pressed={flagged}
-		aria-label={flagged ? `Remove flag from ${job.title}` : `Flag ${job.title} for later`}
-		title="Flag for later (saved on this device)"
-		onclick={onFlag}
+		aria-pressed={bookmarked}
+		aria-label={bookmarked
+			? `Remove bookmark from ${job.title}`
+			: `Bookmark ${job.title} for later`}
+		title="Bookmark for later (saved on this device)"
+		onclick={onBookmark}
 	>
-		<svg width="11" height="14" viewBox="0 0 11 14" fill="currentColor" aria-hidden="true">
-			<path d="M1 0h1.5v14H1z" />
-			<path d="M2.5 1h7l-2 3 2 3h-7z" />
+		<svg width="11" height="14" viewBox="0 0 12 14" aria-hidden="true">
+			<path
+				d="M2.25 1h7.5a.75.75 0 0 1 .75.75v10.9a.4.4 0 0 1-.62.33L6 10.2l-3.88 2.78a.4.4 0 0 1-.62-.33V1.75A.75.75 0 0 1 2.25 1Z"
+				fill={bookmarked ? 'currentColor' : 'none'}
+				stroke="currentColor"
+				stroke-width="1.3"
+				stroke-linejoin="round"
+			/>
 		</svg>
 	</button>
 

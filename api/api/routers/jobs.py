@@ -26,6 +26,20 @@ router = APIRouter(prefix="/api/jobs", tags=["jobs"])
 rate_limiter = SubmissionRateLimiter()
 
 
+MAX_ID_FILTER = 200
+
+
+def _parse_ids(value: Optional[str]) -> Optional[list[int]]:
+    if value is None:
+        return None
+    parsed = []
+    for chunk in value.split(",")[:MAX_ID_FILTER]:
+        chunk = chunk.strip()
+        if chunk.isdigit():
+            parsed.append(int(chunk))
+    return parsed
+
+
 def _parse_csv(value: Optional[str]) -> Optional[list[str]]:
     if not value:
         return None
@@ -48,6 +62,7 @@ def list_jobs(
     remote: Optional[bool] = None,
     include_unrelated: bool = False,
     search: Optional[str] = None,
+    ids: Optional[str] = None,
     sort: str = Query("newest", pattern="^(newest|oldest|salary_desc|salary_asc)$"),
     db: Session = Depends(get_db),
 ):
@@ -65,6 +80,7 @@ def list_jobs(
         remote=remote,
         search=search,
         include_unrelated=include_unrelated,
+        ids=_parse_ids(ids),
     )
     jobs, total = fetch_job_page(
         db, stmt, safe_page, safe_per, sort, country_first=country
