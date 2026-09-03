@@ -2086,6 +2086,76 @@ board's navigation anchors, and check the union actually grows — for
 Harman, two of the eight queries tried returned nothing at all. Keep the
 list short; the cap is 6 including the primary.
 
+## Session update (2026-09-03, later still) — open applications, and two rejections
+
+### Perennial "write to HR" companies (commits 7e7378a, b79ae9d, 107d0e7, 7c602a1)
+
+Some companies post no roles but invite speculative applications.
+`Company.open_application` marks them, and the board shows them in a
+labelled section below the job list.
+
+**Modelled as a company attribute, not a job row.** They have no title, no
+posted date and no expiry, so a Job row would have to be exempted from
+relevance scoring and from reconciliation — the deactivation hazard the
+partial-fetch work had just exposed. Keeping them out of the `jobs` table
+means they never touch pagination, filters, sorting or the result count.
+
+**An invitation is not an empty board.** 17 diagnosed pages say the
+opposite — "no open positions, check back" — and Ableton and Waves are
+among them. Flagging those would invent an offer the company never made.
+The detector treats a no-openings marker as disqualifying on its own, and
+reports a page carrying both signals in a separate section for a human.
+
+`python -m scraper.propose_open_applications --from-cache DIR` is
+**read-only** and consumes the HTML cache from
+`diagnose_failures --html-cache DIR`. It proposes; the seed decides. That
+split matters: 3 of the 19 matches were junk from bad seed data rather
+than bad detection.
+
+15 of 19 were flagged after reading each page. Rejected, with reasons:
+
+| Rejected | Why |
+|---|---|
+| World Wide Stereo | "See our open positions below… send your resume" is application instructions for listed roles. An extractor gap, not a perennial company. |
+| Embracer Group | Invites applications for finance, governance and sustainability functions. |
+| Energica Motor | Electric motorcycles. |
+| Joué | **Its careers_url points at joueclub.fr, a French toy retailer**, not Joué the MIDI controller maker. Seed bug, still unfixed. |
+
+Blocked pages are never proposed — Peavey matches the invitation regex
+only because Cloudflare's block page is what gets fetched.
+
+### Headings-as-jobs — MEASURED AND REJECTED, do not build
+
+Yamaha's internship page lists six real roles as `<h3>` headings with no
+links, which looked like a generic extraction gap. Across all 313
+diagnosed pages, **only 6 have two or more role-like headings and no job
+anchors, and 3 of those 6 are false positives**: SPL would post "Visit us
+at beatcon and join the Hip-Hop Producer Contest", Arturia would post
+hiring-process steps ("Application check by HR and manager"), Meridian
+would post marketing copy. The three genuine ones yield about ten roles.
+A 50% false-positive rate for ten roles is the same trade item 10 failed.
+
+### Yamaha's internships are one community submission, not six
+
+Approval de-duplicates community jobs by `(company, url)`, and Yamaha
+publishes all six projects on one page. Six submissions would collapse
+into one, each superseding the last. The tab anchors do not help: loading
+`#_tab02-02` leaves that panel `display: none`, so a deep link lands the
+reader on the wrong tab. Fabricating per-project fragments would invent
+links that resolve nowhere useful.
+
+So submission id 1 is one entry naming all six projects in its
+description, which `/api/jobs` search still matches because it searches
+description as well as title. **It is pending — it reaches the board only
+when an admin approves it.** Applications open 28 Sept 2026, due 18 Nov
+2026, term Summer–Autumn 2027.
+
+### Route ordering
+
+`/api/companies/open-applications` is registered **before** `/{slug}`.
+FastAPI matches in declaration order, so behind the slug route it would be
+read as a company named "open-applications" and 404. A test pins it.
+
 ## Next steps, in priority order (as of 2026-08-31)
 
 0b. **Restart the API after any change to it.** The dev server runs without
