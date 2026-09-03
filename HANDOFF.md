@@ -2514,6 +2514,33 @@ read as a company named "open-applications" and 404. A test pins it.
     it predates that guard) and TrueFire's Toyota tenant. They are now
     harmless, but they are still wrong.
 
+12. **Two new curation levers, both cheap and both needing a human
+    (2026-09-03).** The mechanisms exist; only the seed entries are missing.
+
+    **More multi-query companies.** Only Harman uses `extra_careers_urls`
+    today. Any board that answers a search query and matches tokens exactly
+    is a candidate. **Measure before editing the seed** — of the eight
+    queries tried on Harman, `noise` and `signal processing` returned
+    nothing, and `speaker` was redundant with `transducer`. Fetch each
+    candidate, strip the board's navigation anchors, and check the union
+    actually grows. The cap is 6 URLs including the primary.
+
+    The other case the field was built for is untouched: **a company with
+    separate regional careers sites.** Nobody has swept for those yet.
+
+    **More open-application companies.** 15 are flagged, from a sweep of the
+    313 diagnosed failures only. The 521 companies that scrape successfully
+    were never examined, and a company can perfectly well post two roles and
+    also invite speculative CVs. Re-run
+    `diagnose_failures --html-cache DIR` then
+    `propose_open_applications --from-cache DIR`; both are read-only.
+
+    **Seed bug found and not fixed: Joué.** Its `careers_url` is
+    `https://www.joueclub.fr/contenu/recrutement.html` — JouéClub, a French
+    toy retailer, not Joué the MIDI controller maker (jouemusic.com). Left
+    for the owner because the seed is hand-edited truth. Worth asking how it
+    got there: a name-similarity match of this kind may not be unique.
+
 Explicitly NOT worth doing, all measured rather than assumed: follow-one-link
 (section 3 above — note this is *not* the same as the pagination that shipped in
 458ebd4), further sweeps of the unverified population (3d and 3e), a
