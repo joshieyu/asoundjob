@@ -56,6 +56,7 @@ def reconcile_company_jobs(
     company: Company,
     fetched: list[NormalizedJob],
     trust_empty: bool,
+    allow_deactivation: bool = True,
 ) -> ReconcileStats:
     stats = ReconcileStats()
 
@@ -126,7 +127,7 @@ def reconcile_company_jobs(
             stats.reactivated += 1
         stats.updated += 1
 
-    can_deactivate = trust_empty or len(fetched) > 0
+    can_deactivate = allow_deactivation and (trust_empty or len(fetched) > 0)
     for row in existing_rows:
         if not row.is_active:
             continue

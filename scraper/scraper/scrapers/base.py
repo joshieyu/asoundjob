@@ -34,6 +34,7 @@ class ScrapeResult:
     error: Optional[str] = None
     duration: float = 0.0
     trust_empty: bool = False
+    partial: bool = False
     html: Optional[str] = None
 
 

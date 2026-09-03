@@ -11,6 +11,7 @@ from typing import Optional
 
 from sqlalchemy import select
 
+from scraper.company_loader import careers_urls_for
 from scraper.config import Settings, load_settings
 from scraper.database import dispose_engine, init_db, session_scope
 from scraper.deduplicator import ReconcileStats, reconcile_company_jobs
@@ -91,7 +92,13 @@ def persist_result(
             )
             for raw in result.jobs
         ]
-        stats = reconcile_company_jobs(session, managed, normalized_jobs, result.trust_empty)
+        stats = reconcile_company_jobs(
+            session,
+            managed,
+            normalized_jobs,
+            result.trust_empty,
+            allow_deactivation=not result.partial,
+        )
         finished_at = datetime.now(timezone.utc)
         session.add(
             ScrapeLog(
@@ -137,6 +144,7 @@ async def run_cycle(
                 slug=c.slug,
                 category=c.category,
                 careers_url=c.careers_url,
+                extra_careers_urls=c.extra_careers_urls,
                 website_url=c.website_url,
                 verified=c.verified,
                 source=c.source,
@@ -244,6 +252,8 @@ def _dedupe_shared_urls(
             )
             skip_list.append(c)
             continue
+        for extra in careers_urls_for(c):
+            seen_urls.add(extra.strip().lower())
         seen_urls.add(url)
         if board is not None and _url_corroborates_board(c.careers_url, board):
             seen_boards.add(board)

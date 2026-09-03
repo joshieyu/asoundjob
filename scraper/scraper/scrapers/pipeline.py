@@ -2,11 +2,14 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import time
 
 from sqlalchemy import select, update
 
+from scraper.company_loader import careers_urls_for
 from scraper.config import Settings
 from scraper.database import get_session_factory
+from scraper.deduplicator import identity_for_raw
 from scraper.models import Company
 from scraper.scrapers.ats.adp import AdpScraper
 from scraper.scrapers.ats.apple import AppleScraper
@@ -22,11 +25,13 @@ from scraper.scrapers.ats.smartrecruiters import SmartRecruitersScraper
 from scraper.scrapers.ats.workable import WorkableScraper
 from scraper.scrapers.ats.workday import WorkdayScraper
 from scraper.scrapers.ats_discovery import discover
-from scraper.scrapers.base import ScrapeResult
+from scraper.scrapers.base import RawJob, ScrapeResult
 from scraper.scrapers.http_scraper import HttpScraper
 from scraper.scrapers.playwright_scraper import PlaywrightScraper
 
 logger = logging.getLogger(__name__)
+
+MULTI_URL_BUDGET_UNITS = 3.0
 
 
 class ScrapePipeline:
@@ -129,6 +134,74 @@ class ScrapePipeline:
             return ScrapeResult(
                 company_id=company.id, method="none", error="no careers_url"
             )
+        urls = careers_urls_for(company)
+        if len(urls) <= 1:
+            return await self._scrape_one(company)
+        return await self._scrape_every(company, urls)
+
+    def _company_for_url(self, company: Company, url: str) -> Company:
+        if (company.careers_url or "").strip() == url:
+            return company
+        return Company(
+            id=company.id,
+            name=company.name,
+            slug=company.slug,
+            category=company.category,
+            careers_url=url,
+            website_url=company.website_url,
+            verified=company.verified,
+            source=company.source,
+            scrape_method=company.scrape_method,
+            audio_scope=company.audio_scope,
+            ats_type=company.ats_type,
+            ats_slug=company.ats_slug,
+        )
+
+    async def _scrape_every(
+        self, company: Company, urls: list[str]
+    ) -> ScrapeResult:
+        budget = self.settings.per_company_timeout * MULTI_URL_BUDGET_UNITS
+        deadline = time.monotonic() + budget
+        merged: dict[str, RawJob] = {}
+        methods: list[str] = []
+        errors: list[str] = []
+        succeeded = 0
+        all_trusted = True
+
+        for index, url in enumerate(urls):
+            if index and time.monotonic() >= deadline:
+                errors.append(f"{url}: skipped, {budget:.0f}s budget exhausted")
+                continue
+            result = await self._scrape_one(self._company_for_url(company, url))
+            if not result.success:
+                errors.append(f"{url}: {result.error}")
+                continue
+            succeeded += 1
+            methods.append(result.method)
+            if not result.trust_empty:
+                all_trusted = False
+            for raw in result.jobs:
+                merged.setdefault(identity_for_raw(raw), raw)
+
+        partial = succeeded < len(urls)
+        if partial:
+            logger.info(
+                "%s scraped %d of %d careers URLs, deactivation suppressed",
+                company.name,
+                succeeded,
+                len(urls),
+            )
+        return ScrapeResult(
+            company_id=company.id,
+            success=succeeded > 0,
+            method="+".join(dict.fromkeys(methods)) or "none",
+            jobs=list(merged.values()),
+            error="; ".join(errors)[:500] or None,
+            trust_empty=all_trusted and not partial,
+            partial=partial,
+        )
+
+    async def _scrape_one(self, company: Company) -> ScrapeResult:
 
         stored_ats_failed = False
         if company.ats_type and company.ats_type in self._ats_map:

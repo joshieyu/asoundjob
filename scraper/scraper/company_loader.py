@@ -61,6 +61,23 @@ def parse_extra_careers_urls(
     return urls or None
 
 
+MAX_CAREERS_URLS = 6
+
+
+def careers_urls_for(company: Company) -> list[str]:
+    primary = (company.careers_url or "").strip()
+    urls = [primary] if primary else []
+    seen = {primary.rstrip("/").lower()} if primary else set()
+    for url in company.extra_careers_urls or []:
+        cleaned = str(url).strip()
+        key = cleaned.rstrip("/").lower()
+        if not cleaned or key in seen:
+            continue
+        seen.add(key)
+        urls.append(cleaned)
+    return urls[:MAX_CAREERS_URLS]
+
+
 def load_companies(session: Session, companies: list[dict[str, Any]]) -> LoadStats:
     stats = LoadStats()
     seen_names: set[str] = set()
