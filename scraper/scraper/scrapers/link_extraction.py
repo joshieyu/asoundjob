@@ -510,6 +510,7 @@ MIN_LOCATION_LEN = 2
 MAX_LOCATION_LEN = 120
 MAX_LOCATION_WORDS = 12
 LOCATION_SCAN_LIMIT = 400
+LOCATION_ENTRY_LIMIT = 12
 LOCATION_FORM_ANCESTOR_WALK = 6
 
 
@@ -548,12 +549,20 @@ def clean_location_value(text: str) -> Optional[str]:
     return value
 
 
+def _location_node_text(node: Tag) -> str:
+    items = node.find_all("li", limit=LOCATION_ENTRY_LIMIT)
+    if len(items) > 1:
+        parts = [item.get_text(" ", strip=True) for item in items]
+        return "; ".join(part for part in parts if part)
+    return node.get_text(" ", strip=True)
+
+
 def card_location(card: Tag) -> Optional[str]:
     for node in card.find_all(True, limit=LOCATION_SCAN_LIMIT):
         if node.name in LOCATION_SKIP_TAGS or _inside_form_control(node):
             continue
         if _location_attr_hit(node):
-            value = clean_location_value(node.get_text(" ", strip=True))
+            value = clean_location_value(_location_node_text(node))
             if value:
                 return value
         elif _clean_text(node.get_text(" ", strip=True)).lower() in LOCATION_ICON_TEXT:

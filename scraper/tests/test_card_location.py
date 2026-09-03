@@ -106,6 +106,42 @@ class TestCardLocation(unittest.TestCase):
         self.assertIsNone(card_location(soup(html).find("div")))
 
 
+class TestMultipleLocationEntries(unittest.TestCase):
+    def _card(self, second: str):
+        html = (
+            '<div><a href="/jobs/1">Audio DSP Engineer</a>'
+            '<div class="job-component-list-location"><ul>'
+            '<li><span>Remote, Illinois, United States</span></li>'
+            '<li><span>' + second + '</span></li>'
+            '</ul></div></div>'
+        )
+        return soup(html).find("div")
+
+    def test_entries_are_joined_with_a_segment_separator(self) -> None:
+        self.assertEqual(
+            card_location(self._card("Remote, Texas, United States")),
+            "Remote, Illinois, United States; Remote, Texas, United States",
+        )
+
+    def test_two_countries_still_resolve_to_none(self) -> None:
+        from scraper.countries import detect_country
+
+        value = card_location(self._card("Remote, Bavaria, Germany"))
+        self.assertEqual(
+            value, "Remote, Illinois, United States; Remote, Bavaria, Germany"
+        )
+        self.assertIsNone(detect_country(value))
+
+    def test_a_single_entry_is_not_reshaped(self) -> None:
+        html = (
+            '<div><a href="/jobs/1">Audio DSP Engineer</a>'
+            '<div class="job-component-list-location"><ul>'
+            '<li><span>Remote, Germany</span></li>'
+            '</ul></div></div>'
+        )
+        self.assertEqual(card_location(soup(html).find("div")), "Remote, Germany")
+
+
 class TestAnchorLocation(unittest.TestCase):
     def test_walks_past_a_heading_wrapper(self) -> None:
         html = '<div class="row"><h3><a href="/jobs/1">Audio DSP Engineer</a></h3>' \
