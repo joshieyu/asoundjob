@@ -2029,6 +2029,63 @@ naive strip would destroy "Aerospace, Full-Time Lecturer, Faculty".
 would newly resolve, but every real duplicate group already shares a
 careers URL and is caught by the URL half of the guard.
 
+## Session update (2026-09-03, later) — several careers URLs per company
+
+### Why one URL was not enough
+
+Harman's board only answers search queries and matches tokens exactly, so
+`?search=audio` structurally cannot return a role titled "Acoustics Quality
+Director". The same shape covers a company running separate regional
+careers sites. `extra_careers_urls` on a seed entry now holds additional
+URLs, merged into the company's single job set.
+
+`careers_url` stays required and primary, so all 1,388 seed entries were
+left untouched — only Harman gained the key.
+
+### Reconciliation is the dangerous part, not fetching
+
+`reconcile_company_jobs` deactivates every active row it does not find in
+the fetched list. Scraping two URLs and reconciling twice would have the
+second pass deactivate everything the first found. So **all URLs are
+merged into one list and reconciled once.**
+
+That leaves the partial case, which is the one to understand before
+changing any of this. If a company lists four URLs and one fails, the jobs
+behind the failed URL are missing through no fault of their own, and
+deactivating them would silently empty part of that company's board.
+`ScrapeResult.partial` now suppresses deactivation entirely — the same
+caution `trust_empty` already applies to an empty fetch. Jobs go stale
+rather than vanishing, and the next clean cycle reconciles them.
+
+Verified for real, not just in tests: pointing one of Harman's extra URLs
+at a 404 produced `jobs_found=24 deactivated=0 deactivation_skips=1` and
+the board held at 26 rather than dropping to 24.
+
+Merging de-duplicates on `identity_for_raw`, the identity reconciliation
+itself uses, because query variants overlap heavily.
+
+### Bounded, per the standing rule
+
+At most `MAX_CAREERS_URLS` (6) URLs per company, and the whole company
+shares a deadline of `per_company_timeout * 3`. URLs still unscraped when
+it passes are recorded as errors and make the result partial rather than
+being dropped silently. `_dedupe_shared_urls` also registers a company's
+extra URLs, so another company naming one as its primary is skipped rather
+than scraped into a second company row.
+
+### Result
+
+Harman 16 board rows -> **26**, `deactivated=0`, new rows categorising as
+audio_systems, transducers and audio_dsp_embedded, countries DE/US/IN/PL/HU.
+A second run inserts nothing and deactivates nothing.
+
+### Adding more companies
+
+Measure before editing the seed. Fetch each candidate URL, strip the
+board's navigation anchors, and check the union actually grows — for
+Harman, two of the eight queries tried returned nothing at all. Keep the
+list short; the cap is 6 including the primary.
+
 ## Next steps, in priority order (as of 2026-08-31)
 
 0b. **Restart the API after any change to it.** The dev server runs without
@@ -2266,14 +2323,21 @@ careers URL and is caught by the URL half of the guard.
    (Cincinnati 4 rows, SLC Triad Center 6, Paddington 2) and none of them are
    on the board. Adding cities is cheap but buys nothing today.
 
-9. **Harman is only two-thirds covered.** `?search=audio` returns 16 of the 24
-   audio-relevant roles. Harman's search matches tokens exactly, so no single
-   query reaches all of them, and its page size is capped at 20 server-side.
-   Pagination does not help because the scoped query fits on one page. Getting
-   the rest means either several seeded queries or an Avature parser — and
-   Avature is a thin bucket (Harman, plus Motorola Mobility's
-   `jobs.lenovo.com/en_US/careers` shares the URL shape). Count the bucket
-   before building anything.
+9. **Harman — CLOSED 2026-09-03 (commits 0c445c9, e533ff3, e5aa78b).** The
+   diagnosis was right: Harman's search matches tokens exactly, so no single
+   query reaches every role. The fix was the several-seeded-queries option, and
+   it needed `extra_careers_urls` to exist first.
+
+   `?search=audio` returned 16 real jobs. Adding acoustic, dsp, transducer and
+   sound takes it to **26**, above the 24 this item was aiming at, verified end
+   to end against a copy. `speaker` was measured and left out — its only find
+   is "Transducer & Lab Engineer Speaker", which the transducer query already
+   returns. `noise` and `signal processing` return nothing.
+
+   **The Avature parser was never needed.** Do not build it for this reason.
+   Avature remains a thin bucket (Harman, plus Motorola Mobility's
+   `jobs.lenovo.com/en_US/careers`), and the page-size cap of 20 no longer
+   binds because each query fits well inside it.
 
 10. **Flattened titles on JS-rendered boards — CLOSED by measurement
     2026-09-03. Do not build this.** The paragraphs below are kept because they
