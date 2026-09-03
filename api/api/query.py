@@ -116,7 +116,7 @@ def fetch_job_page(
     return list(rows), int(total)
 
 
-COMPANY_SORTS = ("name", "jobs", "verified")
+COMPANY_SORTS = ("name", "jobs", "board", "verified")
 SORT_DIRECTIONS = ("asc", "desc")
 
 
@@ -129,12 +129,19 @@ def companies_with_counts(
     direction: str = "asc",
 ):
     counts_subq = (
-        select(Job.company_id, func.count(Job.id).label("job_count"))
+        select(
+            Job.company_id,
+            func.count(Job.id).label("job_count"),
+            func.sum(case((Job.is_audio_related.is_(True), 1), else_=0)).label(
+                "board_count"
+            ),
+        )
         .where(Job.is_active.is_(True))
         .group_by(Job.company_id)
         .subquery()
     )
     job_count = func.coalesce(counts_subq.c.job_count, 0)
+    board_count = func.coalesce(counts_subq.c.board_count, 0)
     if sort not in COMPANY_SORTS:
         sort = "name"
     if direction not in SORT_DIRECTIONS:
@@ -143,6 +150,11 @@ def companies_with_counts(
     if sort == "jobs":
         order_by = [
             job_count.desc() if descending else job_count.asc(),
+            Company.name.asc(),
+        ]
+    elif sort == "board":
+        order_by = [
+            board_count.desc() if descending else board_count.asc(),
             Company.name.asc(),
         ]
     elif sort == "verified":
@@ -156,7 +168,9 @@ def companies_with_counts(
         select(func.count()).select_from(base_stmt.subquery())
     ).scalar_one()
     rows = session.execute(
-        base_stmt.add_columns(job_count.label("job_count"))
+        base_stmt.add_columns(
+            job_count.label("job_count"), board_count.label("board_count")
+        )
         .outerjoin(counts_subq, counts_subq.c.company_id == Company.id)
         .order_by(*order_by)
         .offset((page - 1) * per_page)
@@ -166,8 +180,8 @@ def companies_with_counts(
     items = []
     for row in rows:
         company = row[0]
-        count = row[-1]
         data = {c.name: getattr(company, c.name) for c in Company.__table__.columns}
-        data["active_jobs_count"] = int(count)
+        data["active_jobs_count"] = int(row[-2])
+        data["board_jobs_count"] = int(row[-1])
         items.append(data)
     return items, int(total)

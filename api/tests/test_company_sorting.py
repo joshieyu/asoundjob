@@ -15,12 +15,12 @@ class TestCompanySorting(unittest.TestCase):
         Base.metadata.create_all(self.engine)
         self.session = Session(self.engine)
         plan = [
-            ("Delta Audio", True, 5),
-            ("Alpha Sound", False, 12),
-            ("Charlie Labs", True, 0),
-            ("Bravo Acoustics", False, 3),
+            ("Delta Audio", True, 5, 5),
+            ("Alpha Sound", False, 12, 0),
+            ("Charlie Labs", True, 0, 0),
+            ("Bravo Acoustics", False, 3, 2),
         ]
-        for name, verified, jobs in plan:
+        for name, verified, jobs, on_board in plan:
             company = Company(
                 name=name,
                 slug=name.lower().replace(" ", "-"),
@@ -36,7 +36,7 @@ class TestCompanySorting(unittest.TestCase):
                         title=f"{name} role {n}",
                         url=f"https://example.com/{company.slug}/{n}",
                         is_active=True,
-                        is_audio_related=True,
+                        is_audio_related=n < on_board,
                         source="scraper",
                     )
                 )
@@ -94,6 +94,59 @@ class TestCompanySorting(unittest.TestCase):
         charlie = next(i for i in items if i["name"] == "Charlie Labs")
         self.assertEqual(charlie["active_jobs_count"], 0)
 
+    def _board(self, **kwargs) -> list:
+        items, _ = companies_with_counts(self.session, select(Company), 1, 50, **kwargs)
+        return [i["board_jobs_count"] for i in items]
+
+    def test_board_count_excludes_rows_that_never_reach_the_board(self) -> None:
+        items, _ = companies_with_counts(self.session, select(Company), 1, 50)
+        alpha = next(i for i in items if i["name"] == "Alpha Sound")
+        self.assertEqual(alpha["active_jobs_count"], 12)
+        self.assertEqual(alpha["board_jobs_count"], 0)
+
+    def test_board_count_is_a_subset_of_the_active_count(self) -> None:
+        items, _ = companies_with_counts(self.session, select(Company), 1, 50)
+        for item in items:
+            self.assertLessEqual(item["board_jobs_count"], item["active_jobs_count"])
+
+    def test_board_descending(self) -> None:
+        self.assertEqual(self._board(sort="board", direction="desc"), [5, 2, 0, 0])
+
+    def test_board_ascending(self) -> None:
+        self.assertEqual(self._board(sort="board", direction="asc"), [0, 0, 2, 5])
+
+    def test_board_and_jobs_are_different_orders(self) -> None:
+        self.assertNotEqual(
+            self._names(sort="board", direction="desc"),
+            self._names(sort="jobs", direction="desc"),
+        )
+
+    def test_the_biggest_scraper_can_have_an_empty_board(self) -> None:
+        by_jobs = self._names(sort="jobs", direction="desc")
+        self.assertEqual(by_jobs[0], "Alpha Sound")
+        items, _ = companies_with_counts(self.session, select(Company), 1, 50)
+        alpha = next(i for i in items if i["name"] == "Alpha Sound")
+        self.assertEqual(alpha["board_jobs_count"], 0)
+
+    def test_an_inactive_audio_row_is_not_counted_on_the_board(self) -> None:
+        delta = self.session.execute(
+            select(Company).where(Company.name == "Delta Audio")
+        ).scalar_one()
+        self.session.add(
+            Job(
+                company_id=delta.id,
+                title="Retired audio role",
+                url="https://example.com/delta-audio/retired",
+                is_active=False,
+                is_audio_related=True,
+                source="scraper",
+            )
+        )
+        self.session.flush()
+        items, _ = companies_with_counts(self.session, select(Company), 1, 50)
+        row = next(i for i in items if i["name"] == "Delta Audio")
+        self.assertEqual(row["board_jobs_count"], 5)
+
     def test_verified_descending_puts_verified_first(self) -> None:
         items, _ = companies_with_counts(
             self.session, select(Company), 1, 50, sort="verified", direction="desc"
@@ -149,7 +202,7 @@ class TestAdminSortValidation(unittest.TestCase):
         )
 
     def test_sort_is_constrained_at_the_route(self) -> None:
-        self.assertEqual(self._pattern("sort"), "^(name|jobs|verified)$")
+        self.assertEqual(self._pattern("sort"), "^(name|jobs|board|verified)$")
 
     def test_direction_is_constrained_at_the_route(self) -> None:
         self.assertEqual(self._pattern("direction"), "^(asc|desc)$")

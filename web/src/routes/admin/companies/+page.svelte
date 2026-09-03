@@ -10,6 +10,7 @@
 		verified: boolean;
 		source: string;
 		active_jobs_count: number;
+		board_jobs_count: number;
 	}
 
 	let companies = $state<CompanyRow[]>([]);
@@ -19,7 +20,7 @@
 	let editValue = $state('');
 	let message = $state('');
 	let page = $state(1);
-	let sort = $state<'name' | 'jobs' | 'verified'>('name');
+	let sort = $state<'name' | 'jobs' | 'board' | 'verified'>('name');
 	let direction = $state<'asc' | 'desc'>('asc');
 	let pageData = $state({ total: 0, page: 1, pages: 0 });
 
@@ -48,10 +49,11 @@
 	const DEFAULT_DIRECTION: Record<string, 'asc' | 'desc'> = {
 		name: 'asc',
 		jobs: 'desc',
+		board: 'desc',
 		verified: 'desc'
 	};
 
-	function sortBy(column: 'name' | 'jobs' | 'verified') {
+	function sortBy(column: 'name' | 'jobs' | 'board' | 'verified') {
 		if (sort === column) {
 			direction = direction === 'asc' ? 'desc' : 'asc';
 		} else {
@@ -62,12 +64,12 @@
 		load();
 	}
 
-	function sortMark(column: 'name' | 'jobs' | 'verified') {
+	function sortMark(column: 'name' | 'jobs' | 'board' | 'verified') {
 		if (sort !== column) return '';
 		return direction === 'asc' ? ' ↑' : ' ↓';
 	}
 
-	function ariaSort(column: 'name' | 'jobs' | 'verified') {
+	function ariaSort(column: 'name' | 'jobs' | 'board' | 'verified') {
 		if (sort !== column) return 'none';
 		return direction === 'asc' ? 'ascending' : 'descending';
 	}
@@ -164,8 +166,13 @@
 					</th>
 					<th scope="col" class="px-4 py-2.5">Category</th>
 					<th scope="col" class="px-4 py-2.5" aria-sort={ariaSort('jobs')}>
-						<button type="button" class="uppercase tracking-[0.12em] hover:underline" onclick={() => sortBy('jobs')}>
-							Open jobs{sortMark('jobs')}
+						<button type="button" class="uppercase tracking-[0.12em] hover:underline" onclick={() => sortBy('jobs')} title="Rows the scraper is holding, junk included">
+							Scraped{sortMark('jobs')}
+						</button>
+					</th>
+					<th scope="col" class="px-4 py-2.5" aria-sort={ariaSort('board')}>
+						<button type="button" class="uppercase tracking-[0.12em] hover:underline" onclick={() => sortBy('board')} title="Rows a reader actually sees on the public board">
+							On board{sortMark('board')}
 						</button>
 					</th>
 					<th scope="col" class="px-4 py-2.5">Careers URL</th>
@@ -182,6 +189,9 @@
 						<td class="px-4 py-3 font-semibold">{row.name}</td>
 						<td class="px-4 py-3 text-xs text-ink-soft">{row.category}</td>
 						<td class="readout px-4 py-3">{row.active_jobs_count}</td>
+						<td class="readout px-4 py-3 {row.active_jobs_count > 0 && row.board_jobs_count === 0 ? 'text-ink-soft' : ''}">
+							{row.board_jobs_count}
+						</td>
 						<td class="px-4 py-3">
 							{#if editingUrl === row.id}
 								<span class="flex gap-1.5">
@@ -216,7 +226,7 @@
 					</tr>
 				{:else}
 					<tr>
-						<td colspan="5" class="px-4 py-6 text-center font-mono text-sm text-ink-soft">
+						<td colspan="6" class="px-4 py-6 text-center font-mono text-sm text-ink-soft">
 							{loading ? 'Loading…' : 'No companies match.'}
 						</td>
 					</tr>

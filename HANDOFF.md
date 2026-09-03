@@ -2268,6 +2268,22 @@ Community jobs now store `country`, which the insert path never set. The
 Yamaha submission resolves to JP and would have landed with a NULL country
 and no flag on the board.
 
+### The admin company table shows scraped and board counts separately
+
+**The "Open jobs" column never meant what it looked like.** It counted every
+active row the scraper holds, junk included, and readers of that column —
+including me, in this session — read it as board presence. Live numbers:
+4,990 active rows against 540 on the board, and **319 of the 401 companies
+with any rows contribute nothing to the board at all**. Niantic held 180 rows
+and put 0 on the board; NVIDIA's 6 were "Find Your Next Job", "Applicant
+Privacy Policy", "How We Hire" and three more of the same, because its seed
+URL is a careers landing page rather than a board.
+
+The table now has **Scraped** and **On board** as separate sortable columns,
+both ordered in SQL. Sorting by board gives an entirely different top —
+Shure 97, Apple 69, Beltone 38 — and reading the two side by side is the
+fastest way to spot a seed URL pointed at the wrong page.
+
 ### Company admin sorts by job count and by verified
 
 `companies_with_counts` takes `sort` (name/jobs/verified) and `direction`.

@@ -119,7 +119,7 @@ def admin_list_companies(
     per_page: int = Query(25, ge=1, le=100),
     search: Optional[str] = None,
     verified: Optional[bool] = None,
-    sort: str = Query("name", pattern="^(name|jobs|verified)$"),
+    sort: str = Query("name", pattern="^(name|jobs|board|verified)$"),
     direction: str = Query("asc", pattern="^(asc|desc)$"),
     db: Session = Depends(get_db),
     _: str = Depends(require_admin),

@@ -88,6 +88,7 @@ class CompanyResponse(BaseModel):
     source: str
     created_at: datetime
     active_jobs_count: int = 0
+    board_jobs_count: int = 0
 
 
 class PaginatedCompanies(BaseModel):
