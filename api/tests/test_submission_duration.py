@@ -146,22 +146,6 @@ class TestSubmissionDuration(unittest.TestCase):
         self.assertEqual(result.expires_source, "moderator")
         self.assertEqual(result.expires_days, 365)
 
-    def test_a_second_submission_of_the_same_url_unpublishes_the_first(self) -> None:
-        first = self._approve(self._submit(duration_days=90))
-        job = self.session.get(Job, first.job_id)
-        assert job is not None
-        self.assertTrue(job.is_active)
-
-        second = self._approve(self._submit(duration_days=90))
-        self.assertEqual(second.status, "approved")
-        self.assertIsNone(second.job_id)
-        self.session.refresh(job)
-        self.assertFalse(job.is_active)
-        remaining = (
-            self.session.query(Job).filter(Job.is_active.is_(True)).count()
-        )
-        self.assertEqual(remaining, 0)
-
     def test_approving_twice_is_a_conflict(self) -> None:
         submission_id = self._submit(duration_days=30)
         self._approve(submission_id)

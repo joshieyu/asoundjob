@@ -33,7 +33,7 @@ from api.schemas import (
 from scraper.config import load_settings
 from scraper.models import Company, Job, JobFeedback, JobSubmission, ScrapeLog, SiteFeedback
 from scraper.normalizer import Normalizer
-from scraper.overrides import effective_is_audio
+from scraper.overrides import effective_categories, effective_is_audio
 from scraper.scrapers.base import RawJob
 
 logger = logging.getLogger(__name__)
@@ -257,6 +257,38 @@ def admin_list_submissions(
     )
 
 
+def find_live_community_job(db: Session, submission: JobSubmission) -> Optional[Job]:
+    url = submission.url.strip().lower()
+    stmt = select(Job).where(
+        Job.source == "community",
+        Job.is_active.is_(True),
+        func.lower(Job.url) == url,
+    )
+    if submission.company_id is not None:
+        stmt = stmt.where(Job.company_id == submission.company_id)
+    else:
+        stmt = stmt.where(Job.company_id.is_(None))
+    return db.execute(stmt.order_by(Job.id)).scalars().first()
+
+
+def refresh_community_job(row: Job, replacement: Job, normalized) -> None:
+    row.title = replacement.title
+    row.description = replacement.description
+    row.location = replacement.location
+    row.country = normalized.country
+    row.remote = replacement.remote
+    row.job_type = replacement.job_type
+    row.seniority = replacement.seniority
+    row.salary_min = replacement.salary_min
+    row.salary_max = replacement.salary_max
+    row.salary_currency = replacement.salary_currency
+    row.job_categories = effective_categories(row, normalized.job_categories)
+    row.relevance_score = normalized.relevance_score
+    row.is_audio_related = effective_is_audio(row, normalized.is_audio_related)
+    row.expires_date = replacement.expires_date
+    row.is_active = True
+
+
 def resolve_expiry_days(
     override: Optional[int], requested: Optional[int]
 ) -> tuple[int, str]:
@@ -316,6 +348,7 @@ def approve_submission(
         description=submission.description,
         url=submission.url,
         location=normalized.location,
+        country=normalized.country,
         remote=submission.remote or normalized.remote,
         job_type=normalized.job_type or submission.job_type,
         seniority=normalized.seniority,
@@ -331,34 +364,25 @@ def approve_submission(
         source="community",
     )
 
-    duplicate = None
-    if submission.company_id is not None:
-        duplicate = db.execute(
-            select(Job).where(
-                Job.company_id == submission.company_id,
-                Job.source == "community",
-                Job.is_active.is_(True),
-                func.lower(Job.url) == submission.url.strip().lower(),
-            )
-        ).scalar_one_or_none()
+    duplicate = find_live_community_job(db, submission)
 
     now = datetime.now(timezone.utc)
     submission.status = "approved"
     submission.reviewed_at = now
     submission.reviewed_by = admin
     if duplicate is not None:
+        refresh_community_job(duplicate, job, normalized)
         logger.info(
-            "admin=%s approved submission %s; community duplicate %s superseded",
+            "admin=%s approved submission %s; refreshed live job %s in place",
             admin,
             submission_id,
             duplicate.id,
         )
-        duplicate.is_active = False
     else:
         db.add(job)
 
     db.flush()
-    job_id = None if duplicate is not None else job.id
+    job_id = duplicate.id if duplicate is not None else job.id
     logger.info(
         "admin=%s approved submission %s as job %s, expires %s (%s, %d days)",
         admin,

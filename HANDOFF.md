@@ -2238,18 +2238,35 @@ Svelte's number binding yields null for an empty input, and the schema is
 `Optional[int]`, so it lands as NULL and falls through to the default. If
 anyone ever makes this field required, that null becomes a 422.
 
-### A pre-existing approval defect, pinned but not fixed
+### Re-approving a submission refreshes the live job in place
 
-`test_a_second_submission_of_the_same_url_unpublishes_the_first` documents
-it: approving a second submission whose URL already has a live community job
-sets `duplicate.is_active = False` and, because the insert sits in the `else`
-branch, never adds the replacement. The listing disappears and the API still
-answers `approved` with `job_id: null`.
+The defect: approving a second submission whose URL already had a live
+community job set `duplicate.is_active = False` and, because the insert sat
+in the `else` branch, never added the replacement. The listing vanished and
+the API still answered `approved`.
 
-The log line says "superseded", so replace-the-old-with-the-new was clearly
-the intent. Left alone because replace-versus-refuse is the owner's call. It
-matters more now that duration exists, since asking for a longer run is a
-natural reason to re-submit the same URL.
+The owner chose refresh-in-place over supersede. `refresh_community_job`
+updates the existing row — content, expiry, relevance — and returns its id.
+**The deciding factor was bookmarks**, which are a `Set<number>` of job ids
+in the reader's `localStorage` and device-local by the owner's decision.
+Inserting a replacement row would issue a new id and silently orphan every
+bookmark on that job, with no server-side way to repair it.
+
+**This is the fourth write site for `job_categories` / `is_audio_related` on
+an existing row**, so it consults `effective_categories` and
+`effective_is_audio` like the other three. Sabotage-verified: dropping either
+call fails two tests in `api/tests/test_reapproval.py`. If you add a fifth,
+wire it in.
+
+`find_live_community_job` also closed the mirror-image gap: the duplicate
+lookup used to run only when `submission.company_id` was set, so repeat
+submissions for a company absent from the seed stacked up as separate live
+rows. It now matches on URL for those too, scoped to rows with no company so
+an unmatched submission can never seize a known company's listing.
+
+Community jobs now store `country`, which the insert path never set. The
+Yamaha submission resolves to JP and would have landed with a NULL country
+and no flag on the board.
 
 ### Admin console (commit 8a7b9ed)
 
