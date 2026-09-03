@@ -20,6 +20,7 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from scraper.countries import country_name as lookup_country_name
 
 JobCategories = JSON().with_variant(ARRAY(Text), "postgresql")
+StringList = JSON().with_variant(ARRAY(Text), "postgresql")
 
 
 class Base(DeclarativeBase):
@@ -34,6 +35,7 @@ class Company(Base):
     slug: Mapped[str] = mapped_column(Text, unique=True)
     category: Mapped[str] = mapped_column(Text)
     careers_url: Mapped[Optional[str]] = mapped_column(Text)
+    extra_careers_urls: Mapped[Optional[list[str]]] = mapped_column(StringList)
     website_url: Mapped[Optional[str]] = mapped_column(Text)
     verified: Mapped[bool] = mapped_column(Boolean, default=False)
     source: Mapped[str] = mapped_column(Text, default="auto")

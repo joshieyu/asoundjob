@@ -5,7 +5,7 @@ import json
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
@@ -39,6 +39,28 @@ def slugify(name: str) -> str:
     return slug or "company"
 
 
+def parse_extra_careers_urls(
+    value: Any, primary: Any = None
+) -> Optional[list[str]]:
+    if not isinstance(value, list):
+        return None
+    primary_key = str(primary or "").strip().rstrip("/").lower()
+    seen: set[str] = set()
+    urls: list[str] = []
+    for item in value:
+        if not isinstance(item, str):
+            continue
+        url = item.strip()
+        if not url.lower().startswith(("http://", "https://")):
+            continue
+        key = url.rstrip("/").lower()
+        if key == primary_key or key in seen:
+            continue
+        seen.add(key)
+        urls.append(url)
+    return urls or None
+
+
 def load_companies(session: Session, companies: list[dict[str, Any]]) -> LoadStats:
     stats = LoadStats()
     seen_names: set[str] = set()
@@ -69,6 +91,9 @@ def load_companies(session: Session, companies: list[dict[str, Any]]) -> LoadSta
         scrape_method = str(entry.get("scrape_method", "http"))
         category = str(entry["category"])
         careers_url = entry.get("careers_url")
+        extra_careers_urls = parse_extra_careers_urls(
+            entry.get("extra_careers_urls"), careers_url
+        )
 
         if existing is None:
             session.add(
@@ -77,6 +102,7 @@ def load_companies(session: Session, companies: list[dict[str, Any]]) -> LoadSta
                     slug=slug,
                     category=category,
                     careers_url=careers_url,
+                    extra_careers_urls=extra_careers_urls,
                     verified=verified,
                     source=source,
                     scrape_method=scrape_method,
@@ -91,6 +117,7 @@ def load_companies(session: Session, companies: list[dict[str, Any]]) -> LoadSta
                 existing.name != name
                 or existing.category != category
                 or existing.careers_url != careers_url
+                or existing.extra_careers_urls != extra_careers_urls
                 or existing.verified != verified
                 or existing.source != source
                 or existing.scrape_method != scrape_method
@@ -100,6 +127,7 @@ def load_companies(session: Session, companies: list[dict[str, Any]]) -> LoadSta
                 existing.name = name
                 existing.category = category
                 existing.careers_url = careers_url
+                existing.extra_careers_urls = extra_careers_urls
                 existing.verified = verified
                 existing.source = source
                 existing.scrape_method = scrape_method
