@@ -2275,19 +2275,23 @@ careers URL and is caught by the URL half of the guard.
    `jobs.lenovo.com/en_US/careers` shares the URL shape). Count the bucket
    before building anything.
 
-10. **Flattened titles on JS-rendered boards — open, and it degrades the board
-    the reader sees.** On boards whose listings are cards rather than anchors,
-    the extractor pulls the whole card into the title. Live examples:
+10. **Flattened titles on JS-rendered boards — CLOSED by measurement
+    2026-09-03. Do not build this.** The paragraphs below are kept because they
+    describe the mechanism accurately; the conclusion they reach is wrong, and
+    the count at the end of the item is the thing to act on.
+
+    On boards whose listings are cards rather than anchors, the extractor pulls
+    the whole card into the title. Live examples:
 
     - Devialet: `Senior Audio System Engineer Full-Time Shenzhen...` — both of
       its board rows carry job type and location glued on.
     - Dolby before the Eightfold parser: `Multimodal AI Researcher, Audio
       Atlanta, Georgia,United States Hybrid Flexible Location`.
 
-    This is not cosmetic. A mangled title defeats `classify_categories`, so the
-    rows reach the board with **no category at all** — none of Dolby's five
-    Playwright board rows carried one. Categories are how a reader filters, so
-    this costs more than it looks.
+    The reasoning used to run: a mangled title defeats `classify_categories`,
+    so the rows reach the board with no category, and categories are how a
+    reader filters. That was a fair inference from Dolby's five uncategorized
+    Playwright rows. It did not survive being counted — see below.
 
     Commit 03a8d00 took titles from structure rather than flattened anchor text
     and fixed the anchor case. The card case is not covered. Note the Eightfold
