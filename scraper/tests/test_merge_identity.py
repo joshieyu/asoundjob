@@ -2,7 +2,12 @@ from __future__ import annotations
 
 import unittest
 
-from scraper.deduplicator import identity_for_raw, merge_identity, seed_query_keys
+from scraper.deduplicator import (
+    PAGINATION_QUERY_KEYS,
+    identity_for_raw,
+    merge_identity,
+    seed_query_keys,
+)
 from scraper.scrapers.base import RawJob
 
 
@@ -18,17 +23,20 @@ class TestSeedQueryKeys(unittest.TestCase):
         keys = seed_query_keys(
             ["https://x.example/jobs?q=audio", "https://x.example/jobs?search=dsp"]
         )
-        self.assertEqual(keys, frozenset({"q", "search"}))
+        self.assertEqual(keys - PAGINATION_QUERY_KEYS, frozenset({"q", "search"}))
 
     def test_keys_are_lowercased(self) -> None:
         keys = seed_query_keys(
             ["https://x.example/jobs?Q=audio", "https://x.example/jobs?q=dsp"]
         )
-        self.assertEqual(keys, frozenset({"q"}))
+        self.assertEqual(keys - PAGINATION_QUERY_KEYS, frozenset({"q"}))
 
-    def test_urls_without_query_yield_no_keys(self) -> None:
+    def test_urls_without_query_still_carry_pagination_keys(self) -> None:
         keys = seed_query_keys(["https://x.example/jobs", "https://x.example/careers"])
-        self.assertEqual(keys, frozenset())
+        self.assertEqual(keys, PAGINATION_QUERY_KEYS)
+
+    def test_a_single_url_carries_no_pagination_keys_either(self) -> None:
+        self.assertEqual(seed_query_keys(["https://x.example/jobs"]), frozenset())
 
 
 class TestMergeIdentity(unittest.TestCase):
@@ -64,6 +72,17 @@ class TestMergeIdentity(unittest.TestCase):
         a = job("https://boards.example/co/apply?q=111")
         b = job("https://boards.example/co/apply?q=222")
         self.assertNotEqual(merge_identity(a, keys), merge_identity(b, keys))
+
+    def test_the_same_job_on_a_later_result_page_collapses(self) -> None:
+        keys = seed_query_keys(
+            [
+                "https://jobs.example/search?q=audio",
+                "https://jobs.example/search?q=dsp",
+            ]
+        )
+        a = job("https://jobs.example/roles/1234-audio-engineer?q=audio")
+        b = job("https://jobs.example/roles/1234-audio-engineer?q=dsp&page=2")
+        self.assertEqual(merge_identity(a, keys), merge_identity(b, keys))
 
     def test_external_id_wins_over_url(self) -> None:
         keys = seed_query_keys(

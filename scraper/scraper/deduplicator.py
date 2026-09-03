@@ -44,10 +44,13 @@ def identity_for_raw(raw: RawJob | NormalizedJob) -> str:
     return f"url:{_url_identity(raw.url)}"
 
 
+PAGINATION_QUERY_KEYS = frozenset({"page", "pg", "offset", "start"})
+
+
 def seed_query_keys(urls: list[str]) -> frozenset:
     if len(urls) < 2:
         return frozenset()
-    keys = set()
+    keys = set(PAGINATION_QUERY_KEYS)
     for url in urls:
         query = urlsplit(url.strip()).query
         for key, _ in parse_qsl(query, keep_blank_values=True):

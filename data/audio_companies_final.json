@@ -4133,6 +4133,9 @@
   {
     "name": "Google",
     "careers_url": "https://www.google.com/about/careers/applications/jobs/results/?q=audio",
+    "extra_careers_urls": [
+      "https://www.google.com/about/careers/applications/jobs/results/?q=dsp"
+    ],
     "category": "Consumer Electronics & Tech",
     "verified": true,
     "source": "auto",
