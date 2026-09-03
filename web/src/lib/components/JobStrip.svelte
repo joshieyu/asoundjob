@@ -7,8 +7,14 @@
 	let {
 		job,
 		companyMaxSalary = 220000,
-		categoryNames = new Map<string, string>()
-	}: { job: Job; companyMaxSalary?: number; categoryNames?: Map<string, string> } = $props();
+		categoryNames = new Map<string, string>(),
+		onReport
+	}: {
+		job: Job;
+		companyMaxSalary?: number;
+		categoryNames?: Map<string, string>;
+		onReport?: (job: Job) => void;
+	} = $props();
 
 	let flagged = $state(false);
 
@@ -37,7 +43,7 @@
 		</div>
 	{/if}
 
-	<div class="min-w-0 flex-1 p-4">
+	<div class="min-w-0 flex-1 p-4 pb-9 pr-9">
 		<h3 class="text-base font-bold leading-snug sm:text-lg">
 			<a href="/jobs/{job.id}" class="hover:text-fader-deep hover:underline">{job.title}</a>
 		</h3>
@@ -104,6 +110,20 @@
 		<svg width="11" height="14" viewBox="0 0 11 14" fill="currentColor" aria-hidden="true">
 			<path d="M1 0h1.5v14H1z" />
 			<path d="M2.5 1h7l-2 3 2 3h-7z" />
+		</svg>
+	</button>
+
+	<button
+		type="button"
+		class="absolute bottom-2 right-2 flex h-7 w-7 items-center justify-center rounded-sm border border-seam bg-panel-raised text-ink-soft transition-colors hover:text-fader-deep"
+		aria-label={`Report an issue with ${job.title}`}
+		title="Report an issue with this listing"
+		onclick={() => onReport?.(job)}
+	>
+		<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+			<path
+				d="M8 1 1 14h14L8 1Zm0 4.5c.41 0 .75.34.75.75v3.5a.75.75 0 0 1-1.5 0v-3.5c0-.41.34-.75.75-.75Zm0 6.75a.9.9 0 1 1 0 1.8.9.9 0 0 1 0-1.8Z"
+			/>
 		</svg>
 	</button>
 </article>

@@ -2,6 +2,8 @@
 	import { page } from '$app/state';
 	import JobStrip from '$lib/components/JobStrip.svelte';
 	import Pagination from '$lib/components/Pagination.svelte';
+	import FeedbackDialog from '$lib/components/FeedbackDialog.svelte';
+	import { JOB_FEEDBACK_KINDS } from '$lib/feedback';
 	import type { Paginated, Job } from '$lib/types';
 
 	let { data } = $props();
@@ -14,6 +16,22 @@
 		for (const c of data.categories?.categories ?? []) map.set(c.id, c.name);
 		return map;
 	});
+
+	const categoryOptions = $derived(
+		(data.categories?.categories ?? []).map((c) => ({ id: c.id, name: c.name }))
+	);
+
+	const reportKinds = JOB_FEEDBACK_KINDS.filter(
+		(k) => k.value === 'wrong_category' || k.value === 'not_audio'
+	);
+
+	let reportJob = $state<Job | null>(null);
+	let reportOpen = $state(false);
+
+	function onReport(job: Job) {
+		reportJob = job;
+		reportOpen = true;
+	}
 
 	let selectedCategories = $state<string[]>(params.category ? params.category.split(',') : []);
 	let showZeroCategories = $state(false);
@@ -359,7 +377,7 @@
 						<span class="h-px flex-1 bg-ink-soft/25"></span>
 					</div>
 				{/if}
-				<JobStrip {job} {categoryNames} />
+				<JobStrip {job} {categoryNames} {onReport} />
 			{:else}
 				<div class="panel col-span-full p-8 text-center">
 					<p class="font-mono text-sm text-ink-soft">
@@ -375,3 +393,14 @@
 		{/if}
 	</section>
 </div>
+
+{#if reportJob}
+	<FeedbackDialog
+		mode="job"
+		jobId={reportJob.id}
+		jobTitle={reportJob.title}
+		kinds={reportKinds}
+		categories={categoryOptions}
+		bind:open={reportOpen}
+	/>
+{/if}

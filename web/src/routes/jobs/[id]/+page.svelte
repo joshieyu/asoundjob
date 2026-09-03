@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { formatDate, formatSalary, timeAgo } from '$lib/format';
+	import { JOB_FEEDBACK_KINDS } from '$lib/feedback';
+	import FeedbackDialog from '$lib/components/FeedbackDialog.svelte';
 
 	let { data } = $props();
 
@@ -11,6 +13,10 @@
 		for (const c of data.categories ?? []) map.set(c.id, c.name);
 		return map;
 	});
+
+	const categoryOptions = $derived((data.categories ?? []).map((c) => ({ id: c.id, name: c.name })));
+
+	let reportOpen = $state(false);
 </script>
 
 <svelte:head>
@@ -127,5 +133,23 @@
 				</a>
 			</div>
 		{/if}
+		<div class="panel p-4">
+			<p class="legend">SEE A PROBLEM?</p>
+			<p class="mt-2 text-sm text-ink-soft">
+				Flag a category mistake, a broken link, or anything else off about this listing.
+			</p>
+			<button type="button" class="btn-latch mt-3 w-full" onclick={() => (reportOpen = true)}>
+				Report an issue
+			</button>
+		</div>
 	</aside>
 </div>
+
+<FeedbackDialog
+	mode="job"
+	jobId={job.id}
+	jobTitle={job.title}
+	kinds={JOB_FEEDBACK_KINDS}
+	categories={categoryOptions}
+	bind:open={reportOpen}
+/>
