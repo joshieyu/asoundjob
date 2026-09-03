@@ -2217,6 +2217,57 @@ normalizer: it scores 140, files as `audio_aiml` + `audio_dsp_embedded` +
 2027 internship. A cycle cannot touch it — reconcile only handles rows with
 `source='scraper'`.
 
+## Session update (2026-09-03, night) — submission duration, and admin usability
+
+### How long a community job stays up (commit 9a88e11, migration d3f5a72e9c14)
+
+`job_submissions.requested_days` holds what the submitter asked for; it is a
+request, not a setting, and nothing is applied until approval. The approve
+endpoint takes an optional body `{"expires_days": N}`. Precedence is
+`resolve_expiry_days`: moderator, then submitter, then
+`COMMUNITY_JOB_TTL_DAYS` (30). The response reports `expires_source` so the
+console can say which one applied.
+
+Range is 1 to `MAX_COMMUNITY_JOB_DAYS` (365, env-overridable), enforced at
+the schema boundary **and** clamped again in `resolve_expiry_days`, because a
+value stored today outlives any later change to the maximum.
+
+**A blank duration field posts `duration_days: null`, it is not omitted.**
+Verified in the browser by intercepting the request, not by reading the code.
+Svelte's number binding yields null for an empty input, and the schema is
+`Optional[int]`, so it lands as NULL and falls through to the default. If
+anyone ever makes this field required, that null becomes a 422.
+
+### A pre-existing approval defect, pinned but not fixed
+
+`test_a_second_submission_of_the_same_url_unpublishes_the_first` documents
+it: approving a second submission whose URL already has a live community job
+sets `duplicate.is_active = False` and, because the insert sits in the `else`
+branch, never adds the replacement. The listing disappears and the API still
+answers `approved` with `job_id: null`.
+
+The log line says "superseded", so replace-the-old-with-the-new was clearly
+the intent. Left alone because replace-versus-refuse is the owner's call. It
+matters more now that duration exists, since asking for a longer run is a
+natural reason to re-submit the same URL.
+
+### Admin console (commit 8a7b9ed)
+
+- The careers URL on `/admin/companies` is a real link that opens in a new
+  tab, with a separate Edit button; the inline editor gained Cancel. It used
+  to be a button that only started an edit, so reading a URL meant copying it
+  out by hand.
+- That page was capped at 50 rows with no way to page. It now has Prev/Next
+  and a "Page X of Y - N companies" readout, and searching resets to page 1 —
+  without that, a search from page 7 shows an empty table.
+- `/admin/submissions` shows the requested duration per card and offers a
+  per-card Days override. The override state is keyed by submission id, not a
+  single shared variable, so two pending cards cannot overwrite each other.
+
+Verified in the running app with `fetch` intercepted, so no submission was
+approved and nothing reached the database: a filled field sends
+`{"expires_days": 300}`, a blank one sends `{}`.
+
 ## Next steps, in priority order (as of 2026-08-31)
 
 0b. **Run the API with reload, and watch both packages.** Without `--reload`
