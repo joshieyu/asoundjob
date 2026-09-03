@@ -9,7 +9,7 @@ from sqlalchemy import select, update
 from scraper.company_loader import careers_urls_for
 from scraper.config import Settings
 from scraper.database import get_session_factory
-from scraper.deduplicator import identity_for_raw
+from scraper.deduplicator import merge_identity, seed_query_keys
 from scraper.models import Company
 from scraper.scrapers.ats.adp import AdpScraper
 from scraper.scrapers.ats.apple import AppleScraper
@@ -160,6 +160,7 @@ class ScrapePipeline:
     async def _scrape_every(
         self, company: Company, urls: list[str]
     ) -> ScrapeResult:
+        seed_keys = seed_query_keys(urls)
         budget = self.settings.per_company_timeout * MULTI_URL_BUDGET_UNITS
         deadline = time.monotonic() + budget
         merged: dict[str, RawJob] = {}
@@ -181,7 +182,7 @@ class ScrapePipeline:
             if not result.trust_empty:
                 all_trusted = False
             for raw in result.jobs:
-                merged.setdefault(identity_for_raw(raw), raw)
+                merged.setdefault(merge_identity(raw, seed_keys), raw)
 
         partial = succeeded < len(urls)
         if partial:

@@ -71,6 +71,10 @@ def job(ext: str, title: str) -> RawJob:
     return RawJob(title=title, url=f"https://jobs.example.com/j/{ext}", external_id=ext)
 
 
+def linked_job(slug: str, title: str, query: str) -> RawJob:
+    return RawJob(title=title, url=f"https://jobs.example.com/j/{slug}?search={query}")
+
+
 class TestCareersUrlsFor(unittest.TestCase):
     def test_primary_only(self) -> None:
         self.assertEqual(careers_urls_for(make_company()), [PRIMARY])
@@ -112,6 +116,40 @@ class TestMultiUrlScrape(unittest.TestCase):
         )
         self.assertEqual(len(result.jobs), 2)
         self.assertEqual({j.external_id for j in result.jobs}, {"1", "9"})
+
+    def test_one_job_reached_by_two_queries_is_one_job(self) -> None:
+        result, _ = run_pipeline(
+            {
+                PRIMARY: [linked_job("1234-audio-engineer", "Audio Engineer", "audio")],
+                DSP: [linked_job("1234-audio-engineer", "Audio Engineer", "dsp")],
+            },
+            [DSP],
+        )
+        self.assertEqual(len(result.jobs), 1)
+        self.assertEqual(
+            result.jobs[0].url,
+            "https://jobs.example.com/j/1234-audio-engineer?search=audio",
+        )
+
+    def test_distinct_jobs_reached_by_two_queries_are_both_kept(self) -> None:
+        result, _ = run_pipeline(
+            {
+                PRIMARY: [linked_job("1111-audio-engineer", "Audio Engineer", "audio")],
+                DSP: [linked_job("2222-dsp-engineer", "DSP Engineer", "dsp")],
+            },
+            [DSP],
+        )
+        self.assertEqual(len(result.jobs), 2)
+
+    def test_a_single_url_company_keeps_its_query(self) -> None:
+        result, _ = run_pipeline(
+            {PRIMARY: [linked_job("1234-audio-engineer", "Audio Engineer", "audio")]},
+            None,
+        )
+        self.assertEqual(
+            result.jobs[0].url,
+            "https://jobs.example.com/j/1234-audio-engineer?search=audio",
+        )
 
     def test_a_failing_extra_url_is_partial_but_still_succeeds(self) -> None:
         result, _ = run_pipeline({PRIMARY: [job("1", "Audio DSP Engineer")]}, [ACOUSTIC])

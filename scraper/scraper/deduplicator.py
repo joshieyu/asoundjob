@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Optional
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -41,6 +42,34 @@ def identity_for_raw(raw: RawJob | NormalizedJob) -> str:
     if getattr(raw, "external_id", None):
         return f"ext:{raw.external_id}"
     return f"url:{_url_identity(raw.url)}"
+
+
+def seed_query_keys(urls: list[str]) -> frozenset:
+    if len(urls) < 2:
+        return frozenset()
+    keys = set()
+    for url in urls:
+        query = urlsplit(url.strip()).query
+        for key, _ in parse_qsl(query, keep_blank_values=True):
+            keys.add(key.strip().lower())
+    return frozenset(keys)
+
+
+def merge_identity(raw: RawJob | NormalizedJob, seed_keys: frozenset) -> str:
+    if getattr(raw, "external_id", None):
+        return f"ext:{raw.external_id}"
+    if not seed_keys:
+        return f"url:{_url_identity(raw.url)}"
+    parts = urlsplit(raw.url.strip())
+    kept = [
+        (key, value)
+        for key, value in parse_qsl(parts.query, keep_blank_values=True)
+        if key.strip().lower() not in seed_keys
+    ]
+    rebuilt = urlunsplit(
+        (parts.scheme, parts.netloc, parts.path, urlencode(kept), parts.fragment)
+    )
+    return f"url:{_url_identity(rebuilt)}"
 
 
 def identity_for_job(job: Job) -> Optional[str]:
