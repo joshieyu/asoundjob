@@ -1917,28 +1917,59 @@ was to finish the cycle rather than leave it split.
    rows went 110 -> 104. Nothing new was admitted. See the 2026-09-02 session
    update for the method, which is the one to copy for the rest of this item.
 
-5. **User feedback on parsing quality — REQUESTED, DEFERRED BY THE OWNER.**
-   Explicitly postponed on 2026-08-29; do not start it without asking. Let readers
-   report a bad row rather than chasing every keyword gap by hand: "not an audio
-   job", "wrong category", "suggested category", and a free-text note for the
-   admin. Admin approves before anything changes, mirroring the existing
-   `job_submissions` flow.
+5. **User feedback — BUILT 2026-09-02 (commits 9dacaf2, 55c17ee, 04bf832).**
+   The owner un-deferred it. What shipped is below; what remains is operational,
+   not code.
 
-   Reuse that pattern rather than inventing one: a `job_feedback` table keyed on
-   `job_id` with `kind`, `suggested_categories` (JSON), `comment`, optional
-   submitter email, and the same `status` / `reviewed_at` / `reviewed_by` /
-   `reject_reason` columns. Public POST needs no auth (rate-limit it); the admin
-   list/approve/reject endpoints sit alongside `admin_list_submissions` in
-   `api/api/routers/admin.py`, which already has `rescore_company_jobs` for
-   re-running scoring after an edit.
+   Two tables, not one: `job_feedback` (kinds `wrong_category`, `not_audio`,
+   `broken_description`, `broken_link`) and `site_feedback` (kinds
+   `company_suggestion`, `general`). A company suggestion has no `job_id`, so
+   forcing both through one table would mean a nullable FK plus kind-dependent
+   validation on every row.
 
-   **The trap: an approved correction will be silently reverted.** Every scrape
-   cycle re-normalizes and re-scores each job, and `backfill_relevance` rewrites
-   `job_categories` and `is_audio_related` wholesale — so a hand-approved fix
-   lives only until the next run. The correction has to be sticky. Cleanest is
-   override columns on `Job` (`categories_override`, `is_audio_related_override`,
-   both nullable) that the normalizer and backfill treat as authoritative when
-   set; anything else means re-applying feedback after every cycle.
+   Entry points: job cards on `/jobs` (two kinds), the listing aside (all four),
+   and the footer (site kinds) — the footer is in the root layout, so it reaches
+   every page and passes `page_path`. One `FeedbackDialog` serves all three and
+   lives on the page, never inside `JobStrip`; mounting it per card would put
+   twenty modals on a default board page.
+
+   Public POSTs are rate-limited by IP at 20/day, a separate limiter instance
+   from the 3/day one on job submissions. Suggested category ids are validated
+   against `data/audio_job_categories.json`.
+
+   **The trap, and how it was closed.** Every scrape cycle re-normalizes and
+   re-scores each job, and `backfill_relevance` rewrites `job_categories` and
+   `is_audio_related` wholesale — so a hand-approved fix would live only until
+   the next run and then vanish, with nothing in any log to explain it.
+
+   `Job` now carries `categories_override` and `is_audio_related_override`, both
+   nullable, and `scraper/scraper/overrides.py` is consulted at **all three**
+   sites that write those columns on an existing row: the `deduplicator` update
+   path, `backfill_relevance`, and `rescore_company_jobs` in the admin router.
+   The insert paths are deliberately untouched — a new row cannot carry an
+   override yet. **If you add a fourth write site, wire it in or corrections
+   start silently reverting again.**
+
+   `tests/test_overrides.py` runs the real `backfill()` and the real
+   `reconcile_company_jobs`, not the helpers in isolation, and covers the
+   direction that matters most: a job the scorer keeps admitting, held off the
+   board by a `not_audio` override. One test asserts the fixture scores as audio
+   *without* an override so the rest cannot pass vacuously. Removing either call
+   site fails five of them — verified by sabotage, not by assumption.
+
+   Approve semantics: `not_audio` sets the override false; `wrong_category`
+   writes the suggested ids; `broken_link` and `broken_description` **never touch
+   the job**, by the owner's decision — an anonymous report must not be able to
+   hide a listing. Repairing those means fixing the seed URL or re-scraping by
+   hand.
+
+   Known small inconsistency: `rescore_company_jobs` recomputes `relevance_score`
+   from the *computed* categories, not from `categories_override`, because
+   `Normalizer.normalize` derives both together. `backfill_relevance` does feed
+   the override in. The drift is cosmetic — the board gate is
+   `is_audio_related`, which is overridden — and a backfill resolves it.
+
+   Operational note: the API must be restarted to pick up the new routes.
 
    Second, larger payoff: **approved feedback is a measurement set.** Aggregated
    "wrong category" reports point straight at systematic keyword gaps — the
