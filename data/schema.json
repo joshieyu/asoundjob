@@ -87,6 +87,11 @@
         },
         "minItems": 1,
         "uniqueItems": true
+      },
+      "open_application": {
+        "type": "boolean",
+        "description": "The company invites speculative applications even when it has no posted openings. Set by hand after confirming the page actually makes that invitation; a page saying it has no openings is not one.",
+        "default": false
       }
     },
     "required": [

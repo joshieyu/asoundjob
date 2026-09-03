@@ -64,6 +64,36 @@ class TestParseExtraCareersUrls(unittest.TestCase):
         self.assertIsNone(parse_extra_careers_urls(ACOUSTIC, PRIMARY))
 
 
+class TestLoaderSyncsOpenApplication(unittest.TestCase):
+    def setUp(self) -> None:
+        self.session = make_session()
+
+    def tearDown(self) -> None:
+        self.session.rollback()
+        self.session.close()
+
+    def _row(self):
+        return self.session.execute(Company.__table__.select()).mappings().one()
+
+    def test_default_is_false(self) -> None:
+        load_companies(self.session, [entry()])
+        self.session.flush()
+        self.assertFalse(self._row()["open_application"])
+
+    def test_flag_is_stored(self) -> None:
+        load_companies(self.session, [entry(open_application=True)])
+        self.session.flush()
+        self.assertTrue(self._row()["open_application"])
+
+    def test_turning_it_off_is_an_update(self) -> None:
+        load_companies(self.session, [entry(open_application=True)])
+        self.session.flush()
+        stats = load_companies(self.session, [entry()])
+        self.session.flush()
+        self.assertEqual(stats.updated, 1)
+        self.assertFalse(self._row()["open_application"])
+
+
 class TestLoaderSyncsExtraUrls(unittest.TestCase):
     def setUp(self) -> None:
         self.session = make_session()
