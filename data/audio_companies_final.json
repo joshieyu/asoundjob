@@ -627,6 +627,10 @@
   {
     "name": "Apple",
     "careers_url": "https://jobs.apple.com/en-us/search",
+    "extra_careers_urls": [
+      "https://jobs.apple.com/en-us/search?search=speech",
+      "https://jobs.apple.com/en-us/search?search=acoustic"
+    ],
     "category": "Consumer Electronics & Tech",
     "verified": true,
     "source": "manual",

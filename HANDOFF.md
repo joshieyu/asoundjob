@@ -2316,6 +2316,52 @@ Verified in the running app with `fetch` intercepted, so no submission was
 approved and nothing reached the database: a filled field sends
 `{"expires_days": 300}`, a blank one sends `{}`.
 
+## Session update (2026-09-03, night) — Apple ignored its own seed URL
+
+### The Apple parser hardcoded its search query
+
+`AppleScraper.can_handle` matches on the `jobs.apple.com` host, and the
+parser then fetched `?search=audio` regardless of what the seed said. The
+seeded careers URL decided *which parser ran* and nothing else, so
+`extra_careers_urls` could not reach Apple at all — every extra URL produced
+the same audio search.
+
+`search_term()` now reads `?search=` from the company's careers URL and falls
+back to `audio`, so extras work through the existing multi-URL machinery. The
+term is length-bounded at 40 characters and URL-encoded, so a term with a
+space cannot break the request.
+
+**Measured before seeding, the way Harman and Dolby were.** Fetching each
+alternative query and running the real scorer over whatever the audio query
+did not already return:
+
+| Query | New rows | Would reach the board |
+|---|---|---|
+| speech | 41 | 7 |
+| acoustic | 28 | 4 |
+| dsp | 111 | 1 |
+| sound | 105 | 1, and it duplicates acoustic's |
+
+`speech` and `acoustic` were seeded. `dsp` and `sound` were rejected: Apple's
+search matches loosely, so `sound` returns retail store managers and `dsp`
+returns Bluetooth and RF firmware. 216 rows for one unique addition.
+
+Result on the live board: **69 -> 76**, nine new rows in (Siri Speech, Noise
+& Vibration Acoustics) and two stale ones deactivated. Apple sets
+`external_id`, so identity never depended on the URL here and no duplicates
+appeared. The predicted +11 came in at +7 because Apple's listings shift
+between runs.
+
+### What the admin "Scraped" column means for Apple
+
+221 was never Apple's job count — it is how many results Apple's own search
+returns for one word. The parser pages 20 at a time to a 20-page ceiling it
+has never approached, then fetches each detail page for the full description
+at 8 concurrent, bounded to 85% of `per_company_timeout`. A cycle that
+exhausts that budget (196/221 last time) costs detail, not the description:
+the search page itself supplies one, and Apple's shortest stored description
+is 489 characters.
+
 ## Next steps, in priority order (as of 2026-08-31)
 
 0b. **Run the API with reload, and watch both packages.** Without `--reload`

@@ -7,6 +7,7 @@ import logging
 import re
 from time import monotonic
 from typing import TYPE_CHECKING, Any
+from urllib.parse import parse_qsl, quote, urlsplit
 
 from scraper.scrapers.base import BaseScraper, RawJob
 from scraper.scrapers.fetch import fetch_html, parse_date
@@ -16,7 +17,9 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-SEARCH_URL = "https://jobs.apple.com/en-us/search?search=audio&page={page}"
+SEARCH_URL = "https://jobs.apple.com/en-us/search?search={term}&page={page}"
+DEFAULT_SEARCH_TERM = "audio"
+MAX_SEARCH_TERM_LEN = 40
 DETAIL_URL = "https://jobs.apple.com/en-us/details/{job_id}/{slug}"
 HYDRATION_RE = re.compile(
     r'__staticRouterHydrationData\s*=\s*JSON\.parse\("(.*?)"\);',
@@ -51,11 +54,25 @@ class AppleScraper(BaseScraper):
     def extract_slug(url: str) -> str | None:
         return "apple" if "jobs.apple.com" in url.lower() else None
 
+    @staticmethod
+    def search_term(careers_url: str | None) -> str:
+        if not careers_url:
+            return DEFAULT_SEARCH_TERM
+        query = urlsplit(careers_url.strip()).query
+        for key, value in parse_qsl(query, keep_blank_values=True):
+            if key.strip().lower() != "search":
+                continue
+            term = value.strip()
+            if term:
+                return term[:MAX_SEARCH_TERM_LEN]
+        return DEFAULT_SEARCH_TERM
+
     async def fetch_jobs(self, company: Company) -> list[RawJob]:
         start = monotonic()
+        term = self.search_term(company.careers_url)
         pairs: list[tuple[RawJob, str | None]] = []
         for page in range(1, MAX_PAGES + 1):
-            url = SEARCH_URL.format(page=page)
+            url = SEARCH_URL.format(term=quote(term, safe=""), page=page)
             html_text = await asyncio.to_thread(fetch_html, url, self.settings)
             page_pairs = _parse_search_page_with_teams(html_text)
             if not page_pairs:

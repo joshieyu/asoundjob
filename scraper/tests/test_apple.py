@@ -4,10 +4,15 @@ import asyncio
 import json
 import unittest
 from unittest.mock import patch
+from urllib.parse import quote
 
+from scraper.config import load_settings
+from scraper.models import Company
 from scraper.scrapers.ats.apple import (
     DETAIL_URL,
     ENRICHMENT_BUDGET_FRACTION,
+    MAX_SEARCH_TERM_LEN,
+    SEARCH_URL,
     AppleScraper,
     _compose_description,
     _extract_hydration_data,
@@ -436,3 +441,67 @@ class TestAppleEnrichment(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestAppleSearchTerm(unittest.TestCase):
+    def test_default_when_the_url_has_no_search(self) -> None:
+        self.assertEqual(
+            AppleScraper.search_term("https://jobs.apple.com/en-us/search"), "audio"
+        )
+
+    def test_default_when_there_is_no_url(self) -> None:
+        self.assertEqual(AppleScraper.search_term(None), "audio")
+
+    def test_term_is_read_from_the_url(self) -> None:
+        self.assertEqual(
+            AppleScraper.search_term("https://jobs.apple.com/en-us/search?search=speech"),
+            "speech",
+        )
+
+    def test_a_blank_search_falls_back_to_the_default(self) -> None:
+        self.assertEqual(
+            AppleScraper.search_term("https://jobs.apple.com/en-us/search?search="),
+            "audio",
+        )
+
+    def test_other_parameters_are_ignored(self) -> None:
+        self.assertEqual(
+            AppleScraper.search_term(
+                "https://jobs.apple.com/en-us/search?location=usa&search=acoustic&page=3"
+            ),
+            "acoustic",
+        )
+
+    def test_the_key_is_matched_case_insensitively(self) -> None:
+        self.assertEqual(
+            AppleScraper.search_term("https://jobs.apple.com/en-us/search?Search=acoustic"),
+            "acoustic",
+        )
+
+    def test_the_term_is_length_bounded(self) -> None:
+        term = AppleScraper.search_term(
+            "https://jobs.apple.com/en-us/search?search=" + "a" * 500
+        )
+        self.assertEqual(len(term), MAX_SEARCH_TERM_LEN)
+
+    def test_a_term_with_a_space_survives_as_one_term(self) -> None:
+        self.assertEqual(
+            AppleScraper.search_term(
+                "https://jobs.apple.com/en-us/search?search=signal+processing"
+            ),
+            "signal processing",
+        )
+
+    def test_the_search_url_encodes_the_term(self) -> None:
+        url = SEARCH_URL.format(term=quote("signal processing", safe=""), page=1)
+        self.assertIn("search=signal%20processing", url)
+        self.assertNotIn(" ", url)
+
+    def test_every_seeded_apple_url_still_routes_to_this_parser(self) -> None:
+        scraper = AppleScraper(load_settings())
+        for url in (
+            "https://jobs.apple.com/en-us/search",
+            "https://jobs.apple.com/en-us/search?search=speech",
+        ):
+            company = Company(name="Apple", slug="apple", category="x", careers_url=url)
+            self.assertTrue(scraper.can_handle(company))
