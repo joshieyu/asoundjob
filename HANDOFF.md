@@ -1907,6 +1907,87 @@ in `BOT_DEFENCE_HOSTS`, and the rejected GraphQL experiment returned 19 jobs
 against the DOM's 10 but **the same 3 board jobs**. That is a coverage ceiling,
 not a failure. Do not conflate the two.
 
+## Session update (2026-09-03) — the job card had the location all along
+
+### The generic path never read a location (commits 8bdc635, 390d8a9)
+
+157 of 512 board rows had no country and 138 carried no location string at
+all. The handoff had this filed as "extraction, not parsing", which was
+right, and as needing detail-page fetching, which was wrong.
+
+`extract_job_links` built `RawJob(title=..., url=..., job_type=...)` and
+never set `location`. The only location source on the generic path was
+`_parse_jsonld_location`. So every card-based board lost it — the text was
+sitting one or two ancestors above the anchor, unread.
+
+Measured before building, across the 40 companies holding those 138 rows.
+The four largest — Advanced Bionics 23, Harman 16, Zoom 12, Google 11 —
+all carry it in the DOM. Result after re-scraping all 40 into a **copy** of
+the database:
+
+| Metric | Before | After |
+|---|---|---|
+| Board rows with a country | 355 of 512 (69%) | **434 of 525 (83%)** |
+| Board rows with no location string | 138 | **72** |
+| Countries represented | 21 | **26** |
+
+Advanced Bionics, Harman, Zoom and Google each went to **zero** unlocated
+board rows. The board grew 512 -> 525 because re-scraping brought fresh
+rows with it.
+
+### The signal is a semantic marker, and blind text scraping is a trap
+
+The first prototype took the card's whole text and ran `detect_country` on
+it. It produced a **wrong country** immediately: Google's language switcher
+reads "Francais (Canada)" and resolved to CA. A wrong country is worse than
+none here — it hides a job from the filter it belongs to, while no country
+never does, which is the same reason `detect_country` resolves ambiguity to
+NULL.
+
+So the extractor keys on an element whose `class`, `id`, `aria-label`,
+`title`, `data-label` or `itemprop` names "location", or on a Material icon
+glyph (`place`, `location_on`) whose sibling holds the text. Real markup
+found in the wild: `_sf_location`, `table__detail--location`,
+`job-component-location`, `list-item-location`, `location_icon_text_<hash>`.
+
+Three guards, each verified by sabotage rather than assumption — deleting
+any one of them fails a test:
+
+- **The scan never leaves the card.** It walks up only while the container
+  still holds exactly one job anchor. Solid State Logic's board carries a
+  Location dropdown offering UK and USA; scoped this way it is unreachable.
+- **Form controls are skipped**, ancestors included.
+- **Job-board vocabulary is rejected.** Without it AMX yielded "Browse Jobs"
+  five times.
+
+JSON-LD still wins where it has a location; the card only fills a gap.
+
+A false-positive sweep over 60 sampled boards extracted 55 locations across
+9 companies, **disagreed with JSON-LD 0 times**, and left the other 51
+boards empty rather than guessing.
+
+### Multiple locations need a real separator (commit 390d8a9)
+
+A card listing several places was flattened with spaces. `detect_country`
+matches 1-3 word n-grams inside each segment, so a space join lets a phrase
+form across the seam between two entries that neither contains. Sibling list
+items are now joined with `; `, matching what `_parse_jsonld_location`
+already does. Zoom's Cork/Dublin/London role stores all three and resolves
+to NULL rather than picking one.
+
+### This only lands on a scrape
+
+Location is written at normalize time from `RawJob`. `backfill_relevance`
+recomputes country from the *stored* location, so it cannot help a row that
+has no location string. **The 66-row gain arrives when the next full cycle
+runs**, not before. Everything above was verified against a copy of the
+database, never the live one.
+
+### Cost
+
+Linear and negligible: 71ms for a synthetic 500-card page, against network
+time measured in seconds.
+
 ## Next steps, in priority order (as of 2026-08-31)
 
 0b. **Restart the API after any change to it.** The dev server runs without
@@ -2105,12 +2186,44 @@ not a failure. Do not conflate the two.
    and takes about a minute. See the session update above for the HEAD-versus-GET
    trap it exposed.
 
-8. **Location extraction is the remaining lever for country coverage.** 157 of
-   512 board rows have no country (2026-09-02, after the full cycle), and 138
-   carry no location string at all — so extraction, not parsing, is the
-   constraint. ADP (7 companies) and Pinpoint (1) return none; the generic anchor
-   path would need detail-page fetching. See "Session update (2026-08-30)". The
-   parser itself is not the constraint — it resolves 92% of what it is given.
+8. **Location extraction — the listing-page lever is now spent (2026-09-03).**
+   The generic anchor path reads location from the job card as of commits
+   8bdc635 and 390d8a9. Re-scraping the 40 affected companies took the board
+   from 355 of 512 rows with a country to **434 of 525**, 69% to 83%, and from
+   21 countries to 26. See the 2026-09-03 session update for the method.
+
+   **Two claims this item used to make were wrong; do not act on them.**
+
+   - "ADP (7 companies) and Pinpoint (1) return none" was true when written on
+     2026-08-30 and is stale. ADP now locates 27 of 33 active rows and Pinpoint
+     40 of 40, fixed as a side effect of the JSON-LD array work (e1142bf).
+   - "The generic anchor path would need detail-page fetching" was too
+     pessimistic for the listing page itself. The location was in the DOM the
+     whole time; nothing read it.
+
+   What remains is genuinely harder, and was measured rather than assumed. Of
+   the 32 companies still holding an unlocated board row, **28 have no location
+   anywhere within six ancestors of the job anchor** — their listing pages do
+   not publish it. Only detail-page fetching reaches those, which "Detail-page
+   fetching" already sized as a small population. Shure's 9 are a separate
+   case: its iCIMS detail pages carry no JSON-LD JobPosting at all, so the
+   existing iCIMS location path has nothing to read.
+
+   **REJECTED, measured 2026-09-03: widening the card boundary to tolerate a
+   second anchor.** The card scan stops at any container holding another job
+   anchor, so a card with a title link plus an Apply link yields nothing. That
+   sounded like the next gap. It reaches 14 anchors across 3 companies, worth
+   about 2 board rows, and two of the three are false positives — Riedel's
+   container is a job *list*, so widening it would staple one job's city onto a
+   different job. That is the wrong-country failure the whole design avoids.
+   Not worth it at that price.
+
+   The parser is still not the constraint. Of the board rows that carry a
+   location but resolve to no country, nearly all are correct refusals:
+   "2 Locations", "Remote", "EMEA | Remote", "Canada, United States". The only
+   real parser gaps found were bare city names absent from `CITY_COUNTRY`
+   (Cincinnati 4 rows, SLC Triad Center 6, Paddington 2) and none of them are
+   on the board. Adding cities is cheap but buys nothing today.
 
 9. **Harman is only two-thirds covered.** `?search=audio` returns 16 of the 24
    audio-relevant roles. Harman's search matches tokens exactly, so no single
