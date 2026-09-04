@@ -51,7 +51,6 @@ thin relative to total headcount, NVH aside.
 
 | Company | Why it earns the top | Fix |
 |---|---|---|
-| **Knowles Corporation** | MEMS microphones and balanced-armature drivers — the components inside most hearing aids and earbuds. As close to a pure transducer-engineering employer as exists. | **Code.** On `myjobs.adp.com/knowles/cx`; the ADP parser exists but `can_handle` does not claim it. |
 | **Fraunhofer IIS** | Invented mp3 and AAC. The most prestigious audio research employer in Europe, hiring DSP and audio-coding researchers continuously. | Seed. `iis.fraunhofer.de/de/jobs.html` |
 | **Demant (Oticon)** | One of the largest hearing groups on earth. Deep DSP, acoustics and audio-ML hiring. | Scraper. `careers.demant.com` is a genuine board. |
 | **Cochlear** | Implants: embedded audio, DSP, psychoacoustics. Large and always hiring. | Seed/scraper. |
@@ -66,6 +65,47 @@ thin relative to total headcount, NVH aside.
 | **KEF** | Loudspeaker acoustics R&D under GP Acoustics. | **Seed. URL is the shop homepage,** `us.kef.com/`. |
 | **Klippel** | The reference name in transducer measurement. Small, but every role is the audience's field. | Seed. |
 | **Steinberg** | Cubase and Nuendo. Audio software engineering at depth. | Seed. |
+
+## MEASURED AND REJECTED: Knowles, and the myjobs.adp.com surface
+
+Knowles led this list on the reasoning that it makes the MEMS microphones and
+balanced-armature drivers inside most hearing aids and earbuds. **That
+reasoning did not survive contact with its job board.** Do not retry it.
+
+`myjobs.adp.com` is a different ADP product from the `workforcenow.adp.com`
+one the ADP parser reads: a client alias rather than a cid, and an Angular
+front end behind a privacy gate. Its API is reachable without the gate:
+
+```
+GET https://myjobs.adp.com/public/staffing/v1/career-site/<alias>
+    -> .id (the cid) and .orgoid
+GET https://myjobs.adp.com/public/staffing/v1/job-requisitions?cid=<id>&$top=100&$skip=0
+    header: orgoid: <orgoid>
+```
+
+Recorded so nobody re-derives it. But the parser is not worth building:
+
+- **Only 2 seed companies are on this surface**, Knowles and Switchcraft.
+- **Knowles returns 47 open roles and none of them are audio.** They are
+  capacitors, ceramics, RF and production: "Applications Engineer - Single
+  Layer Capacitors", "Sr. Ceramic Process Engineer", "Microwave Regional Sales
+  Manager", "IMPREG OPERATOR", "Welder". Scored through the real Normalizer at
+  native scope — more permissive than the partial scope Knowles actually
+  carries — the board yield is **0 of 47**. The openings are all from the
+  precision-components side of the company, not the audio side.
+- **Switchcraft's seed URL is worse than useless.** It points at
+  `myjobs.adp.com/heico/cx/job-listing?keyword=Switchcraft`, which is parent
+  company HEICO's entire board — 279 requisitions — and the API ignores the
+  keyword. Not one title even mentions Switchcraft. Parsing it would import
+  279 aerospace machinist and inspector jobs under Switchcraft's name.
+
+So the surface costs a parser, an orgoid-header code path and two seed fixes,
+and returns nothing. Switchcraft's seed URL should be corrected or the company
+set `verified: false`.
+
+The general lesson, which applies to the rest of this file: **brand prestige
+is a hypothesis about a company's job board, not a measurement of it.** Check
+the board before spending the effort.
 
 ## Tier 2 — high value, narrower or smaller
 
