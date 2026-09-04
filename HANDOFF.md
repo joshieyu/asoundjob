@@ -2285,7 +2285,7 @@ and no flag on the board.
 **The "Open jobs" column never meant what it looked like.** It counted every
 active row the scraper holds, junk included, and readers of that column —
 including me, in this session — read it as board presence. Live numbers:
-5,363 active rows against 722 on the board, and **316 of the 402 companies
+7,674 active rows against 846 on the board, and **313 of the 403 companies
 with any rows contribute nothing to the board at all**. Niantic held 180 rows
 and put 0 on the board; NVIDIA's 6 were "Find Your Next Job", "Applicant
 Privacy Policy", "How We Hire" and three more of the same, because its seed
@@ -2762,9 +2762,9 @@ Check the board with `check_url` before spending effort on the seed.
    | Harman | 16 | 26 |
    | contributing companies | 80 | 82 |
 
-   **The board is at 722 now, not 535.** Seven companies have been re-scraped
-   individually since that cycle, so their rows are much newer than everyone
-   else's and the table above is history, not current state:
+   **The board is at 846 now, not 535.** Seventeen companies have been
+   re-scraped individually since that cycle, so their rows are much newer than
+   everyone else's and the table above is history, not current state:
 
    | Company | Board rows | Why |
    |---|---|---|
@@ -2775,16 +2775,25 @@ Check the board with `check_url` before spending effort on the seed.
    | Twilio Voice | 14 -> 19 | Eightfold cap raise alone |
    | Starkey | 0 -> 56 | UltiPro board URL + the new parser |
    | Cirrus Logic | 0 -> 56 | EU Lever host + Audio Semiconductors scope |
+   | Beltone | 120 -> 81 | moved to partial scope, front-desk roles dropped |
+   | L-Acoustics | 0 -> 22 | Workday board replaced the homepage |
+   | Analog Devices | 0 -> 4 | Workday board + the pagination fix |
+   | 8 more Workday cos | see below | the 40-job truncation fix |
 
-   Live as of 2026-09-04: **722 board rows, 5,363 active, 86 contributing
-   companies, 143 uncategorized.**
+   Live as of 2026-09-04: **846 board rows, 7,674 active, 90 contributing
+   companies, 171 uncategorized.**
 
-   Seven seed edits are **all synced** into the database: Google's `?q=dsp`,
-   Apple's `?search=speech` and `?search=acoustic`, 23 `open_application`
-   flags, Qualcomm's two queries, Infineon's three, Starkey's UltiPro URL,
-   and the Cirrus Logic URL plus the four Audio Semiconductors
-   recategorizations. A `--company` run syncs the whole seed first, so no
-   separate load is owed.
+   Active rows jumped from 5,363 to 7,674 in one session because the Workday
+   pagination fix unpinned nine boards at once. Most of that is not board
+   material — Samsung alone added ~618 rows and contributes 1.
+
+   All seed edits are **synced** into the database: Google's `?q=dsp`, Apple's
+   `?search=speech` and `?search=acoustic`, 23 `open_application` flags,
+   Qualcomm's two queries, Infineon's three, Starkey's UltiPro URL, the Cirrus
+   Logic URL, the four Audio Semiconductors recategorizations, the Analog
+   Devices Workday URL, Beltone's category move and the L-Acoustics Workday
+   URL. A `--company` run syncs the whole seed first, so no separate load is
+   owed.
 
    Nothing is owed. The next full cycle is routine, not a catch-up — but it
    will re-scrape the other 720 companies against code that has changed a
@@ -3295,3 +3304,99 @@ the seed entirely**, found while scanning for audio-silicon companies.
 `scripts/validate_companies.py` still reports `open_application` as an
 "unexpected field" (108 warnings), which is stale in the validator, not in the
 seed.
+
+### Every Workday board was truncated at 40 jobs (commits 16a5771, 6efae1b, 4f5fb18)
+
+Found while checking whether the Analog Devices seed edit was populating. The
+first scrape returned 40 jobs in 2 seconds against a board of 839.
+
+**Workday reports the true `total` only on the first page. Every page after it
+returns `"total": 0` alongside a full 20 postings.** `_fetch_all` compared the
+running offset against that per-page total, so page two evaluated `40 >= 0`
+and broke. Confirmed on four tenants before any code was written — Analog
+Devices 839, Samsung 657, Razer 174, GN Store Nord 74, all reporting 0 from
+the second page on.
+
+Nine companies were pinned at exactly 40. That number is the fingerprint: if
+a Workday company ever shows exactly 40 active rows again, suspect this class
+of bug rather than a genuine board size.
+
+| Company | Before | After |
+|---|---:|---:|
+| Analog Devices | 40 | 839 |
+| Samsung | 40 | 658 |
+| iHeartRadio | 40 | 292 |
+| McGill Music Tech | 40 | 214 |
+| Blue Microphones | 40 | 201 |
+| Razer | 40 | 174 |
+| Beltone | 40 | 129 |
+| GN ReSound/Jabra | 40 | 74 |
+| Sky Studios | 40 | 40 (genuine) |
+
+The total is now remembered from the first page that reports one, a later zero
+cannot end the loop, and the loop is bounded by `MAX_PAGES = 50` — enough for
+the largest board measured. `workday` is registered in `detect_truncation`, so
+a real cap hit is now visible. **Workday rejects a `limit` above 20** (tested
+50 and 100, both return an empty body), so PAGE_SIZE cannot be raised to cut
+the request count. Analog Devices takes 33 seconds for 42 pages, inside the 90
+second per-company timeout.
+
+Analog Devices itself yields **4 of 839** — two Embedded Audio Software roles,
+a Principal Audio/DSP Systems Engineer and a signal processing chip architect.
+The near-miss, Senior MEMS Design and Simulation Engineer, is correctly
+excluded: MEMS at ADI is inertial sensors, not microphones. That ratio is the
+argument for keeping ADI at partial scope.
+
+#### Beltone moved to partial scope
+
+Beltone is GN's retail clinic chain, not an R&D site. At native scope its 129
+postings put 120 on the board. Filed under **Audio Retailers & Distributors**
+it scores at partial and drops to 81 — and what leaves is exactly the
+non-audio half: all 29 `Patient Care Coordinator` front-desk roles and 9 sales
+and consultant roles. The 73 licensed hearing care professionals and 9
+audiologists stay. No `Patient Care` rows remain anywhere on the board.
+
+The category name reads oddly next to Guitar Center and Best Buy. The scope
+behaviour is the point, not the label.
+
+#### L-Acoustics
+
+Seeded with its homepage, so it produced nothing. Its Workday board is
+`lgroup.wd3.myworkdayjobs.com/en-US/L-Acoustics_Group_career`: 50 postings, 22
+on the board. About 9 of those 22 are corporate or logistics — *CEO EMEA*,
+*Credit Manager Group*, *Transport & Customs Coordinator*, *Warehousing &
+Distribution Team Leader*, *Director of Sales*.
+
+**`CORPORATE_ROLE` matches none of those titles, not even "CEO" or "Director
+of Sales".** That is a pre-existing gap affecting every native-scope company,
+not something L-Acoustics introduced. It was left alone deliberately: widening
+that regex is a board-wide precision change against the owner's stated
+recall-over-precision preference, and it could strip legitimate rows from all
+846. Measure the blast radius before touching it.
+
+### MEASURED, DECISION PENDING: ElevenLabs
+
+The seeded URL is `elevenlabs.io/careers`, which carries **zero job links**.
+The real listing is `elevenlabs.io/careers/positions` with **252**, as plain
+static anchors of the form `/careers/<uuid>/<slug>` — no ATS, no JS needed,
+the generic `http` scraper reads it fine.
+
+**Seeding it as-is is a poor trade: 54 rows reach the board and 52 of them are
+sales.** Only two are audio — *Audio Engineering Lead (Post-Production)* and
+*Audio Engineering (Freelance)*.
+
+Worse, the roles this audience actually wants are all missing: *Research
+Engineer* (x4, including Inference and Data Infrastructure), *Data Scientist -
+AI Safety*, *Data Engineer*. **Every one of the 252 jobs extracts with a
+zero-length description**, so they score 0 on title alone, while *Account
+Executive* clears the native threshold at exactly 45 on its
+`sales_marketing_cs` category (+35) plus the native bonus (+10).
+
+Descriptions are available — a detail page carries ~35k characters of static
+text — but **the generic `http` scraper has no enrichment pass at all**. Only
+`eightfold.py` and `apple.py` have one. Adding a generic detail-fetch touches
+all 898 `http` companies and must be time-bounded per the project's own rule,
+so it is a real design decision, not a tweak.
+
+Board-wide context for the decision: **91 of 846 rows (11%) are already
+`sales_marketing_cs` only.** ElevenLabs would take that to 143 of 898 (16%).
