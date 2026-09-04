@@ -2785,6 +2785,14 @@
     "scrape_method": "playwright"
   },
   {
+    "name": "Delart",
+    "careers_url": "https://job-boards.greenhouse.io/delartech",
+    "category": "Acoustic Consulting & Engineering",
+    "verified": true,
+    "source": "manual",
+    "scrape_method": "http"
+  },
+  {
     "name": "Dell Technologies",
     "careers_url": "https://careers.dell.com",
     "category": "Consumer Electronics & Tech",
