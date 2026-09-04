@@ -2782,10 +2782,10 @@ Check the board with `check_url` before spending effort on the seed.
    | Amazon | 0 -> 59 | new amazon.jobs parser + seeded queries |
    | Demant | 0 -> 61 | new SuccessFactors parser + global search URL |
 
-   Live as of 2026-09-04: **971 board rows, 8,469 active, 93 contributing
+   Live as of 2026-09-04: **979 board rows, 8,491 active, 94 contributing
    companies, 212 uncategorized.** Audible and Oticon Medical were both
-   deleted outright, seed and database; Sigma Connectivity was added; the
-   seed is now 1,387 entries.
+   deleted outright, seed and database; Sigma Connectivity and Delart were
+   added; the seed is now 1,388 entries.
 
    Active rows jumped from 5,363 to 8,455 in one session, mostly because the
    Workday pagination fix unpinned nine boards at once and the two new parsers
@@ -3732,3 +3732,44 @@ not on that field. The field only matters for `skip_http`.
 
 Gates after the change: 895 scraper tests (18 new in `tests/test_sigma.py`),
 116 API tests, ruff and mypy clean.
+
+## Session update (2026-09-04, later) — Delart, and an embed-only Greenhouse board
+
+**Delart added: 8 board rows out of 22, every one categorized** (commit
+`372a893`), no new code. Board 971 -> 979. Like Sigma Connectivity it is a
+contract engineering house building audio devices for consumer brands, filed
+under `Acoustic Consulting & Engineering`, and it is the same shape of find:
+the careers page is not the board.
+
+`delartech.com/join-our-team` is a Squarespace page whose "Careers" heading is
+followed by nothing scrapable — no job links in the rendered DOM, let alone the
+raw HTML. The listings are inside an iframe pointing at Greenhouse's embed
+endpoint, `job-boards.greenhouse.io/embed/job_board?for=delartech`, with a
+`boards.greenhouse.io/embed/job_board/js?for=delartech` loader beside it. The
+board slug is `delartech`, and the existing Greenhouse parser handles it.
+
+**This board is embed-only, so the hosted board index 404s.** Both
+`job-boards.greenhouse.io/delartech` and `boards.greenhouse.io/delartech`
+return 404, while `boards-api.greenhouse.io/v1/boards/delartech/jobs` returns
+22 jobs and every individual job link resolves to a real application page.
+Anyone sanity-checking the seed by pasting the careers URL into a browser will
+see a 404 and reasonably conclude the entry is broken — it is not. Nothing
+public links to `careers_url`: it is a scraper input and an admin field, and
+`check_links` checks job URLs, not careers URLs. **Do not "fix" this entry by
+repointing it at delartech.com**, which yields zero jobs.
+
+The rows: four unambiguous audio roles at score 140 — Acoustic Measurement Lab
+Lead, Audio Capture Experience Engineer, Audio Electrical Engineer, Audio
+Render Experience Engineer — then four hardware roles carried in by their
+descriptions rather than their titles (BSP Firmware, two PCB Design, and
+Mechanical Design Engineer - Battery Systems, at 65/65/65/45). That tail is the
+recall-over-precision trade working as intended: they are real roles at an
+audio-device shop, and they cost nothing to skim past.
+
+Half the board rows are in China and Hong Kong (Shenzhen, New Territories),
+which is worth knowing before reading the country filter's distribution.
+
+The forecast was made with `python -m scraper.check_url <url> --category
+"Acoustic Consulting & Engineering"` before the seed was touched, and the live
+result matched it exactly: 8 of 22. That tool is the cheapest way to decide
+whether a candidate company is worth adding, and it writes nothing.
