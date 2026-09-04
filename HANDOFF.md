@@ -3374,7 +3374,7 @@ that regex is a board-wide precision change against the owner's stated
 recall-over-precision preference, and it could strip legitimate rows from all
 846. Measure the blast radius before touching it.
 
-### MEASURED, DECISION PENDING: ElevenLabs
+### MEASURED AND NOT SEEDED: ElevenLabs
 
 The seeded URL is `elevenlabs.io/careers`, which carries **zero job links**.
 The real listing is `elevenlabs.io/careers/positions` with **252**, as plain
@@ -3400,3 +3400,49 @@ so it is a real design decision, not a tweak.
 
 Board-wide context for the decision: **91 of 846 rows (11%) are already
 `sales_marketing_cs` only.** ElevenLabs would take that to 143 of 898 (16%).
+
+#### The enrichment pass was built, and it did not fix ElevenLabs (commit 114fd88)
+
+The owner chose to build description enrichment rather than seed ElevenLabs
+as-is. It is built, bounded and tested — and **it did not achieve what it was
+built for. Do not re-run this experiment expecting a different answer.**
+
+Enrichment works mechanically: 150 of ElevenLabs' 252 jobs came back with real
+descriptions in 8.7 seconds. But the research roles still do not reach the
+board:
+
+| Role | Description | Score | Threshold |
+|---|---:|---:|---:|
+| Research Engineer | 4,424 chars | 30 | 45 |
+| Research Engineer - Inference | 4,994 | 30 | 45 |
+| Research Engineer - Data Infrastructure | 4,838 | 30 | 45 |
+| Data Scientist - AI Safety | 5,579 | 30 | 45 |
+
+**The blocker was never the description — it is the classifier, and it misses
+by one point.** An ElevenLabs Research Engineer posting is mostly company
+boilerplate (office headcounts, "About ElevenLabs", investor list); the role
+text itself says almost nothing about audio — audio x2, speech x1, voice x3.
+`audio_research` scores **4** against `classify_categories`' cutoff of **5**.
+No category means no +35, so 30 stays under the native threshold of 45.
+
+The fallback path cannot rescue it either, for two independent reasons:
+`Voice & Speech Technology` has no `COMPANY_CATEGORY_FALLBACK` entry, **and**
+none of the `FALLBACK_ROLE_CATEGORIES` patterns match "Research Engineer" or
+"Data Scientist" anyway. Adding either is a board-wide change and was not
+made.
+
+Worse, enrichment made ElevenLabs' composition *worse*: 54 board rows became
+65, and the 11 additions are Deployment Strategist, Revenue Strategy &
+Operations and Lead Generation roles that now pass on audio words borrowed
+from the boilerplate. **ElevenLabs was deliberately NOT seeded.** Its seed URL
+is still `elevenlabs.io/careers`, which carries zero job links.
+
+Measured board delta from enrichment elsewhere: Creative Assembly +0, Valve
++0, Harman +0. It moves scoring almost nowhere.
+
+**What enrichment is actually worth:** 248 of 846 board rows (29%) have no
+description a reader can read, 174 of them from `http` companies. That is the
+justification for keeping it — content, not recall. The effect on the other
+~890 http companies is unmeasured until the next full cycle; watch for
+non-audio roles gaining board access on boilerplate audio words, which is the
+ElevenLabs failure mode generalised.
