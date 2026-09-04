@@ -44,6 +44,7 @@ class CompanyMetrics:
     board_jobs: int
     audio_scope: str
     careers_url: str
+    careers_url_count: int = 1
 
 
 @dataclass
@@ -52,6 +53,7 @@ class TruncationFinding:
     company: str
     scrape_method: str
     cap: int
+    careers_url_count: int
     jobs_found: int
     active_jobs: int
     board_jobs: int
@@ -75,9 +77,11 @@ def evaluate(
     caps = cap_by_method if cap_by_method is not None else CAP_BY_SCRAPE_METHOD
     findings: list = []
     for row in rows:
-        cap = caps.get(row.scrape_method)
-        if cap is None:
+        per_url_cap = caps.get(row.scrape_method)
+        if per_url_cap is None:
             continue
+        url_count = max(1, row.careers_url_count)
+        cap = per_url_cap * url_count
         if row.jobs_found < cap:
             continue
         findings.append(
@@ -86,6 +90,7 @@ def evaluate(
                 company=row.company,
                 scrape_method=row.scrape_method,
                 cap=cap,
+                careers_url_count=url_count,
                 jobs_found=row.jobs_found,
                 active_jobs=row.active_jobs,
                 board_jobs=row.board_jobs,
@@ -123,6 +128,7 @@ def select_scrape_metrics(session: Session) -> list:
             Company.id,
             Company.name,
             Company.careers_url,
+            Company.extra_careers_urls,
             Company.audio_scope,
             ScrapeLog.scrape_method,
             ScrapeLog.jobs_found,
@@ -141,7 +147,15 @@ def select_scrape_metrics(session: Session) -> list:
     job_counts = _job_counts(session)
 
     metrics: list = []
-    for company_id, name, careers_url, audio_scope, scrape_method, jobs_found in rows:
+    for (
+        company_id,
+        name,
+        careers_url,
+        extra_careers_urls,
+        audio_scope,
+        scrape_method,
+        jobs_found,
+    ) in rows:
         active_jobs, board_jobs = job_counts.get(company_id, (0, 0))
         metrics.append(
             CompanyMetrics(
@@ -153,6 +167,7 @@ def select_scrape_metrics(session: Session) -> list:
                 board_jobs=board_jobs,
                 audio_scope=audio_scope or "",
                 careers_url=(careers_url or "").strip(),
+                careers_url_count=1 + len(extra_careers_urls or []),
             )
         )
     return metrics
@@ -185,10 +200,18 @@ def render(findings: list) -> str:
         "The seed is hand-edited truth — this tool never edits it, it only",
         "points at where a human should look.",
         "",
+        "A company with several careers URLs is measured against its per-URL",
+        "cap times the number of URLs it holds, because jobs_found is their",
+        "deduplicated union. That keeps every multi-URL company from being",
+        "flagged on arithmetic alone, at the cost of a blind spot: one query",
+        "of several can be truncated without the union reaching the total.",
+        "",
         f"- companies flagged: {len(findings)}",
     ]
     for method, count in summary.items():
-        lines.append(f"- {method}: {count} (cap {CAP_BY_SCRAPE_METHOD.get(method)})")
+        lines.append(
+            f"- {method}: {count} (cap {CAP_BY_SCRAPE_METHOD.get(method)} per careers URL)"
+        )
     lines.append("")
     lines.append(
         "Sorted worst waste first: fewest board rows for the most jobs fetched."
@@ -200,6 +223,7 @@ def render(findings: list) -> str:
         lines.append(f"## {name}")
         lines.append(
             f"- method={finding.scrape_method} cap={finding.cap} "
+            f"careers_urls={finding.careers_url_count} "
             f"jobs_found={finding.jobs_found}"
         )
         lines.append(

@@ -74,6 +74,31 @@ class TestEvaluateSortOrder(unittest.TestCase):
         self.assertEqual([f.company for f in findings], ["High", "Low"])
 
 
+class TestMultiUrlCap(unittest.TestCase):
+    def test_cap_scales_with_the_number_of_careers_urls(self) -> None:
+        row = make_metrics(jobs_found=294, careers_url_count=2)
+        self.assertEqual(evaluate([row], {"eightfold": 200}), [])
+
+    def test_a_multi_url_company_at_its_combined_cap_is_flagged(self) -> None:
+        row = make_metrics(jobs_found=400, careers_url_count=2)
+        findings = evaluate([row], {"eightfold": 200})
+        self.assertEqual(len(findings), 1)
+        self.assertEqual(findings[0].cap, 400)
+        self.assertEqual(findings[0].careers_url_count, 2)
+
+    def test_a_single_url_company_is_unaffected(self) -> None:
+        row = make_metrics(jobs_found=200, careers_url_count=1)
+        findings = evaluate([row], {"eightfold": 200})
+        self.assertEqual(len(findings), 1)
+        self.assertEqual(findings[0].cap, 200)
+
+    def test_a_zero_url_count_is_treated_as_one(self) -> None:
+        row = make_metrics(jobs_found=200, careers_url_count=0)
+        findings = evaluate([row], {"eightfold": 200})
+        self.assertEqual(len(findings), 1)
+        self.assertEqual(findings[0].cap, 200)
+
+
 class TestHasScopingQuery(unittest.TestCase):
     def test_query_key_with_value_is_true(self) -> None:
         self.assertTrue(has_scoping_query("https://acme.icims.com/jobs?query=audio"))
