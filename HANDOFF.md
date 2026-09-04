@@ -3327,6 +3327,8 @@ Nine companies were pinned at exactly 40. That number is the fingerprint: if
 a Workday company ever shows exactly 40 active rows again, suspect this class
 of bug rather than a genuine board size.
 
+**That list of nine was incomplete — see "the sweep missed six more" below.**
+
 | Company | Before | After |
 |---|---:|---:|
 | Analog Devices | 40 | 839 |
@@ -3773,3 +3775,59 @@ The forecast was made with `python -m scraper.check_url <url> --category
 "Acoustic Consulting & Engineering"` before the seed was touched, and the live
 result matched it exactly: 8 of 22. That tool is the cheapest way to decide
 whether a candidate company is worth adding, and it writes nothing.
+
+## Session update (2026-09-04, later) — the 40-job sweep missed six more companies
+
+Asked whether Brüel & Kjær, sitting at exactly 40 jobs on Workday, was covered
+by the truncation fix. It is affected, it was **not** in the table of nine, and
+neither were five other companies.
+
+**Why the sweep missed them.** All nine companies in that table have a
+`myworkdayjobs.com` careers URL. These six do not — their `careers_url` is a
+marketing or search page, and they reach the Workday parser through a stored
+`ats_type='workday'` discovered earlier. Any audit that selects Workday
+companies by URL shape silently skips them. Select on `ats_type` instead, or on
+the `scrape_method` recorded in `scrape_log`.
+
+Measured with the fixed parser against each stored `ats_slug`:
+
+| Company | stored | real | board now | board forecast |
+|---|---:|---:|---:|---:|
+| Adobe Audition | 40 | 724 | 11 | 110 |
+| Bose | 40 | 71 | 21 | 34 |
+| Brüel & Kjær (HBK) | 40 | 93 | 2 | 4 |
+| Nissan | 40 | 252 | 0 | 0 |
+| Toyota | 40 | 113 | 0 | 0 |
+| TrueFire | 40 | — | 0 | — |
+
+TrueFire was not measured: it carries **Toyota's slug**, `toyota.wd503/TMNA`,
+from a bad ATS discovery, so its 40 rows are Toyota's. That is the misrouted-
+slug bug already recorded elsewhere in this document, not the page cap.
+
+**Bose is the clean win: 21 -> 34, and 21 of the 34 carry audio vocabulary in
+the title** — Android Audio Engineer, DSP Engineer - Audio Tech, Acoustical
+Engineer, Control Systems Engineer - Noise Cancellation. Exactly the audience.
+
+**Adobe is the opposite and should be decided before the next full scrape.**
+Its board rows go 11 -> 110, but **only 2 of the 110 have any audio word in
+the title.** The rest are generic Adobe roles — "Sr. Database Reliability
+Engineer", "Enterprise Account Executive Retail/Public", a dozen "Software
+Development Engineer" variants — all scoring exactly 45, which is the native
+threshold, reached by the `+35` for holding any job category plus the `+10`
+native bonus. The company is seeded as *Adobe Audition* but the board is all
+of Adobe: 724 postings across the whole company. Options are to move it to
+partial scope, or to scope the seed URL to a query the way Google and Apple
+are scoped. **Recall over precision is the standing preference, but ~108 junk
+rows from one company is a different order of magnitude from a few strays.**
+
+**Brüel & Kjær's cap was never its real problem.** 93 real postings, but only
+2 titles in the whole board carry audio vocabulary and both are sales — Senior
+Key Account Manager - Audio and S&V, Inside Sales-HBK Audio. The tenant is
+`spectris.wd3/HBK_Careers`, the Spectris group board covering all of HBK, and
+its engineering openings today are IT, SAP, cloud and security roles. Going
+2 -> 4 is the honest ceiling until HBK posts audio engineering work.
+
+A caution for anyone repeating this measurement: **B&K has three separate
+postings titled "Field Sales Engineer"** at different locations that score
+differently. Two samples of "the same" title disagreeing is duplicate
+postings, not a nondeterministic scorer.
