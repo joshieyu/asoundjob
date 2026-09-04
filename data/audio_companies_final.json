@@ -2211,7 +2211,7 @@
   {
     "name": "Cirrus Logic",
     "careers_url": "https://jobs.eu.lever.co/cirrus",
-    "category": "Consumer Electronics & Tech",
+    "category": "Audio Semiconductors",
     "verified": true,
     "source": "auto",
     "scrape_method": "http"
@@ -3497,7 +3497,7 @@
   {
     "name": "ESS Technology",
     "careers_url": "https://www.esstech.com/ess-careers/",
-    "category": "Consumer Electronics & Tech",
+    "category": "Audio Semiconductors",
     "verified": true,
     "source": "auto",
     "scrape_method": "playwright"
@@ -9791,7 +9791,7 @@
   {
     "name": "Tempo Semiconductor",
     "careers_url": "https://temposemi.com/about/careers/",
-    "category": "Consumer Electronics & Tech",
+    "category": "Audio Semiconductors",
     "verified": true,
     "open_application": true,
     "source": "auto",
@@ -11036,7 +11036,7 @@
   {
     "name": "XMOS",
     "careers_url": "https://www.xmos.com/careers",
-    "category": "Consumer Electronics & Tech",
+    "category": "Audio Semiconductors",
     "verified": false,
     "source": "auto",
     "scrape_method": "http"
