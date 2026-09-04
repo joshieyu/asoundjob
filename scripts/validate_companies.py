@@ -38,6 +38,7 @@ VALID_CATEGORIES = {
     "Audio Middleware & SDK",
     "Audio Plugins & Virtual Instruments",
     "Audio Retailers & Distributors",
+    "Audio Semiconductors",
     "Audio Testing & Measurement",
     "Automotive OEMs",
     "Car Audio",

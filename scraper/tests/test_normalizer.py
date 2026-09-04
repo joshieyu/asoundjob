@@ -281,6 +281,24 @@ class TestCompanyCategoryFallback(unittest.TestCase):
     def test_no_company_category_keeps_existing_behaviour(self) -> None:
         self.assertEqual(classify_categories("Firmware Engineer", None), [])
 
+    def test_analog_engineer_at_semiconductor_company(self) -> None:
+        cats = classify_categories(
+            "Analog Design Engineer", None, "Audio Semiconductors"
+        )
+        self.assertIn("audio_ee", cats)
+
+    def test_embedded_engineer_at_semiconductor_company(self) -> None:
+        cats = classify_categories(
+            "Embedded Software Engineer", None, "Audio Semiconductors"
+        )
+        self.assertIn("audio_dsp_embedded", cats)
+
+    def test_corporate_role_at_semiconductor_company_does_not_fall_back(self) -> None:
+        self.assertEqual(
+            classify_categories("Financial Analyst", None, "Audio Semiconductors"),
+            [],
+        )
+
 
 class TestDescriptionCleaning(unittest.TestCase):
     def test_clean_description_handles_double_escaped_html(self) -> None:

@@ -21,6 +21,7 @@ class TestCategoryScope(unittest.TestCase):
             "Professional Audio & Live Sound",
             "Headphones & Personal Audio",
             "Transducer & Driver Manufacturers",
+            "Audio Semiconductors",
         ):
             self.assertEqual(category_to_scope(cat), "native", cat)
 

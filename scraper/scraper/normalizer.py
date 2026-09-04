@@ -1104,6 +1104,10 @@ COMPANY_CATEGORY_FALLBACK: dict[str, tuple[frozenset, Optional[str]]] = {
         None,
     ),
     "Smart Home & IoT Audio": (frozenset({COMPANY_FALLBACK_HARDWARE}), None),
+    "Audio Semiconductors": (
+        frozenset({COMPANY_FALLBACK_HARDWARE, COMPANY_FALLBACK_SOFTWARE}),
+        None,
+    ),
 }
 
 FALLBACK_ROLE_CATEGORIES: list[tuple[re.Pattern[str], str, str]] = [
