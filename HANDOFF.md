@@ -3487,10 +3487,13 @@ title also names audio. **Title anchoring cannot reach the ElevenLabs case:
 touches the shared scoring curve and ripples through every category.
 
 **3. The `COMPANY_CATEGORY_FALLBACK` and `FALLBACK_ROLE_CATEGORIES` gaps.**
-`Voice & Speech Technology` has no fallback entry at all, and 12 other
-categories are likewise absent (`AI/ML Audio`, `Audio Testing & Measurement`,
-`Acoustic Consulting & Engineering`, `Gaming, VR & Immersive Audio`,
-`Recording Studios & Post Houses` among them). Separately, no
+`Voice & Speech Technology` has no fallback entry at all. 14 of the seed's 28
+company categories are absent from the map, but 6 of those are partial-scope
+and a fallback there is arguable. **The 8 native categories with no fallback
+are the real gap:** `AI/ML Audio`, `Acoustic Consulting & Engineering`, `Audio
+Accessories & Cables`, `Audio Health & Wellness`, `Audio Testing &
+Measurement`, `Gaming, VR & Immersive Audio`, `Recording Studios & Post
+Houses` and `Voice & Speech Technology`. Separately, no
 `FALLBACK_ROLE_CATEGORIES` pattern matches "Research Engineer" or "Data
 Scientist".
 
