@@ -8662,6 +8662,14 @@
     "scrape_method": "playwright"
   },
   {
+    "name": "Sigma Connectivity",
+    "careers_url": "https://integration.sigma.se/esb/vacancy/portal/positions?company_startswith=Sigma+Connectivity",
+    "category": "Acoustic Consulting & Engineering",
+    "verified": true,
+    "source": "manual",
+    "scrape_method": "http"
+  },
+  {
     "name": "Signalogic",
     "careers_url": "https://www.signalogic.com/index.pl?page=careers",
     "category": "Audio Plugins & Virtual Instruments",

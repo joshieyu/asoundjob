@@ -22,6 +22,7 @@ from scraper.scrapers.ats.icims import IcimsScraper
 from scraper.scrapers.ats.lever import LeverScraper
 from scraper.scrapers.ats.pinpoint import PinpointScraper
 from scraper.scrapers.ats.recruitee import RecruiteeScraper
+from scraper.scrapers.ats.sigma import SigmaScraper
 from scraper.scrapers.ats.smartrecruiters import SmartRecruitersScraper
 from scraper.scrapers.ats.successfactors import SuccessFactorsScraper
 from scraper.scrapers.ats.ultipro import UltiproScraper
@@ -59,6 +60,7 @@ class ScrapePipeline:
         self.ultipro = UltiproScraper(settings)
         self.successfactors = SuccessFactorsScraper(settings)
         self.amazon = AmazonScraper(settings)
+        self.sigma = SigmaScraper(settings)
         self.http = HttpScraper(settings)
         self.playwright: PlaywrightScraper | None = None
         self.stealth: PlaywrightScraper | None = None
@@ -79,6 +81,7 @@ class ScrapePipeline:
             "ultipro": self.ultipro,
             "successfactors": self.successfactors,
             "amazon": self.amazon,
+            "sigma": self.sigma,
         }
 
     def _playwright_scraper(self) -> PlaywrightScraper:
@@ -241,6 +244,7 @@ class ScrapePipeline:
             self.apple,
             self.eightfold,
             self.successfactors,
+            self.sigma,
         )
         for ats in ats_scrapers:
             if ats.can_handle(company):
