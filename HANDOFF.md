@@ -2782,9 +2782,10 @@ Check the board with `check_url` before spending effort on the seed.
    | Amazon | 0 -> 59 | new amazon.jobs parser + seeded queries |
    | Demant | 0 -> 61 | new SuccessFactors parser + global search URL |
 
-   Live as of 2026-09-04: **966 board rows, 8,455 active, 92 contributing
-   companies, 211 uncategorized.** Audible and Oticon Medical were both
-   deleted outright, seed and database; the seed is now 1,386 entries.
+   Live as of 2026-09-04: **971 board rows, 8,469 active, 93 contributing
+   companies, 212 uncategorized.** Audible and Oticon Medical were both
+   deleted outright, seed and database; Sigma Connectivity was added; the
+   seed is now 1,387 entries.
 
    Active rows jumped from 5,363 to 8,455 in one session, mostly because the
    Workday pagination fix unpinned nine boards at once and the two new parsers
@@ -3652,3 +3653,82 @@ Demant's 271 — pointing it at its own `/go/` board would have put the
 same rows on the board under two companies. Removed from the seed and
 from the database (11 jobs, 1 scrape log), the same way Audible was.
 The seed is now 1,386 entries.
+
+## Session update (2026-09-04, later) — Sigma Connectivity, and reading the API a page is a client of
+
+**Sigma Connectivity added: 5 board rows, 4 of them categorized** (commit
+`c3640bd`). It is a contract engineering house in Lund and the US Pacific
+Northwest doing audio and acoustics work for consumer device makers, so its
+open roles are squarely the audience: Audio Silicon Development Engineer,
+Audio and Acoustics Systems Integration Engineer, Electrical Engineer with
+Audio, and Acoustic Measurement Engineer/Technician, plus a Redmond embedded
+systems role that the description alone carried onto the board.
+
+**The listing page was not the right thing to scrape.**
+`sigmaconnectivity.com/open-positions` is JS-rendered; its raw HTML has zero
+job links, so the `http` scraper found one row ("Folder: Career"). Playwright
+rendered it and did find all 14 jobs, so the cheap path *worked* — but badly:
+
+- titles came out as `Electrical Engineer with Audio Sigma Connectivity Inc. | Bay`,
+  the company name and a truncated location fragment glued on by the tile markup;
+- locations came out as `Sigma Connectivity Inc. | Redmond, WA`;
+- every description was empty, because the detail pages live on `sigma.se`
+  and `http_scraper`'s enrichment has a same-origin guard;
+- and a `Folder: Career` junk row rode along.
+
+The page is a client of a JSON API — `integration.sigma.se/esb/vacancy/portal/positions`
+— which returns the entire Sigma group (202 positions) in a single request
+with no pagination. Measured side by side against the real normalizer before
+any code was written:
+
+| route | board rows | of those, categorized |
+|---|---|---|
+| Playwright on the Wix page | 4 | 0 |
+| the JSON API | **5** | **4** |
+
+Same recall, materially better data: clean titles, real cities, posted dates,
+stable ids, and full descriptions. The categorized rows land on `audio_ee`,
+`audio_systems`, `audio_dsp_embedded`, `test_measurement_qa`, `transducers`
+and `psychoacoustics_perception` rather than adding four more to the
+uncategorized pile. That gap is the whole argument for the new parser: **four board rows
+either way, but zero categories versus four.**
+
+**The server's own filter is a trap.** The API accepts `?company=`, and it is
+an exact match. `?company=Sigma+Connectivity` returns 2 rows and misses every
+audio role, because those sit under `Sigma Connectivity Inc.`, not
+`Sigma Connectivity`. The prefix match has to happen client-side. The seed URL
+therefore carries a deliberately distinct `company_startswith` param, so that
+nobody later "fixes" it into the server's own parameter and silently collapses
+the company to two irrelevant rows. Unknown params are ignored by the server,
+verified with `?foo=bar`.
+
+**Job URLs are reconstructed, and were verified one by one.** The API carries
+no public job URL: `_links` offers only a `profiler.sigma.se` login page. The
+real page is built client-side by the site's own script from a
+title/location/date slug, with quirks worth keeping — the country is dropped
+when it is the United States but appended otherwise, `Bay Area, CA` is
+re-joined out of comma-split tokens by a `^[A-Z]{2}$` state-code rule, and
+Swedish-locale postings take an `/sv/position/` path. That logic is ported
+verbatim rather than guessed, and **all 14 generated URLs were checked against
+the live site by page `<title>`, not status code** — `sigma.se` soft-404s with
+a 200, so a status check would have passed on fabricated URLs. A deliberately
+bogus slug returns `<title>404 Not found`, which is what makes the check real.
+The trailing date turned out to be lenient (both the UTC and the US-Pacific
+date resolve), which removes what would otherwise be a timezone hazard, since
+the site generates that date in the visitor's own timezone.
+
+**Scoped to Sigma Connectivity on purpose.** All 202 group postings were
+scanned for audio relevance in title and description; outside Sigma
+Connectivity there are **zero** hits. Sibling entities (Sigma Technology,
+Sigma Industry, Sigma Energy & Marine) are not worth seeding, and the prefix
+filter is what keeps their ~188 rows off the board.
+
+**The scraper has no page cap**, so it gets no `detect_truncation` entry —
+one request returns everything.
+
+`scrape_method` in the seed stays `http`: the validator only accepts `http`
+or `playwright`, and dispatch happens on the URL pattern via `can_handle`,
+not on that field. The field only matters for `skip_http`.
+
+Gates after the change: 895 scraper tests (18 new in `tests/test_sigma.py`),
+116 API tests, ruff and mypy clean.
