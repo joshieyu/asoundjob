@@ -4800,7 +4800,11 @@
   },
   {
     "name": "Infineon Technologies",
-    "careers_url": "https://jobs.infineon.com/careers?start=0&pid=563808971874262&sort_by=timestamp",
+    "careers_url": "https://jobs.infineon.com/careers?query=audio",
+    "extra_careers_urls": [
+      "https://jobs.infineon.com/careers?query=dsp",
+      "https://jobs.infineon.com/careers?query=acoustic"
+    ],
     "category": "Consumer Electronics & Tech",
     "verified": true,
     "source": "auto",
@@ -7771,7 +7775,10 @@
   },
   {
     "name": "Qualcomm",
-    "careers_url": "https://careers.qualcomm.com/careers?start=0&pid=446720669967&sort_by=timestamp",
+    "careers_url": "https://careers.qualcomm.com/careers?query=audio",
+    "extra_careers_urls": [
+      "https://careers.qualcomm.com/careers?query=dsp"
+    ],
     "category": "Consumer Electronics & Tech",
     "verified": true,
     "source": "auto",
