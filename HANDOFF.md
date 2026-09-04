@@ -2783,11 +2783,13 @@ Check the board with `check_url` before spending effort on the seed.
    | Demant | 0 -> 61 | new SuccessFactors parser + global search URL |
 
    Live as of 2026-09-04: **966 board rows, 8,455 active, 92 contributing
-   companies, 211 uncategorized.** Audible was deleted outright.
+   companies, 211 uncategorized.** Audible and Oticon Medical were both
+   deleted outright, seed and database; the seed is now 1,386 entries.
 
-   Active rows jumped from 5,363 to 7,674 in one session because the Workday
-   pagination fix unpinned nine boards at once. Most of that is not board
-   material — Samsung alone added ~618 rows and contributes 1.
+   Active rows jumped from 5,363 to 8,455 in one session, mostly because the
+   Workday pagination fix unpinned nine boards at once and the two new parsers
+   opened Amazon and Demant. Most of that is not board material — Samsung
+   alone added ~618 rows and contributes 1.
 
    All seed edits are **synced** into the database: Google's `?q=dsp`, Apple's
    `?search=speech` and `?search=acoustic`, 23 `open_application` flags,
@@ -3297,14 +3299,15 @@ and left alone. The broad-line vendors stay `partial` on purpose.
 
 `sound_design` is fully wired — it is in `data/audio_job_categories.json` and
 in `CATEGORY_KEYWORDS`, and the two vocabularies are 21/21 aligned — but it
-carries **zero of the 722 board rows**. The user asked to fix this and then
-deferred it to a later session. It is worth taking together with the 143
-uncategorized board rows, which is the same class of problem.
+carries **1 of the 966 board rows** — Valve's "Sound Designer", and nothing
+else. The user asked to fix this and then deferred it to a later session. It
+is worth taking together with the 211 uncategorized board rows, which is the
+same class of problem.
 
 Not audited: Syntiant, Vesper, Sonion, Aspinity and USound are **absent from
 the seed entirely**, found while scanning for audio-silicon companies.
 `scripts/validate_companies.py` still reports `open_application` as an
-"unexpected field" (108 warnings), which is stale in the validator, not in the
+"unexpected field" (107 warnings), which is stale in the validator, not in the
 seed.
 
 ### Every Workday board was truncated at 40 jobs (commits 16a5771, 6efae1b, 4f5fb18)
@@ -3568,13 +3571,15 @@ check what the term means at that employer before seeding it. One such
 row still slipped onto the board via the `audio` query: "Biz Tech
 Leader, Amazon DSP - India".
 
-**Audible is a thin result and worth revisiting.** Given
-`base_query=audible` it returns 112 jobs for **1 board row, and that
-row is an Alexa job, not an Audible one**. Its real openings are
-content, FinOps and coordinator roles, correctly filtered out. The
-seed is at least no longer a duplicate of Amazon's, but 112 rows of
-database noise for one misattributed board row is a poor trade; either
-find a narrower query or consider whether Audible earns its own entry.
+**Audible was measured, then deleted (commit b80b635).** Given
+`base_query=audible` it returned 112 jobs for **1 board row, and that
+row was an Alexa job, not an Audible one**. Its real openings are
+content, FinOps and coordinator roles, all correctly filtered out — 112
+rows of database noise for one misattributed row. Removed from the seed
+and from the database along with its 115 jobs. Note that a seed-only
+removal would have been undone: `run_cycle` reloads the seed at the
+start of every run, so a company deleted from the database alone comes
+straight back.
 
 **Watch out:** the parser's `URL_PATTERN` matches the bare homepage
 too, and with no `base_query` the API returns the unfiltered board —
@@ -3641,9 +3646,9 @@ nothing:** Acer 27 jobs, Belden 109, Ferrari 7, all 0 on the board. That
 is an honest result rather than a fault — none of them has an audio role
 open. The parser earns its place on Demant.
 
-**Still owed: Oticon Medical is a duplicate.** It shares
-`careers.demant.com/` with Demant and produces nothing. Its 10 jobs are
-already inside Demant's 271, so pointing it at its own `/go/` board
-would put the same rows on the board under two companies. Either delete
-the entry the way Audible was deleted, or accept the overlap
-deliberately.
+**Oticon Medical was deleted.** It shared `careers.demant.com/` with
+Demant and produced nothing, and its 10 jobs are already inside
+Demant's 271 — pointing it at its own `/go/` board would have put the
+same rows on the board under two companies. Removed from the seed and
+from the database (11 jobs, 1 scrape log), the same way Audible was.
+The seed is now 1,386 entries.
