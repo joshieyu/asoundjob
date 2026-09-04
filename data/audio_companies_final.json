@@ -1398,7 +1398,7 @@
   {
     "name": "Beltone",
     "careers_url": "https://gn.wd3.myworkdayjobs.com/beltonecareers",
-    "category": "Hearing Aid & Hearing Tech",
+    "category": "Audio Retailers & Distributors",
     "verified": true,
     "source": "auto",
     "scrape_method": "http"
@@ -5357,7 +5357,7 @@
   },
   {
     "name": "L-Acoustics",
-    "careers_url": "https://www.l-acoustics.com/",
+    "careers_url": "https://lgroup.wd3.myworkdayjobs.com/en-US/L-Acoustics_Group_career",
     "category": "Professional Audio & Live Sound",
     "verified": true,
     "source": "auto",
