@@ -3446,3 +3446,75 @@ justification for keeping it — content, not recall. The effect on the other
 ~890 http companies is unmeasured until the next full cycle; watch for
 non-audio roles gaining board access on boilerplate audio words, which is the
 ElevenLabs failure mode generalised.
+
+### The three precision levers, and why they must be measured together
+
+Three separate findings this session all landed on the same small piece of
+scoring machinery. Each is a board-wide change; none was made. **They pull in
+opposite directions, so measuring one at a time gives a misleading answer —
+the collateral of widening one is partly cancelled by the recall of another.**
+Anyone picking this up should measure all three against the live board in one
+pass, not sequentially.
+
+None of these are new ideas. All three have prior history in this file, and
+two already carry rules that must be honoured.
+
+**1. `CORPORATE_ROLE` does not cover senior and logistics titles.** Found on
+L-Acoustics, where 9 of 22 board rows are *CEO EMEA*, *Credit Manager Group*,
+*Transport & Customs Coordinator*, *Warehousing & Distribution Team Leader*
+and *Director of Sales*. `CORPORATE_ROLE` matches none of them — not even
+"CEO".
+
+This is the same lever extended earlier in this file with credit collections,
+trade compliance, customs broker and buyer. **That work set a bar and it still
+applies: measure the collateral against the live board before committing, and
+the bar is zero legitimate losses.** Terms were deliberately left out then
+where the role was arguable rather than clearly non-audio — demand generation
+and event management would each have cost real listings. "Director of Sales"
+is exactly that kind of arguable term, and three Demand Generation roles
+already sit on the board under `sales_marketing_cs`.
+
+**2. The `classify_categories` cutoff of 5.** ElevenLabs' *Research Engineer*
+scores `audio_research` at **4** on a 4,424-character description and so gets
+no category, no +35, and stays off the board at 30 against a threshold of 45.
+
+The cutoff has come up twice before — a fixture that scores `audiology_hearing`
+at 3, and the weak-title-keyword problem that **title anchoring (commit
+cbe38fc) already partly solved** by scoring a weak title keyword at 6 when the
+title also names audio. **Title anchoring cannot reach the ElevenLabs case:
+"Research Engineer" contains no audio word at all**, so there is nothing for
+`AUDIO_ANCHOR` to anchor to. The standing warning applies — moving the cutoff
+touches the shared scoring curve and ripples through every category.
+
+**3. The `COMPANY_CATEGORY_FALLBACK` and `FALLBACK_ROLE_CATEGORIES` gaps.**
+`Voice & Speech Technology` has no fallback entry at all, and 12 other
+categories are likewise absent (`AI/ML Audio`, `Audio Testing & Measurement`,
+`Acoustic Consulting & Engineering`, `Gaming, VR & Immersive Audio`,
+`Recording Studios & Post Houses` among them). Separately, no
+`FALLBACK_ROLE_CATEGORIES` pattern matches "Research Engineer" or "Data
+Scientist".
+
+**Read the REJECTED note above before touching the second half of this.**
+Extending `FALLBACK_ROLE_CATEGORIES` with `systems`, `process`, `metrology`
+and `npi` was measured in commit 89ddf50 and rejected: it put six rows on the
+board, four of them junk, and missed the case that motivated it. A
+`research`/`scientist` pattern is a different term set, but it is the same
+move and deserves the same scepticism. Adding the missing
+`COMPANY_CATEGORY_FALLBACK` entries is the safer half — that is precisely what
+made `Audio Semiconductors` work for Cirrus Logic, taking it from a forecast
+39 rows to an actual 56.
+
+**Why they interact.** Lever 1 removes rows; levers 2 and 3 add them. The
+ElevenLabs evidence shows both effects at once on a single company: the
+enrichment pass added 11 rows, of which roughly 9 were *Deployment Strategist*
+and *Revenue Strategy & Operations* — junk that lever 1 would remove — while
+the four research roles that levers 2 and 3 target stayed off. Judging lever 2
+or 3 by board-count delta alone, without lever 1 in place, will score junk as
+success.
+
+That failure mode is already documented earlier in this file, at Shure, Suno
+and Bose: non-audio roles reaching the board on long descriptions saturated
+with audio words at a native-scope company. **The enrichment pass generalises
+that risk to every `http` company**, because it now supplies exactly those long
+boilerplate-heavy descriptions where there were none. Its board-wide effect is
+unmeasured until the next full cycle.
