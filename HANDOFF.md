@@ -2573,6 +2573,57 @@ Ortofon's careers URL is `ortofon.com/about-us/career`, not an Eightfold board
 at all. Same stale-identity class as the Flowkey and TrueFire rows in item 11.
 Harmless beyond a wasted attempt per cycle.
 
+## Session update (2026-09-04, later) — two detectors, and what the failures really are
+
+### detect_nonjob_rows (commit ce4c3e1)
+
+The counterpart to `detect_truncation`, for the other way a scrape lies. The
+generic extractor grabs "Careers" off a page, stores it as a job, and the run
+reports success. Live: **230 of the 300 non-contributing companies**, 149 of
+them native scope. Beyerdynamic stores "Jobs", Biamp "Open Positions", Bungie
+"Browse Careers", Rode Microphones "Preferences".
+
+Two tiers, because one was not enough. `chrome_rows` is a plainly navigational
+or boilerplate row. `no_job_shaped_row` is a company where nothing stored
+carries a role noun at all — the weaker signal, and the one that catches what no
+phrase list would: Anker's product menu, Acoustic Energy's "Download our
+brochure", a press-release headline at Broadcast Electronics. It took the count
+from 153 to 230, and the report names the tier so the weaker one is read with
+more suspicion.
+
+The negative control is what keeps it honest. "Wild Card", "PRODUCTION PLANNER"
+and "Audiologist MOLU" are real board titles, so every generalizing rule is
+gated on the absence of a role noun.
+
+### The failures and the junk rows are one defect (commit c7e4f47)
+
+**296 of the 299 hard failures carry the same error**, `page loaded but no job
+link found`. Not 403s, not 404s, not timeouts — the pages load. So the 299
+failures and the 230 junk-row companies are the same extractor limitation
+surfacing two ways, a combined pool of **529**.
+
+By what the seeded URL points at:
+
+- 49 bare homepages — obvious seed errors (L-Acoustics, KEF, CEVA, dCS, Naim
+  are all seeded to a homepage)
+- 85 real job-board hosts that still fail — mostly custom JS portals
+- 395 other pages on the company's own site — the classic wrong-URL case
+- 8 on an ATS platform with no parser
+
+**No systemic fix is hiding there.** Only 11 pool companies sit on a
+recognizable ATS host at all, confirming the handoff's earlier finding that the
+remaining platforms are one or two companies apiece. The one exception worth
+acting on: **Knowles Corporation** is on `myjobs.adp.com/knowles/cx` and the ADP
+parser's `can_handle` does not claim it. Knowles makes the MEMS microphones and
+balanced-armature drivers inside most hearing aids and earbuds — as close to a
+pure transducer-engineering employer as the seed contains.
+
+`TRIAGE.md` ranks the pool by judgement rather than row counts: R&D depth,
+hiring cadence, and whether the name matters to a young audio professional.
+Automotive OEMs (34) and game studios (23) are deliberately down-weighted
+against their size, because game audio hiring is sound design and the owner
+ruled that out of scope.
+
 ## Next steps, in priority order (as of 2026-08-31)
 
 0b. **Run the API with reload, and watch both packages.** Without `--reload`
