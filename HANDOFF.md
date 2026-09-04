@@ -2643,11 +2643,17 @@ Scoping drops 4 engineering roles to avoid 37 clinical ones, which is backwards
 against recall-over-precision, and the clinical postings are
 `audiology_hearing`, an existing category rather than junk.
 
-### The open gap: an UltiPro parser is worth +32 board rows
+### The UltiPro parser — BUILT, and it paid exactly as forecast (commit 6e021be)
 
-**The DOM scrape reads 51 of the 90 jobs the board's own API returns**, so 24
-of the measured 56 board rows arrived. The board paginates and Playwright takes
-the first page.
+The DOM scrape read 51 of the 90 jobs the board's own API returns, so 24 of the
+measured 56 board rows arrived. The board paginates and Playwright takes the
+first page.
+
+**Built and shipped: Starkey 24 -> 56 board rows, 90 fetched, board total
+634 -> 666.** The forecast was +32 and the delivery was +32. Every row carries a
+location and a description. `fetch.py` gained `post_json` (there was no POST
+helper) and `detect_truncation` imports the new caps, so ultipro is in its
+table; it flags 0 companies after the change.
 
 The API needs no auth and returns all 90 in one call:
 
@@ -2661,12 +2667,17 @@ Fields per opportunity: `Id`, `Title`, `RequisitionNumber`, `JobCategoryName`,
 `Locations`, `PostedDate`, `BriefDescription`. `QueryString` works as a scoping
 query if one is ever wanted.
 
-**Unlike the myjobs.adp.com surface rejected above, this one pays.** +32 board
-rows from a single company is a larger return than the whole Google multi-query
-sweep (+5) or Apple's seeded queries (+7). Only two seed companies are on
-UltiPro — Starkey and Canoo, and Canoo is automotive with 0 board rows — so the
-justification is Starkey alone. Build it for the row count, not for the
-platform coverage.
+**Unlike the myjobs.adp.com surface rejected above, this one paid.** +32 board
+rows from a single company beat the whole Google multi-query sweep (+5) and
+Apple's seeded queries (+7). Only two seed companies are on UltiPro — Starkey
+and Canoo, and Canoo is automotive with 0 board rows — so the justification was
+Starkey alone. That is the right way to size a parser: by the rows it returns,
+not by the platform it covers.
+
+There is no detail pass, deliberately. `LoadOpportunity` is a 404 and the HTML
+detail page carries no JSON-LD, so `BriefDescription` (400-600 chars) is the
+only description available. The +32 measurement was made with it, so the
+shipped parser reproduces the number rather than estimating it.
 
 ## DO NOT REPEAT: Knowles and the myjobs.adp.com parser (2026-09-04, commit 7942328)
 
