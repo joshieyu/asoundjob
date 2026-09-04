@@ -51,6 +51,18 @@ python -m scraper.backfill_relevance
 # What would this careers URL give the board? (read-only, writes nothing)
 python -m scraper.check_url "https://job-boards.greenhouse.io/acme" --name "Acme"
 
+# Which scrapes stored navigation chrome instead of jobs? (read-only, no network)
+python -m scraper.detect_nonjob_rows
+
+# Which scrapes stopped at their parser's page cap? (read-only, no network)
+python -m scraper.detect_truncation
+
+# Which admin edits have not been applied to the seed? (read-only, no network)
+python -m scraper.export_seed_edits --output ../seed_export.json --report ../seed_export.md
+
+# Which seeded careers URLs are not careers pages? (read-only, no network)
+python -m scraper.audit_seed_urls
+
 # Tests + lint + typecheck
 python -m unittest discover -s tests && ruff check . && mypy scraper
 
@@ -2273,7 +2285,7 @@ and no flag on the board.
 **The "Open jobs" column never meant what it looked like.** It counted every
 active row the scraper holds, junk included, and readers of that column —
 including me, in this session — read it as board presence. Live numbers:
-5,057 active rows against 547 on the board, and **319 of the 401 companies
+5,253 active rows against 666 on the board, and **316 of the 401 companies
 with any rows contribute nothing to the board at all**. Niantic held 180 rows
 and put 0 on the board; NVIDIA's 6 were "Find Your Next Job", "Applicant
 Privacy Policy", "How We Hire" and three more of the same, because its seed
@@ -2750,17 +2762,31 @@ Check the board with `check_url` before spending effort on the seed.
    | Harman | 16 | 26 |
    | contributing companies | 80 | 82 |
 
-   **The board is at 547 now, not 535.** Google, Harman and Apple were
-   re-scraped individually after that cycle — Google and Harman for the query
-   identity fix, Apple for its seeded queries — so their rows are newer than
-   everyone else's and their counts moved after the table above.
+   **The board is at 666 now, not 535.** Six companies have been re-scraped
+   individually since that cycle, so their rows are much newer than everyone
+   else's and the table above is history, not current state:
 
-   Three seed edits landed after that cycle and are **all synced** into the
-   database: Google's `?q=dsp`, Apple's `?search=speech` and
-   `?search=acoustic`, and 23 new `open_application` flags. A `--company`
-   run syncs the whole seed first, so no separate load is owed.
+   | Company | Board rows | Why |
+   |---|---|---|
+   | Google, Harman | 16, 26 | query identity fix |
+   | Apple | 76 | seeded `?search=` queries |
+   | Qualcomm | 1 -> 50 | seeded `?query=audio` + `?query=dsp` |
+   | Infineon | 0 -> 8 | seeded audio + dsp + acoustic |
+   | Twilio Voice | 14 -> 19 | Eightfold cap raise alone |
+   | Starkey | 0 -> 56 | UltiPro board URL + the new parser |
 
-   Nothing is owed. The next full cycle is routine, not a catch-up.
+   Live as of 2026-09-04: **666 board rows, 5,253 active, 85 contributing
+   companies, 571 board rows with a country, 143 uncategorized.**
+
+   Six seed edits are **all synced** into the database: Google's `?q=dsp`,
+   Apple's `?search=speech` and `?search=acoustic`, 23 `open_application`
+   flags, Qualcomm's two queries, Infineon's three, and Starkey's UltiPro
+   URL. A `--company` run syncs the whole seed first, so no separate load is
+   owed.
+
+   Nothing is owed. The next full cycle is routine, not a catch-up — but it
+   will re-scrape the other 720 companies against code that has changed a
+   lot today, so expect movement beyond these six.
 
 
 1. **Company case studies — what the owner is doing next.** The owner works by
