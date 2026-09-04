@@ -2210,9 +2210,9 @@
   },
   {
     "name": "Cirrus Logic",
-    "careers_url": "https://careers.cirrus.com",
+    "careers_url": "https://jobs.eu.lever.co/cirrus",
     "category": "Consumer Electronics & Tech",
-    "verified": false,
+    "verified": true,
     "source": "auto",
     "scrape_method": "http"
   },
