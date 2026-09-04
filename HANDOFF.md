@@ -2624,6 +2624,50 @@ Automotive OEMs (34) and game studios (23) are deliberately down-weighted
 against their size, because game audio hiring is sound design and the owner
 ruled that out of scope.
 
+## Starkey landed, and an UltiPro parser is worth building (2026-09-04, commit 3b9c7a9)
+
+The owner found Starkey's real board:
+`recruiting2.ultipro.com/STA1003STARK/JobBoard/aa9d7813-.../?q=&o=postedDateDesc`.
+The seed had `starkey.com/careers`, a marketing page that stored two rows of
+navigation. **Starkey 0 -> 24 board rows, board total 610 -> 634.** No parser
+was needed; the generic Playwright path reads the board.
+
+Measured before the edit, and the query trade-off went to recall:
+
+| seed | fetched | board | engineering roles |
+|---|---|---|---|
+| plain board | 90 | 56 | 19 |
+| `?q=engineer` | 21 | 16 | 15 |
+
+Scoping drops 4 engineering roles to avoid 37 clinical ones, which is backwards
+against recall-over-precision, and the clinical postings are
+`audiology_hearing`, an existing category rather than junk.
+
+### The open gap: an UltiPro parser is worth +32 board rows
+
+**The DOM scrape reads 51 of the 90 jobs the board's own API returns**, so 24
+of the measured 56 board rows arrived. The board paginates and Playwright takes
+the first page.
+
+The API needs no auth and returns all 90 in one call:
+
+```
+POST https://recruiting2.ultipro.com/<TENANT>/JobBoard/<board-uuid>/JobBoardView/LoadSearchResults
+body: {"opportunitySearch":{"Top":200,"Skip":0,"QueryString":"",
+        "OrderBy":[{"Value":"postedDateDesc"}],"Filters":[]}}
+```
+
+Fields per opportunity: `Id`, `Title`, `RequisitionNumber`, `JobCategoryName`,
+`Locations`, `PostedDate`, `BriefDescription`. `QueryString` works as a scoping
+query if one is ever wanted.
+
+**Unlike the myjobs.adp.com surface rejected above, this one pays.** +32 board
+rows from a single company is a larger return than the whole Google multi-query
+sweep (+5) or Apple's seeded queries (+7). Only two seed companies are on
+UltiPro — Starkey and Canoo, and Canoo is automotive with 0 board rows — so the
+justification is Starkey alone. Build it for the row count, not for the
+platform coverage.
+
 ## DO NOT REPEAT: Knowles and the myjobs.adp.com parser (2026-09-04, commit 7942328)
 
 Knowles Corporation was the top pick in `TRIAGE.md` on the reasoning that it
