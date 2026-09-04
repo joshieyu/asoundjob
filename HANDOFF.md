@@ -2455,6 +2455,99 @@ export after deleting anything.
 and `npm run build` succeeds. Not verified in a browser: the admin pages need a
 login, and entering the password is not something this session does.
 
+## Session update (2026-09-04) — the page cap was truncating silently
+
+Asked whether the setup actually captures the jobs at big companies. It does
+not, and the failure had no signal anywhere.
+
+### What was measured
+
+Three companies stopped at **exactly 120** in the last cycle, which is
+Eightfold's ceiling: `MAX_PAGES = 12` times ten positions per page. Asked
+Eightfold's own search API for the true counts:
+
+| | real openings | stored | board rows |
+|---|---|---|---|
+| Qualcomm | 1,957 | 120 (6%) | 1 |
+| Infineon | 1,355 | 120 (9%) | 0 |
+| Twilio Voice | 140 | 120 | 14 |
+| Dolby (already seeded) | 99 | 61 | 8 |
+
+The 120 Qualcomm rows we hold are an arbitrary slice — Oracle EBS Developer,
+Senior Manager of Finance, RISCV CPU RTL Engineer — yielding one board row.
+
+**Why nobody caught it.** The multi-query sweep of 2026-09-03 only examined the
+four boards that were *already* query-scoped and asked whether they deserved
+more queries. It never asked which unscoped boards need one. Qualcomm and
+Infineon were never in the candidate set.
+
+### detect_truncation (commit af096f6)
+
+```
+cd scraper && python -m scraper.detect_truncation
+```
+
+Read-only, no network. Compares each company's latest successful `jobs_found`
+against the cap for the parser that ran, importing the caps from the parser
+modules so they cannot drift. Reports board rows alongside and sorts worst
+waste first. Flags 3 companies today, all eightfold. A company that genuinely
+has cap-many openings looks the same from the log, so it is a proposal list.
+
+### Query yields, measured with the real parser and Normalizer
+
+Not `check_url` — a Company was constructed with `ats_type`/`ats_slug` as
+`main.py` does, and `MAX_PAGES`/`MAX_DETAIL_FETCHES` were raised for the
+measurement only.
+
+Qualcomm, greedy union over audio/dsp/acoustic/speech/voice/sound/signal
+processing — **51 board rows reachable in total**:
+
+| term | fetched | board | new |
+|---|---|---|---|
+| dsp | 200 (of 394) | 41 | +41 |
+| audio | 129 | 25 | +9 |
+| signal processing | 158 | 17 | +1 |
+
+acoustic, speech, voice and sound add **nothing** beyond those.
+
+Infineon — 8 reachable: audio +4, dsp +3, acoustic +1; speech, voice, sound and
+signal processing add nothing.
+
+### The judgment call on `dsp`, which is why this was not just applied
+
+`?query=audio` at Qualcomm is clean — all 25 rows are real audio work: Audio
+Systems Engineer, Speech & Audio Research Engineer, Engineer - Audio DSP, Linux
+Audio device drivers, Senior ASIC Design Engineer Low Power Audio AI Subsystems.
+
+`?query=dsp` adds 25 rows that `audio` does not reach, and they are dominated by
+**Hexagon NPU, modem and 5G silicon**: "NPU/AI Processor Synthesis Staff
+Engineer", "2026 Intern-Modem Firmware DSP Engineer", "Physical Design Engineer
+- DSP Team", "5G Signal Processing Systems Engineer". Same acronym, different
+field. That is a 5% dilution of a 548-row board from one company, and it has the
+shape of the experiments this document already rejected. Left to the owner.
+
+Infineon's `dsp` is milder but the same kind: 2 of its 3 are PHY digital design.
+`audio` + `acoustic` there is 5 clean rows (MEMS microphone, electro-acoustics,
+acoustic sensors).
+
+### Shipping this needs two cap changes, not one
+
+Qualcomm's audio query returns **129**, above the 120 ceiling, so seeding the
+query alone still truncates. `MAX_PAGES` must go to at least 14. And
+`MAX_DETAIL_FETCHES = 100` caps description enrichment, so rows past the 100th
+would score without a description — the measurement above raised both. Raising
+`MAX_PAGES` without `MAX_DETAIL_FETCHES` will under-deliver against these
+numbers.
+
+### Noticed in passing, not fixed
+
+Only 4 of the 9 companies carrying `ats_type='eightfold'` actually scrape
+through that parser. Activision Blizzard, Astro Gaming, Clarion, John Deere and
+Ortofon fall through to http/playwright after the Eightfold attempt fails —
+Ortofon's careers URL is `ortofon.com/about-us/career`, not an Eightfold board
+at all. Same stale-identity class as the Flowkey and TrueFire rows in item 11.
+Harmless beyond a wasted attempt per cycle.
+
 ## Next steps, in priority order (as of 2026-08-31)
 
 0b. **Run the API with reload, and watch both packages.** Without `--reload`
