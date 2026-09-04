@@ -827,14 +827,6 @@
     "scrape_method": "http"
   },
   {
-    "name": "Audible",
-    "careers_url": "https://www.amazon.jobs/en/search?base_query=audible",
-    "category": "Streaming & Music Services",
-    "verified": true,
-    "source": "auto",
-    "scrape_method": "http"
-  },
-  {
     "name": "Audicus",
     "careers_url": "https://www.audicus.com/pages/careers",
     "category": "Hearing Aid & Hearing Tech",
