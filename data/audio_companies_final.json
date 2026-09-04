@@ -409,7 +409,11 @@
   },
   {
     "name": "Amazon",
-    "careers_url": "https://www.amazon.jobs/en/",
+    "careers_url": "https://www.amazon.jobs/en/search?base_query=audio",
+    "extra_careers_urls": [
+      "https://www.amazon.jobs/en/search?base_query=speech",
+      "https://www.amazon.jobs/en/search?base_query=signal+processing"
+    ],
     "category": "Consumer Electronics & Tech",
     "verified": true,
     "source": "auto",
@@ -824,7 +828,7 @@
   },
   {
     "name": "Audible",
-    "careers_url": "https://www.amazon.jobs/en/",
+    "careers_url": "https://www.amazon.jobs/en/search?base_query=audible",
     "category": "Streaming & Music Services",
     "verified": true,
     "source": "auto",
