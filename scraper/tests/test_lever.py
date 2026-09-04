@@ -1,9 +1,24 @@
 from __future__ import annotations
 
+import asyncio
 import unittest
 from datetime import date
+from unittest.mock import patch
 
-from scraper.scrapers.ats.lever import LeverScraper, parse_postings
+from scraper.scrapers.ats.lever import LeverScraper, api_url_for, parse_postings
+
+
+def make_company(url: str, ats_slug: str | None = None):
+    from scraper.models import Company
+
+    return Company(
+        id=1,
+        name="Test Co",
+        slug="test-co",
+        category="Audio Software",
+        careers_url=url,
+        ats_slug=ats_slug,
+    )
 
 LEVER_PAYLOAD = [
     {
@@ -83,6 +98,59 @@ class TestLeverParser(unittest.TestCase):
         self.assertIsNone(
             LeverScraper.extract_slug("https://example.com/careers")
         )
+
+    def test_extract_slug_eu(self) -> None:
+        self.assertEqual(
+            LeverScraper.extract_slug("https://jobs.eu.lever.co/cirrus"), "cirrus"
+        )
+
+    def test_can_handle_us_and_eu(self) -> None:
+        from scraper.config import load_settings
+
+        scraper = LeverScraper(load_settings())
+        self.assertTrue(scraper.can_handle(make_company("https://jobs.lever.co/envato-2")))
+        self.assertTrue(scraper.can_handle(make_company("https://jobs.eu.lever.co/cirrus")))
+        self.assertFalse(scraper.can_handle(make_company("https://example.com/careers")))
+
+
+class TestApiUrlFor(unittest.TestCase):
+    def test_eu_careers_url_routes_to_eu_host(self) -> None:
+        self.assertEqual(
+            api_url_for("https://jobs.eu.lever.co/cirrus", "cirrus"),
+            "https://api.eu.lever.co/v0/postings/cirrus?mode=json",
+        )
+
+    def test_us_careers_url_routes_to_us_host(self) -> None:
+        self.assertEqual(
+            api_url_for("https://jobs.lever.co/envato-2", "envato-2"),
+            "https://api.lever.co/v0/postings/envato-2?mode=json",
+        )
+
+    def test_non_matching_careers_url_falls_back_to_us_host(self) -> None:
+        self.assertEqual(
+            api_url_for("https://example.com/careers", "envato-2"),
+            "https://api.lever.co/v0/postings/envato-2?mode=json",
+        )
+
+
+class TestLeverFetchJobs(unittest.TestCase):
+    def setUp(self) -> None:
+        from scraper.config import load_settings
+
+        self.scraper = LeverScraper(load_settings())
+
+    def test_stored_ats_slug_with_eu_careers_url_still_routes_to_eu_host(self) -> None:
+        company = make_company("https://jobs.eu.lever.co/cirrus", ats_slug="cirrus")
+        seen_urls = []
+
+        def fake_fetch_json(url: str, settings: object):
+            seen_urls.append(url)
+            return []
+
+        with patch("scraper.scrapers.ats.lever.fetch_json", side_effect=fake_fetch_json):
+            asyncio.run(self.scraper.fetch_jobs(company))
+
+        self.assertEqual(seen_urls, ["https://api.eu.lever.co/v0/postings/cirrus?mode=json"])
 
 
 if __name__ == "__main__":

@@ -11,11 +11,19 @@ if TYPE_CHECKING:
     from scraper.models import Company
 
 URL_PATTERN = re.compile(
-    r"^https?://(?:[a-z0-9-]+\.)*jobs\.lever\.co/(?P<slug>[^/?#]+)",
+    r"^https?://(?:[a-z0-9-]{1,40}\.){0,4}jobs\.(?P<region>eu\.)?lever\.co/(?P<slug>[^/?#]{1,120})",
     re.IGNORECASE,
 )
 
 API_URL = "https://api.lever.co/v0/postings/{slug}?mode=json"
+EU_API_URL = "https://api.eu.lever.co/v0/postings/{slug}?mode=json"
+
+
+def api_url_for(careers_url: str, slug: str) -> str:
+    match = URL_PATTERN.match((careers_url or "").strip())
+    if match and match.group("region"):
+        return EU_API_URL.format(slug=slug)
+    return API_URL.format(slug=slug)
 
 
 class LeverScraper(BaseScraper):
@@ -35,9 +43,8 @@ class LeverScraper(BaseScraper):
         slug = company.ats_slug or self.extract_slug(company.careers_url or "")
         if not slug:
             raise ValueError(f"No lever slug in {company.careers_url}")
-        data = await asyncio.to_thread(
-            fetch_json, API_URL.format(slug=slug), self.settings
-        )
+        url = api_url_for(company.careers_url or "", slug)
+        data = await asyncio.to_thread(fetch_json, url, self.settings)
         return parse_postings(data)
 
 
