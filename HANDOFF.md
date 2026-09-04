@@ -2624,6 +2624,45 @@ Automotive OEMs (34) and game studios (23) are deliberately down-weighted
 against their size, because game audio hiring is sound design and the owner
 ruled that out of scope.
 
+## DO NOT REPEAT: Knowles and the myjobs.adp.com parser (2026-09-04, commit 7942328)
+
+Knowles Corporation was the top pick in `TRIAGE.md` on the reasoning that it
+makes the MEMS microphones and balanced-armature drivers inside most hearing
+aids and earbuds — as close to a pure transducer-engineering employer as the
+seed contains. **The reasoning was sound and the conclusion was wrong.**
+
+Its board returns 47 open roles and not one is audio: "Applications Engineer -
+Single Layer Capacitors", "Sr. Ceramic Process Engineer", "Microwave Regional
+Sales Manager", "IMPREG OPERATOR", "Welder". Everything open is on the
+precision-components side. Scored through the real Normalizer at **native**
+scope — deliberately more permissive than the **partial** scope Knowles
+actually carries — the board yield is **0 of 47**.
+
+It was also not a `can_handle` gap, as the triage first described it.
+`myjobs.adp.com` is a different ADP product from `workforcenow.adp.com`: a
+client alias instead of a cid, an Angular front end behind a privacy gate, and
+an orgoid **header** rather than a query parameter. The API, recorded so nobody
+re-derives it:
+
+```
+GET https://myjobs.adp.com/public/staffing/v1/career-site/<alias>
+    -> .id (use as cid) and .orgoid
+GET https://myjobs.adp.com/public/staffing/v1/job-requisitions?cid=<id>&$top=100&$skip=0
+    header: orgoid: <orgoid>
+```
+
+**Do not build the parser.** Only two seed companies are on the surface. Knowles
+yields nothing, and Switchcraft is worse: its seed URL is
+`myjobs.adp.com/heico/cx/job-listing?keyword=Switchcraft`, which is parent
+company HEICO's entire board of **279 aerospace requisitions**, with a keyword
+the API ignores and not one title mentioning Switchcraft. Parsing it would
+import 279 machinist and inspector jobs under Switchcraft's name. Switchcraft's
+seed URL needs correcting or the company needs `verified: false`.
+
+This is the counterexample to keep in mind while working `TRIAGE.md`: brand
+prestige is a hypothesis about a company's job board, not a measurement of it.
+Check the board with `check_url` before spending effort on the seed.
+
 ## Next steps, in priority order (as of 2026-08-31)
 
 0b. **Run the API with reload, and watch both packages.** Without `--reload`
