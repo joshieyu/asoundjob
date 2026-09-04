@@ -19,8 +19,8 @@ URL_PATTERN = re.compile(
 SEARCH_PATH = "/api/pcsx/search"
 DETAIL_PATH = "/api/pcsx/position_details"
 
-MAX_PAGES = 12
-MAX_DETAIL_FETCHES = 100
+MAX_PAGES = 20
+MAX_DETAIL_FETCHES = 200
 ENRICHMENT_BUDGET_FRACTION = 0.85
 
 SPECIAL_SECOND_LEVEL_LABELS = frozenset({"co", "com", "net", "org", "ac", "gov", "edu"})
