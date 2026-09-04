@@ -22,6 +22,7 @@ from scraper.scrapers.ats.lever import LeverScraper
 from scraper.scrapers.ats.pinpoint import PinpointScraper
 from scraper.scrapers.ats.recruitee import RecruiteeScraper
 from scraper.scrapers.ats.smartrecruiters import SmartRecruitersScraper
+from scraper.scrapers.ats.ultipro import UltiproScraper
 from scraper.scrapers.ats.workable import WorkableScraper
 from scraper.scrapers.ats.workday import WorkdayScraper
 from scraper.scrapers.ats_discovery import discover
@@ -53,6 +54,7 @@ class ScrapePipeline:
         self.pinpoint = PinpointScraper(settings)
         self.icims = IcimsScraper(settings)
         self.adp = AdpScraper(settings)
+        self.ultipro = UltiproScraper(settings)
         self.http = HttpScraper(settings)
         self.playwright: PlaywrightScraper | None = None
         self.stealth: PlaywrightScraper | None = None
@@ -70,6 +72,7 @@ class ScrapePipeline:
             "pinpoint": self.pinpoint,
             "icims": self.icims,
             "adp": self.adp,
+            "ultipro": self.ultipro,
         }
 
     def _playwright_scraper(self) -> PlaywrightScraper:
@@ -227,6 +230,7 @@ class ScrapePipeline:
             self.pinpoint,
             self.icims,
             self.adp,
+            self.ultipro,
             self.apple,
             self.eightfold,
         )

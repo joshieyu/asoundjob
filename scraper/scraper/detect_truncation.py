@@ -18,6 +18,8 @@ from scraper.scrapers.ats.apple import PAGE_SIZE as APPLE_PAGE_SIZE
 from scraper.scrapers.ats.eightfold import MAX_PAGES as EIGHTFOLD_MAX_PAGES
 from scraper.scrapers.ats.icims import MAX_PAGES as ICIMS_MAX_PAGES
 from scraper.scrapers.ats.icims import PAGE_SIZE as ICIMS_PAGE_SIZE
+from scraper.scrapers.ats.ultipro import MAX_PAGES as ULTIPRO_MAX_PAGES
+from scraper.scrapers.ats.ultipro import PAGE_SIZE as ULTIPRO_PAGE_SIZE
 
 EIGHTFOLD_SEARCH_RESPONSE_PAGE_SIZE = 10
 
@@ -26,6 +28,7 @@ CAP_BY_SCRAPE_METHOD: dict = {
     "apple": APPLE_MAX_PAGES * APPLE_PAGE_SIZE,
     "icims": ICIMS_MAX_PAGES * ICIMS_PAGE_SIZE,
     "adp": ADP_MAX_PAGES * ADP_PAGE_SIZE,
+    "ultipro": ULTIPRO_MAX_PAGES * ULTIPRO_PAGE_SIZE,
 }
 
 SCOPING_QUERY_KEYS = frozenset({"q", "query", "search", "keyword"})

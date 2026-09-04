@@ -43,6 +43,20 @@ def fetch_json(url: str, settings: Settings, timeout: float | None = None) -> An
         raise FetchError(f"Invalid JSON from {url}: {exc}") from exc
 
 
+def post_json(
+    url: str, payload: Any, settings: Settings, timeout: float | None = None
+) -> Any:
+    response = _get_session(settings).post(
+        url, json=payload, timeout=timeout or settings.request_timeout
+    )
+    if response.status_code != 200:
+        raise FetchError(f"HTTP {response.status_code} for {url}")
+    try:
+        return json.loads(response.text)
+    except json.JSONDecodeError as exc:
+        raise FetchError(f"Invalid JSON from {url}: {exc}") from exc
+
+
 def fetch_html(url: str, settings: Settings, timeout: float | None = None) -> str:
     response = _get_session(settings).get(
         url, timeout=timeout or settings.request_timeout

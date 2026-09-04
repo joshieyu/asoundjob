@@ -14,6 +14,8 @@ from scraper.detect_truncation import (
     select_scrape_metrics,
 )
 from scraper.models import Base, Company, Job, ScrapeLog
+from scraper.scrapers.ats.ultipro import MAX_PAGES as ULTIPRO_MAX_PAGES
+from scraper.scrapers.ats.ultipro import PAGE_SIZE as ULTIPRO_PAGE_SIZE
 
 EIGHTFOLD_CAP = CAP_BY_SCRAPE_METHOD["eightfold"]
 
@@ -50,6 +52,14 @@ class TestEvaluateThreshold(unittest.TestCase):
         row = make_metrics(scrape_method="http", jobs_found=10_000)
         findings = evaluate([row])
         self.assertEqual(findings, [])
+
+
+class TestUltiproCap(unittest.TestCase):
+    def test_ultipro_cap_is_max_pages_times_page_size(self) -> None:
+        self.assertIn("ultipro", CAP_BY_SCRAPE_METHOD)
+        self.assertEqual(
+            CAP_BY_SCRAPE_METHOD["ultipro"], ULTIPRO_MAX_PAGES * ULTIPRO_PAGE_SIZE
+        )
 
 
 class TestEvaluateSortOrder(unittest.TestCase):
