@@ -20,6 +20,8 @@ from scraper.scrapers.ats.apple import PAGE_SIZE as APPLE_PAGE_SIZE
 from scraper.scrapers.ats.eightfold import MAX_PAGES as EIGHTFOLD_MAX_PAGES
 from scraper.scrapers.ats.icims import MAX_PAGES as ICIMS_MAX_PAGES
 from scraper.scrapers.ats.icims import PAGE_SIZE as ICIMS_PAGE_SIZE
+from scraper.scrapers.ats.successfactors import MAX_PAGES as SUCCESSFACTORS_MAX_PAGES
+from scraper.scrapers.ats.successfactors import PAGE_SIZE as SUCCESSFACTORS_PAGE_SIZE
 from scraper.scrapers.ats.ultipro import MAX_PAGES as ULTIPRO_MAX_PAGES
 from scraper.scrapers.ats.ultipro import PAGE_SIZE as ULTIPRO_PAGE_SIZE
 from scraper.scrapers.ats.workday import MAX_PAGES as WORKDAY_MAX_PAGES
@@ -33,6 +35,7 @@ CAP_BY_SCRAPE_METHOD: dict = {
     "icims": ICIMS_MAX_PAGES * ICIMS_PAGE_SIZE,
     "adp": ADP_MAX_PAGES * ADP_PAGE_SIZE,
     "ultipro": ULTIPRO_MAX_PAGES * ULTIPRO_PAGE_SIZE,
+    "successfactors": SUCCESSFACTORS_MAX_PAGES * SUCCESSFACTORS_PAGE_SIZE,
     "workday": WORKDAY_MAX_PAGES * WORKDAY_PAGE_SIZE,
     "amazon": AMAZON_MAX_PAGES * AMAZON_PAGE_SIZE,
 }

@@ -23,6 +23,7 @@ from scraper.scrapers.ats.lever import LeverScraper
 from scraper.scrapers.ats.pinpoint import PinpointScraper
 from scraper.scrapers.ats.recruitee import RecruiteeScraper
 from scraper.scrapers.ats.smartrecruiters import SmartRecruitersScraper
+from scraper.scrapers.ats.successfactors import SuccessFactorsScraper
 from scraper.scrapers.ats.ultipro import UltiproScraper
 from scraper.scrapers.ats.workable import WorkableScraper
 from scraper.scrapers.ats.workday import WorkdayScraper
@@ -56,6 +57,7 @@ class ScrapePipeline:
         self.icims = IcimsScraper(settings)
         self.adp = AdpScraper(settings)
         self.ultipro = UltiproScraper(settings)
+        self.successfactors = SuccessFactorsScraper(settings)
         self.amazon = AmazonScraper(settings)
         self.http = HttpScraper(settings)
         self.playwright: PlaywrightScraper | None = None
@@ -75,6 +77,7 @@ class ScrapePipeline:
             "icims": self.icims,
             "adp": self.adp,
             "ultipro": self.ultipro,
+            "successfactors": self.successfactors,
             "amazon": self.amazon,
         }
 
@@ -237,6 +240,7 @@ class ScrapePipeline:
             self.amazon,
             self.apple,
             self.eightfold,
+            self.successfactors,
         )
         for ats in ats_scrapers:
             if ats.can_handle(company):
