@@ -2285,7 +2285,7 @@ and no flag on the board.
 **The "Open jobs" column never meant what it looked like.** It counted every
 active row the scraper holds, junk included, and readers of that column —
 including me, in this session — read it as board presence. Live numbers:
-7,674 active rows against 846 on the board, and **313 of the 403 companies
+8,227 active rows against 906 on the board, and **312 of the 404 companies
 with any rows contribute nothing to the board at all**. Niantic held 180 rows
 and put 0 on the board; NVIDIA's 6 were "Find Your Next Job", "Applicant
 Privacy Policy", "How We Hire" and three more of the same, because its seed
@@ -2779,9 +2779,10 @@ Check the board with `check_url` before spending effort on the seed.
    | L-Acoustics | 0 -> 22 | Workday board replaced the homepage |
    | Analog Devices | 0 -> 4 | Workday board + the pagination fix |
    | 8 more Workday cos | see below | the 40-job truncation fix |
+   | Amazon | 0 -> 59 | new amazon.jobs parser + seeded queries |
 
-   Live as of 2026-09-04: **846 board rows, 7,674 active, 90 contributing
-   companies, 171 uncategorized.**
+   Live as of 2026-09-04: **906 board rows, 8,227 active, 92 contributing
+   companies, 199 uncategorized.**
 
    Active rows jumped from 5,363 to 7,674 in one session because the Workday
    pagination fix unpinned nine boards at once. Most of that is not board
@@ -3521,3 +3522,60 @@ with audio words at a native-scope company. **The enrichment pass generalises
 that risk to every `http` company**, because it now supplies exactly those long
 boilerplate-heavy descriptions where there were none. Its board-wide effect is
 unmeasured until the next full cycle.
+
+### Amazon: a homepage seed, a duplicate, and a query that means the wrong thing (commits 546dfb9, 65a7115)
+
+Amazon **and Audible were seeded with the same URL**, `https://www.amazon.jobs/en/` — the
+homepage. Between them they held 3 jobs and put 0 on the board, while
+audio roles were live on the site the whole time.
+
+amazon.jobs exposes a clean public JSON API:
+
+```
+GET https://www.amazon.jobs/en/search.json?base_query=audio&result_limit=100&offset=0
+    -> {"error": null, "hits": 351, "jobs": [...]}
+```
+
+`result_limit=100` is accepted, offset pagination behaves, and **`hits`
+is stable across pages** — the opposite of Workday, though the parser
+latches it from the first page that reports one regardless. The list
+response already carries `description`, `basic_qualifications` and
+`preferred_qualifications`, so there is no detail pass.
+
+Because the search term is read from the seed URL's `base_query`, the
+established multi-query seeding pattern works. Measured marginal board
+yield before seeding anything:
+
+| Query | Fetched | Board | New board rows |
+|---|---:|---:|---:|
+| audio | 351 | 54 | +54 |
+| speech | 111 | 7 | +2 |
+| acoustic | 16 | 5 | **+0** |
+| signal processing | 46 | 8 | +3 |
+
+`acoustic` was dropped: its 16 results are a subset of `audio`'s.
+Amazon is seeded with `audio` plus `speech` and `signal processing`,
+and delivered exactly the forecast **59 rows** — 444 jobs fetched in 8
+seconds.
+
+**`dsp` is a trap at Amazon, and this generalises.** It returns 370
+hits and not one is signal processing: at Amazon, DSP means *Delivery
+Service Partner* and *Demand-Side Platform*. This repo seeds
+`?query=dsp` for Qualcomm and Infineon, where it works. **A scoping
+query is a company-specific measurement, never a reusable recipe** —
+check what the term means at that employer before seeding it. One such
+row still slipped onto the board via the `audio` query: "Biz Tech
+Leader, Amazon DSP - India".
+
+**Audible is a thin result and worth revisiting.** Given
+`base_query=audible` it returns 112 jobs for **1 board row, and that
+row is an Alexa job, not an Audible one**. Its real openings are
+content, FinOps and coordinator roles, correctly filtered out. The
+seed is at least no longer a duplicate of Amazon's, but 112 rows of
+database noise for one misattributed board row is a poor trade; either
+find a narrower query or consider whether Audible earns its own entry.
+
+**Watch out:** the parser's `URL_PATTERN` matches the bare homepage
+too, and with no `base_query` the API returns the unfiltered board —
+capped by `MAX_PAGES * PAGE_SIZE` at 1000 rows. Any future amazon.jobs
+seed URL must carry a query.
