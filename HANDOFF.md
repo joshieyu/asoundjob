@@ -2513,7 +2513,30 @@ acoustic, speech, voice and sound add **nothing** beyond those.
 Infineon — 8 reachable: audio +4, dsp +3, acoustic +1; speech, voice, sound and
 signal processing add nothing.
 
-### The judgment call on `dsp`, which is why this was not just applied
+### APPLIED (commits e806fb1, eda8243, 1d1be5a) — the owner accepted `dsp`
+
+Caps raised to the values the measurement ran under: `MAX_PAGES` 12 -> 20 and
+`MAX_DETAIL_FETCHES` 100 -> 200. Seeded Qualcomm with audio + dsp and Infineon
+with audio + dsp + acoustic. Re-scraped all three; the forecast held:
+
+| | before | forecast | after |
+|---|---|---|---|
+| Qualcomm | 1 | 51 | **50** |
+| Infineon | 0 | 8 | **8** |
+| Twilio Voice | 14 | — | **19** |
+
+**Board 548 -> 610**, active 5,058 -> 5,165, contributing companies 82 -> 84.
+Twilio Voice needed no seed change — the cap raise alone reached its real 140.
+Infineon now fetches 33 rows instead of 120, so this is *less* work there.
+
+`detect_truncation` flags 0 companies after the change. It also had a defect the
+live run caught, now fixed (commit eda8243): a multi-URL company's jobs_found is
+a deduplicated union, so comparing it against a single-URL cap flagged Qualcomm
+on arithmetic. The cap is now per-URL times the URL count, which costs a
+documented blind spot — one query of several can truncate without the union
+reaching the total, and scrape_log stores no per-URL counts.
+
+### The judgment call on `dsp`, which the owner took
 
 `?query=audio` at Qualcomm is clean — all 25 rows are real audio work: Audio
 Systems Engineer, Speech & Audio Research Engineer, Engineer - Audio DSP, Linux
@@ -2523,8 +2546,10 @@ Audio device drivers, Senior ASIC Design Engineer Low Power Audio AI Subsystems.
 **Hexagon NPU, modem and 5G silicon**: "NPU/AI Processor Synthesis Staff
 Engineer", "2026 Intern-Modem Firmware DSP Engineer", "Physical Design Engineer
 - DSP Team", "5G Signal Processing Systems Engineer". Same acronym, different
-field. That is a 5% dilution of a 548-row board from one company, and it has the
-shape of the experiments this document already rejected. Left to the owner.
+field. **The owner accepted this.** Of Qualcomm's 50 board rows, 28 carry no
+audio word in the title and most are NPU, modem or 5G silicon. If the board ever
+feels diluted by Qualcomm, dropping `?query=dsp` from its
+`extra_careers_urls` returns it to 25 clean rows without touching anything else.
 
 Infineon's `dsp` is milder but the same kind: 2 of its 3 are PHY digital design.
 `audio` + `acoustic` there is 5 clean rows (MEMS microphone, electro-acoustics,
