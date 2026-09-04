@@ -24,6 +24,7 @@ HOST_WITH_DC_RE = re.compile(r"^[a-z0-9]{1,63}\.wd\d+$", re.IGNORECASE)
 
 LIST_BODY = {"appliedFacets": {}, "limit": 20, "offset": 0, "searchText": ""}
 PAGE_SIZE = 20
+MAX_PAGES = 50
 MAX_DETAIL_FETCHES = 100
 
 AUDIO_TITLE_RE = re.compile(
@@ -78,7 +79,8 @@ class WorkdayScraper(BaseScraper):
     async def _fetch_all(self, base: str, tenant: str, site: str) -> list[RawJob]:
         jobs: list[RawJob] = []
         offset = 0
-        while True:
+        total: int | None = None
+        for page_index in range(MAX_PAGES):
             body = {**LIST_BODY, "offset": offset}
             url = f"{base}/wday/cxs/{tenant}/{site}/jobs"
             data = await asyncio.to_thread(
@@ -91,10 +93,17 @@ class WorkdayScraper(BaseScraper):
                 parsed = _parse_list_item(item, base, site)
                 if parsed:
                     jobs.append(parsed)
-            total = data.get("total", 0)
+            page_total = data.get("total", 0)
+            if total is None and page_total:
+                total = page_total
             offset += len(postings)
-            if offset >= total or len(postings) < PAGE_SIZE:
+            if (total is not None and offset >= total) or len(postings) < PAGE_SIZE:
                 break
+            if page_index == MAX_PAGES - 1:
+                logger.info(
+                    "workday: hit MAX_PAGES=%d cap for %s/%s, jobs may be truncated",
+                    MAX_PAGES, tenant, site,
+                )
         return jobs
 
     async def _fetch_descriptions(
