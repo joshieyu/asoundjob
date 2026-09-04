@@ -2285,7 +2285,7 @@ and no flag on the board.
 **The "Open jobs" column never meant what it looked like.** It counted every
 active row the scraper holds, junk included, and readers of that column —
 including me, in this session — read it as board presence. Live numbers:
-8,227 active rows against 906 on the board, and **312 of the 404 companies
+8,455 active rows against 966 on the board, and **311 of the 403 companies
 with any rows contribute nothing to the board at all**. Niantic held 180 rows
 and put 0 on the board; NVIDIA's 6 were "Find Your Next Job", "Applicant
 Privacy Policy", "How We Hire" and three more of the same, because its seed
@@ -2780,9 +2780,10 @@ Check the board with `check_url` before spending effort on the seed.
    | Analog Devices | 0 -> 4 | Workday board + the pagination fix |
    | 8 more Workday cos | see below | the 40-job truncation fix |
    | Amazon | 0 -> 59 | new amazon.jobs parser + seeded queries |
+   | Demant | 0 -> 61 | new SuccessFactors parser + global search URL |
 
-   Live as of 2026-09-04: **906 board rows, 8,227 active, 92 contributing
-   companies, 199 uncategorized.**
+   Live as of 2026-09-04: **966 board rows, 8,455 active, 92 contributing
+   companies, 211 uncategorized.** Audible was deleted outright.
 
    Active rows jumped from 5,363 to 7,674 in one session because the Workday
    pagination fix unpinned nine boards at once. Most of that is not board
@@ -3579,3 +3580,70 @@ find a narrower query or consider whether Audible earns its own entry.
 too, and with no `base_query` the API returns the unfiltered board —
 capped by `MAX_PAGES * PAGE_SIZE` at 1000 rows. Any future amazon.jobs
 seed URL must carry a query.
+
+### Demant, and a SuccessFactors parser (commits fccaa2d, b200176)
+
+**Two wrong URLs before the right one.** The seed held
+`careers.demant.com/`, a marketing landing page that produced nothing.
+`careers.us.demant.com/jobs` looks like the answer and is not: it is the
+**US clinic hiring site** — 132 jobs, 108 of them board-eligible at
+native scope, and **not one an engineering role** (53 audiologists, 19
+front desk, 17 hearing care). Seeding it would have been Beltone again,
+at twice the size.
+
+The right URL is **`https://careers.demant.com/search/`**: the global
+board across all 21 brand sites, 271 jobs, **61 on the board**,
+including the **DSP Engineer (f/m/d)** in Middelfart at score 125, plus
+Electronic Engineer, Mechanical Engineer, Electronics Engineer and Test
+Sequence Developer. The per-brand `/go/` boards are filtered subsets —
+Oticon's own board shows 3 jobs, which is why surveying them one by one
+badly understates the company. **Do not go back to the per-brand boards
+or the US site.**
+
+`careers.us.demant.com` is a different platform again (iCIMS CareerSite,
+formerly Jibe, with a `/api/jobs` endpoint). Not worth building: the
+classic iCIMS parser already reports the migration cleanly — *"icims
+board for careers-demant has migrated off-platform"* — and the
+destination has no engineering roles.
+
+#### The parser, and why matching it is awkward
+
+SuccessFactors runs on customer vanity domains, so **there is no host
+marker**. The discriminator is that these sites serve search at the site
+ROOT. Verified: `careers.demant.com/search/`, `careers.belden.com/search/?q=`,
+`jobs.ferrari.com/search/` and `careers.acer.com/search/` are
+SuccessFactors; `tesla.com/careers/search/` and `careers.zoom.us/jobs/search`
+are not — they nest the path. The parser is registered **last** in the
+ATS tuple so every host-specific parser gets first refusal, and it was
+verified to claim exactly the 3 SuccessFactors URLs already in the seed
+and nothing else. `pipeline.py` breaks out of the ATS loop on a
+can_handle match, so a false match would block the fallback scrapers.
+
+**Two defects that the fixtures passed and the live site caught.** Both
+are worth remembering as a class:
+
+1. Each job tile is rendered more than once per page. The first live run
+   returned duplicate `external_id`s and died on
+   `UNIQUE constraint failed: jobs.company_id, jobs.external_id` with
+   **zero jobs stored**. Listing parse and pagination now both dedupe.
+2. Location and posted date live in `<meta content="...">` attributes,
+   not element text — and the date is Java's
+   `"Fri Aug 21 00:00:00 UTC 2026"`, which `parse_date` does not handle.
+   All 271 jobs came back with no location and no date while the tests
+   stayed green, because the fixture had been written from the
+   description's shape, which is a span. A fixture copied from the real
+   page now pins all three fields. Coverage after the fix: 150
+   descriptions and 150 dates (the MAX_DETAIL_FETCHES cap), 63 locations
+   — SuccessFactors omits `streetAddress` on some postings.
+
+**The other three SuccessFactors companies now scrape and contribute
+nothing:** Acer 27 jobs, Belden 109, Ferrari 7, all 0 on the board. That
+is an honest result rather than a fault — none of them has an audio role
+open. The parser earns its place on Demant.
+
+**Still owed: Oticon Medical is a duplicate.** It shares
+`careers.demant.com/` with Demant and produces nothing. Its 10 jobs are
+already inside Demant's 271, so pointing it at its own `/go/` board
+would put the same rows on the board under two companies. Either delete
+the entry the way Audible was deleted, or accept the overlap
+deliberately.
