@@ -12,6 +12,7 @@ from scraper.database import get_session_factory
 from scraper.deduplicator import merge_identity, seed_query_keys
 from scraper.models import Company
 from scraper.scrapers.ats.adp import AdpScraper
+from scraper.scrapers.ats.amazon import AmazonScraper
 from scraper.scrapers.ats.apple import AppleScraper
 from scraper.scrapers.ats.ashby import AshbyScraper
 from scraper.scrapers.ats.bamboohr import BambooHRScraper
@@ -55,6 +56,7 @@ class ScrapePipeline:
         self.icims = IcimsScraper(settings)
         self.adp = AdpScraper(settings)
         self.ultipro = UltiproScraper(settings)
+        self.amazon = AmazonScraper(settings)
         self.http = HttpScraper(settings)
         self.playwright: PlaywrightScraper | None = None
         self.stealth: PlaywrightScraper | None = None
@@ -73,6 +75,7 @@ class ScrapePipeline:
             "icims": self.icims,
             "adp": self.adp,
             "ultipro": self.ultipro,
+            "amazon": self.amazon,
         }
 
     def _playwright_scraper(self) -> PlaywrightScraper:
@@ -231,6 +234,7 @@ class ScrapePipeline:
             self.icims,
             self.adp,
             self.ultipro,
+            self.amazon,
             self.apple,
             self.eightfold,
         )

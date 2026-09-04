@@ -13,6 +13,8 @@ from scraper.database import dispose_engine, init_db, session_scope
 from scraper.models import Company, Job, ScrapeLog
 from scraper.scrapers.ats.adp import MAX_PAGES as ADP_MAX_PAGES
 from scraper.scrapers.ats.adp import PAGE_SIZE as ADP_PAGE_SIZE
+from scraper.scrapers.ats.amazon import MAX_PAGES as AMAZON_MAX_PAGES
+from scraper.scrapers.ats.amazon import PAGE_SIZE as AMAZON_PAGE_SIZE
 from scraper.scrapers.ats.apple import MAX_PAGES as APPLE_MAX_PAGES
 from scraper.scrapers.ats.apple import PAGE_SIZE as APPLE_PAGE_SIZE
 from scraper.scrapers.ats.eightfold import MAX_PAGES as EIGHTFOLD_MAX_PAGES
@@ -32,6 +34,7 @@ CAP_BY_SCRAPE_METHOD: dict = {
     "adp": ADP_MAX_PAGES * ADP_PAGE_SIZE,
     "ultipro": ULTIPRO_MAX_PAGES * ULTIPRO_PAGE_SIZE,
     "workday": WORKDAY_MAX_PAGES * WORKDAY_PAGE_SIZE,
+    "amazon": AMAZON_MAX_PAGES * AMAZON_PAGE_SIZE,
 }
 
 SCOPING_QUERY_KEYS = frozenset({"q", "query", "search", "keyword"})
