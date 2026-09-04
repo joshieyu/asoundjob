@@ -2285,7 +2285,7 @@ and no flag on the board.
 **The "Open jobs" column never meant what it looked like.** It counted every
 active row the scraper holds, junk included, and readers of that column —
 including me, in this session — read it as board presence. Live numbers:
-5,253 active rows against 666 on the board, and **316 of the 401 companies
+5,363 active rows against 722 on the board, and **316 of the 402 companies
 with any rows contribute nothing to the board at all**. Niantic held 180 rows
 and put 0 on the board; NVIDIA's 6 were "Find Your Next Job", "Applicant
 Privacy Policy", "How We Hire" and three more of the same, because its seed
@@ -2762,7 +2762,7 @@ Check the board with `check_url` before spending effort on the seed.
    | Harman | 16 | 26 |
    | contributing companies | 80 | 82 |
 
-   **The board is at 666 now, not 535.** Six companies have been re-scraped
+   **The board is at 722 now, not 535.** Seven companies have been re-scraped
    individually since that cycle, so their rows are much newer than everyone
    else's and the table above is history, not current state:
 
@@ -2774,15 +2774,17 @@ Check the board with `check_url` before spending effort on the seed.
    | Infineon | 0 -> 8 | seeded audio + dsp + acoustic |
    | Twilio Voice | 14 -> 19 | Eightfold cap raise alone |
    | Starkey | 0 -> 56 | UltiPro board URL + the new parser |
+   | Cirrus Logic | 0 -> 56 | EU Lever host + Audio Semiconductors scope |
 
-   Live as of 2026-09-04: **666 board rows, 5,253 active, 85 contributing
-   companies, 571 board rows with a country, 143 uncategorized.**
+   Live as of 2026-09-04: **722 board rows, 5,363 active, 86 contributing
+   companies, 143 uncategorized.**
 
-   Six seed edits are **all synced** into the database: Google's `?q=dsp`,
+   Seven seed edits are **all synced** into the database: Google's `?q=dsp`,
    Apple's `?search=speech` and `?search=acoustic`, 23 `open_application`
-   flags, Qualcomm's two queries, Infineon's three, and Starkey's UltiPro
-   URL. A `--company` run syncs the whole seed first, so no separate load is
-   owed.
+   flags, Qualcomm's two queries, Infineon's three, Starkey's UltiPro URL,
+   and the Cirrus Logic URL plus the four Audio Semiconductors
+   recategorizations. A `--company` run syncs the whole seed first, so no
+   separate load is owed.
 
    Nothing is owed. The next full cycle is routine, not a catch-up — but it
    will re-scrape the other 720 companies against code that has changed a
@@ -3215,3 +3217,81 @@ Regression set that must keep passing:
   Representative" (not audio_aiml); Suno "Songwriting Camp Manager" (not
   audio_dsp_embedded); Akai "Copywriter" (not music_technology); Razer
   "Computer Vision Intern" (not audio_aiml)
+
+### Cirrus Logic: the EU Lever host, and a category for audio silicon (commits f9fa0c8, 07e683f, 323c4df, 514089d)
+
+`careers.cirrus.com` **has no DNS record**. Cirrus Logic had never produced a
+scrape log or a single job row — not a parse failure, a dead hostname.
+`data/final_verification_report.md` had recorded it as `network_error` all
+along.
+
+The live board is `https://www.cirrus.com/careers/jobs`, a JS shell. Its
+bundle calls `https://api.eu.lever.co/v0/postings/cirrus?mode=json`. Cirrus is
+on **Lever**, which was already supported, but tenanted **only in Lever's EU
+region**: `jobs.lever.co/cirrus` and `api.lever.co/v0/postings/cirrus` both
+404. `URL_PATTERN` matched neither host, so it fell through ATS dispatch
+entirely.
+
+The payload is structurally identical across regions, so `parse_postings` is
+untouched. `api_url_for` derives the host from `careers_url` rather than from
+`ats_slug`, so a stored slug cannot route an EU company at the US host. Both
+quantifiers in `URL_PATTERN` were unbounded and are now bounded. Host-spoof
+checks (`jobs.lever.co.evil.com`, `evil.com/jobs.lever.co/...`) reject.
+
+**Only three seed entries use Lever at all** (Audinate, Envato, Getty Images),
+all US. Whether other companies hide an EU Lever board behind a corporate
+careers page is unmeasured — finding out means fetching each unverified
+company's page and grepping the bundle, which is how Cirrus was found.
+
+#### Scope was the larger half of the win
+
+The URL fix alone put 5 of 110 postings on the board. Cirrus sat in Consumer
+Electronics & Tech, whose `partial` scope adds 15 to the threshold when a
+title has no audio word — so `Analog Design Engineer` at a company that makes
+nothing but audio codecs was filtered out.
+
+I measured the whole audio-silicon cohort before recommending anything, and
+the result argued **against** the obvious fix of flipping the category:
+
+| Company | Active | Before | Native | Delta |
+|---|---:|---:|---:|---:|
+| Cirrus Logic | 110 | 5 | 39 | +34 |
+| Qualcomm | 294 | 50 | 89 | +39 |
+| Infineon | 33 | 8 | 15 | +7 |
+| Analog Devices | 40 | 0 | 2 | +2 |
+| ESS Technology | 4 | 1 | 2 | +1 |
+
+Qualcomm's +39 is mostly 5G NR gNodeB PHY firmware, WLAN/BT and Linux kernel
+work — `partial` is doing its job there. The fault was that **the seed had no
+category for audio silicon**, so pure-play and broad-line vendors shared one
+bucket.
+
+`Audio Semiconductors` is absent from `PARTIAL_SCOPE_CATEGORIES`, so
+`category_to_scope` resolves it to native. Its `COMPANY_CATEGORY_FALLBACK`
+entry allows hardware and software role kinds with no forced domain.
+
+**Cirrus landed at 56, not the forecast 39.** The fallback categories were the
+difference: having any `job_categories` adds 35 to the score, so IC design and
+firmware titles cleared the threshold that bare scope alone left them under.
+All 56 are IC design, mixed-signal layout, embedded firmware or validation;
+every one carries a job category, and no corporate, facilities, HR, IT or
+finance role got through. Board 666 -> 722.
+
+Members: Cirrus Logic, ESS Technology, Tempo Semiconductor, XMOS. CEVA (IP
+across audio/vision/5G), DSP Concepts (audio software, not silicon) and
+Knowles (MEMS transducers, and 0 of 47 measured last session) were considered
+and left alone. The broad-line vendors stay `partial` on purpose.
+
+#### Open: sound_design never fires
+
+`sound_design` is fully wired — it is in `data/audio_job_categories.json` and
+in `CATEGORY_KEYWORDS`, and the two vocabularies are 21/21 aligned — but it
+carries **zero of the 722 board rows**. The user asked to fix this and then
+deferred it to a later session. It is worth taking together with the 143
+uncategorized board rows, which is the same class of problem.
+
+Not audited: Syntiant, Vesper, Sonion, Aspinity and USound are **absent from
+the seed entirely**, found while scanning for audio-silicon companies.
+`scripts/validate_companies.py` still reports `open_application` as an
+"unexpected field" (108 warnings), which is stale in the validator, not in the
+seed.
