@@ -1482,11 +1482,12 @@
   },
   {
     "name": "Beyerdynamic",
-    "careers_url": "https://www.beyerdynamic.com/careers.html",
+    "careers_url": "https://north-america.beyerdynamic.com/company/jobs",
     "category": "Headphones & Personal Audio",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "http"
+    "open_application": true,
+    "source": "manual",
+    "scrape_method": "playwright"
   },
   {
     "name": "Beyma",
