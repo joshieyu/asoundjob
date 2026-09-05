@@ -2782,7 +2782,7 @@ Check the board with `check_url` before spending effort on the seed.
    | Amazon | 0 -> 59 | new amazon.jobs parser + seeded queries |
    | Demant | 0 -> 61 | new SuccessFactors parser + global search URL |
 
-   Live as of 2026-09-05: **974 board rows, 8,512 active, 95 contributing
+   Live as of 2026-09-05: **974 board rows, 8,508 active, 95 contributing
    companies, 213 uncategorized.** Audible and Oticon Medical were both
    deleted outright, seed and database; Sigma Connectivity and Delart were
    added; the seed is now 1,388 entries.
@@ -3974,3 +3974,57 @@ rather than a screenshot — the preview pane returned blank images.
 **Peerless and Vifa are both seeded to `https://www.dst.dk/da/OmDS/Job`**, which
 is Danmarks Statistik, the Danish statistics agency — not the transducer makers.
 Two wrong seed URLs sharing one wrong destination.
+**Resolved — see "Peerless became Tymphany" below.**
+
+## Session update (2026-09-05, later) — Peerless became Tymphany, and renaming is delete-plus-insert
+
+Commit `818400a`. Board unchanged at 974; active 8,512 -> 8,508; seed stays
+1,388 entries (one out, one in).
+
+**The wrong-URL pair is resolved.** Peerless and Vifa both pointed at
+`https://www.dst.dk/da/OmDS/Job` — Danmarks Statistik, the Danish statistics
+agency. Peerless was `verified: true`, so it scraped that site every cycle and
+held **four active rows of Danish government page furniture**: "Arbejdspladsen",
+"Hvordan søger du?", "Spørgsmål og find vej", "Ledige stillinger". All scored 0
+and none reached the board, which is exactly why nobody noticed.
+
+Peerless is a Tymphany brand, so the entry is now **Tymphany** at
+`https://tymphany.com/JoinUs.html`, `Transducer & Driver Manufacturers`,
+`open_application: true`, `source: manual`. That page has no listings at all —
+one "CLICK TO APPLY" button pointing at a contact form — so the scrape
+correctly logs `ScrapeError: page loaded but no job links found` and the
+company contributes through the open-applications section instead. It is the
+39th company there. **A failed scrape is the correct outcome for this entry;
+do not "fix" it.**
+
+Vifa keeps the `dst.dk` URL but is now `verified: false`, so its jobs deactivate
+and it stays off the board. **The URL is still wrong** — if Vifa is ever
+re-verified it will start collecting Danish statistics chrome exactly as
+Peerless did. Either give it a real Vifa page or delete the entry.
+
+### Renaming a seeded company is a delete plus an insert
+
+`company_loader` looks an existing company up by `lower(name)` first, falling
+back to slug only when the database row's `source` is already `manual`. A
+renamed seed entry therefore matches nothing, **inserts a second company, and
+leaves the original orphaned in the database with all its jobs**. So the
+Peerless row and its six jobs were removed the same way Audible and Oticon
+Medical were:
+
+```
+DELETE FROM jobs WHERE company_id=899;
+DELETE FROM scrape_log WHERE company_id=899;
+UPDATE job_submissions SET company_id=NULL WHERE company_id=899;
+DELETE FROM companies WHERE id=899;
+```
+
+This is the second time this trap has come up in one session — it is also why
+Adobe kept the name "Adobe Audition" when its board turned out to be all of
+Adobe. **Treat a name change in the seed as a migration, never an edit.**
+
+### A near-collision worth knowing about
+
+`Tympany` (`tympany.net`, `Hearing Aid & Hearing Tech`, unverified) was already
+in the seed and is a **different company** — tympanometry and hearing
+diagnostics, not transducers. `Tympany` and `Tymphany` differ by one letter and
+sort adjacently. Do not merge them.
