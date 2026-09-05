@@ -2782,8 +2782,8 @@ Check the board with `check_url` before spending effort on the seed.
    | Amazon | 0 -> 59 | new amazon.jobs parser + seeded queries |
    | Demant | 0 -> 61 | new SuccessFactors parser + global search URL |
 
-   Live as of 2026-09-04: **979 board rows, 8,491 active, 94 contributing
-   companies, 212 uncategorized.** Audible and Oticon Medical were both
+   Live as of 2026-09-04: **970 board rows, 8,506 active, 94 contributing
+   companies, 213 uncategorized.** Audible and Oticon Medical were both
    deleted outright, seed and database; Sigma Connectivity and Delart were
    added; the seed is now 1,388 entries.
 
@@ -3819,6 +3819,7 @@ of Adobe: 724 postings across the whole company. Options are to move it to
 partial scope, or to scope the seed URL to a query the way Google and Apple
 are scoped. **Recall over precision is the standing preference, but ~108 junk
 rows from one company is a different order of magnitude from a few strays.**
+**Resolved: both were done — see "Adobe scoped to a query" below.**
 
 **Brüel & Kjær's cap was never its real problem.** 93 real postings, but only
 2 titles in the whole board carry audio vocabulary and both are sales — Senior
@@ -3831,3 +3832,69 @@ A caution for anyone repeating this measurement: **B&K has three separate
 postings titled "Field Sales Engineer"** at different locations that score
 differently. Two samples of "the same" title disagreeing is duplicate
 postings, not a nondeterministic scorer.
+
+## Session update (2026-09-04, later) — Adobe scoped to a query, and Workday learned to use one
+
+Adobe is now `?q=audio` on a partial-scope category (commit `c9c64db`). Live:
+**55 active postings, 2 board rows**, down from 11 board rows off a truncated
+40. Board total 979 -> 970.
+
+**Workday ignored queries entirely until now.** `LIST_BODY` carried
+`"searchText": ""` and nothing ever wrote to it, so a query in a seed URL was
+silently dropped — the board would scrape in full and nobody would see a
+difference. `fetch_jobs` now reads `?q=` off the careers URL via a module-level
+`extract_query` and passes it into `_fetch_all`, which builds
+`{**LIST_BODY, "offset": offset, "searchText": query}`. `?q=` is Workday's own
+UI parameter, verified by loading
+`adobe.wd5.myworkdayjobs.com/external_experienced?q=audio` and seeing the search
+box prefilled. `_fetch_all` keeps `query: str = ""` as a default so the
+existing pagination tests still call it with three positional arguments.
+
+**No other Workday board is affected**: zero seed URLs and zero database rows
+with `ats_type='workday'` carry a `q` parameter, checked before the change.
+Any Workday company can now be query-scoped by editing its seed URL alone.
+
+### The four configurations, all measured against the live board
+
+| configuration | Adobe board rows |
+|---|---:|
+| before (truncated at 40) | 11 |
+| cap fix alone | 110 |
+| `?q=audio` alone, still native | 9 |
+| `?q=audio` + partial scope | **2** |
+
+`searchText` totals on Adobe's board: empty 724, `audio` 55, `sound` 28,
+`dsp` 20, `acoustic` 0, `speech` 0.
+
+**One query is the right scoping, and this was measured rather than assumed.**
+`q=dsp` yields exactly one board row, *Principal Product Manager (DSP
+Advertising)* — Demand-Side Platform, the same false friend that made `dsp`
+useless at Amazon. `q=sound` yields zero board rows. Adding either would add
+noise and nothing else.
+
+**Both surviving rows deserve scrutiny.** They are *Sr. Director, Engineering -
+Digital Video & Audio (DVA)*, which is real, and that same *DSP Advertising*
+product manager, which is not an audio role and outscores it at 105 to 95.
+Adobe genuinely has very little audio hiring open: Audition is a small product
+inside a 724-posting company. The seven rows lost between "query alone" and
+"query + partial" were `Sr. Research Engineer`, `Senior Applied Scientist`,
+`Software Development Engineer` and similar — scoring on description keywords,
+not on being audio roles.
+
+**Why partial scope needed a category change.** `audio_scope` is not a seed
+field; `company_loader` derives it as `category_to_scope(category)` on insert
+and re-derives it whenever the category changes. The only way to move a company
+to partial scope is to file it under one of `PARTIAL_SCOPE_CATEGORIES`.
+`Consumer Electronics & Tech` is the established home for big-tech companies
+with a narrow audio slice — Google, Meta, Qualcomm, Infineon, Dolby and Amazon
+are all filed there. A side effect worth knowing: that category is **not** in
+`COMPANY_CATEGORY_FALLBACK`, so Adobe's rows also stop collecting the `+35`
+for holding a fallback job category, and partial scope additionally stops
+`_fetch_descriptions` fetching details for non-audio titles. Both contribute
+to the 9 -> 2 drop; the scope change alone is not the whole story.
+
+**The name stays "Adobe Audition" even though the board is all of Adobe.**
+`company_loader` matches an existing company by `lower(name)` first, so
+renaming it to "Adobe" would fail to match, insert a second company, and orphan
+the existing row along with its job history. Renaming a seeded company is not a
+safe edit.
