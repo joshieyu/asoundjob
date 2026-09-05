@@ -361,7 +361,7 @@
   },
   {
     "name": "Allen & Heath",
-    "careers_url": "https://www.allen-heath.com/about/careers/",
+    "careers_url": "https://www.allen-heath.com/about/careers/current-vacancies/",
     "category": "Professional Audio & Live Sound",
     "verified": true,
     "source": "auto",
@@ -2911,6 +2911,14 @@
     "category": "Professional Audio & Live Sound",
     "verified": true,
     "source": "auto",
+    "scrape_method": "http"
+  },
+  {
+    "name": "DiGiGrid",
+    "careers_url": "https://digigrid.net/recruitment",
+    "category": "Professional Audio & Live Sound",
+    "verified": true,
+    "source": "manual",
     "scrape_method": "http"
   },
   {
@@ -6109,7 +6117,7 @@
     "name": "MESA/Boogie",
     "careers_url": "https://www.gibson.com/pages/mesa-boogie",
     "category": "Professional Audio & Live Sound",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "http"
   },
@@ -9008,6 +9016,14 @@
     "verified": false,
     "source": "auto",
     "scrape_method": "http"
+  },
+  {
+    "name": "Sound Devices",
+    "careers_url": "https://www.sounddevices.com/company/careers/",
+    "category": "Professional Audio & Live Sound",
+    "verified": true,
+    "source": "manual",
+    "scrape_method": "playwright"
   },
   {
     "name": "Sound Oasis",

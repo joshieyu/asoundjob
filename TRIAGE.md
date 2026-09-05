@@ -175,6 +175,59 @@ links found*, and the causes are all different:
 Apply the file's own standard before promoting any of these: the seeded URL is
 a hypothesis. Run `check_url` and read the sample titles first.
 
+## The Audiotonix group — measured 2026-09-05
+
+Allen & Heath's `current-vacancies` page links to the careers pages of eight
+sister brands, which is a useful shortcut for finding the group. Seeded state
+after working through it:
+
+| Brand | State |
+|---|---|
+| **DiGiCo** | Already seeded and working, 5 active / 4 board. |
+| **Solid State Logic** | Already seeded and working, 5 active / 4 board. |
+| **Calrec Audio** | Already seeded, 3 active / 0 board, on `careers.calrec.com`. The group page points at `calrec.com/careers/` instead — worth comparing. |
+| **Slate Digital**, **sonible** | Already seeded, 0 rows each. |
+| **DiGiGrid** | **Added.** `digigrid.net/recruitment` fetches fine and currently says "no positions available". |
+| **Sound Devices** | **Added.** Four real openings including Embedded Software Engineer and Senior Software Engineer, both audience roles. **Cloudflare-blocked, see below.** |
+| **Group One Limited** | **Deliberately not added.** It is Audiotonix's US distribution arm — sales, marketing, demo suites and warehousing, no engineering. It has no current openings, and its page yields one row reading "Providing entertainment services across the USA" that scores 45 at native scope. Adding it would put a marketing tagline on the board. |
+
+### DO NOT REPEAT: Allen & Heath and Sound Devices are Cloudflare-blocked
+
+Both return **HTTP 403** to plain requests and serve a challenge or block page
+to Playwright, **including the stealth scraper**. Confirmed with three user
+agents (Chrome/Windows, Safari/macOS, curl) — it is not a UA problem. Only a
+real browser session gets through.
+
+Allen & Heath's seed URL was corrected to
+`allen-heath.com/about/careers/current-vacancies/`, which is the right page and
+lists three vacancies — Product Specialist MI, Embedded Software Engineer,
+High Level Software Engineer — but it will keep failing until the block lifts.
+Sound Devices behaves identically. Both are left `verified: true` because the
+boards are real; that is a yield problem, not a seed error.
+
+Their WordPress REST APIs are also closed (`itsec_rest_api_access_restricted`),
+so that route is out too.
+
+### MEASURED AND REJECTED: relaxing the job-link URL gate
+
+While chasing the above I found that `extract_job_links` rejects these pages'
+job links for an unrelated reason worth recording. Both sites are WordPress and
+link to job posts whose slug *is* the title —
+`/embedded-software-engineer-madison-wi/` — which contains none of the words
+`JOB_HINT` looks for, so `looks_like_job` drops them even when the anchor text
+is a clean job title.
+
+A relaxation was prototyped: accept a same-host link from a job-hinted listing
+page when the slugified anchor text matches the final path segment and the
+title contains a role head noun. **Measured across 52 live careers pages: 10
+new rows, 4 real (GripWorks) and 6 junk**, and the junk included
+"Audio engineering Mix, master, and repair" at Native Instruments, which scores
+**70** and would land on the board. Requiring the links to appear as a sibling
+cluster of two or more removed all six junk rows and kept all four real ones —
+but the two companies that motivated the work are blocked anyway, so it went
+unbuilt. **If this is picked up later, use the sibling-cluster form; the bare
+slug-match form is not safe.**
+
 ## Tier 3 — do these only when tier 1 and 2 are exhausted
 
 Guitar and studio boutiques (**Walrus Audio**, **EarthQuaker Devices**,
