@@ -16,6 +16,7 @@ from scraper.normalizer import (
     normalize_job_type,
     parse_salary,
     score_relevance,
+    strip_gender_markers,
 )
 from scraper.scrapers.base import RawJob
 
@@ -49,6 +50,95 @@ class TestSeniority(unittest.TestCase):
     def test_mid_default(self) -> None:
         self.assertEqual(detect_seniority("Audio Systems Engineer"), "mid")
         self.assertEqual(detect_seniority("DSP Developer"), "mid")
+
+    def test_non_english_entry(self) -> None:
+        for title in (
+            "Werkstudent (m-w-d) Vertrieb Boeblingen",
+            "Praktikanten (m/w/d) – Instrumentelle Qualitätsbewertung",
+            "Ausbildung und Duales Studium (Verbundstudium)",
+            "Masterand (m/w/d)",
+            "Alternance - Conception/Méthodes/Maintenance",
+            "Alternant Analyste Processus & Cartographie",
+            "Stage Digital Marketing",
+            "Stage Assistant(e) prévision des ventes (H/F)",
+        ):
+            self.assertEqual(detect_seniority(title), "entry", title)
+
+    def test_stage_as_english_theatre_role_is_not_entry(self) -> None:
+        for title in (
+            "Stage Manager",
+            "Stage Technician",
+            "Stage Hand",
+            "Stage Crew",
+            "Stage Director",
+            "Stage Designer",
+            "Stage Lighting",
+        ):
+            self.assertNotEqual(detect_seniority(title), "entry", title)
+
+    def test_sous_chef_is_not_manager(self) -> None:
+        self.assertNotEqual(detect_seniority("Sous Chef"), "manager")
+
+    def test_non_english_manager(self) -> None:
+        self.assertEqual(detect_seniority("Leiter Entwicklung"), "manager")
+
+
+class TestGenderMarkerStripping(unittest.TestCase):
+    def test_strips_parenthesised_markers(self) -> None:
+        self.assertEqual(
+            strip_gender_markers("Akustik-Ingenieur (w/m/d)"), "Akustik-Ingenieur"
+        )
+        self.assertEqual(
+            strip_gender_markers("Audio DSP Engineer (m/f/d)"), "Audio DSP Engineer"
+        )
+        self.assertEqual(
+            strip_gender_markers("Werkstudent (m-w-d) Vertrieb Boeblingen"),
+            "Werkstudent Vertrieb Boeblingen",
+        )
+        self.assertEqual(
+            strip_gender_markers(
+                "FOCUS ENTERTAINMENT PUBLISHING - STAGE - ASSISTANT BRAND "
+                "( H/F/NB) - JANVIER"
+            ),
+            "FOCUS ENTERTAINMENT PUBLISHING - STAGE - ASSISTANT BRAND - JANVIER",
+        )
+
+    def test_strips_bare_markers(self) -> None:
+        self.assertEqual(
+            strip_gender_markers("Chargé Marketing Digital Local H/F"),
+            "Chargé Marketing Digital Local",
+        )
+
+    def test_leaves_real_tokens_alone(self) -> None:
+        self.assertIn(
+            "R&D",
+            strip_gender_markers(
+                "Head of R&D (w/m/d) Berufserfahrene Ingenieure und technische "
+                "Berufe Berlin"
+            ),
+        )
+
+    def test_strips_star_and_colon_inflections(self) -> None:
+        self.assertEqual(
+            strip_gender_markers("Fachberater*in Dübendorf 60-80% (m/w/d)"),
+            "Fachberater Dübendorf 60-80%",
+        )
+        self.assertEqual(
+            strip_gender_markers(
+                "Technische*r Vertriebsmitarbeiter*in für Simulationssoftware"
+            ),
+            "Technische Vertriebsmitarbeiter für Simulationssoftware",
+        )
+        self.assertEqual(strip_gender_markers("Mitarbeiter:in"), "Mitarbeiter")
+        self.assertEqual(strip_gender_markers("Kolleg_innen"), "Kolleg")
+
+    def test_no_dangling_separator(self) -> None:
+        self.assertEqual(
+            strip_gender_markers("Ingénieur Firmware - (H/F)"), "Ingénieur Firmware"
+        )
+        self.assertFalse(
+            strip_gender_markers("Stage Assistant - (m/w/d)").endswith("-")
+        )
 
 
 class TestTitleAnchoring(unittest.TestCase):

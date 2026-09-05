@@ -664,15 +664,67 @@ AUDIO_ANCHOR = re.compile(
     re.IGNORECASE,
 )
 
+GENDER_MARKER_PAREN_RE = re.compile(
+    r"\(\s*[mwdfhxnb]{1,2}(?:\s*[/-]\s*[mwdfhxnb]{1,2}){1,2}\s*\)",
+    re.IGNORECASE,
+)
+
+GENDER_MARKER_BARE_RE = re.compile(
+    r"\b(?:H/F/NB|H/F|F/H|M/F)\b",
+    re.IGNORECASE,
+)
+
+GENDER_MARKER_INFLECTION_RE = re.compile(
+    r"[*:_](?:innen|in|r)\b",
+    re.IGNORECASE,
+)
+
+DANGLING_SEPARATOR_LEAD_RE = re.compile(r"^[\-–—/:;,]+\s*")
+DANGLING_SEPARATOR_TRAIL_RE = re.compile(r"\s*[\-–—/:;,]+$")
+
+
+def strip_gender_markers(title: str) -> str:
+    if not title:
+        return title
+    text = GENDER_MARKER_PAREN_RE.sub("", title)
+    text = GENDER_MARKER_BARE_RE.sub("", text)
+    text = GENDER_MARKER_INFLECTION_RE.sub("", text)
+    text = re.sub(r"\s+", " ", text).strip()
+    text = DANGLING_SEPARATOR_LEAD_RE.sub("", text)
+    text = DANGLING_SEPARATOR_TRAIL_RE.sub("", text)
+    return text.strip()
+
+
+NON_ENGLISH_INTERN_TERMS = (
+    r"werkstudent|praktikant|praktikanten|praktikum|praktika|ausbildung|"
+    r"auszubildende|azubi|duales studium|masterand|bachelorand|diplomand|"
+    r"abschlussarbeit|bachelorarbeit|masterarbeit|lehrling|trainee-programm|"
+    r"stagiaire|alternance|alternant|alternante|apprenti|apprentie|"
+    r"contrat de professionnalisation|becario|becaria|prácticas|estágio|"
+    r"estagiário|tirocinio|tirocinante|stagiair|afstudeerder|praktikplats|"
+    r"traineeprogram|lærling|laerling"
+)
+
+STAGE_INTERN_FRAGMENT = (
+    r"^stage(?!\s+(?:manager|technician|hand|crew|director|designer|lighting))\b"
+)
+
+NON_ENGLISH_INTERN_RE_FRAGMENT = (
+    rf"\b(?:{NON_ENGLISH_INTERN_TERMS})\b|{STAGE_INTERN_FRAGMENT}"
+)
+
 SENIORITY_PATTERNS: list[tuple[str, str]] = [
     (r"\b(intern|internship|co-?op|trainee|apprentice|graduate|grad)\b", "entry"),
     (r"\b(entry[- ]level|junior|jr\.?)\b", "entry"),
+    (NON_ENGLISH_INTERN_RE_FRAGMENT, "entry"),
     (
-        r"\b(manager|director|vp\b|vice president|chief|head of)",
+        r"\b(manager|director|vp\b|vice president|chief|head of|leiter|leitung|"
+        r"geschäftsführer|abteilungsleiter|teamleiter|responsable|directeur|"
+        r"directrice|chef d'équipe|jefe|direttore|chef de projet)",
         "manager",
     ),
     (r"\b(lead|principal|staff|distinguished|fellow)\b", "lead"),
-    (r"\b(senior|snr\.?|sr\.?)\b", "senior"),
+    (r"\b(senior|snr\.?|sr\.?|leitender|erfahrener|sénior|señor)\b", "senior"),
 ]
 
 JOB_TYPE_PATTERNS: list[tuple[str, str]] = [
@@ -683,7 +735,10 @@ JOB_TYPE_PATTERNS: list[tuple[str, str]] = [
         r"|\bcontractor\b|\bfreelance\b|c2h|corp[- ]to[- ]corp",
         "contract",
     ),
-    (r"\bintern(ship)?\b|\bco[- ]?op\b", "internship"),
+    (
+        rf"\bintern(ship)?\b|\bco[- ]?op\b|{NON_ENGLISH_INTERN_RE_FRAGMENT}",
+        "internship",
+    ),
     (r"\btemporary\b|temp[- ]to[- ]perm|seasonal", "temporary"),
     (r"\bvolunteer\b", "volunteer"),
 ]
@@ -1448,31 +1503,33 @@ class Normalizer:
         )
         salary_min, salary_max, salary_currency = parse_salary(salary_text)
 
-        categories = classify_categories(raw.title, raw.description, company_category)
+        title = strip_gender_markers(raw.title.strip())
+
+        categories = classify_categories(title, raw.description, company_category)
         if self.valid_ids is not None:
             categories = [c for c in categories if c in self.valid_ids]
 
         relevance_score, is_audio_related = score_relevance(
-            raw.title, raw.description, categories, audio_scope
+            title, raw.description, categories, audio_scope
         )
 
         job_type = normalize_job_type(raw.job_type)
         if job_type is None:
-            job_type = normalize_job_type(raw.title)
+            job_type = normalize_job_type(title)
         if job_type is None and raw.description:
             job_type = normalize_job_type(raw.description[:500])
 
         location = clean_location(raw.location)
         return NormalizedJob(
-            title=raw.title.strip(),
+            title=title,
             url=raw.url.strip(),
             external_id=raw.external_id,
             location=location,
             country=detect_country(location),
             description=raw.description,
-            remote=detect_remote(raw.location, raw.title, raw.description) or raw.remote_hint,
+            remote=detect_remote(raw.location, title, raw.description) or raw.remote_hint,
             job_type=job_type,
-            seniority=detect_seniority(raw.title),
+            seniority=detect_seniority(title),
             salary_min=salary_min,
             salary_max=salary_max,
             salary_currency=salary_currency,
