@@ -2782,8 +2782,10 @@ Check the board with `check_url` before spending effort on the seed.
    | Amazon | 0 -> 59 | new amazon.jobs parser + seeded queries |
    | Demant | 0 -> 61 | new SuccessFactors parser + global search URL |
 
-   Live as of 2026-09-05: **1,005 board rows, 8,584 active, 97 contributing
-   companies, 216 uncategorized, 41 open-application companies.** Audible,
+   Live as of 2026-09-05 (after European language support): **1,018 board
+   rows, 8,539 active, 99 contributing companies, 225 uncategorized, 41
+   open-application companies.** The active count fell while the board rose
+   because 44 junk rows were removed in the same pass. Audible,
    Oticon Medical and Peerless were deleted outright, seed and database;
    Sigma Connectivity, Delart, Tymphany, xMEMS and Fender were added; the
    seed is now **1,390 entries**.
@@ -4425,7 +4427,194 @@ job hint, so neither the http nor the playwright path extracts them, and both
 score 0 regardless as non-audio roles. Beyerdynamic is the 41st open-application
 company.
 
+## Session update (2026-09-05, later) — European language support, built and measured
+
+**This is the project the "NEXT UP" section below scoped. It is done.** That
+section is kept underneath as the reasoning trail; where the two disagree, this
+one is what shipped. Five commits, all pushed.
+
+**Board 1,005 to 1,018. Active rows 8,584 to 8,539** — the corpus shrank because
+44 junk rows were removed while 13 real ones were gained.
+
+### What shipped
+
+| commit | what |
+|---|---|
+| `05f6496` | non-English link furniture + language-switcher rejection |
+| `8ba8014` | gender-marker stripping + non-English seniority/job type |
+| `5a554e0` | non-English title vocabulary, compound-aware |
+| `f3d1903` | trailing-chevron strip + "view open positions" |
+| `83183b3` | skip links that point at a listing |
+
+### The finding that mattered most was not a scoring one
+
+The scoped plan assumed the work was vocabulary. **The largest single win was
+extraction.** Focal's French board produced five rows all titled `lire la
+suite` — French for "read more", whose English equivalent was already in
+`NON_JOB_TEXT`. The real titles were sitting in headings one level up the whole
+time, and the existing structural fallback picked them up the moment the French
+phrase was in the set. Focal now has its first board row ever, `Ingénieur
+Electronique R&D`, at 45.
+
+Two more extraction classes fell out of the same look:
+
+- **Language pickers scraped as jobs.** 38 active rows were bare endonyms —
+  Rohde & Schwarz 27 (`Deutsch`, `Español - ES`, `Čeština, český jazyk`, nine
+  each), ReadSpeaker 6, Native Instruments 5. `LANGUAGE_SWITCHER_RE` rejects a
+  title that is only an endonym plus an optional locale suffix.
+- **A decorative arrow defeated the entire furniture set.** `NON_JOB_TEXT` is
+  exact-matched on the whole title, so beyerdynamic's German ATS rendering
+  `MEHR ERFAHREN >` slipped past every entry added for it — and an English page
+  rendering `LEARN MORE >` always would have. Not a language bug; the
+  non-English block was simply one arrow away from being unreachable.
+
+### Language parity is reached, and that is the honest stopping point
+
+The scoped plan warned this was a coverage project, not a row-count project.
+That proved exactly right, and the measurement that settles it:
+
+**Every remaining off-board non-English row scores identically to its English
+equivalent.** Checked pair by pair — `Leitung Engineering Services Telecom`
+vs "Head of Engineering Services Telecom", `Service-Techniker` vs "Service
+Technician", `Technicien qualité opérationnelle` vs "Operational Quality
+Technician", and five more. All `(0, False)` on both sides.
+
+The eleven scoring gains were: both `Akustik-Ingenieur` rows (Brüel & Kjær,
+HEAD acoustics — the two named targets, 0 to 70), two `Hörsystemakustiker`,
+six French `Audioprothésiste`, and Cochlear's `Ingénieur Firmware` (30 to 65).
+No English row was lost.
+
+### DO NOT REPEAT — the CATEGORY_KEYWORDS phase, which was measured and rejected
+
+Step 3 of the scoped plan was non-English `CATEGORY_KEYWORDS`. **It was
+prototyped, measured at +6 board rows, and deliberately not built.** The
+prototype had to force `title_hit=True` to bypass the anchored-category gate,
+and that is what exposed the problem: the six rows it "won" — B&K's
+`Industrieelektroniker` and `Industriemechaniker/Mechatroniker`, Sigma's
+`Hårdvarukonstruktör` and `Senior Hårdvaruutvecklare`, HEAD's `Praktikanten –
+Instrumentelle Qualitätsbewertung` — score **0 in English too**:
+
+```
+(0, False)  Industrieelektroniker
+(0, False)  Industrial Electronics Technician
+(0, False)  Hårdvarukonstruktör
+(0, False)  Hardware Design Engineer
+```
+
+They are not blocked by being German or Swedish. They are blocked because
+`Audio Testing & Measurement` and `Acoustic Consulting & Engineering` are two
+of the eight native categories missing from `COMPANY_CATEGORY_FALLBACK`.
+Building the keyword phase would have made German titles outscore identical
+English ones and credited six rows to the wrong project.
+
+**Related measurement for whoever takes the precision levers.** Adding those
+two categories to `COMPANY_CATEGORY_FALLBACK` as hardware-only yields **+22
+board rows, only 2 of them non-English**, and six are junk: DLR Group is an
+architecture practice filed under `Acoustic Consulting & Engineering`, and it
+contributes `Senior Mechanical Engineer - Gas & Energy` and similar. Real gains
+in the same batch: Delart 7, Sigma 5, B&K 3. Worth doing, but as part of the
+precision-lever work with DLR handled, not as language support.
+
+### Also measured and not built: non-English description vocabulary
+
+`AUDIO_DESC_STRONG` / `AUDIO_DESC_WEAK` are English-only, and extending them
+looked obvious. It is not: of **70 non-English job descriptions in the corpus,
+exactly 2 contain any audio stem at all**, and both of those titles already
+score on the title vocabulary alone. Zero payoff.
+
+### beyerdynamic's German site — traced to the end, still not scrapable
+
+`beyerdynamic.de/unternehmen/jobs` renders `<pb-widgetHTML id="jobs">` empty and
+injects an iframe:
+
+```
+https://www.onlinebewerbungsserver.de/WJJobs/JobList.aspx?CustID=_E2_DF_02y_DD_0D_FBK_DB_11_5C_189_2DG_3F&Design=0
+```
+
+That URL returns 200 and holds **13 real German listings**. They are still not
+extractable, and the reason is structural, not linguistic: each title sits in a
+*sibling* table branch from its `MEHR ERFAHREN >` button, so `_structural_title`
+walks ancestors and finds only the button's own cell. It would need a
+sibling-aware table extractor.
+
+**Deliberate non-build, with the numbers.** `onlinebewerbungsserver.de` is used
+by **zero** other companies in the 1,390-entry seed, and the 13 listings are
+Ausbildung Lagerlogistik, Industriekaufmann, Bilanzbuchhalter, Logistik-
+mitarbeiter, Finanzbuchhaltung, Controlling, Teamlead Logistics and similar —
+roughly **0 board rows**. The owner had already said beyerdynamic's roles are
+"not really relevant". The chevron fix means those buttons are now correctly
+*rejected* rather than becoming 13 junk titles.
+
+### THQ Nordic, and a fix that had to be corrected
+
+Adding `view open positions` to `FURNITURE_PHRASES` was expected to remove THQ
+Nordic's 17 studio-directory rows. **It did not.** Rejecting the flat title only
+routes the anchor to the structural fallback, which found the studio-name
+heading directly above it, so the rows survived as `Bugbear Entertainment` —
+shorter junk, but junk. `83183b3` adds `is_listing_pointer`: an anchor whose own
+text says "view open positions" points at a *list*, and is skipped before the
+fallback runs. THQ went 17 to 1.
+
+### Traps confirmed live, for anyone extending this
+
+- **Substring matching is safe here, and that is measured, not assumed.** Every
+  stem was tested as a bare substring against all 8,583 active titles before
+  use; none matched an English title. Do the same for anything you add.
+- **`schall` is inside `Ultraschall`.** The corpus holds
+  `Applikationsspezialist Ultraschall` at Samsung, an X-ray and imaging sales
+  role. Guarded with `(?<!ultra)`.
+- **`Stage` is French and Italian for internship, and English for theatre.**
+  `Stage Manager`, `Stage Technician`, `Stage Hand` are real live-sound titles.
+  Only matched at the start of a title, with a negative lookahead.
+- **`chef` is French for manager and English for cook.** `Sous Chef` exists at
+  McGill and Sweetwater. Only matched in multi-word French forms.
+- **Sales engineers.** `FALLBACK_ROLE_EXCLUSIONS_INTL` had to land in the same
+  commit as the positive vocabulary, or B&K's `Ingénieur technico-commercial`
+  would have started scoring alongside the real roles.
+
+### Nordic coverage is a seed problem, not a language problem
+
+The owner asked for this partly to reach Nordic audio companies. The language
+layer no longer blocks them, but they still contribute almost nothing, and the
+causes are all upstream:
+
+- **Genelec is not in the seed at all** — a major Finnish pro-audio monitor
+  manufacturer, a clear omission. Also absent: Soundboks, AIAIAI, Urbanista,
+  Jays, Sudio, Propellerhead.
+- **Unverified with 0 rows**: Dirac Research, Libratone, SEAS, Vifa, Reason
+  Studios, Scan-Speak, Lyngdorf, Jamo, Bang & Olufsen.
+- **Verified but yielding 0**: Dynaudio Automotive, DALI Speakers, Tymphany,
+  Nagra.
+
+That is triage work of the kind done all session, not parsing work.
+
+### Measurement harness
+
+`lang_yardstick.py` (scratchpad, not committed) recomputes the whole corpus
+through `Normalizer` and diffs against a stored baseline, reporting board delta
+plus per-row score changes for the 113 non-English titles. Rebuild it before
+the next pass rather than trusting stored `is_audio_related`, which drifts —
+one apparent gain (ESS Technology) turned out to be stale DB state, not a
+change from this work.
+
+### Left undone, deliberately
+
+- `CORPORATE_ROLE` and `NEGATIVE_SIGNALS` are still English-only. They *remove*
+  rows, and with parity already reached there is nothing measured for them to
+  fix. Do them only alongside a precision pass.
+- Gender-stripped titles reach the DB on the next scrape of each company, not
+  via `backfill_relevance`, which rescores stored titles in place. Cosmetic
+  only; scoring is unaffected because the patterns are boundary-matched.
+- Lucid Motors' six active rows are all marketing pages (`Life at Lucid`,
+  press articles). Wrong seed URL, unrelated to this work.
+
+---
+
 ## NEXT UP (2026-09-05) — non-English language support: scoping, evidence, and where to cut
+
+> **SUPERSEDED — this project shipped.** See "European language support, built
+> and measured" immediately above. Kept for the evidence and the reasoning.
+
 
 The owner's chosen next project. Everything below is measured, not estimated.
 **Read this before touching the normalizer.**
