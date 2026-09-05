@@ -2310,11 +2310,11 @@
   },
   {
     "name": "Cochlear",
-    "careers_url": "https://www.cochlear.com/us/en/corporate/careers",
+    "careers_url": "https://cochlear.wd3.myworkdayjobs.com/Cochlear_Careers",
     "category": "Hearing Aid & Hearing Tech",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "http"
   },
   {
     "name": "Cockos (REAPER)",
