@@ -899,5 +899,35 @@ class TestLinkedInExcluded(unittest.TestCase):
         self.assertEqual(jobs[0].title, "Senior Audio Engineer")
 
 
+class TestNonEnglishFurnitureText(unittest.TestCase):
+    def test_french_read_more_falls_back_to_heading(self) -> None:
+        html = """
+        <html><body>
+        <div class="card">
+          <div class="card-body">
+            <h3>Ingénieur Electronique R&amp;D (F/H)</h3>
+          </div>
+          <div class="card-footer">
+            <a class="btn" href="/careers/ingenieur-electronique-rd-77213">lire la suite</a>
+          </div>
+        </div>
+        </body></html>
+        """
+        jobs = extract_job_links(html, "https://www.focal.com/fr/recrutement")
+        self.assertEqual(len(jobs), 1)
+        self.assertEqual(jobs[0].title, "Ingénieur Electronique R&D (F/H)")
+
+
+class TestLanguageSwitcherRejected(unittest.TestCase):
+    def test_bare_language_endonyms_rejected(self) -> None:
+        self.assertTrue(is_furniture_title("Deutsch"))
+        self.assertTrue(is_furniture_title("Español - ES"))
+        self.assertTrue(is_furniture_title("Čeština, český jazyk"))
+
+    def test_real_job_titles_not_rejected(self) -> None:
+        self.assertFalse(is_furniture_title("Audio DSP Engineer"))
+        self.assertFalse(is_furniture_title("Senior Sound Designer"))
+
+
 if __name__ == "__main__":
     unittest.main()

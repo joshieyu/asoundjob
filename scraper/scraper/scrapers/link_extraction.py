@@ -72,6 +72,95 @@ NON_JOB_TEXT = {
     "sign up for job alerts",
     "powered by jobvite",
     "job alerts",
+
+    "lire la suite",
+    "en savoir plus",
+    "voir plus",
+    "voir l'offre",
+    "voir les offres",
+    "toutes nos offres",
+    "nos offres",
+    "nos offres d'emploi",
+    "postuler",
+    "candidature spontanée",
+    "candidature spontanee",
+    "retour",
+    "accueil",
+    "nous contacter",
+    "mehr erfahren",
+    "weiterlesen",
+    "mehr",
+    "jetzt bewerben",
+    "bewerben",
+    "initiativbewerbung",
+    "alle jobs",
+    "alle stellen",
+    "alle stellenangebote",
+    "stellenangebote",
+    "zur stellenanzeige",
+    "offene stellen",
+    "startseite",
+    "zurück",
+    "zurueck",
+    "kontakt",
+    "impressum",
+    "datenschutz",
+    "leer más",
+    "leer mas",
+    "más información",
+    "mas informacion",
+    "ver más",
+    "ver mas",
+    "solicitar",
+    "todas las ofertas",
+    "ofertas de empleo",
+    "inicio",
+    "contacto",
+    "volver",
+    "leggi di più",
+    "leggi di piu",
+    "scopri di più",
+    "scopri di piu",
+    "candidati",
+    "tutte le offerte",
+    "posizioni aperte",
+    "contatti",
+    "indietro",
+    "lees meer",
+    "meer informatie",
+    "solliciteer",
+    "alle vacatures",
+    "terug",
+    "läs mer",
+    "las mer",
+    "ansök",
+    "ansok",
+    "alla jobb",
+    "lediga jobb",
+    "lediga tjänster",
+    "tillbaka",
+    "læs mere",
+    "laes mere",
+    "ansøg",
+    "ansog",
+    "alle job",
+    "ledige stillinger",
+    "tilbage",
+    "les mer",
+    "søk",
+    "sok",
+    "alle stillinger",
+    "tilbake",
+    "lue lisää",
+    "lue lisaa",
+    "avoimet työpaikat",
+    "kaikki työpaikat",
+    "takaisin",
+    "saiba mais",
+    "ler mais",
+    "candidatar-se",
+    "todas as vagas",
+    "voltar",
 }
 
 FURNITURE_PHRASES = (
@@ -99,6 +188,18 @@ PAGINATION_CONTROL_RE = re.compile(
     rf"(?:{PAGINATION_WORD_RE}|page\s+\d{{1,4}}|\d{{1,4}})"
     rf"(?:\s*{PAGINATION_CHEVRON_RE})?$"
     rf"|^{PAGINATION_CHEVRON_RE}$",
+    re.IGNORECASE,
+)
+
+LANGUAGE_ENDONYM_ALTERNATION_RE = (
+    r"(?:deutsch|français|francais|español|espanol|italiano|português|portugues|"
+    r"nederlands|svenska|norsk|dansk|suomi|polski|magyar|română|türkçe|"
+    r"čeština(?:,\s*český\s+jazyk)?|english|日本語|한국어|简体中文|繁體中文|中文|"
+    r"русский|العربية|ไทย|tiếng\s+việt|bahasa\s+indonesia)"
+)
+
+LANGUAGE_SWITCHER_RE = re.compile(
+    rf"^{LANGUAGE_ENDONYM_ALTERNATION_RE}(?:\s*[-–—]\s*[A-Za-zÀ-ÿ]{{2,5}})?$",
     re.IGNORECASE,
 )
 
@@ -436,6 +537,8 @@ def is_furniture_title(title: str) -> bool:
     if COOKIE_NOTICE_RE.search(lowered):
         return True
     if PAGINATION_CONTROL_RE.match(title):
+        return True
+    if LANGUAGE_SWITCHER_RE.match(title.strip()):
         return True
     return False
 
