@@ -11039,6 +11039,15 @@
     "scrape_method": "playwright"
   },
   {
+    "name": "xMEMS",
+    "careers_url": "https://xmems.com/careers/",
+    "category": "Audio Semiconductors",
+    "verified": true,
+    "open_application": true,
+    "source": "manual",
+    "scrape_method": "playwright"
+  },
+  {
     "name": "XMOS",
     "careers_url": "https://www.xmos.com/careers",
     "category": "Audio Semiconductors",
