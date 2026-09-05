@@ -681,6 +681,55 @@ class TestPaginationControlRejected(unittest.TestCase):
         self.assertFalse(is_furniture_title("Senior Audio Engineer"))
 
 
+SAME_PAGE_ANCHOR_HTML = """
+<html><body>
+<a href="#pagetop">^top^</a>
+<div id="pagetop"></div>
+<a href="#featured">FEATURED</a>
+<div id="featured"></div>
+<a href="#">PRODUCTS</a>
+<a href="#it_firmware_engineer_20200529">Firmware Engineer</a>
+<a name="it_firmware_engineer_20200529"></a>
+<a href="#it_yocto_ambedded_developer_20251031">Yocto Embedded Developer</a>
+<a name="it_yocto_ambedded_developer_20251031"></a>
+</body></html>
+"""
+
+
+class TestSamePageAnchorJobs(unittest.TestCase):
+    def test_named_anchor_jobs_extracted_and_chrome_excluded(self) -> None:
+        jobs = extract_job_links(
+            SAME_PAGE_ANCHOR_HTML, "https://www.ikmultimedia.com/careers/"
+        )
+        titles = sorted(job.title for job in jobs)
+        self.assertEqual(titles, ["Firmware Engineer", "Yocto Embedded Developer"])
+        urls = sorted(job.url for job in jobs)
+        self.assertEqual(
+            urls,
+            [
+                "https://www.ikmultimedia.com/careers/"
+                "#it_firmware_engineer_20200529",
+                "https://www.ikmultimedia.com/careers/"
+                "#it_yocto_ambedded_developer_20251031",
+            ],
+        )
+
+    def test_named_anchor_ignored_without_page_job_hint(self) -> None:
+        html = """
+        <html><body>
+        <a href="#accountant-role">Accountant</a>
+        <a name="accountant-role"></a>
+        </body></html>
+        """
+        jobs = extract_job_links(html, "https://example.com/about/")
+        self.assertEqual(jobs, [])
+
+    def test_ordinary_self_link_without_fragment_still_dropped(self) -> None:
+        html = '<html><body><a href="/careers/">Careers</a></body></html>'
+        jobs = extract_job_links(html, "https://example.com/careers/")
+        self.assertEqual(jobs, [])
+
+
 class TestBoardChromeRejected(unittest.TestCase):
     def test_search_jobs_rejected(self) -> None:
         self.assertIn("search jobs", NON_JOB_TEXT)

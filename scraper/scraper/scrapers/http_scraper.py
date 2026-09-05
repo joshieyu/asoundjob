@@ -43,7 +43,9 @@ class HttpScraper(BaseScraper):
         candidates = [
             job
             for job in jobs
-            if _needs_enrichment(job) and urlparse(job.url).netloc.lower() == host
+            if _needs_enrichment(job)
+            and urlparse(job.url).netloc.lower() == host
+            and not _is_same_page_anchor(job.url, url)
         ][:MAX_DETAIL_FETCHES]
 
         deadline = start + self.settings.per_company_timeout * ENRICHMENT_BUDGET_FRACTION
@@ -84,6 +86,12 @@ class HttpScraper(BaseScraper):
 
 def _needs_enrichment(job: RawJob) -> bool:
     return job.description is None or len(job.description) < MIN_DESCRIPTION_CHARS
+
+
+def _is_same_page_anchor(job_url: str, listing_url: str) -> bool:
+    job_no_fragment = urlparse(job_url)._replace(fragment="").geturl()
+    listing_no_fragment = urlparse(listing_url)._replace(fragment="").geturl()
+    return job_no_fragment == listing_no_fragment
 
 
 def extract_description(html_text: str) -> Optional[str]:

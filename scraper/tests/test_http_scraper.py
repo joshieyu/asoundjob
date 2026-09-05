@@ -11,6 +11,7 @@ from scraper.scrapers.base import ScrapeError
 from scraper.scrapers.http_scraper import (
     MIN_DESCRIPTION_CHARS,
     HttpScraper,
+    _is_same_page_anchor,
     extract_description,
 )
 
@@ -213,6 +214,22 @@ class TestHttpScraper(unittest.TestCase):
 
         self.assertEqual(len(jobs), 5)
         self.assertEqual(len(detail_calls), 2)
+
+
+class TestIsSamePageAnchor(unittest.TestCase):
+    def test_fragment_only_difference_is_same_page(self) -> None:
+        self.assertTrue(
+            _is_same_page_anchor(
+                "https://x.com/careers/#a", "https://x.com/careers/"
+            )
+        )
+
+    def test_different_path_is_not_same_page(self) -> None:
+        self.assertFalse(
+            _is_same_page_anchor(
+                "https://x.com/careers/jobs/1", "https://x.com/careers/"
+            )
+        )
 
 
 class TestExtractDescription(unittest.TestCase):

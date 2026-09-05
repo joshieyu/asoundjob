@@ -622,6 +622,11 @@ def extract_job_links(html: str, base_url: str) -> list[RawJob]:
     base_path = base_parsed.path.rstrip("/").lower()
     base_netloc = base_parsed.netloc.lower()
     base_has_job_hint = bool(JOB_HINT.search(base_path))
+    named_anchors = {
+        _clean_text(tag.get("name"))
+        for tag in soup.find_all("a", attrs={"name": True})
+        if _clean_text(tag.get("name"))
+    }
 
     for anchor in soup.find_all("a", href=True):
         href = _clean_text(anchor.get("href"))
@@ -665,16 +670,23 @@ def extract_job_links(html: str, base_url: str) -> list[RawJob]:
 
         same_host = bool(base_netloc) and parsed.netloc.lower() == base_netloc
         structural_job_hint = came_from_structure and base_has_job_hint and same_host
+        same_page_anchor = bool(
+            parsed.fragment
+            and same_host
+            and path == base_path
+            and parsed.fragment in named_anchors
+        )
 
         looks_like_job = bool(
             (JOB_HINT.search(path) and _looks_like_job_detail_path(path, parsed.query))
             or (text and JOB_HINT.search(text))
             or (title_attr and JOB_HINT.search(title_attr))
             or structural_job_hint
+            or (same_page_anchor and base_has_job_hint)
         )
         if not looks_like_job:
             continue
-        if path == base_path or path == "":
+        if (path == base_path or path == "") and not same_page_anchor:
             continue
 
         existing = best_by_url.get(absolute)
