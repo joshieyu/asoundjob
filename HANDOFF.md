@@ -4079,11 +4079,18 @@ audio company and this will change — or when they migrate to Career Site
 Builder, at which point the existing `successfactors` parser handles them with
 a seed URL edit alone. The scrape failing in the meantime is the correct state.
 
-### Open question for the owner
+### Resolved: moved to native scope, and stood down (commit `2070416`)
 
-**B&O is filed under `Consumer Electronics & Tech`, which is partial scope**,
-alongside Google, Meta, Amazon, Qualcomm and Dolby. B&O is a far purer audio
-company than any of those, and `Hi-Fi & Consumer Speakers` is native. Changing
-it has **no effect today** because nothing scrapes, which is why it was left
-alone rather than changed quietly — but it will matter the moment the board
-becomes readable.
+B&O sat in `Consumer Electronics & Tech`, partial scope, alongside Google,
+Meta, Amazon, Qualcomm and Dolby. It is a far purer audio company than any of
+those, so it is now **`Hi-Fi & Consumer Speakers`, which is native** — threshold
+45 instead of 50, and no `+15` penalty for titles without an audio word.
+`audio_scope` is derived from the category by `company_loader`, so the category
+move *is* the scope change; there is no scope field to set. The owner also set
+**`verified: false`**, since the portal cannot be read.
+
+Neither change moves the board today, because nothing scrapes. Both matter the
+moment it does — and the earlier payoff measurement (0 of 10 board rows under
+partial, 1 of 10 under native) was taken against exactly this native category,
+so **re-measure against live postings rather than reusing that number** when
+the board becomes readable. Re-verifying B&O is the trigger.
