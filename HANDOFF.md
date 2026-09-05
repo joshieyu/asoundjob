@@ -2782,8 +2782,8 @@ Check the board with `check_url` before spending effort on the seed.
    | Amazon | 0 -> 59 | new amazon.jobs parser + seeded queries |
    | Demant | 0 -> 61 | new SuccessFactors parser + global search URL |
 
-   Live as of 2026-09-05: **979 board rows, 8,510 active, 96 contributing
-   companies, 213 uncategorized.** Audible and Oticon Medical were both
+   Live as of 2026-09-05: **984 board rows, 8,510 active, 96 contributing
+   companies, 214 uncategorized.** Audible and Oticon Medical were both
    deleted outright, seed and database; Sigma Connectivity and Delart were
    added; the seed is now 1,388 entries.
 
@@ -4278,3 +4278,50 @@ Accordion jobs get **no location**, so `country` is NULL for all five xMEMS
 rows and they are invisible to the country filter. The locations are in the
 titles ("..., Santa Clara", "..., Shenzhen"). Parsing them was deliberately not
 attempted; revisit if accordion companies become common.
+
+## Session update (2026-09-05, later) — Fender, and the shared-URL bug's third and worst form
+
+Commit `2e843b9`. Fender added with **6 board rows**; board 979 -> 984. Fender
+itself had never been seeded.
+
+**Fender Play held the whole company's board.** The subscription lesson app
+carried `job-boards.greenhouse.io/fender` — all 39 Fender postings, scraped
+successfully every cycle. This is the third instance of the shared-URL claim
+bug after inMusic and Logitech, and the worst of the three, because the
+sub-brand was not merely misattributing the jobs: **Fender Play is filed under
+`Music Education Technology`, which is partial scope**, so the parent's board
+was being scored at a raised threshold with a no-audio-word penalty.
+
+Measured before the change:
+
+| owner's category | scope | board rows |
+|---|---|---:|
+| Music Education Technology (Fender Play) | partial | **1** |
+| Electronic Musical Instruments | native | **6** |
+| Professional Audio & Live Sound | native | 6 |
+
+Fender is now seeded against the same board under `Electronic Musical
+Instruments` — electric guitars, basses and amplifiers — and Fender Play is
+`verified: false`, so it stays in the directory but stops competing. The rows
+are Electrical Engineer II Mixed-Signal (Phoenix), Mechanical Engineer
+(Ensenada), Software Engineer II Applications (Hamburg), Sales Director Greater
+China, a Spanish-speaking Customer Service Advisor and Temp Guitar Packer — the
+last two are the recall-over-precision tail working as intended.
+
+**Fender would have won the name ordering anyway** ("Fender" sorts before
+"Fender Play"), so marking Fender Play unverified is belt and braces: it stops
+the board silently reverting to Fender Play if the Fender entry is ever renamed
+or removed.
+
+**The pattern is now swept.** Querying every verified company that shares a
+careers URL, holds active jobs and sits at partial scope returns only
+Harley-Davidson (5 active, 0 board) and Microsoft (2 active, 0 board) — in both
+cases the parent is the claimant and correct. **No further instances of the
+Fender form exist.** The plain misattribution form was swept earlier in the
+session; see the Logitech entry for that table.
+
+**Aside:** `job-boards.greenhouse.io/fender` returns **403 behind Cloudflare**
+in a browser, but `boards-api.greenhouse.io/v1/boards/fender/jobs` is a clean
+200 with all 39 postings, and the API is what the parser uses. Like Delart's
+embed-only 404, a hand-check of the hosted board URL is not evidence the entry
+is broken.
