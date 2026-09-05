@@ -1256,10 +1256,10 @@
   },
   {
     "name": "Bang & Olufsen",
-    "careers_url": "https://www.bang-olufsen.com/en/us/story/careers",
+    "careers_url": "https://career5.successfactors.eu/career?company=bangolufse",
     "category": "Consumer Electronics & Tech",
     "verified": true,
-    "source": "auto",
+    "source": "manual",
     "scrape_method": "playwright"
   },
   {
