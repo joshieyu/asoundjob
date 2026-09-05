@@ -3645,10 +3645,18 @@
     "scrape_method": "playwright"
   },
   {
+    "name": "Fender",
+    "careers_url": "https://job-boards.greenhouse.io/fender",
+    "category": "Electronic Musical Instruments",
+    "verified": true,
+    "source": "manual",
+    "scrape_method": "http"
+  },
+  {
     "name": "Fender Play",
     "careers_url": "https://job-boards.greenhouse.io/fender",
     "category": "Music Education Technology",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "playwright"
   },
