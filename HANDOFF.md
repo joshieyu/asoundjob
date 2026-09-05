@@ -2782,7 +2782,7 @@ Check the board with `check_url` before spending effort on the seed.
    | Amazon | 0 -> 59 | new amazon.jobs parser + seeded queries |
    | Demant | 0 -> 61 | new SuccessFactors parser + global search URL |
 
-   Live as of 2026-09-05: **974 board rows, 8,505 active, 95 contributing
+   Live as of 2026-09-05: **976 board rows, 8,507 active, 95 contributing
    companies, 213 uncategorized.** Audible and Oticon Medical were both
    deleted outright, seed and database; Sigma Connectivity and Delart were
    added; the seed is now 1,388 entries.
@@ -4094,3 +4094,69 @@ moment it does — and the earlier payoff measurement (0 of 10 board rows under
 partial, 1 of 10 under native) was taken against exactly this native category,
 so **re-measure against live postings rather than reusing that number** when
 the board becomes readable. Re-verifying B&O is the trigger.
+
+## Session update (2026-09-05, later) — inMusic's board was scraping all along, under the wrong company
+
+Commit `b8926a2`. inMusic Brands went 0 -> **6 board rows**; board 974 -> 976.
+**Nothing was broken.** The board scraped perfectly every cycle; the jobs were
+simply filed under Akai Professional.
+
+### The mechanism
+
+Nine seed entries share the careers URL `https://inmusicbrands.pinpointhq.com/`
+— inMusic Brands plus Akai Professional, Alesis, Denon DJ, M-Audio, Moog Music,
+Numark, Rane and Stanton. `_dedupe_shared_urls` in `main.py` lets the **first**
+company with a given URL scrape it, skips the rest and deactivates their jobs.
+That is correct: without it the same 42 postings would appear nine times.
+
+The winner is decided by iteration order, and the scrape query is
+`order_by(Company.name)` — **case-sensitive in SQLite, so lowercase "inMusic
+Brands" sorts after every uppercase name** and came last of the nine. Akai
+Professional, first alphabetically, took all 42 postings and its 4 board rows.
+Anyone looking at inMusic Brands saw nothing, and nothing in the logs said why.
+
+**This is the fingerprint:** a company with a shared careers URL, zero active
+jobs, and a sibling holding a full board. `_dedupe_shared_urls` logs a skip line
+only for the `ats_type`/`ats_slug` branch, not the plain-URL branch, so a
+URL-shared skip is silent.
+
+### The fix
+
+The eight brands are **products, not employers** — none has its own board, and
+the postings span brands that are not even seeded, such as Alto Professional.
+They are now `verified: false`, which keeps them in the company directory
+(`list_companies` only filters on verified when `verified_only` is passed) but
+removes them from the scrape query, which selects `verified.is_(True)`. inMusic
+Brands is then the only claimant.
+
+**inMusic Brands also moved from `Professional Audio & Live Sound` to
+`Electronic Musical Instruments`.** It is the better fit for a group built on
+Akai, Alesis, M-Audio and Moog — and it is worth being explicit that it also
+changes the yield, which was measured before choosing: `Professional Audio &
+Live Sound` has a **hardware-only** entry in `COMPANY_CATEGORY_FALLBACK`, so the
+two "Software Engineer" roles (Cambridge and Cumberland) score 30 and miss,
+while `Electronic Musical Instruments` carries software and they land at 65.
+Four rows versus six. If the categorisation is ever revisited, that is the cost.
+
+### The same bug elsewhere — not fixed, worth a decision
+
+`https://logitech.wd5.myworkdayjobs.com/Logitech` is shared by **Blue
+Microphones, Logitech and Ultimate Ears**, and Blue Microphones — first
+alphabetically — holds **201 active rows and 25 board rows**, i.e. Logitech's
+entire board is filed under one of its microphone brands. Unlike the inMusic
+case this looks free to fix: Blue Microphones is `Professional Audio & Live
+Sound` and Logitech is `Headphones & Personal Audio`, both native and both
+hardware-only in the fallback map, so re-pointing ownership should not move the
+row count. Not done, because it was outside the request.
+
+Other shared-URL clusters, for reference — the winner is named first and its
+board count is in brackets:
+
+| URL | members |
+|---|---|
+| apply.workable.com/focusrite/ | Focusrite (6), Novation DJ (0), Sonnox (0) — parent already wins |
+| careers.sega.co.uk/vacancies | Creative Assembly (2), Sega (0), Sports Interactive (0) |
+| iaggroup.com/jobs/current-vacancies/ | Audiolab, Quad Electronics, Wharfedale — all 0 |
+| careers.microsoft.com/... | Microsoft, Playground Games, Xbox Game Studios — all 0 |
+| jobs.hp.com | Astro Gaming, HyperX — both 0 |
+| www.disneycareers.com/en | Disney Post Production, Skywalker Sound — both 0 |
