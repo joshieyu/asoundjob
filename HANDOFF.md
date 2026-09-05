@@ -2782,8 +2782,8 @@ Check the board with `check_url` before spending effort on the seed.
    | Amazon | 0 -> 59 | new amazon.jobs parser + seeded queries |
    | Demant | 0 -> 61 | new SuccessFactors parser + global search URL |
 
-   Live as of 2026-09-05: **984 board rows, 8,510 active, 96 contributing
-   companies, 214 uncategorized.** Audible and Oticon Medical were both
+   Live as of 2026-09-05: **1,005 board rows, 8,585 active, 97 contributing
+   companies, 216 uncategorized.** Audible and Oticon Medical were both
    deleted outright, seed and database; Sigma Connectivity and Delart were
    added; the seed is now 1,388 entries.
 
@@ -4325,3 +4325,41 @@ in a browser, but `boards-api.greenhouse.io/v1/boards/fender/jobs` is a clean
 200 with all 39 postings, and the API is what the parser uses. Like Delart's
 embed-only 404, a hand-check of the hosted board URL is not evidence the entry
 is broken.
+
+## Session update (2026-09-05, later) — Cochlear, and the board passes 1,000
+
+Commit `244e55c`. Cochlear went 0 -> **21 board rows**; board 984 -> **1,005**,
+active 8,510 -> 8,585, contributing companies 96 -> 97.
+
+The seeded URL was a marketing careers page. It scraped "successfully" every
+cycle and returned two rows — "Cochlear culture" and "Jobs at Cochlear" —
+neither a job. The real board is
+`cochlear.wd3.myworkdayjobs.com/Cochlear_Careers`, 77 postings.
+
+**No category or scope change was needed**, unusually for this session:
+Cochlear was already `Hearing Aid & Hearing Tech`, which is native, and it is
+the correct label for an implant manufacturer. The seed URL alone was the fault.
+No query scoping either — 77 postings is small enough that scoping would only
+lose the acoustics and audiology roles whose titles never say "audio".
+
+### Read the composition before trusting the number
+
+Of the 21 board rows, **8 are engineering or technical and 13 are clinical,
+commercial or product**. The engineering side is real and on-audience — Senior
+Embedded Wireless Software Engineer (Mechelen), Embedded Software Engineering
+Manager (Sydney), Acoustics technical specialist, Senior Mechanical Engineer,
+Principal Systems Integration V&V, Validation and Quality Engineers, and a
+Doctoral Candidate in Advanced Implant Process Technology. The other 13 are
+Clinical Territory Managers, Regional Sales Specialists, Territory Leads and
+Customer Engagement Specialists, which reach the board on the `+35` from the
+`audiology_hearing` forced category that `Hearing Aid & Hearing Tech` carries
+in `COMPANY_CATEGORY_FALLBACK`, plus the native bonus.
+
+That is the recall-over-precision trade behaving as specified, and Cochlear is
+a medical device company so a commercial majority is expected. **It is also the
+same shape of tail that led to Beltone being moved to partial scope earlier in
+this session.** The distinction drawn here: Beltone is a retail hearing-aid
+clinic chain with no R&D, while Cochlear designs implants and employs embedded,
+acoustics and DSP engineers, so native scope is right and the commercial tail
+is the price. If the tail is ever judged too heavy, the lever is
+`CORPORATE_ROLE` coverage, not Cochlear's category.
