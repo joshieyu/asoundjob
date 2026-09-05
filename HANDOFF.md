@@ -2783,9 +2783,10 @@ Check the board with `check_url` before spending effort on the seed.
    | Demant | 0 -> 61 | new SuccessFactors parser + global search URL |
 
    Live as of 2026-09-05: **1,005 board rows, 8,584 active, 97 contributing
-   companies, 216 uncategorized.** Audible and Oticon Medical were both
-   deleted outright, seed and database; Sigma Connectivity and Delart were
-   added; the seed is now 1,388 entries.
+   companies, 216 uncategorized, 41 open-application companies.** Audible,
+   Oticon Medical and Peerless were deleted outright, seed and database;
+   Sigma Connectivity, Delart, Tymphany, xMEMS and Fender were added; the
+   seed is now **1,390 entries**.
 
    Active rows jumped from 5,363 to 8,455 in one session, mostly because the
    Workday pagination fix unpinned nine boards at once and the two new parsers
@@ -4423,3 +4424,121 @@ Assistant, are PDF downloads on `api.beyerdynamic.de` with titles carrying no
 job hint, so neither the http nor the playwright path extracts them, and both
 score 0 regardless as non-audio roles. Beyerdynamic is the 41st open-application
 company.
+
+## NEXT UP (2026-09-05) — non-English language support: scoping, evidence, and where to cut
+
+The owner's chosen next project. Everything below is measured, not estimated.
+**Read this before touching the normalizer.**
+
+### The finding
+
+The scoring vocabulary is English throughout. A German acoustics engineer
+scores **0** while its English equivalent scores 70-105:
+
+| German title | score | English equivalent | score |
+|---|---:|---|---:|
+| Entwicklungsingenieur Akustik (m/w/d) | **0** | Acoustic Development Engineer | 70 |
+| Akustikingenieur (m/w/d) | **0** | Acoustics Engineer | 105 |
+| Softwareentwickler Embedded Systeme (m/w/d) | **0** | Embedded Software Developer | 45 |
+| Werkstudent Tontechnik (m/w/d) | **0** | Working Student Sound Engineering | 70 |
+| Elektroniktechniker (m/w/d) | **0** | Electronics Technician | 45 |
+| Hardwareentwickler Elektronik (m/w/d) | **0** | Hardware Electronics Developer | 45 |
+| Praktikant Schallmessung (m/w/d) | **0** | Intern Acoustic Measurement | 105 |
+| Produktmanager Audio (m/w/d) | 70 | Audio Product Manager | 70 |
+
+Seven of eight score zero; the one that scores does so only because "Audio" is
+an English loanword. Confirmed independently by Sigma Connectivity's Swedish
+roles and Bang & Olufsen's Danish apprenticeships, all 0.
+
+### Be honest about the size of the prize
+
+**The in-corpus prize is small.** Of 8,584 active rows:
+
+- **114** have a non-English title (74 German, 31 French, 7 Spanish/Italian,
+  1 Dutch, 1 Nordic); 13 of those already reach the board.
+- **Exactly 2** carry a non-English *audio* term: `Akustik-Ingenieur für
+  EOL-Messtechnik` (Brüel & Kjær) and `Akustik-Ingenieur (w/m/d)` (HEAD
+  acoustics). Both score 0 today. Both are precisely the target audience.
+- **13** carry a non-English engineer/technician word (`Ingénieur`,
+  `Techniker`, `Ingeniero`, `Technicien`), **none** on the board — Devialet,
+  Demant, HEAD acoustics, Burmester, Belden.
+
+**Counter-evidence worth respecting: German companies mostly post in English.**
+Board rate by country shows DE at **23.5%** (81 active, 19 board), *above* the
+US at 14.5%. FR is 13.1%. The low-yield countries — PH 1.4%, IE 3.0%, ES 3.2%,
+TR 1.8%, TH 0% — are support and sales sites, not a language problem.
+
+So this project **will not add hundreds of rows to the current corpus.** Its
+value is (a) unlocking the specific European audio employers that do post in
+their own language — HEAD acoustics, Devialet, Burmester, beyerdynamic's German
+site, Sennheiser, Neumann, Klein + Hummel — and (b) removing a systematic
+blind spot before European coverage is expanded. **Scope it as a coverage and
+correctness project, not a row-count project**, or it will look like a failure.
+
+### The surfaces that need changing, all in `scraper/scraper/normalizer.py`
+
+| constant | size | role |
+|---|---|---|
+| `AUDIO_TITLE_STRONG` | 282-char pattern | +60 / +30 title signal |
+| `AUDIO_TITLE_WEAK` | 166 chars | the +30 tier |
+| `AUDIO_DESC_STRONG` | 577 chars | description mentions, +20/+35 |
+| `AUDIO_DESC_WEAK` | 229 chars | +15 tier |
+| `CATEGORY_KEYWORDS` | 631 lines | the 21 job categories; drives the `+35` |
+| `FALLBACK_ROLE_CATEGORIES` | 37 lines | test/firmware/electrical/mechanical/software role kinds |
+| `FALLBACK_ROLE_HEAD` | 125 chars | engineer/developer/scientist/technician head nouns |
+| `FALLBACK_ROLE_EXCLUSIONS` | 496 chars | civil/structural/HVAC etc. |
+| `CORPORATE_ROLE` | 2,411 chars | the `-70` penalty |
+| `NEGATIVE_SIGNALS` | 165 chars | the negative penalty |
+
+`detect_seniority`, `normalize_job_type` and `detect_remote` are also
+English-only. `scraper/scraper/countries.py` (459 lines) is separate and
+already handles non-English place names; **it is not part of this work.**
+
+### Recommended cut, in order
+
+1. **Strip gender markers first, as its own commit.** German `(m/w/d)`,
+   `(w/m/d)`, `(m/f/d)`, `(d/m/w)`; French `(H/F)`, `(F/H)`, `(H/F/NB)`;
+   Swiss `*in`. These appear in most DACH titles, add nothing, and pollute
+   every match. Cheap, self-contained, testable, and it improves titles on the
+   board immediately.
+2. **Title vocabulary only** — `AUDIO_TITLE_STRONG` / `AUDIO_TITLE_WEAK` plus
+   `FALLBACK_ROLE_HEAD`. Highest value per line: the two `Akustik-Ingenieur`
+   rows land from this step alone. Measure before and after.
+3. **`CATEGORY_KEYWORDS`**, which unlocks the `+35`. Largest and riskiest;
+   do it per category with a measurement each time.
+4. **`CORPORATE_ROLE` and `NEGATIVE_SIGNALS` last.** These *remove* rows, so
+   adding foreign terms here without the positives in place will look like a
+   regression.
+
+### Traps, all real
+
+- **No language signal exists.** Companies have no country or language field,
+  and job `country` is derived from location, which is often absent. Patterns
+  are global, so a German term is tested against every English title too.
+- **False friends that will bite**: French `son` (sound) matches English "son";
+  `chef` (manager) is a cook in English; German `Leiter` is also "ladder";
+  `Regie` (directing) vs English "regie"; Spanish `sonido` is safe but `son`
+  is not. **Require word boundaries and prefer compounds** — `akustik`,
+  `tontechnik`, `schallmessung`, `lautsprecher`, `hörgerät`, `acoustique`,
+  `haut-parleur`, `altavoz` — over short bare words.
+- **German compounds are unbounded**: `Akustikingenieur`, `Akustik-Ingenieur`,
+  `Entwicklungsingenieur Akustik` are all one role. Substring matching on
+  `akustik` handles all three; word-boundary matching handles only some.
+  This argues for a *separate* compound-friendly pattern rather than bolting
+  terms onto the existing word-boundary ones.
+- **Umlaut folding**: `hörgerät` / `hoergeraet` / `horgerat` all occur. Decide
+  once — normalise the text before matching, or list variants — and be
+  consistent.
+- **Bounded quantifiers still apply.** These patterns are already large;
+  `CORPORATE_ROLE` is 2.4k characters. Catastrophic backtracking has bitten
+  this project before.
+
+### How to measure each step
+
+`scripts/` has no harness for this. The cheapest honest loop is the one used
+throughout this session: score a fixed list of real non-English titles from the
+database through `Normalizer` before and after, and re-run
+`python -m scraper.backfill_relevance` to see the board delta — it takes
+`--dry-run`, so the "after" number can be read without writing anything. **Build the
+before/after title list first**, from the 114 rows identified above, so every
+step has a fixed yardstick rather than a fresh opinion.
