@@ -2782,7 +2782,7 @@ Check the board with `check_url` before spending effort on the seed.
    | Amazon | 0 -> 59 | new amazon.jobs parser + seeded queries |
    | Demant | 0 -> 61 | new SuccessFactors parser + global search URL |
 
-   Live as of 2026-09-05: **976 board rows, 8,507 active, 95 contributing
+   Live as of 2026-09-05: **975 board rows, 8,505 active, 95 contributing
    companies, 213 uncategorized.** Audible and Oticon Medical were both
    deleted outright, seed and database; Sigma Connectivity and Delart were
    added; the seed is now 1,388 entries.
@@ -4147,7 +4147,7 @@ entire board is filed under one of its microphone brands. Unlike the inMusic
 case this looks free to fix: Blue Microphones is `Professional Audio & Live
 Sound` and Logitech is `Headphones & Personal Audio`, both native and both
 hardware-only in the fallback map, so re-pointing ownership should not move the
-row count. Not done, because it was outside the request.
+row count. **Done in commit `cffc432` — see below.**
 
 Other shared-URL clusters, for reference — the winner is named first and its
 board count is in brackets:
@@ -4160,3 +4160,40 @@ board count is in brackets:
 | careers.microsoft.com/... | Microsoft, Playground Games, Xbox Game Studios — all 0 |
 | jobs.hp.com | Astro Gaming, HyperX — both 0 |
 | www.disneycareers.com/en | Disney Post Production, Skywalker Sound — both 0 |
+
+## Session update (2026-09-05, later) — Logitech's board returned to Logitech
+
+Commit `cffc432`, the second instance of the shared-URL claim bug described
+directly above. Blue Microphones, Logitech and Ultimate Ears all carried
+`logitech.wd5.myworkdayjobs.com/Logitech`; **Blue Microphones sorted first and
+held Logitech's entire board** — 199 postings, 24 board rows — under one of its
+microphone brands. Blue Microphones and Ultimate Ears are now `verified: false`,
+so they remain in the company directory but stop competing, and Logitech claims
+its own board: **199 active, 24 on the board.**
+
+**Verified free of recall cost before the change, not after.** Blue Microphones
+is `Professional Audio & Live Sound` and Logitech is `Headphones & Personal
+Audio`; both are native and both are hardware-only in
+`COMPANY_CATEGORY_FALLBACK`. Scoring the live 199 postings under each category
+returned **24 rows either way, with identical membership** — unlike the inMusic
+case, where the two categories genuinely differed.
+
+Board total moved 976 -> 975. That single row is **not** a regression from this
+change: Blue Microphones was holding a stale 201-posting snapshot with 25
+qualifying rows, and the live board has 199 postings and 24. The re-scrape
+refreshed it.
+
+### inMusic's category: decided, leave it alone
+
+The owner considered moving inMusic Brands back to `Professional Audio & Live
+Sound` and **chose to keep `Electronic Musical Instruments`**. Recorded because
+the direction is easy to invert from memory: **Electronic Musical Instruments is
+the six-row option, Professional Audio & Live Sound is the four-row one.** The
+difference is the two "Software Engineer" roles, which need the SOFTWARE entry
+in the fallback map that Professional Audio lacks.
+
+A third option was raised and not taken: keep the pro-audio label and add
+SOFTWARE to `Professional Audio & Live Sound` in `COMPANY_CATEGORY_FALLBACK`.
+That would change scoring for **every** pro-audio company, so it belongs with
+the three interacting precision levers and needs a blast-radius measurement
+first, not a one-company decision.
