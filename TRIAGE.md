@@ -52,19 +52,15 @@ thin relative to total headcount, NVH aside.
 | Company | Why it earns the top | Fix |
 |---|---|---|
 | **Fraunhofer IIS** | Invented mp3 and AAC. The most prestigious audio research employer in Europe, hiring DSP and audio-coding researchers continuously. | Seed. `iis.fraunhofer.de/de/jobs.html` |
-| **Demant (Oticon)** | One of the largest hearing groups on earth. Deep DSP, acoustics and audio-ML hiring. | Scraper. `careers.demant.com` is a genuine board. |
-| **Cochlear** | Implants: embedded audio, DSP, psychoacoustics. Large and always hiring. | Seed/scraper. |
-| **Starkey** | Large US hearing manufacturer with a serious audio-ML group. | Seed. |
-| **L-Acoustics** | Top-tier loudspeaker R&D — DSP, transducers, acoustics, in France and the US. | **Seed. The URL is the homepage,** `l-acoustics.com/`. |
 | **Audio-Technica** | Global transducer manufacturer at scale. | Seed. |
 | **Texas Instruments** | Audio amplifier and codec silicon. Partial scope, huge headcount. | Seed **plus a scoping query** — this is the Qualcomm play. |
 | **MediaTek** | Audio DSP inside the SoCs in most non-Apple phones. Same play. | Seed plus query. |
 | **CEVA** | Licenses audio and voice DSP IP. Precisely the DSP audience. | **Seed. URL is the homepage,** `ceva-ip.com/`. |
-| **ElevenLabs** | The highest-pull audio-AI name for this audience right now. | Seed. |
-| **Bang & Olufsen** | Audio-first, real acoustics and DSP R&D. | Seed. |
 | **KEF** | Loudspeaker acoustics R&D under GP Acoustics. | **Seed. URL is the shop homepage,** `us.kef.com/`. |
 | **Klippel** | The reference name in transducer measurement. Small, but every role is the audience's field. | Seed. |
 | **Steinberg** | Cubase and Nuendo. Audio software engineering at depth. | Seed. |
+| **Genelec** | Finnish studio-monitor maker; DSP, acoustics and transducer work, and the name every young engineer knows from the control room. **Not in the seed at all.** | Add. `genelec.com/jobs-careers` is the careers page but yields 1 junk row and no ATS host — a human needs to find where the openings actually live. |
+Adobe, DPA, B&K, Sigma, LTTS/Intelliswift
 
 ## MEASURED AND REJECTED: Knowles, and the myjobs.adp.com surface
 
@@ -117,8 +113,7 @@ Technologies**, **Crystal Instruments**.
 Hearing, after the tier-1 three: **Sivantos**, **MED-EL**, **Amplifon**,
 **Eargo**, **Earlens**, **Natus Medical**.
 
-Transducers and drivers: **Celestion**, **B&C Speakers**, **Beyma**,
-**Peerless**, **Warwick Acoustics**.
+Transducers and drivers: **Celestion**, **B&C Speakers**, **Beyma**, **Warwick Acoustics**.
 
 Pro audio with real R&D: **Calrec Audio**, **Lawo**, **AMS Neve**, **Allen &
 Heath**, **Biamp Systems**, **Rode Microphones**, **Schoeps**,
@@ -134,8 +129,51 @@ Research and standards: **Fraunhofer IDMT**, **IRCAM**, **AES**, **THX**,
 Acoustic consulting, where **Arup** leads the field: **Hoare Lea**,
 **Ramboll**, **Stantec**, **Sweco**, **Thornton Tomasetti**, **WSDG**.
 
-High-end audio with genuine DSP work: **dCS**, **Naim Audio**, **Focal**,
-**Beyerdynamic**. Note dCS and Naim are both seeded to their homepages.
+High-end audio with genuine DSP work: **dCS**, **Naim Audio**. Both are
+seeded to their homepages. Focal and Beyerdynamic came off this list on
+2026-09-05 — Focal is fixed and on the board, Beyerdynamic is a recorded
+non-build (see the handoff).
+
+## The Nordic gap — measured 2026-09-05
+
+Raised after European language support shipped. **The language layer no longer
+blocks these companies; every one of the problems below is upstream of it.**
+For contrast, the Nordic companies that do work: GN Store Nord 74 active / 29
+board, Jabra 12/4, Sigma Connectivity 14/5, Teenage Engineering 3/1,
+Elektron 2/1.
+
+**Absent from the seed entirely.** Genelec is promoted to tier 1 above. The
+rest are consumer-brand tier 3 at best: **Soundboks**, **AIAIAI**,
+**Urbanista**, **Jays**, **Sudio**, **Audio Pro**. (Propellerhead is already
+seeded under its current name, Reason Studios.)
+
+**Verified, scraping "successfully", contributing nothing.** All three checked
+with `check_url`; all three fail with the canonical *page loaded but no job
+links found*, and the causes are all different:
+
+| Company | What is actually there | Fix |
+|---|---|---|
+| **Dynaudio Automotive** | `job.dynaudio.com` is the right URL and renders "Vacant positions" with **nothing under it**. Genuinely empty right now. | None. Recheck later; do not chase this as a parser defect. |
+| **DALI Speakers** | The seeded URL *is* the real careers page — its own "Job Openings" link points back at itself. No vacancies in the HTML. | None, unless the openings turn out to be JS-loaded. Verify before spending time. |
+| **Nagra** | **Misidentified company.** `careers.nagra.com` is the **Kudelski Group** — digital security, cybersecurity, IoT. This is not Nagra Audio, the Swiss high-end recorder brand. It is filed under `Professional Audio & Live Sound`. | Reseed to Audio Technology Switzerland, or set `verified: false`. It will never yield an audio role as seeded. |
+
+**Unverified with 0 rows**, in rough order of whether they are worth a human:
+
+- **Dirac Research** — `dirac.com/careers`. Swedish room-correction and
+  spatial-audio DSP house. **The standout here**; precisely the audience.
+- **SEAS** — `seas.no/careers`. Norwegian driver manufacturer, a transducer
+  name that matters.
+- **Scan-Speak** — `scan-speak.com/careers`. Danish drivers, same argument.
+- **Reason Studios** — `reasonstudios.se/careers`. DAW engineering.
+- **Libratone** — `libratone.com/careers`.
+- **Lyngdorf Audio** and **Steinway Lyngdorf** — two separate seed entries,
+  both unverified, `lyngdorf.com` and `steinwaylyngdorf.com`.
+- **Jamo Speakers** — seeded to `careers.klipsch.com`, i.e. the parent. Check
+  whether that board carries anything Jamo-specific before verifying, or it
+  becomes another Switchcraft.
+
+Apply the file's own standard before promoting any of these: the seeded URL is
+a hypothesis. Run `check_url` and read the sample titles first.
 
 ## Tier 3 — do these only when tier 1 and 2 are exhausted
 
