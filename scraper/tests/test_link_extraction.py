@@ -929,5 +929,40 @@ class TestLanguageSwitcherRejected(unittest.TestCase):
         self.assertFalse(is_furniture_title("Senior Sound Designer"))
 
 
+class TestTrailingChevronDecoration(unittest.TestCase):
+    def test_chevron_decorated_cta_falls_back_to_heading(self) -> None:
+        html = """
+        <html><body>
+        <div class="card">
+          <div class="card-body">
+            <h5>Audio Systems Engineer</h5>
+            <h6>Based in San Jose, CA</h6>
+          </div>
+          <div class="card-footer">
+            <a class="btn" href="/audio_systems_engineer">MEHR ERFAHREN &gt;</a>
+          </div>
+        </div>
+        </body></html>
+        """
+        jobs = extract_job_links(html, "https://example.com/careers")
+        self.assertEqual(len(jobs), 1)
+        self.assertEqual(jobs[0].title, "Audio Systems Engineer")
+
+    def test_cpp_developer_unaffected_by_decoration_strip(self) -> None:
+        self.assertEqual(clean_job_title("C++ Developer"), "C++ Developer")
+
+
+class TestViewOpenPositionsFurniture(unittest.TestCase):
+    def test_studio_directory_row_rejected(self) -> None:
+        self.assertTrue(
+            is_furniture_title(
+                "Ashborne Games Brno, Czech Republic View Open Positions →"
+            )
+        )
+
+    def test_real_job_title_not_rejected(self) -> None:
+        self.assertFalse(is_furniture_title("Senior Audio DSP Engineer"))
+
+
 if __name__ == "__main__":
     unittest.main()

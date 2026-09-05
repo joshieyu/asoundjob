@@ -175,6 +175,9 @@ FURNITURE_PHRASES = (
     "see all job",
     "browse all job",
     "search all job",
+    "view open positions",
+    "see open positions",
+    "view open roles",
     "cookie settings",
 )
 
@@ -280,6 +283,12 @@ POSTED_AGO_RE = re.compile(
 CTA_SUFFIX_RE = re.compile(
     SEP + r"+(?:Apply\s*Now|Apply|Read\s*More|Learn\s*More|View\s*Job|See\s*Details)\s*$",
     re.IGNORECASE,
+)
+
+TRAILING_DECORATION_CHARS = ">»›→▸▶←‹«"
+
+TRAILING_DECORATION_RE = re.compile(
+    r"\s*(?:-->|->|&gt;|[" + TRAILING_DECORATION_CHARS + r"]){1,3}\s*$"
 )
 
 EMPLOYMENT_SUFFIX_RE = re.compile(
@@ -484,6 +493,8 @@ def _clean_job_title_and_type(text: str) -> tuple[str, Optional[str]]:
             new_title = REMOTE_BARE_RE.sub("", title)
         if new_title == title:
             new_title = TRAILING_STOPWORD_RE.sub("", title)
+        if new_title == title:
+            new_title = TRAILING_DECORATION_RE.sub("", title)
 
         new_title = _clean_text(new_title).strip(EDGE_PUNCT).strip()
         if new_title == title:
