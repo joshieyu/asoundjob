@@ -1257,8 +1257,8 @@
   {
     "name": "Bang & Olufsen",
     "careers_url": "https://career5.successfactors.eu/career?company=bangolufse",
-    "category": "Consumer Electronics & Tech",
-    "verified": true,
+    "category": "Hi-Fi & Consumer Speakers",
+    "verified": false,
     "source": "manual",
     "scrape_method": "playwright"
   },
