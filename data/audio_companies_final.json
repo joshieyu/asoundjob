@@ -1572,7 +1572,7 @@
     "name": "Blue Microphones",
     "careers_url": "https://logitech.wd5.myworkdayjobs.com/Logitech",
     "category": "Professional Audio & Live Sound",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "http"
   },
@@ -10272,7 +10272,7 @@
     "name": "Ultimate Ears",
     "careers_url": "https://logitech.wd5.myworkdayjobs.com/Logitech",
     "category": "Headphones & Personal Audio",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "http"
   },
