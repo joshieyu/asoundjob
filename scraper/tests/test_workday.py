@@ -1,15 +1,20 @@
 from __future__ import annotations
 
+import asyncio
 import unittest
 from datetime import date, timedelta
+from unittest.mock import patch
 
 from scraper.scrapers.ats.workday import (
+    MAX_PAGES,
+    PAGE_SIZE,
     WorkdayScraper,
     _build_base,
     _extract_description,
     _parse_list_item,
     _parse_relative_date,
     _parse_time_type,
+    extract_query,
 )
 
 
@@ -48,7 +53,9 @@ DETAIL = {
 
 class TestWorkdayParser(unittest.TestCase):
     def test_parse_list_item(self) -> None:
-        job = _parse_list_item(LIST_ITEM, "https://sonos.wd1.myworkdayjobs.com")
+        job = _parse_list_item(
+            LIST_ITEM, "https://sonos.wd1.myworkdayjobs.com", "Sonos_Careers"
+        )
         assert job is not None
         self.assertEqual(job.title, "Senior DSP Engineer")
         self.assertEqual(
@@ -59,10 +66,28 @@ class TestWorkdayParser(unittest.TestCase):
         expected = date.today() - timedelta(days=3)
         self.assertEqual(job.posted_date, expected)
 
+    def test_url_includes_the_site_segment(self) -> None:
+        job = _parse_list_item(
+            LIST_ITEM, "https://sonos.wd1.myworkdayjobs.com", "Sonos_Careers"
+        )
+        assert job is not None
+        self.assertEqual(
+            job.url,
+            "https://sonos.wd1.myworkdayjobs.com/Sonos_Careers"
+            "/job/Berlin/Senior-DSP-Engineer_R12345",
+        )
+
+    def test_external_id_stays_the_bare_path(self) -> None:
+        job = _parse_list_item(
+            LIST_ITEM, "https://sonos.wd1.myworkdayjobs.com", "Sonos_Careers"
+        )
+        assert job is not None
+        self.assertNotIn("Sonos_Careers", job.external_id or "")
+
     def test_parse_list_item_missing_fields(self) -> None:
-        self.assertIsNone(_parse_list_item({}, "https://example.com"))
+        self.assertIsNone(_parse_list_item({}, "https://example.com", "Site"))
         self.assertIsNone(
-            _parse_list_item({"title": "Engineer"}, "https://example.com")
+            _parse_list_item({"title": "Engineer"}, "https://example.com", "Site")
         )
 
     def test_extract_description(self) -> None:
@@ -98,25 +123,25 @@ class TestWorkdayParser(unittest.TestCase):
     def test_extract_slug(self) -> None:
         self.assertEqual(
             WorkdayScraper.extract_slug("https://sonos.wd1.myworkdayjobs.com/Sonos"),
-            "sonos/Sonos",
+            "sonos.wd1/Sonos",
         )
         self.assertEqual(
             WorkdayScraper.extract_slug(
                 "https://sec.wd3.myworkdayjobs.com/Samsung_Careers"
             ),
-            "sec/Samsung_Careers",
+            "sec.wd3/Samsung_Careers",
         )
         self.assertEqual(
             WorkdayScraper.extract_slug(
                 "https://sky.wd3.myworkdayjobs.com/en-US/sky_careers"
             ),
-            "sky/sky_careers",
+            "sky.wd3/sky_careers",
         )
         self.assertEqual(
             WorkdayScraper.extract_slug(
                 "https://belkin.wd5.myworkdayjobs.com/belkin_careers/jobs"
             ),
-            "belkin/belkin_careers",
+            "belkin.wd5/belkin_careers",
         )
         self.assertIsNone(
             WorkdayScraper.extract_slug("https://example.com/careers")
@@ -126,10 +151,17 @@ class TestWorkdayParser(unittest.TestCase):
         self.assertEqual(
             _build_base(
                 "https://sonos.wd1.myworkdayjobs.com/Sonos",
-                "sonos",
-                "Sonos",
+                "sonos.wd1",
             ),
             "https://sonos.wd1.myworkdayjobs.com",
+        )
+        self.assertEqual(
+            _build_base("https://careers.bose.com/us/en", "boseallaboutme.wd503"),
+            "https://boseallaboutme.wd503.myworkdayjobs.com",
+        )
+        self.assertEqual(
+            _build_base("https://careers.example.com", "acme"),
+            "https://acme.wd1.myworkdayjobs.com",
         )
 
     def test_can_handle(self) -> None:
@@ -148,6 +180,171 @@ class TestWorkdayParser(unittest.TestCase):
             scraper.can_handle(make_company("https://jobs.lever.co/acme"))
         )
         self.assertFalse(scraper.can_handle(make_company("")))
+
+    def test_extract_query(self) -> None:
+        self.assertEqual(
+            extract_query(
+                "https://adobe.wd5.myworkdayjobs.com/external_experienced?q=audio"
+            ),
+            "audio",
+        )
+        self.assertEqual(
+            extract_query(
+                "https://adobe.wd5.myworkdayjobs.com/external_experienced"
+            ),
+            "",
+        )
+        self.assertEqual(
+            extract_query(
+                "https://adobe.wd5.myworkdayjobs.com/external_experienced?q="
+            ),
+            "",
+        )
+        self.assertEqual(extract_query(""), "")
+
+
+def make_posting(index: int) -> dict:
+    return {
+        "title": f"Engineer {index}",
+        "externalPath": f"/job/Role_{index}",
+        "timeType": "Full time",
+        "locationsText": "Remote",
+        "postedOn": "Posted Today",
+    }
+
+
+class TestFetchAllPagination(unittest.TestCase):
+    def setUp(self) -> None:
+        from scraper.config import load_settings
+
+        self.scraper = WorkdayScraper(load_settings())
+        self.base = "https://sonos.wd1.myworkdayjobs.com"
+        self.tenant = "sonos"
+        self.site = "Sonos_Careers"
+
+    def _run(self) -> list:
+        return asyncio.run(
+            self.scraper._fetch_all(self.base, self.tenant, self.site)
+        )
+
+    def test_later_pages_reporting_total_zero_do_not_truncate_the_board(self) -> None:
+        calls: list[int] = []
+
+        def fake_post_json(url, body, settings):
+            offset = body["offset"]
+            calls.append(offset)
+            if offset == 0:
+                items = [make_posting(i) for i in range(PAGE_SIZE)]
+                return {"total": 839, "jobPostings": items}
+            if offset < 820:
+                items = [make_posting(offset + i) for i in range(PAGE_SIZE)]
+                return {"total": 0, "jobPostings": items}
+            items = [make_posting(offset + i) for i in range(19)]
+            return {"total": 0, "jobPostings": items}
+
+        with patch(
+            "scraper.scrapers.ats.workday._post_json", side_effect=fake_post_json
+        ):
+            jobs = self._run()
+
+        self.assertEqual(len(jobs), 839)
+        self.assertEqual(calls[-1], 820)
+
+    def test_max_pages_bounds_a_board_that_never_reports_a_positive_total(
+        self,
+    ) -> None:
+        call_count = 0
+
+        def fake_post_json(url, body, settings):
+            nonlocal call_count
+            call_count += 1
+            offset = body["offset"]
+            items = [make_posting(offset + i) for i in range(PAGE_SIZE)]
+            return {"total": 0, "jobPostings": items}
+
+        with patch(
+            "scraper.scrapers.ats.workday._post_json", side_effect=fake_post_json
+        ):
+            jobs = self._run()
+
+        self.assertEqual(call_count, MAX_PAGES)
+        self.assertEqual(len(jobs), MAX_PAGES * PAGE_SIZE)
+
+    def test_short_board_still_terminates_early(self) -> None:
+        calls: list[int] = []
+
+        def fake_post_json(url, body, settings):
+            offset = body["offset"]
+            calls.append(offset)
+            if offset == 0:
+                items = [make_posting(i) for i in range(PAGE_SIZE)]
+                return {"total": 25, "jobPostings": items}
+            items = [make_posting(offset + i) for i in range(5)]
+            return {"total": 25, "jobPostings": items}
+
+        with patch(
+            "scraper.scrapers.ats.workday._post_json", side_effect=fake_post_json
+        ):
+            jobs = self._run()
+
+        self.assertEqual(len(jobs), 25)
+        self.assertEqual(calls, [0, 20])
+
+    def test_fetch_all_sends_search_text_from_query(self) -> None:
+        search_texts: list[str] = []
+
+        def fake_post_json(url, body, settings):
+            search_texts.append(body["searchText"])
+            return {"total": 0, "jobPostings": []}
+
+        with patch(
+            "scraper.scrapers.ats.workday._post_json", side_effect=fake_post_json
+        ):
+            asyncio.run(
+                self.scraper._fetch_all(
+                    self.base, self.tenant, self.site, "audio"
+                )
+            )
+
+        self.assertEqual(search_texts, ["audio"])
+
+    def test_fetch_all_sends_empty_search_text_by_default(self) -> None:
+        search_texts: list[str] = []
+
+        def fake_post_json(url, body, settings):
+            search_texts.append(body["searchText"])
+            return {"total": 0, "jobPostings": []}
+
+        with patch(
+            "scraper.scrapers.ats.workday._post_json", side_effect=fake_post_json
+        ):
+            asyncio.run(self.scraper._fetch_all(self.base, self.tenant, self.site))
+
+        self.assertEqual(search_texts, [""])
+
+
+class TestFetchJobsUsesQuery(unittest.TestCase):
+    def test_fetch_jobs_passes_q_param_through_to_search_text(self) -> None:
+        from scraper.config import load_settings
+
+        scraper = WorkdayScraper(load_settings())
+        company = make_company(
+            "https://sonos.wd1.myworkdayjobs.com/Sonos?q=audio",
+            audio_scope="partial",
+        )
+        search_texts: list[str] = []
+
+        def fake_post_json(url, body, settings):
+            search_texts.append(body["searchText"])
+            return {"total": 0, "jobPostings": []}
+
+        with patch(
+            "scraper.scrapers.ats.workday._post_json", side_effect=fake_post_json
+        ):
+            jobs = asyncio.run(scraper.fetch_jobs(company))
+
+        self.assertEqual(jobs, [])
+        self.assertEqual(search_texts, ["audio"])
 
 
 if __name__ == "__main__":

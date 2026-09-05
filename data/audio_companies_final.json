@@ -97,9 +97,9 @@
   },
   {
     "name": "Acer",
-    "careers_url": "https://careers.acer.com/",
+    "careers_url": "https://careers.acer.com/go/All-Jobs/7865610/",
     "category": "Consumer Electronics & Tech",
-    "verified": false,
+    "verified": true,
     "source": "auto",
     "scrape_method": "http"
   },
@@ -217,11 +217,11 @@
   },
   {
     "name": "Adobe Audition",
-    "careers_url": "https://careers.adobe.com/us/en",
-    "category": "DAW & Music Production Software",
+    "careers_url": "https://adobe.wd5.myworkdayjobs.com/external_experienced?q=audio",
+    "category": "Consumer Electronics & Tech",
     "verified": true,
     "source": "auto",
-    "scrape_method": "playwright"
+    "scrape_method": "http"
   },
   {
     "name": "Advanced Bionics",
@@ -307,7 +307,7 @@
     "name": "Akai Professional",
     "careers_url": "https://inmusicbrands.pinpointhq.com/",
     "category": "Electronic Musical Instruments",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "http"
   },
@@ -339,7 +339,7 @@
     "name": "Alesis",
     "careers_url": "https://inmusicbrands.pinpointhq.com/",
     "category": "Audio Interfaces & Converters",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "http"
   },
@@ -361,7 +361,7 @@
   },
   {
     "name": "Allen & Heath",
-    "careers_url": "https://www.allen-heath.com/about/careers/",
+    "careers_url": "https://www.allen-heath.com/about/careers/current-vacancies/",
     "category": "Professional Audio & Live Sound",
     "verified": true,
     "source": "auto",
@@ -409,7 +409,11 @@
   },
   {
     "name": "Amazon",
-    "careers_url": "https://www.amazon.jobs/en/",
+    "careers_url": "https://www.amazon.jobs/en/search?base_query=audio",
+    "extra_careers_urls": [
+      "https://www.amazon.jobs/en/search?base_query=speech",
+      "https://www.amazon.jobs/en/search?base_query=signal+processing"
+    ],
     "category": "Consumer Electronics & Tech",
     "verified": true,
     "source": "auto",
@@ -467,7 +471,7 @@
     "name": "Ampify Music",
     "careers_url": "https://focusrite.workable.com/",
     "category": "DAW & Music Production Software",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "http"
   },
@@ -521,7 +525,7 @@
   },
   {
     "name": "Analog Devices",
-    "careers_url": "https://www.analog.com/en/careers.html",
+    "careers_url": "https://analogdevices.wd1.myworkdayjobs.com/External",
     "category": "Consumer Electronics & Tech",
     "verified": true,
     "source": "auto",
@@ -596,6 +600,7 @@
     "careers_url": "https://www.anthemav.com/careers",
     "category": "Hi-Fi & Consumer Speakers",
     "verified": true,
+    "open_application": true,
     "source": "auto",
     "scrape_method": "playwright"
   },
@@ -626,6 +631,10 @@
   {
     "name": "Apple",
     "careers_url": "https://jobs.apple.com/en-us/search",
+    "extra_careers_urls": [
+      "https://jobs.apple.com/en-us/search?search=speech",
+      "https://jobs.apple.com/en-us/search?search=acoustic"
+    ],
     "category": "Consumer Electronics & Tech",
     "verified": true,
     "source": "manual",
@@ -652,6 +661,7 @@
     "careers_url": "https://www.arkamys.com/join-us/our-job-offers/",
     "category": "Car Audio",
     "verified": true,
+    "open_application": true,
     "source": "auto",
     "scrape_method": "playwright"
   },
@@ -681,9 +691,10 @@
   },
   {
     "name": "Arturia",
-    "careers_url": "https://jobs.arturia.com/",
+    "careers_url": "https://jobs.arturia.com/join-us",
     "category": "Audio Plugins & Virtual Instruments",
     "verified": true,
+    "open_application": true,
     "source": "auto",
     "scrape_method": "playwright"
   },
@@ -739,7 +750,7 @@
     "name": "Aston Microphones",
     "careers_url": "https://www.astonmics.com/careers",
     "category": "Professional Audio & Live Sound",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "http"
   },
@@ -816,14 +827,6 @@
     "scrape_method": "http"
   },
   {
-    "name": "Audible",
-    "careers_url": "https://www.amazon.jobs/en/",
-    "category": "Streaming & Music Services",
-    "verified": true,
-    "source": "auto",
-    "scrape_method": "http"
-  },
-  {
     "name": "Audicus",
     "careers_url": "https://www.audicus.com/pages/careers",
     "category": "Hearing Aid & Hearing Tech",
@@ -865,7 +868,7 @@
   },
   {
     "name": "Audinate",
-    "careers_url": "https://www.audinate.com/careers/",
+    "careers_url": "https://jobs.lever.co/audinate",
     "category": "Professional Audio & Live Sound",
     "verified": true,
     "source": "auto",
@@ -988,6 +991,7 @@
     "careers_url": "https://iaggroup.com/jobs/current-vacancies/",
     "category": "Hi-Fi & Consumer Speakers",
     "verified": true,
+    "open_application": true,
     "source": "auto",
     "scrape_method": "playwright"
   },
@@ -1020,6 +1024,7 @@
     "careers_url": "https://www.audionova.com/careers/",
     "category": "Hearing Aid & Hearing Tech",
     "verified": true,
+    "open_application": true,
     "source": "auto",
     "scrape_method": "playwright"
   },
@@ -1036,6 +1041,7 @@
     "careers_url": "https://www.audioshake.ai/audioshake-careers",
     "category": "AI/ML Audio",
     "verified": true,
+    "open_application": true,
     "source": "auto",
     "scrape_method": "playwright"
   },
@@ -1073,9 +1079,9 @@
   },
   {
     "name": "Audison",
-    "careers_url": "https://www.audison.eu/en/careers",
+    "careers_url": "https://elettromedia.com/careers",
     "category": "Car Audio",
-    "verified": false,
+    "verified": true,
     "source": "auto",
     "scrape_method": "http"
   },
@@ -1116,6 +1122,7 @@
     "careers_url": "https://auralex.com/careers/",
     "category": "Acoustic Consulting & Engineering",
     "verified": true,
+    "open_application": true,
     "source": "auto",
     "scrape_method": "playwright"
   },
@@ -1249,10 +1256,10 @@
   },
   {
     "name": "Bang & Olufsen",
-    "careers_url": "https://www.bang-olufsen.com/en/us/story/careers",
-    "category": "Consumer Electronics & Tech",
-    "verified": true,
-    "source": "auto",
+    "careers_url": "https://career5.successfactors.eu/career?company=bangolufse",
+    "category": "Hi-Fi & Consumer Speakers",
+    "verified": false,
+    "source": "manual",
     "scrape_method": "playwright"
   },
   {
@@ -1260,6 +1267,7 @@
     "careers_url": "https://baracoda.com/careers",
     "category": "Hearing Aid & Hearing Tech",
     "verified": true,
+    "open_application": true,
     "source": "auto",
     "scrape_method": "playwright"
   },
@@ -1386,7 +1394,7 @@
   {
     "name": "Beltone",
     "careers_url": "https://gn.wd3.myworkdayjobs.com/beltonecareers",
-    "category": "Hearing Aid & Hearing Tech",
+    "category": "Audio Retailers & Distributors",
     "verified": true,
     "source": "auto",
     "scrape_method": "http"
@@ -1412,6 +1420,7 @@
     "careers_url": "https://www.bensound.com/careers",
     "category": "Recording Studios & Post Houses",
     "verified": true,
+    "open_application": true,
     "source": "auto",
     "scrape_method": "playwright"
   },
@@ -1473,11 +1482,12 @@
   },
   {
     "name": "Beyerdynamic",
-    "careers_url": "https://www.beyerdynamic.com/careers.html",
+    "careers_url": "https://north-america.beyerdynamic.com/company/jobs",
     "category": "Headphones & Personal Audio",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "http"
+    "open_application": true,
+    "source": "manual",
+    "scrape_method": "playwright"
   },
   {
     "name": "Beyma",
@@ -1563,7 +1573,7 @@
     "name": "Blue Microphones",
     "careers_url": "https://logitech.wd5.myworkdayjobs.com/Logitech",
     "category": "Professional Audio & Live Sound",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "http"
   },
@@ -1601,7 +1611,7 @@
   },
   {
     "name": "BMG Production Music",
-    "careers_url": "https://careers.smartrecruiters.com/Bertelsmann-Jobs",
+    "careers_url": "https://careers.smartrecruiters.com/BMG",
     "category": "Recording Studios & Post Houses",
     "verified": true,
     "source": "auto",
@@ -1633,7 +1643,7 @@
   },
   {
     "name": "Bonneville",
-    "careers_url": "https://bonneville.com/careers/",
+    "careers_url": "https://deseretmanagement.wd1.myworkdayjobs.com/BonSaltLake",
     "category": "Audio Retailers & Distributors",
     "verified": true,
     "source": "auto",
@@ -1699,15 +1709,16 @@
     "name": "Bowers & Wilkins",
     "careers_url": "https://jobs.harman.com/",
     "category": "Consumer Electronics & Tech",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "playwright"
   },
   {
     "name": "Brain.fm",
-    "careers_url": "https://www.brain.fm/jobs",
+    "careers_url": "https://brain.recruitee.com",
     "category": "Streaming & Music Services",
     "verified": true,
+    "open_application": true,
     "source": "auto",
     "scrape_method": "playwright"
   },
@@ -1828,6 +1839,7 @@
     "careers_url": "https://www.burmester.jobs/",
     "category": "Car Audio",
     "verified": true,
+    "open_application": true,
     "source": "auto",
     "scrape_method": "playwright"
   },
@@ -1841,9 +1853,9 @@
   },
   {
     "name": "BYD",
-    "careers_url": "https://www.bydauto.com/en/careers",
+    "careers_url": "https://boards.greenhouse.io/byd",
     "category": "Automotive OEMs",
-    "verified": false,
+    "verified": true,
     "source": "auto",
     "scrape_method": "http"
   },
@@ -1897,7 +1909,7 @@
   },
   {
     "name": "Calrec Audio",
-    "careers_url": "https://calrec.com/careers/",
+    "careers_url": "https://careers.calrec.com",
     "category": "Professional Audio & Live Sound",
     "verified": true,
     "source": "auto",
@@ -1964,6 +1976,7 @@
     "careers_url": "https://jobs.jobvite.com/capcomusa",
     "category": "Gaming, VR & Immersive Audio",
     "verified": true,
+    "open_application": true,
     "source": "auto",
     "scrape_method": "http"
   },
@@ -2084,6 +2097,7 @@
     "careers_url": "https://celestion.com/about-us/careers/",
     "category": "Transducer & Driver Manufacturers",
     "verified": true,
+    "open_application": true,
     "source": "auto",
     "scrape_method": "playwright"
   },
@@ -2193,9 +2207,9 @@
   },
   {
     "name": "Cirrus Logic",
-    "careers_url": "https://careers.cirrus.com",
-    "category": "Consumer Electronics & Tech",
-    "verified": false,
+    "careers_url": "https://jobs.eu.lever.co/cirrus",
+    "category": "Audio Semiconductors",
+    "verified": true,
     "source": "auto",
     "scrape_method": "http"
   },
@@ -2297,11 +2311,11 @@
   },
   {
     "name": "Cochlear",
-    "careers_url": "https://www.cochlear.com/us/en/corporate/careers",
+    "careers_url": "https://cochlear.wd3.myworkdayjobs.com/Cochlear_Careers",
     "category": "Hearing Aid & Hearing Tech",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "http"
   },
   {
     "name": "Cockos (REAPER)",
@@ -2417,11 +2431,11 @@
   },
   {
     "name": "Creative Assembly",
-    "careers_url": "https://careers.sega.co.uk/",
+    "careers_url": "https://careers.sega.co.uk/vacancies",
     "category": "Gaming, VR & Immersive Audio",
     "verified": true,
     "source": "auto",
-    "scrape_method": "playwright"
+    "scrape_method": "http"
   },
   {
     "name": "Creative Technology",
@@ -2435,7 +2449,7 @@
     "name": "Creek Audio",
     "careers_url": "https://creekaudio.com/",
     "category": "Hi-Fi & Consumer Speakers",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "http"
   },
@@ -2475,7 +2489,7 @@
     "name": "Cross DJ (Mixvibes)",
     "careers_url": "https://fr.linkedin.com/company/mixvibes",
     "category": "DJ Equipment",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "http"
   },
@@ -2540,6 +2554,7 @@
     "careers_url": "https://www.cyberdata.net/pages/careers",
     "category": "Professional Audio & Live Sound",
     "verified": true,
+    "open_application": true,
     "source": "auto",
     "scrape_method": "playwright"
   },
@@ -2561,9 +2576,9 @@
   },
   {
     "name": "d&b audiotechnik",
-    "careers_url": "https://www.db-audio.com/en/careers",
+    "careers_url": "https://dbaudio.wd103.myworkdayjobs.com/en-US/dbaudiotechnik-careers-en",
     "category": "Professional Audio & Live Sound",
-    "verified": false,
+    "verified": true,
     "source": "auto",
     "scrape_method": "http"
   },
@@ -2572,6 +2587,7 @@
     "careers_url": "https://www.daimlertruck.com/en/career",
     "category": "Automotive OEMs",
     "verified": true,
+    "open_application": true,
     "source": "auto",
     "scrape_method": "playwright"
   },
@@ -2588,6 +2604,7 @@
     "careers_url": "https://www.dali-speakers.com/en/about-dali/careers-at-dali/",
     "category": "Hi-Fi & Consumer Speakers",
     "verified": true,
+    "open_application": true,
     "source": "auto",
     "scrape_method": "playwright"
   },
@@ -2676,6 +2693,7 @@
     "careers_url": "https://www.dbtechnologies.com/us/our-world/careers",
     "category": "Professional Audio & Live Sound",
     "verified": true,
+    "open_application": true,
     "source": "auto",
     "scrape_method": "playwright"
   },
@@ -2768,6 +2786,14 @@
     "scrape_method": "playwright"
   },
   {
+    "name": "Delart",
+    "careers_url": "https://job-boards.greenhouse.io/delartech",
+    "category": "Acoustic Consulting & Engineering",
+    "verified": true,
+    "source": "manual",
+    "scrape_method": "http"
+  },
+  {
     "name": "Dell Technologies",
     "careers_url": "https://careers.dell.com",
     "category": "Consumer Electronics & Tech",
@@ -2777,7 +2803,7 @@
   },
   {
     "name": "Demant (Oticon/Bernafon)",
-    "careers_url": "https://careers.demant.com/",
+    "careers_url": "https://careers.demant.com/search/",
     "category": "Hearing Aid & Hearing Tech",
     "verified": true,
     "source": "auto",
@@ -2787,7 +2813,7 @@
     "name": "Denon",
     "careers_url": "https://jobs.harman.com/",
     "category": "Hi-Fi & Consumer Speakers",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "playwright"
   },
@@ -2795,7 +2821,7 @@
     "name": "Denon DJ",
     "careers_url": "https://inmusicbrands.pinpointhq.com/",
     "category": "DJ Equipment",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "http"
   },
@@ -2809,11 +2835,11 @@
   },
   {
     "name": "Devialet",
-    "careers_url": "https://www.jobvite.com/support/job-seeker-support/?invalid=1",
+    "careers_url": "https://devialet.welcomekit.co/",
     "category": "Consumer Electronics & Tech",
     "verified": true,
     "source": "auto",
-    "scrape_method": "http"
+    "scrape_method": "playwright"
   },
   {
     "name": "Devicemarket",
@@ -2865,7 +2891,7 @@
   },
   {
     "name": "Dice FM",
-    "careers_url": "https://dice.fm/jobs?canonicalLng=x-default&lng=en-US",
+    "careers_url": "https://boards.eu.greenhouse.io/dicefm-careers",
     "category": "Streaming & Music Services",
     "verified": true,
     "source": "auto",
@@ -2873,7 +2899,7 @@
   },
   {
     "name": "DiGiCo",
-    "careers_url": "https://www.digico.tv/app.php/About-Us/careers",
+    "careers_url": "https://digico.biz/recruitment/",
     "category": "Professional Audio & Live Sound",
     "verified": true,
     "source": "auto",
@@ -2885,6 +2911,14 @@
     "category": "Professional Audio & Live Sound",
     "verified": true,
     "source": "auto",
+    "scrape_method": "http"
+  },
+  {
+    "name": "DiGiGrid",
+    "careers_url": "https://digigrid.net/recruitment",
+    "category": "Professional Audio & Live Sound",
+    "verified": true,
+    "source": "manual",
     "scrape_method": "http"
   },
   {
@@ -2976,6 +3010,14 @@
     "scrape_method": "http"
   },
   {
+    "name": "Dolby",
+    "careers_url": "https://jobs.dolby.com/careers?query=audio",
+    "category": "Consumer Electronics & Tech",
+    "verified": true,
+    "source": "manual",
+    "scrape_method": "http"
+  },
+  {
     "name": "Dongfeng Motor",
     "careers_url": "https://www.dfmc.com/en/careers",
     "category": "Automotive OEMs",
@@ -2988,6 +3030,7 @@
     "careers_url": "https://careers.smartrecruiters.com/DONTNOD",
     "category": "Gaming, VR & Immersive Audio",
     "verified": true,
+    "open_application": true,
     "source": "auto",
     "scrape_method": "http"
   },
@@ -3068,6 +3111,7 @@
     "careers_url": "https://job.dynaudio.com/",
     "category": "Car Audio",
     "verified": true,
+    "open_application": true,
     "source": "auto",
     "scrape_method": "playwright"
   },
@@ -3466,7 +3510,7 @@
   {
     "name": "ESS Technology",
     "careers_url": "https://www.esstech.com/ess-careers/",
-    "category": "Consumer Electronics & Tech",
+    "category": "Audio Semiconductors",
     "verified": true,
     "source": "auto",
     "scrape_method": "playwright"
@@ -3524,6 +3568,7 @@
     "careers_url": "https://www.expressivee.com/category/3-careers",
     "category": "Electronic Musical Instruments",
     "verified": true,
+    "open_application": true,
     "source": "auto",
     "scrape_method": "playwright"
   },
@@ -3539,7 +3584,7 @@
     "name": "Extron Electronics",
     "careers_url": "https://www.extron.com/careers",
     "category": "Professional Audio & Live Sound",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "playwright"
   },
@@ -3580,6 +3625,7 @@
     "careers_url": "https://www.fasttravelgames.com/career",
     "category": "Gaming, VR & Immersive Audio",
     "verified": true,
+    "open_application": true,
     "source": "auto",
     "scrape_method": "playwright"
   },
@@ -3603,15 +3649,23 @@
     "name": "FBT",
     "careers_url": "https://www.fbt.it/events/join-us-at-infocomm-2025-in-orlando/",
     "category": "Professional Audio & Live Sound",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "playwright"
   },
   {
-    "name": "Fender Play",
-    "careers_url": "https://www.fender.com/pages/careers",
-    "category": "Music Education Technology",
+    "name": "Fender",
+    "careers_url": "https://job-boards.greenhouse.io/fender",
+    "category": "Electronic Musical Instruments",
     "verified": true,
+    "source": "manual",
+    "scrape_method": "http"
+  },
+  {
+    "name": "Fender Play",
+    "careers_url": "https://job-boards.greenhouse.io/fender",
+    "category": "Music Education Technology",
+    "verified": false,
     "source": "auto",
     "scrape_method": "playwright"
   },
@@ -3660,6 +3714,7 @@
     "careers_url": "https://www.fmod.com/careers",
     "category": "Audio Middleware & SDK",
     "verified": true,
+    "open_application": true,
     "source": "auto",
     "scrape_method": "playwright"
   },
@@ -3732,6 +3787,7 @@
     "careers_url": "https://www.focal.com/fr/recrutement",
     "category": "Headphones & Personal Audio",
     "verified": true,
+    "open_application": true,
     "source": "auto",
     "scrape_method": "http"
   },
@@ -3779,7 +3835,7 @@
     "name": "Fostex",
     "careers_url": "https://898093.studiowatersolutions.com/?mlk=kzzmoibVw0zDfg4SAYjqBFGr9jEpCc8%2BSUgvklbslQS7mssoUbAEzoPTkU61M6lwXNGwnAOVr%2B693%2BZMHek5w4ukCWjQ02S5Ci1%2BpzNilWX3jgcneBFUBcttKcs32tCJlNJW2He1g0TW5fC8BO0f0nsFLume3VQjRqV3dHuiSfGcelfQk20BkEZ5D87CHN%2F1awtgy91gJF12I1dI%2BBnZ7UBOQ96ug%2ByPcpFiwWsIBzje%2FvJqjmN30Vx6PAr7MMeolNGSdbUldzdlnhlw1xW9dJZWBDIGHlo%2BcsljYee4iIeUFK7zqwlhjGlurJJfHqYIhPFy%2F172oZooCuVTdC1SIP40Vu5wpr%2BfK%2FZVWFN47lITJYZzz84aWXtDF66%2FeN81PlaIgPKe9s2tJZmluWbAkGk56WVtM57rUM%2BOt3HcEZoooUDXWDA1xMznsMQ5yxWlLlmJAiRz5uXAfEnZBGraJ8eKrjyFE%2B9GRb5d8Wc7bbzntDUJweRriIw6CnnEayEOajW7jAIAJJ9kHa6SenhInjBIWZSWsGrJBWdixiqzg%2FatYEz6fBMJ%2Bd21egZp6TcJ5QB5Yh5AtsSjxIppWhFdG12bf%2FD9piHwSsKblMd59VT6wE67BmLoriwTfbUTZfJo5QRyNTBixaW73j%2BAWFpLljJl6sKu4RffJdKX2LzqUkH7%2FMfYfqVZwEx1qpsMK9UdtcBWIs%2BRpxjF6%2F8bf67QEmfi9uMprFxV5qdNWUdaHw2d70c95MUT4bpPqbs1CRQGyhz7XojEoDyYdG%2Ffsx5uYEU0ptc%2Bt1rGjVwJCNfmy0%2B%2F5FIoRQ%3D%3D",
     "category": "Headphones & Personal Audio",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "playwright"
   },
@@ -3873,7 +3929,7 @@
   },
   {
     "name": "Full Sail University",
-    "careers_url": "https://go.fullsail.edu/join-our-team",
+    "careers_url": "https://fullsail.wd1.myworkdayjobs.com/External",
     "category": "Music Education Technology",
     "verified": true,
     "source": "auto",
@@ -3993,7 +4049,7 @@
   },
   {
     "name": "Genius",
-    "careers_url": "https://genius.com/Careers",
+    "careers_url": "https://job-boards.greenhouse.io/geniusjobs",
     "category": "Streaming & Music Services",
     "verified": true,
     "source": "auto",
@@ -4029,6 +4085,14 @@
     "category": "Streaming & Music Services",
     "verified": true,
     "source": "auto",
+    "scrape_method": "http"
+  },
+  {
+    "name": "Gibson",
+    "careers_url": "https://www.gibson.com/apps/adpJobRequisition/",
+    "category": "Electronic Musical Instruments",
+    "verified": true,
+    "source": "manual",
     "scrape_method": "http"
   },
   {
@@ -4113,11 +4177,14 @@
   },
   {
     "name": "Google",
-    "careers_url": "https://www.google.com/about/careers/applications/",
+    "careers_url": "https://www.google.com/about/careers/applications/jobs/results/?q=audio",
+    "extra_careers_urls": [
+      "https://www.google.com/about/careers/applications/jobs/results/?q=dsp"
+    ],
     "category": "Consumer Electronics & Tech",
     "verified": true,
     "source": "auto",
-    "scrape_method": "playwright"
+    "scrape_method": "http"
   },
   {
     "name": "Gotham Audio",
@@ -4264,6 +4331,20 @@
     "scrape_method": "http"
   },
   {
+    "name": "Harman",
+    "careers_url": "https://jobsearch.harman.com/en_US/careers/SearchJobs/?search=audio",
+    "extra_careers_urls": [
+      "https://jobsearch.harman.com/en_US/careers/SearchJobs/?search=acoustic",
+      "https://jobsearch.harman.com/en_US/careers/SearchJobs/?search=dsp",
+      "https://jobsearch.harman.com/en_US/careers/SearchJobs/?search=transducer",
+      "https://jobsearch.harman.com/en_US/careers/SearchJobs/?search=sound"
+    ],
+    "category": "Professional Audio & Live Sound",
+    "verified": true,
+    "source": "manual",
+    "scrape_method": "http"
+  },
+  {
     "name": "Harmonai",
     "careers_url": "https://www.harmonai.org/careers",
     "category": "Gaming, VR & Immersive Audio",
@@ -4292,6 +4373,7 @@
     "careers_url": "https://www.head-acoustics.com/career/",
     "category": "Audio Testing & Measurement",
     "verified": true,
+    "open_application": true,
     "source": "auto",
     "scrape_method": "playwright"
   },
@@ -4436,6 +4518,7 @@
     "careers_url": "https://www.hilsonmoran.com/careers/",
     "category": "Acoustic Consulting & Engineering",
     "verified": true,
+    "open_application": true,
     "source": "auto",
     "scrape_method": "playwright"
   },
@@ -4571,7 +4654,7 @@
     "name": "Hulu Post",
     "careers_url": "https://jobs.disneycareers.com/",
     "category": "Recording Studios & Post Houses",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "playwright"
   },
@@ -4684,6 +4767,7 @@
     "careers_url": "https://www.ikmultimedia.com/careers/",
     "category": "Audio Plugins & Virtual Instruments",
     "verified": true,
+    "open_application": true,
     "source": "auto",
     "scrape_method": "playwright"
   },
@@ -4745,7 +4829,11 @@
   },
   {
     "name": "Infineon Technologies",
-    "careers_url": "https://jobs.infineon.com/careers?start=0&pid=563808971874262&sort_by=timestamp",
+    "careers_url": "https://jobs.infineon.com/careers?query=audio",
+    "extra_careers_urls": [
+      "https://jobs.infineon.com/careers?query=dsp",
+      "https://jobs.infineon.com/careers?query=acoustic"
+    ],
     "category": "Consumer Electronics & Tech",
     "verified": true,
     "source": "auto",
@@ -4754,7 +4842,7 @@
   {
     "name": "inMusic Brands",
     "careers_url": "https://inmusicbrands.pinpointhq.com/",
-    "category": "Professional Audio & Live Sound",
+    "category": "Electronic Musical Instruments",
     "verified": true,
     "source": "auto",
     "scrape_method": "http"
@@ -4769,9 +4857,9 @@
   },
   {
     "name": "Integra",
-    "careers_url": "https://www.integrahometheater.com/us/careers",
+    "careers_url": "https://boards.greenhouse.io/integra",
     "category": "Hi-Fi & Consumer Speakers",
-    "verified": false,
+    "verified": true,
     "source": "auto",
     "scrape_method": "http"
   },
@@ -4844,6 +4932,7 @@
     "careers_url": "https://www.ircam.fr/en/jobs-offers",
     "category": "Music Education Technology",
     "verified": true,
+    "open_application": true,
     "source": "auto",
     "scrape_method": "playwright"
   },
@@ -5073,7 +5162,7 @@
   },
   {
     "name": "Keysight Technologies",
-    "careers_url": "https://careers-keysight.icims.com/jobs",
+    "careers_url": "https://jobs.keysight.com/external/jobs",
     "category": "Audio Testing & Measurement",
     "verified": true,
     "source": "manual",
@@ -5297,7 +5386,7 @@
   },
   {
     "name": "L-Acoustics",
-    "careers_url": "https://www.l-acoustics.com/",
+    "careers_url": "https://lgroup.wd3.myworkdayjobs.com/en-US/L-Acoustics_Group_career",
     "category": "Professional Audio & Live Sound",
     "verified": true,
     "source": "auto",
@@ -5307,7 +5396,7 @@
     "name": "Lab.gruppen",
     "careers_url": "https://www.labgruppen.com/careers",
     "category": "Professional Audio & Live Sound",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "http"
   },
@@ -5683,7 +5772,7 @@
     "name": "M-Audio",
     "careers_url": "https://inmusicbrands.pinpointhq.com/",
     "category": "Audio Interfaces & Converters",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "http"
   },
@@ -5708,6 +5797,7 @@
     "careers_url": "https://www.madfingergames.com/careers",
     "category": "Gaming, VR & Immersive Audio",
     "verified": true,
+    "open_application": true,
     "source": "auto",
     "scrape_method": "playwright"
   },
@@ -5811,7 +5901,7 @@
     "name": "Marantz",
     "careers_url": "https://jobs.harman.com/",
     "category": "Hi-Fi & Consumer Speakers",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "playwright"
   },
@@ -6027,17 +6117,17 @@
     "name": "MESA/Boogie",
     "careers_url": "https://www.gibson.com/pages/mesa-boogie",
     "category": "Professional Audio & Live Sound",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "http"
   },
   {
     "name": "Meta",
-    "careers_url": "https://www.metacareers.com/",
+    "careers_url": "https://www.metacareers.com/jobs?q=audio",
     "category": "Consumer Electronics & Tech",
     "verified": true,
     "source": "auto",
-    "scrape_method": "http"
+    "scrape_method": "playwright"
   },
   {
     "name": "Metric Halo",
@@ -6177,9 +6267,9 @@
   },
   {
     "name": "Modal Electronics",
-    "careers_url": "https://modal.com/company#careers",
+    "careers_url": "https://modalelectronics.com",
     "category": "Electronic Musical Instruments",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "playwright"
   },
@@ -6291,7 +6381,7 @@
     "name": "Moog Music",
     "careers_url": "https://inmusicbrands.pinpointhq.com/",
     "category": "Electronic Musical Instruments",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "http"
   },
@@ -6371,7 +6461,7 @@
     "name": "Musi",
     "careers_url": "https://mufgub.wd3.myworkdayjobs.com/MUFG-Careers",
     "category": "Streaming & Music Services",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "http"
   },
@@ -6401,9 +6491,9 @@
   },
   {
     "name": "Music Tribe",
-    "careers_url": "https://www.musictribe.com/careers",
+    "careers_url": "https://jobs.jobvite.com/musictribe",
     "category": "Professional Audio & Live Sound",
-    "verified": false,
+    "verified": true,
     "source": "auto",
     "scrape_method": "http"
   },
@@ -6875,7 +6965,7 @@
     "name": "Numark",
     "careers_url": "https://inmusicbrands.pinpointhq.com/",
     "category": "DJ Equipment",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "http"
   },
@@ -6985,7 +7075,7 @@
   },
   {
     "name": "Ooma",
-    "careers_url": "https://www.ooma.com/careers/",
+    "careers_url": "https://job-boards.greenhouse.io/ooma",
     "category": "Voice & Speech Technology",
     "verified": true,
     "source": "auto",
@@ -7030,14 +7120,6 @@
     "verified": true,
     "source": "auto",
     "scrape_method": "http"
-  },
-  {
-    "name": "Oticon Medical",
-    "careers_url": "https://careers.demant.com/",
-    "category": "Hearing Aid & Hearing Tech",
-    "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
   },
   {
     "name": "Otter.ai",
@@ -7187,14 +7269,6 @@
     "name": "Peavey Electronics",
     "careers_url": "https://peavey.com/careers/",
     "category": "Professional Audio & Live Sound",
-    "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
-  },
-  {
-    "name": "Peerless",
-    "careers_url": "https://www.dst.dk/da/OmDS/Job",
-    "category": "Transducer & Driver Manufacturers",
     "verified": true,
     "source": "auto",
     "scrape_method": "playwright"
@@ -7428,6 +7502,7 @@
     "careers_url": "https://jobs.porsche.com/",
     "category": "Automotive OEMs",
     "verified": true,
+    "open_application": true,
     "source": "auto",
     "scrape_method": "http"
   },
@@ -7681,7 +7756,7 @@
   },
   {
     "name": "QSC",
-    "careers_url": "https://www.acuityinc.com/careers",
+    "careers_url": "https://qsccareersemea-qsc.icims.com/jobs/",
     "category": "Professional Audio & Live Sound",
     "verified": true,
     "source": "auto",
@@ -7713,7 +7788,10 @@
   },
   {
     "name": "Qualcomm",
-    "careers_url": "https://careers.qualcomm.com/careers?start=0&pid=446720669967&sort_by=timestamp",
+    "careers_url": "https://careers.qualcomm.com/careers?query=audio",
+    "extra_careers_urls": [
+      "https://careers.qualcomm.com/careers?query=dsp"
+    ],
     "category": "Consumer Electronics & Tech",
     "verified": true,
     "source": "auto",
@@ -7795,7 +7873,7 @@
     "name": "Rane",
     "careers_url": "https://inmusicbrands.pinpointhq.com/",
     "category": "DJ Equipment",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "http"
   },
@@ -7860,6 +7938,7 @@
     "careers_url": "https://www.rcsworks.com/company/careers-at-rcs/",
     "category": "Professional Audio & Live Sound",
     "verified": true,
+    "open_application": true,
     "source": "auto",
     "scrape_method": "playwright"
   },
@@ -8209,11 +8288,11 @@
   },
   {
     "name": "Rohde & Schwarz",
-    "careers_url": "https://www.rohde-schwarz.com/uk/career/jobs/career-jobboard_251573.html",
+    "careers_url": "https://jobs.rohde-schwarz.com/en_US/careers",
     "category": "Professional Audio & Live Sound",
     "verified": true,
     "source": "auto",
-    "scrape_method": "playwright"
+    "scrape_method": "http"
   },
   {
     "name": "Roland",
@@ -8465,11 +8544,11 @@
   },
   {
     "name": "Sega",
-    "careers_url": "https://careers.sega.co.uk/",
+    "careers_url": "https://careers.sega.co.uk/vacancies",
     "category": "Gaming, VR & Immersive Audio",
     "verified": true,
     "source": "auto",
-    "scrape_method": "playwright"
+    "scrape_method": "http"
   },
   {
     "name": "Sennheiser",
@@ -8608,6 +8687,14 @@
     "scrape_method": "playwright"
   },
   {
+    "name": "Sigma Connectivity",
+    "careers_url": "https://integration.sigma.se/esb/vacancy/portal/positions?company_startswith=Sigma+Connectivity",
+    "category": "Acoustic Consulting & Engineering",
+    "verified": true,
+    "source": "manual",
+    "scrape_method": "http"
+  },
+  {
     "name": "Signalogic",
     "careers_url": "https://www.signalogic.com/index.pl?page=careers",
     "category": "Audio Plugins & Virtual Instruments",
@@ -8636,6 +8723,7 @@
     "careers_url": "https://simaudio.com/en/careers/",
     "category": "Hi-Fi & Consumer Speakers",
     "verified": true,
+    "open_application": true,
     "source": "auto",
     "scrape_method": "playwright"
   },
@@ -8740,6 +8828,7 @@
     "careers_url": "https://sleepcycleab.teamtailor.com/",
     "category": "Audio Health & Wellness",
     "verified": true,
+    "open_application": true,
     "source": "auto",
     "scrape_method": "http"
   },
@@ -8852,6 +8941,7 @@
     "careers_url": "https://www.sonible.com/jobs/",
     "category": "Audio Plugins & Virtual Instruments",
     "verified": true,
+    "open_application": true,
     "source": "auto",
     "scrape_method": "playwright"
   },
@@ -8926,6 +9016,14 @@
     "verified": false,
     "source": "auto",
     "scrape_method": "http"
+  },
+  {
+    "name": "Sound Devices",
+    "careers_url": "https://www.sounddevices.com/company/careers/",
+    "category": "Professional Audio & Live Sound",
+    "verified": true,
+    "source": "manual",
+    "scrape_method": "playwright"
   },
   {
     "name": "Sound Oasis",
@@ -9193,7 +9291,7 @@
   },
   {
     "name": "Spitfire Audio",
-    "careers_url": "https://www.spitfireaudio.com/en-us/pages/careers",
+    "careers_url": "https://apply.workable.com/spitfire-audio/",
     "category": "Audio Plugins & Virtual Instruments",
     "verified": true,
     "source": "auto",
@@ -9217,11 +9315,11 @@
   },
   {
     "name": "Sports Interactive",
-    "careers_url": "https://careers.sega.co.uk/",
+    "careers_url": "https://careers.sega.co.uk/vacancies",
     "category": "Gaming, VR & Immersive Audio",
     "verified": true,
     "source": "auto",
-    "scrape_method": "playwright"
+    "scrape_method": "http"
   },
   {
     "name": "Spotify",
@@ -9275,13 +9373,13 @@
     "name": "Stanton",
     "careers_url": "https://inmusicbrands.pinpointhq.com/",
     "category": "DJ Equipment",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "http"
   },
   {
     "name": "Starkey Hearing Technologies",
-    "careers_url": "https://www.starkey.com/careers",
+    "careers_url": "https://recruiting2.ultipro.com/STA1003STARK/JobBoard/aa9d7813-93e5-4731-9f45-8ccb56bea5fd/?q=&o=postedDateDesc",
     "category": "Hearing Aid & Hearing Tech",
     "verified": true,
     "source": "auto",
@@ -9451,7 +9549,7 @@
     "name": "Supro",
     "careers_url": "https://www.suprousa.com/careers/",
     "category": "Professional Audio & Live Sound",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "http"
   },
@@ -9619,7 +9717,7 @@
     "name": "Tannoy",
     "careers_url": "https://www.musictribe.com/careers",
     "category": "Hi-Fi & Consumer Speakers",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "http"
   },
@@ -9651,7 +9749,7 @@
     "name": "TC Electronic",
     "careers_url": "https://www.musictribe.com/careers",
     "category": "Professional Audio & Live Sound",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "http"
   },
@@ -9659,7 +9757,7 @@
     "name": "TC Helicon",
     "careers_url": "https://www.musictribe.com/careers",
     "category": "Professional Audio & Live Sound",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "http"
   },
@@ -9722,8 +9820,9 @@
   {
     "name": "Tempo Semiconductor",
     "careers_url": "https://temposemi.com/about/careers/",
-    "category": "Consumer Electronics & Tech",
+    "category": "Audio Semiconductors",
     "verified": true,
+    "open_application": true,
     "source": "auto",
     "scrape_method": "playwright"
   },
@@ -9745,7 +9844,7 @@
   },
   {
     "name": "Tesla",
-    "careers_url": "https://www.tesla.com/careers",
+    "careers_url": "https://www.tesla.com/careers/search/",
     "category": "Automotive OEMs",
     "verified": false,
     "source": "auto",
@@ -9828,6 +9927,7 @@
     "careers_url": "https://thqnordic.com/company/careers",
     "category": "Gaming, VR & Immersive Audio",
     "verified": true,
+    "open_application": true,
     "source": "auto",
     "scrape_method": "playwright"
   },
@@ -9972,6 +10072,7 @@
     "careers_url": "https://careers.toyota.com/us/en",
     "category": "Automotive OEMs",
     "verified": true,
+    "open_application": true,
     "source": "auto",
     "scrape_method": "http"
   },
@@ -10099,7 +10200,7 @@
     "name": "Turbosound",
     "careers_url": "https://www.musictribe.com/careers",
     "category": "Professional Audio & Live Sound",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "http"
   },
@@ -10160,6 +10261,15 @@
     "scrape_method": "http"
   },
   {
+    "name": "Tymphany",
+    "careers_url": "https://tymphany.com/JoinUs.html",
+    "category": "Transducer & Driver Manufacturers",
+    "verified": true,
+    "open_application": true,
+    "source": "manual",
+    "scrape_method": "http"
+  },
+  {
     "name": "u-he Diva",
     "careers_url": "https://u-he.com/about/jobs.html",
     "category": "Audio Plugins & Virtual Instruments",
@@ -10195,7 +10305,7 @@
     "name": "Ultimate Ears",
     "careers_url": "https://logitech.wd5.myworkdayjobs.com/Logitech",
     "category": "Headphones & Personal Audio",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "http"
   },
@@ -10364,6 +10474,7 @@
     "careers_url": "https://varjo.com/jobs",
     "category": "Gaming, VR & Immersive Audio",
     "verified": true,
+    "open_application": true,
     "source": "auto",
     "scrape_method": "playwright"
   },
@@ -10411,7 +10522,7 @@
     "name": "Vifa",
     "careers_url": "https://www.dst.dk/da/OmDS/Job",
     "category": "Transducer & Driver Manufacturers",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "playwright"
   },
@@ -10593,9 +10704,9 @@
   },
   {
     "name": "Vonage",
-    "careers_url": "https://www.vonage.com/careers",
+    "careers_url": "https://boards.greenhouse.io/vonage",
     "category": "Voice & Speech Technology",
-    "verified": false,
+    "verified": true,
     "source": "auto",
     "scrape_method": "http"
   },
@@ -10660,6 +10771,7 @@
     "careers_url": "https://waldorfmusic.com/de/jobs/",
     "category": "Electronic Musical Instruments",
     "verified": true,
+    "open_application": true,
     "source": "auto",
     "scrape_method": "playwright"
   },
@@ -10835,7 +10947,7 @@
     "name": "Wisycom",
     "careers_url": "https://wisycom.com/products/careers/",
     "category": "Professional Audio & Live Sound",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "playwright"
   },
@@ -10960,9 +11072,18 @@
     "scrape_method": "playwright"
   },
   {
+    "name": "xMEMS",
+    "careers_url": "https://xmems.com/careers/",
+    "category": "Audio Semiconductors",
+    "verified": true,
+    "open_application": true,
+    "source": "manual",
+    "scrape_method": "playwright"
+  },
+  {
     "name": "XMOS",
     "careers_url": "https://www.xmos.com/careers",
-    "category": "Consumer Electronics & Tech",
+    "category": "Audio Semiconductors",
     "verified": false,
     "source": "auto",
     "scrape_method": "http"
@@ -11057,7 +11178,7 @@
   },
   {
     "name": "Zoom",
-    "careers_url": "https://careers.zoom.us/home",
+    "careers_url": "https://careers.zoom.us/jobs/search",
     "category": "Voice & Speech Technology",
     "verified": true,
     "source": "auto",
@@ -11075,7 +11196,7 @@
     "name": "Zynaptiq",
     "careers_url": "https://www.zynaptiq.com/careers/",
     "category": "Professional Audio & Live Sound",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "http"
   },

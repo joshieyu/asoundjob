@@ -2,12 +2,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Optional
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from scraper.models import Company, Job
 from scraper.normalizer import NormalizedJob
+from scraper.overrides import effective_categories, effective_is_audio
 from scraper.scrapers.base import RawJob
 
 
@@ -42,6 +44,37 @@ def identity_for_raw(raw: RawJob | NormalizedJob) -> str:
     return f"url:{_url_identity(raw.url)}"
 
 
+PAGINATION_QUERY_KEYS = frozenset({"page", "pg", "offset", "start"})
+
+
+def seed_query_keys(urls: list[str]) -> frozenset:
+    if len(urls) < 2:
+        return frozenset()
+    keys = set(PAGINATION_QUERY_KEYS)
+    for url in urls:
+        query = urlsplit(url.strip()).query
+        for key, _ in parse_qsl(query, keep_blank_values=True):
+            keys.add(key.strip().lower())
+    return frozenset(keys)
+
+
+def merge_identity(raw: RawJob | NormalizedJob, seed_keys: frozenset) -> str:
+    if getattr(raw, "external_id", None):
+        return f"ext:{raw.external_id}"
+    if not seed_keys:
+        return f"url:{_url_identity(raw.url)}"
+    parts = urlsplit(raw.url.strip())
+    kept = [
+        (key, value)
+        for key, value in parse_qsl(parts.query, keep_blank_values=True)
+        if key.strip().lower() not in seed_keys
+    ]
+    rebuilt = urlunsplit(
+        (parts.scheme, parts.netloc, parts.path, urlencode(kept), parts.fragment)
+    )
+    return f"url:{_url_identity(rebuilt)}"
+
+
 def identity_for_job(job: Job) -> Optional[str]:
     if job.external_id:
         return f"ext:{job.external_id}"
@@ -55,6 +88,7 @@ def reconcile_company_jobs(
     company: Company,
     fetched: list[NormalizedJob],
     trust_empty: bool,
+    allow_deactivation: bool = True,
 ) -> ReconcileStats:
     stats = ReconcileStats()
 
@@ -84,6 +118,7 @@ def reconcile_company_jobs(
                     description=normalized.description,
                     url=normalized.url,
                     location=normalized.location,
+                    country=normalized.country,
                     remote=normalized.remote,
                     job_type=normalized.job_type,
                     seniority=normalized.seniority,
@@ -107,15 +142,16 @@ def reconcile_company_jobs(
         row.description = normalized.description
         row.url = normalized.url
         row.location = normalized.location
+        row.country = normalized.country
         row.remote = normalized.remote
         row.job_type = normalized.job_type
         row.seniority = normalized.seniority
         row.salary_min = normalized.salary_min
         row.salary_max = normalized.salary_max
         row.salary_currency = normalized.salary_currency
-        row.job_categories = normalized.job_categories
+        row.job_categories = effective_categories(row, normalized.job_categories)
         row.relevance_score = normalized.relevance_score
-        row.is_audio_related = normalized.is_audio_related
+        row.is_audio_related = effective_is_audio(row, normalized.is_audio_related)
         if normalized.posted_date is not None:
             row.posted_date = normalized.posted_date
         if not row.is_active:
@@ -123,7 +159,7 @@ def reconcile_company_jobs(
             stats.reactivated += 1
         stats.updated += 1
 
-    can_deactivate = trust_empty or len(fetched) > 0
+    can_deactivate = allow_deactivation and (trust_empty or len(fetched) > 0)
     for row in existing_rows:
         if not row.is_active:
             continue

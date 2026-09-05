@@ -1,7 +1,12 @@
 <script lang="ts">
 	import discordLink from '$lib/data/discord-link.txt?raw';
+	import type { PageData } from './$types';
+
+	let { data }: { data: PageData } = $props();
 
 	const discord = discordLink.trim();
+	const companyCount = $derived(data.companyCount.toLocaleString('en-US'));
+	const categoryCount = $derived(data.categoryCount);
 </script>
 
 <svelte:head>
@@ -43,11 +48,11 @@
 
 	<div class="mt-6 grid gap-3 sm:grid-cols-3">
 		<div class="well p-4">
-			<p class="font-mono text-xl font-semibold">1,385</p>
+			<p class="font-mono text-xl font-semibold">{companyCount}</p>
 			<p class="mt-0.5 text-sm text-ink-soft">audio companies indexed</p>
 		</div>
 		<div class="well p-4">
-			<p class="font-mono text-xl font-semibold">14</p>
+			<p class="font-mono text-xl font-semibold">{categoryCount}</p>
 			<p class="mt-0.5 text-sm text-ink-soft">specialty categories</p>
 		</div>
 		<div class="well p-4">

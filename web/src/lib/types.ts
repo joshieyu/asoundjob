@@ -10,6 +10,8 @@ export interface Job {
 	title: string;
 	url: string;
 	location: string | null;
+	country: string | null;
+	country_name: string | null;
 	remote: boolean;
 	job_type: string | null;
 	seniority: string | null;
@@ -39,6 +41,31 @@ export interface CategoryInfo {
 	name: string;
 	description: string;
 	job_count: number;
+}
+
+export interface CountryInfo {
+	code: string;
+	name: string;
+	job_count: number;
+}
+
+export interface CountriesResponse {
+	countries: CountryInfo[];
+	unknown_count: number;
+}
+
+export interface OpenApplicationCompany {
+	id: number;
+	name: string;
+	slug: string;
+	category: string;
+	careers_url: string | null;
+	open_roles: number;
+}
+
+export interface OpenApplicationsResponse {
+	companies: OpenApplicationCompany[];
+	total: number;
 }
 
 export interface CompanyRecord {

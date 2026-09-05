@@ -1,5 +1,12 @@
 import { env } from '$env/dynamic/private';
-import type { CategoryInfo, Job, Paginated, CompanyRecord } from '$lib/types';
+import type {
+	CategoryInfo,
+	CountriesResponse,
+	Job,
+	Paginated,
+	CompanyRecord,
+	OpenApplicationsResponse
+} from '$lib/types';
 
 const API_URL = env.API_URL ?? 'http://127.0.0.1:8000';
 
@@ -49,6 +56,14 @@ export function getCompanies(
 
 export function getCategories(): Promise<{ categories: CategoryInfo[] }> {
 	return api<{ categories: CategoryInfo[] }>(`/api/categories`);
+}
+
+export function getCountries(): Promise<CountriesResponse> {
+	return api<CountriesResponse>(`/api/countries`);
+}
+
+export function getOpenApplications(): Promise<OpenApplicationsResponse> {
+	return api<OpenApplicationsResponse>(`/api/companies/open-applications`);
 }
 
 export const SITE_URL = env.SITE_URL ?? 'http://localhost:5173';

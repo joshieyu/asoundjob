@@ -4,7 +4,9 @@ import re
 from datetime import date, datetime
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+
+from api.config import MAX_COMMUNITY_JOB_DAYS
 
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
@@ -25,6 +27,8 @@ class JobSummary(BaseModel):
     title: str
     url: str
     location: Optional[str] = None
+    country: Optional[str] = None
+    country_name: Optional[str] = None
     remote: bool
     job_type: Optional[str] = None
     seniority: Optional[str] = None
@@ -52,6 +56,22 @@ class PaginatedJobs(BaseModel):
     pages: int
 
 
+class OpenApplicationCompany(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+    slug: str
+    category: str
+    careers_url: Optional[str] = None
+    open_roles: int = 0
+
+
+class OpenApplicationsResponse(BaseModel):
+    companies: list[OpenApplicationCompany]
+    total: int
+
+
 class CompanyResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -69,6 +89,7 @@ class CompanyResponse(BaseModel):
     source: str
     created_at: datetime
     active_jobs_count: int = 0
+    board_jobs_count: int = 0
 
 
 class PaginatedCompanies(BaseModel):
@@ -88,6 +109,17 @@ class CategoryInfo(BaseModel):
     name: str
     description: str
     job_count: int
+
+
+class CountryInfo(BaseModel):
+    code: str
+    name: str
+    job_count: int
+
+
+class CountriesResponse(BaseModel):
+    countries: list[CountryInfo]
+    unknown_count: int
 
 
 class CategoriesResponse(BaseModel):
@@ -132,6 +164,7 @@ class JobSubmissionRequest(BaseModel):
     salary_range: Optional[str] = Field(default=None, max_length=100)
     experience_level: Optional[str] = Field(default=None, max_length=50)
     audio_domain: Optional[str] = Field(default=None, max_length=50)
+    duration_days: Optional[int] = Field(default=None, ge=1, le=MAX_COMMUNITY_JOB_DAYS)
     submitter_name: Optional[str] = Field(default=None, max_length=200)
     submitter_email: Optional[str] = Field(default=None, max_length=320)
 
@@ -160,6 +193,7 @@ class AdminCompanyUpdate(BaseModel):
     name: Optional[str] = Field(default=None, min_length=1, max_length=200)
     category: Optional[str] = Field(default=None, min_length=1, max_length=100)
     careers_url: Optional[str] = Field(default=None, max_length=1000)
+    extra_careers_urls: Optional[list[str]] = Field(default=None, max_length=5)
     website_url: Optional[str] = Field(default=None, max_length=1000)
     verified: Optional[bool] = None
     scrape_method: Optional[str] = None
@@ -169,10 +203,37 @@ class AdminCompanyUpdate(BaseModel):
     headquarters: Optional[str] = None
     founded: Optional[int] = None
 
+    @field_validator("extra_careers_urls")
+    @classmethod
+    def extra_careers_urls_items_are_bounded(
+        cls, value: Optional[list[str]]
+    ) -> Optional[list[str]]:
+        if value is None:
+            return value
+        cleaned = []
+        for item in value:
+            stripped = item.strip()
+            if len(stripped) > 1000:
+                raise ValueError("extra_careers_urls items must be at most 1000 characters")
+            cleaned.append(stripped)
+        return cleaned
+
 
 class AdminCompanyCreate(AdminCompanyUpdate):
     name: str = Field(min_length=1, max_length=200)
     category: str = Field(min_length=1, max_length=100)
+
+
+class ApproveRequest(BaseModel):
+    expires_days: Optional[int] = Field(default=None, ge=1, le=MAX_COMMUNITY_JOB_DAYS)
+
+
+class ApproveResponse(BaseModel):
+    status: str
+    job_id: Optional[int] = None
+    expires_date: date
+    expires_days: int
+    expires_source: str
 
 
 class RejectRequest(BaseModel):
@@ -194,11 +255,115 @@ class AdminSubmission(BaseModel):
     salary_range: Optional[str] = None
     experience_level: Optional[str] = None
     audio_domain: Optional[str] = None
+    requested_days: Optional[int] = None
     status: str
     submitted_at: datetime
     reviewed_at: Optional[datetime] = None
     reviewed_by: Optional[str] = None
     reject_reason: Optional[str] = None
+
+
+JOB_FEEDBACK_KINDS = ("wrong_category", "not_audio", "broken_description", "broken_link")
+SITE_FEEDBACK_KINDS = ("company_suggestion", "general")
+
+
+class JobFeedbackRequest(BaseModel):
+    kind: str = Field(pattern="^(wrong_category|not_audio|broken_description|broken_link)$")
+    suggested_categories: Optional[list[str]] = None
+    comment: Optional[str] = Field(default=None, max_length=2000)
+    submitter_email: Optional[str] = Field(default=None, max_length=320)
+
+    @field_validator("submitter_email")
+    @classmethod
+    def email_must_be_valid(cls, value: Optional[str]) -> Optional[str]:
+        if value is not None and not EMAIL_RE.match(value):
+            raise ValueError("invalid email address")
+        return value
+
+    @model_validator(mode="after")
+    def wrong_category_needs_detail(self) -> JobFeedbackRequest:
+        if self.kind == "wrong_category" and not self.suggested_categories and not self.comment:
+            raise ValueError(
+                "wrong_category feedback requires suggested_categories or comment"
+            )
+        return self
+
+
+class SiteFeedbackRequest(BaseModel):
+    kind: str = Field(pattern="^(company_suggestion|general)$")
+    company_name: Optional[str] = Field(default=None, max_length=200)
+    company_url: Optional[str] = Field(default=None, max_length=1000)
+    comment: Optional[str] = Field(default=None, max_length=4000)
+    submitter_email: Optional[str] = Field(default=None, max_length=320)
+    page_path: Optional[str] = Field(default=None, max_length=300)
+
+    @field_validator("submitter_email")
+    @classmethod
+    def email_must_be_valid(cls, value: Optional[str]) -> Optional[str]:
+        if value is not None and not EMAIL_RE.match(value):
+            raise ValueError("invalid email address")
+        return value
+
+    @field_validator("company_url")
+    @classmethod
+    def url_must_be_http(cls, value: Optional[str]) -> Optional[str]:
+        if value is not None and not re.match(r"^https?://", value.strip()):
+            raise ValueError("company_url must start with http:// or https://")
+        return value
+
+    @model_validator(mode="after")
+    def kind_requires_fields(self) -> SiteFeedbackRequest:
+        if self.kind == "company_suggestion" and not self.company_name:
+            raise ValueError("company_suggestion feedback requires company_name")
+        if self.kind == "general" and (not self.comment or len(self.comment) < 5):
+            raise ValueError("general feedback requires a comment of at least 5 characters")
+        return self
+
+
+class FeedbackCreateResponse(BaseModel):
+    id: int
+    status: str
+    message: str
+
+
+class AdminJobFeedback(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    job_id: int
+    job_title: str
+    company_name: Optional[str] = None
+    kind: str
+    suggested_categories: Optional[list[str]] = None
+    comment: Optional[str] = None
+    submitter_email: Optional[str] = None
+    status: str
+    submitted_at: datetime
+    reviewed_at: Optional[datetime] = None
+    reviewed_by: Optional[str] = None
+    reject_reason: Optional[str] = None
+
+
+class AdminSiteFeedback(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    kind: str
+    company_name: Optional[str] = None
+    company_url: Optional[str] = None
+    comment: Optional[str] = None
+    submitter_email: Optional[str] = None
+    page_path: Optional[str] = None
+    status: str
+    submitted_at: datetime
+    reviewed_at: Optional[datetime] = None
+    reviewed_by: Optional[str] = None
+    reject_reason: Optional[str] = None
+
+
+class FeedbackApproveResponse(BaseModel):
+    status: str
+    applied: str
 
 
 class ScrapeStatus(BaseModel):

@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import re
 from typing import TYPE_CHECKING
+from urllib.parse import urlparse
+
+from scraper.scrapers.ats.eightfold import registrable_domain
 
 if TYPE_CHECKING:
     pass
@@ -10,8 +13,8 @@ PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     (
         "greenhouse",
         re.compile(
-            r"(?:job-)?boards\.greenhouse\.io/"
-            r"(?:embed/job_board\?for=)?(?P<slug>[a-z0-9_-]+)",
+            r"(?:job-)?boards(?:\.[a-z]{2,4})?\.greenhouse\.io/"
+            r"(?:embed/job_board(?:/js)?\?for=)?(?P<slug>[a-z0-9_-]{1,63})",
             re.IGNORECASE,
         ),
     ),
@@ -43,32 +46,33 @@ PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     (
         "recruitee",
         re.compile(
-            r"(?P<slug>[a-z0-9-]+)\.recruitee\.com", re.IGNORECASE
+            r"(?P<slug>[a-z0-9-]{1,63})\.recruitee\.com", re.IGNORECASE
         ),
     ),
     (
         "workday",
         re.compile(
-            r"(?:wd\d+\.)?myworkdayjobs\.com/(?P<slug>[a-z0-9_]+)",
+            r"(?P<tenant>[a-z0-9]{1,63})\.(?P<dc>wd\d+)\.myworkdayjobs\.com"
+            r"(?:/[a-z]{2}-[a-z]{2})?/(?P<site>[a-z0-9_-]{1,80})",
             re.IGNORECASE,
         ),
     ),
     (
         "bamboohr",
         re.compile(
-            r"(?P<slug>[a-z0-9-]+)\.bamboohr\.com/careers", re.IGNORECASE
+            r"(?P<slug>[a-z0-9-]{1,63})\.bamboohr\.com/careers", re.IGNORECASE
         ),
     ),
     (
         "breezy",
         re.compile(
-            r"(?P<slug>[a-z0-9-]+)\.breezy\.hr", re.IGNORECASE
+            r"(?P<slug>[a-z0-9-]{1,63})\.breezy\.hr", re.IGNORECASE
         ),
     ),
     (
         "pinpoint",
         re.compile(
-            r"(?P<slug>[a-z0-9-]+)\.pinpointhq\.com", re.IGNORECASE
+            r"(?P<slug>[a-z0-9-]{1,63})\.pinpointhq\.com", re.IGNORECASE
         ),
     ),
     (
@@ -77,10 +81,58 @@ PATTERNS: list[tuple[str, re.Pattern[str]]] = [
             r"myjobs\.adp\.com/(?P<slug>[a-z0-9_]+)", re.IGNORECASE
         ),
     ),
+    (
+        "adp",
+        re.compile(
+            r"workforcenow\.adp\.com/[^\s\"'<>]{1,200}[?&]cid="
+            r"(?P<slug>[0-9a-fA-F-]{36})",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "icims",
+        re.compile(
+            r"(?P<slug>[a-z0-9-]{1,63})\.icims\.com", re.IGNORECASE
+        ),
+    ),
     ("apple", re.compile(r"jobs\.apple\.com", re.IGNORECASE)),
+    (
+        "eightfold",
+        re.compile(r"(?:app\.)?eightfold\.ai", re.IGNORECASE),
+    ),
 ]
 
 SLUGLESS_ATS = {"apple"}
+
+BASE_URL_SLUG_ATS = {"eightfold"}
+
+NON_BOARD_SUBDOMAINS = frozenset(
+    {
+        "analytics",
+        "api",
+        "assets",
+        "cdn",
+        "help",
+        "static",
+        "support",
+        "www",
+    }
+)
+
+NON_BOARD_SUBDOMAIN_RE = re.compile(
+    r"^(?:assets|static|cdn|img|images|media|files|analytics)[-.]"
+    r"|[-.](?:cdn|assets|analytics)$",
+    re.IGNORECASE,
+)
+
+
+def _slug_from_base_url(base_url: str) -> str:
+    if not base_url:
+        return ""
+    host = urlparse(base_url.strip()).netloc
+    if not host:
+        return ""
+    return registrable_domain(host)
 
 
 def discover(html: str, base_url: str = "") -> list[tuple[str, str]]:
@@ -89,10 +141,25 @@ def discover(html: str, base_url: str = "") -> list[tuple[str, str]]:
 
     for ats_type, pattern in PATTERNS:
         for m in pattern.finditer(html):
-            if ats_type in SLUGLESS_ATS:
+            groups = m.groupdict()
+            if ats_type in BASE_URL_SLUG_ATS:
+                slug = _slug_from_base_url(base_url)
+                if not slug:
+                    continue
+            elif ats_type in SLUGLESS_ATS:
                 slug = ""
+            elif groups.get("tenant") and groups.get("site"):
+                host = groups["tenant"]
+                if groups.get("dc"):
+                    host = f"{host}.{groups['dc']}"
+                slug = f"{host}/{groups['site'].rstrip('/')}"
             else:
-                slug = (m.groupdict().get("slug") or "").strip("/")
+                slug = (groups.get("slug") or "").strip("/")
+                lowered = slug.lower()
+                if lowered in NON_BOARD_SUBDOMAINS:
+                    continue
+                if NON_BOARD_SUBDOMAIN_RE.search(lowered):
+                    continue
             key = (ats_type, slug.lower())
             if key not in seen:
                 seen.add(key)

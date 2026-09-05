@@ -38,6 +38,7 @@
 	const sections = [
 		['/admin', 'Dashboard'],
 		['/admin/submissions', 'Submissions'],
+		['/admin/feedback', 'Feedback'],
 		['/admin/scraper', 'Scraper'],
 		['/admin/companies', 'Companies']
 	] as const;

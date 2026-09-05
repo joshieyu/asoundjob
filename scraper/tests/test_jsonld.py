@@ -101,7 +101,7 @@ JSONLD_NESTED_TYPE = """
 ANCHOR_AND_JSONLD = """
 <html><body>
 <a href="https://example.com/jobs/dsp-engineer">DSP Engineer</a>
-<a href="https://example.com/jobs/acoustics">Acoustics</a>
+<a href="https://example.com/jobs/acoustics-engineer-role">Acoustics</a>
 <script type="application/ld+json">
 {
   "@type": "JobPosting",
@@ -163,11 +163,11 @@ class TestMergeExtraction(unittest.TestCase):
         jobs = extract_jobs(ANCHOR_AND_JSONLD, "https://example.com/careers")
         by_url = {j.url: j for j in jobs}
         self.assertIn("https://example.com/jobs/dsp-engineer", by_url)
-        self.assertIn("https://example.com/jobs/acoustics", by_url)
+        self.assertIn("https://example.com/jobs/acoustics-engineer-role", by_url)
         merged = by_url["https://example.com/jobs/dsp-engineer"]
         self.assertEqual(merged.title, "Senior DSP Engineer")
         self.assertEqual(merged.description, "<p>Rich description from JSON-LD.</p>")
-        acoustics = by_url["https://example.com/jobs/acoustics"]
+        acoustics = by_url["https://example.com/jobs/acoustics-engineer-role"]
         self.assertEqual(acoustics.title, "Acoustics")
         self.assertIsNone(acoustics.description)
 

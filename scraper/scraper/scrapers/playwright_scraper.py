@@ -5,7 +5,7 @@ import logging
 from typing import Any
 
 from scraper.scrapers.base import BaseScraper, RawJob, ScrapeError
-from scraper.scrapers.link_extraction import extract_jobs
+from scraper.scrapers.pagination import collect_paginated
 
 logger = logging.getLogger(__name__)
 
@@ -72,9 +72,8 @@ class PlaywrightScraper(BaseScraper):
         if not company.careers_url:
             raise ValueError(f"Company {company.name} has no careers_url")
         url = company.careers_url.strip()
-        html = await self.fetch_page_html(url)
-        self._last_html = html
-        jobs = extract_jobs(html, url)
+        jobs, first_page_html = await collect_paginated(self.fetch_page_html, url)
+        self._last_html = first_page_html
         if not jobs:
             raise ScrapeError("page loaded but no job links found")
         return jobs

@@ -3,13 +3,13 @@ from __future__ import annotations
 import json
 
 from fastapi import APIRouter, Depends
-from scraper.config import REPO_ROOT, load_settings
-from scraper.models import Job
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from api.database import get_db
 from api.schemas import CategoriesResponse, CategoryInfo
+from scraper.config import REPO_ROOT, load_settings
+from scraper.models import Job
 
 router = APIRouter(prefix="/api/categories", tags=["categories"])
 

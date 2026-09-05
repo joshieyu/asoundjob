@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import html
 import json
 import logging
 import re
@@ -9,322 +10,721 @@ from pathlib import Path
 from typing import Optional
 
 from scraper.config import Settings
+from scraper.countries import detect_country
 from scraper.scrapers.base import RawJob
 
 logger = logging.getLogger(__name__)
 
-CATEGORY_KEYWORDS: dict[str, tuple[str, ...]] = {
-    "audio_ee": (
-        "electrical engineer",
-        "analog design",
-        "analog circuit",
-        "pcb layout",
-        "pcb design",
-        "circuit design",
-        "amplifier design",
-        "hardware engineer",
-        "electronics engineer",
-        "schematic capture",
-        "mixed-signal",
-        "mixed signal",
-        "power supply",
-        "op-amp",
-        "op amp",
-        "signal integrity",
-        "board bring-up",
-        "pcba",
-        "audio electronics",
-    ),
-    "transducers": (
-        "transducer",
-        "transducer design",
-        "loudspeaker",
-        "loudspeaker design",
-        "speaker design",
-        "speaker engineer",
-        "headphone design",
-        "headphone driver",
-        "earbud",
-        "voice coil",
-        "electroacoustic",
-        "driver design",
-        "acoustic transducer",
-        "acoustic chamber",
-        "acoustic simulation",
-        "acoustic modeling",
-        "acoustic design",
-        "klippel",
-        "soundcheck",
-        "audio precision",
-        "lumped parameter",
-        "finite element",
-        "comsol",
-    ),
-    "microphones_recording": (
-        "microphone design",
-        "microphone engineer",
-        "microphone array",
-        "mems microphone",
-        "microphone system",
-        "microphone/telephony",
-        "wireless microphone",
-        "microphone integration",
-        "ingress protection",
-        "audio capture",
-        "audio capture system",
-        "beamforming",
-        "mic array",
-    ),
-    "audio_software": (
-        "automation"
-        "audio software",
-        "audio programmer",
-        "audio developer",
-        "audio engineer software",
-        "audio sdk",
-        "audio api",
-        "audio engine",
-        "audio engine",
-        "juce",
-        "daw",
-        "audio plugin",
-        "vst",
-        "aax",
-        "clap plugin",
-        "audio middleware",
-        "audio stack",
-        "audio hal",
-        "audio flinger",
-        "audio driver",
-        "audio software engineer",
-        "python"
-    ),
-    "music_technology": (
-        "synthesizer",
-        "synth designer",
-        "midi",
-        "guitar pedal",
-        "effects pedal",
-        "virtual instrument",
-        "drum machine",
-        "music technology",
-        "music electronics",
-        "sampler instruments",
-    ),
-    "audio_systems": (
-        "audio systems engineer",
-        "audio system engineer",
-        "audio system design",
-        "system integration audio",
-        "audio tuning",
-        "acoustic tuning",
-        "acoustic engineer"
-        "tuning engineer",
-        "audio validation",
-        "audio test engineer",
-        "audio measurement",
-        "audio subsystem",
-        "audio subsystems",
-        "acoustic system",
-        "acoustic systems",
-        "audio test plan",
-        "system-level audio",
-        "audio benchmark",
-        "audio architecture",
-        "audio ee architecture",
-        "audio system",
-        "audio systems",
-    ),
-    "automotive_audio": (
-        "automotive audio",
-        "car audio",
-        "vehicle audio",
-        "cabin audio",
-        "in-car audio",
-        "infotainment",
-        "automotive sound",
-        "vehicle cabin",
-        "automotive acoustic",
-    ),
-    "audio_dsp_embedded": (
-        "dsp",
-        "digital signal processing",
-        "signal processing",
-        "filter design",
-        "fft",
-        "convolution",
-        "codec",
-        "audio algorithm",
-        "spatial audio",
-        "noise cancellation",
-        "active noise cancelling",
-        "echo cancellation",
-        "sample rate conversion",
-        "embedded firmware",
-        "embedded system",
-        "embedded software",
-        "embedded linux",
-        "arm",
-        "dsp architecture",
-        "bare metal",
-        "rtos",
-        "bsp",
-        "kernel driver",
-        "audio sw",
-        "alsa",
-        "audio processing algorithm",
-        "biquad",
-        "iir",
-        "fir",
-        "agc",
-        "drc",
-        "noise suppression",
-        "audio tuning algorithm",
-        "dynamics processing",
-        "loudspeaker protection",
-    ),
-    "audio_aiml": (
-        "machine learning",
-        "deep learning",
-        "neural network",
-        "speech recognition",
-        "speech processing",
-        "source separation",
-        "music information retrieval",
-        "generative audio",
-        "generative music",
-        "ai ml",
-        "ml engineer",
-        "computational audiology",
-        "voice assistant",
-        "applied scientist",
-        "audio intelligence",
-        "machine learned",
-        "genai",
-    ),
-    "audio_research": (
-        "research engineer",
-        "research scientist",
-        "research acoustic",
-        "acoustic research",
-        "audio research",
-        "novel acoustic",
-        "research hardware",
-        "research platforms",
-        "original research",
-        "acoustic architecture",
-        "applied scientist",
-        "reality labs",
-        "research staff",
-        "director of research",
-        "member of technical staff",
-        "machine learning applied researcher",
-        "acoustic research engineer",
-        "research scientist audio",
-        "audio research engineer",
-    ),
-    "music_production_recording": (
-        "mixing engineer",
-        "mastering engineer",
-        "recording engineer",
-        "studio engineer",
-        "music producer",
-        "pro tools",
-        "ableton",
-        "logic pro",
-        "beat making",
-        "track mixing",
-    ),
-    "live_sound_events": (
-        "live sound",
-        "front of house",
-        "foh engineer",
-        "monitor engineer",
-        "monitor mixer",
-        "a/v technician",
-        "av technician",
-        "audio visual",
-        "concert audio",
-        "touring audio",
-        "system tech",
-        "rigging",
-        "event production",
-    ),
-    "nvh": (
-        "nvh",
-        "noise vibration",
-        "vibration analysis",
-        "harshness",
-        "vibro-acoustic",
-        "vibroacoustic",
-    ),
-    "psychoacoustics_perception": (
-        "psychoacoustic",
-        "listening test",
-        "perceptual audio",
-        "sound quality evaluation",
-        "hrtf",
-        "auditory",
-        "hearing science",
-        "subjective evaluation",
-        "psycho-acoustic",
-        "spatial sound",
-        "human perception",
-    ),
-    "game_audio_interactive": (
-        "game audio",
-        "video game audio",
-        "interactive audio",
-        "adaptive audio",
-        "wwise",
-        "fmod",
-        "xr audio",
-        "vr audio",
-        "ar audio",
-        "dialogue implementation",
-    ),
-    "sound_design": (
-        "sound designer",
-        "sound design",
-        "foley",
-        "audio designer",
-        "sound artist",
-        "sound creator",
-        "audio identity",
-        "sonic branding",
-        "sound effects",
-        "soundscapes",
-        "sound design engineer",
-    ),
-    "sales_marketing_cs": (
-        "partnerships manager",
-        "customer success",
-        "account executive",
-        "brand strategy",
-        "brand manager",
-        "sales director",
-        "product marketing",
-        "demand generation",
-        "go-to-market",
-        "go to market",
-        "channel partnerships",
-        "creator program",
-        "artist partnerships",
-        "songwriting camp",
-        "emerging creator",
-        "editorial & curation",
-    ),
+CATEGORY_KEYWORDS: dict[str, dict[str, tuple[str, ...]]] = {
+    "audio_ee": {
+        "strong": (
+            "analog design",
+            "analog circuit",
+            "pcb layout",
+            "pcb design",
+            "circuit design",
+            "amplifier design",
+            "electronics engineer",
+            "schematic capture",
+            "mixed-signal",
+            "mixed signal",
+            "power supply",
+            "op-amp",
+            "op amp",
+            "signal integrity",
+            "board bring-up",
+            "pcba",
+            "audio electronics",
+            "audio circuit design",
+            "audio pcb",
+        ),
+        "weak": (
+            "electrical engineer",
+            "hardware engineer",
+        ),
+    },
+    "transducers": {
+        "strong": (
+            "transducer",
+            "transducer design",
+            "transducer engineer",
+            "transducer characterization",
+            "loudspeaker",
+            "loudspeaker design",
+            "speaker design",
+            "speaker engineer",
+            "speaker driver",
+            "headphone design",
+            "headphone driver",
+            "earbud driver",
+            "earbud",
+            "voice coil",
+            "electroacoustic",
+            "electroacoustic transducer",
+            "driver design",
+            "acoustic transducer",
+            "acoustic chamber",
+            "acoustic simulation",
+            "acoustic modeling",
+            "acoustic design",
+            "klippel",
+            "soundcheck",
+            "audio precision",
+            "lumped parameter",
+            "finite element",
+            "comsol",
+            "diaphragm design",
+            "magnet design",
+            "moving coil",
+            "studio monitor",
+            "acoustic engineer",
+            "acoustics engineer",
+        ),
+        "weak": (
+            "tweeter",
+            "woofer",
+            "subwoofer",
+            "diaphragm",
+            "magnet assembly",
+        ),
+    },
+    "microphones_recording": {
+        "strong": (
+            "microphone design",
+            "microphone engineer",
+            "microphone array",
+            "mems microphone",
+            "microphone system",
+            "microphone/telephony",
+            "wireless microphone",
+            "microphone integration",
+            "audio capture",
+            "audio capture system",
+            "beamforming",
+            "mic array",
+            "microphone characterization",
+            "microphone calibration",
+            "microphone testing",
+            "condenser microphone",
+            "dynamic microphone",
+            "microphone capsule",
+            "microphone",
+        ),
+        "weak": (
+            "ingress protection",
+        ),
+    },
+    "audio_software": {
+        "strong": (
+            "audio software engineer",
+            "audio application",
+            "audio applications",
+            "media applications engineer",
+            "music app",
+            "music apps",
+            "airplay",
+            "audio framework",
+            "core audio",
+            "audio playback",
+            "audio streaming",
+            "audio software",
+            "audio programmer",
+            "audio developer",
+            "audio engineer software",
+            "audio sdk",
+            "audio api",
+            "audio engine",
+            "juce",
+            "daw",
+            "audio plugin",
+            "vst",
+            "aax",
+            "clap plugin",
+            "audio middleware",
+            "audio stack",
+            "audio hal",
+            "audio flinger",
+            "audio driver",
+            "audio & music apps",
+        ),
+        "weak": (
+            "audio pipeline",
+            "real-time audio",
+        ),
+    },
+    "music_technology": {
+        "strong": (
+            "synthesizer",
+            "synth designer",
+            "midi",
+            "guitar pedal",
+            "effects pedal",
+            "virtual instrument",
+            "drum machine",
+            "music technology",
+            "music electronics",
+            "sampler instruments",
+        ),
+        "weak": (
+            "synth",
+            "sampler",
+            "drum kit",
+        ),
+    },
+    "audio_systems": {
+        "strong": (
+            "audio systems engineer",
+            "audio system engineer",
+            "audio system design",
+            "system integration audio",
+            "audio tuning",
+            "acoustic tuning",
+            "acoustic engineer",
+            "tuning engineer",
+            "audio subsystem",
+            "audio subsystems",
+            "acoustic system",
+            "acoustic systems",
+            "system-level audio",
+            "audio integration",
+            "av engineer",
+            "audio video engineer",
+            "acoustics engineer",
+            "acoustic engineering",
+            "acoustics engineering",
+            "acoustics",
+            "audio architecture",
+            "audio system",
+            "audio systems",
+            "loudspeaker",
+            "studio monitor",
+            "audio architect",
+            "program manager, audio",
+            "program manager - audio",
+            "program manager- audio",
+        ),
+        "weak": (
+            "systems engineering",
+            "audio engineer",
+            "connected audio",
+            "audio device",
+            "audio technology",
+            "audio product",
+            "audio video",
+        ),
+    },
+    "test_measurement_qa": {
+        "strong": (
+            "audio test",
+            "audio testing",
+            "audio test engineer",
+            "audio test plan",
+            "audio test automation",
+            "audio measurement",
+            "audio metrology",
+            "audio validation",
+            "audio validation engineer",
+            "audio verification",
+            "audio qualification",
+            "audio benchmark",
+            "audio benchmarking",
+            "audio quality engineer",
+            "audio qa",
+            "acoustic test",
+            "acoustic testing",
+            "acoustic measurement",
+            "acoustical measurement",
+            "acoustic validation",
+            "acoustic characterization",
+            "electroacoustic measurement",
+            "electroacoustic test",
+            "electroacoustic testing",
+            "sound quality engineer",
+            "anechoic chamber",
+            "anechoic",
+            "audio precision",
+            "klippel",
+            "real ear",
+            "real-ear",
+            "insertion gain",
+            "ear simulator",
+            "acoustic coupler",
+            "acoustic calibrator",
+            "acoustic test fixture",
+            "measurement microphone",
+            "head and torso simulator",
+            "head-and-torso simulator",
+        ),
+        "weak": (
+            "test engineer",
+            "test engineering",
+            "test automation",
+            "test fixture",
+            "test bench",
+            "test equipment",
+            "measurement engineer",
+            "metrology",
+            "calibration",
+            "validation engineer",
+            "verification engineer",
+            "quality assurance",
+            "quality engineer",
+            "qa engineer",
+            "reliability engineer",
+            "reliability test",
+            "production test",
+            "device under test",
+            "test protocol",
+            "test report",
+            "measurement bench",
+            "measurement lab",
+            "acoustic lab",
+            "test lab",
+            "design verification",
+            "audio quality",
+        ),
+    },
+    "automotive_audio": {
+        "strong": (
+            "automotive audio",
+            "car audio",
+            "vehicle audio",
+            "cabin audio",
+            "in-car audio",
+            "automotive sound",
+            "automotive acoustic",
+        ),
+        "weak": (
+            "infotainment",
+            "vehicle cabin",
+        ),
+    },
+    "audio_dsp_embedded": {
+        "strong": (
+            "audio embedded",
+            "audio firmware",
+            "audio dsp",
+            "audio codec",
+            "audio sensor",
+            "dsp",
+            "digital signal processing",
+            "filter design",
+            "fft",
+            "convolution",
+            "audio algorithm",
+            "spatial audio",
+            "noise cancellation",
+            "active noise cancelling",
+            "echo cancellation",
+            "sample rate conversion",
+            "embedded linux",
+            "dsp architecture",
+            "audio sw",
+            "alsa",
+            "audio processing algorithm",
+            "biquad",
+            "agc",
+            "drc",
+            "noise suppression",
+            "audio tuning algorithm",
+            "dynamics processing",
+            "loudspeaker protection",
+        ),
+        "weak": (
+            "embedded system",
+            "embedded software",
+            "embedded firmware",
+            "signal processing",
+            "codec",
+            "rtos",
+            "bsp",
+            "kernel driver",
+            "bare metal",
+            "iir",
+            "fir",
+        ),
+    },
+    "audio_aiml": {
+        "strong": (
+            "speech recognition",
+            "speech model",
+            "multimodal language",
+            "speech and audio",
+            "speech & audio",
+            "audio understanding",
+            "speech processing",
+            "source separation",
+            "music information retrieval",
+            "generative audio",
+            "generative music",
+            "voice assistant",
+            "computational audiology",
+            "audio intelligence",
+            "machine learned audio",
+            "voice agent",
+            "voice ai",
+            "speech-to-text",
+            "text-to-speech",
+            "speech synthesis",
+            "conversational ai",
+            "speaker diarization",
+            "wake word",
+            "keyword spotting",
+            "audio machine learning",
+            "audio ml",
+            "speech ai",
+            "voice processing",
+            "siri speech",
+            "conversational speech",
+            "computer vision & audio",
+            "voice os",
+        ),
+        "weak": (
+            "machine learning",
+            "deep learning",
+            "neural network",
+            "ml engineer",
+            "applied scientist",
+            "genai",
+            "ai ml",
+            "asr",
+            "tts",
+        ),
+    },
+    "audio_research": {
+        "strong": (
+            "research acoustic",
+            "acoustic research",
+            "audio research",
+            "novel acoustic",
+            "acoustic architecture",
+            "acoustic research engineer",
+            "research scientist audio",
+            "audio research engineer",
+            "audio research scientist",
+            "spatial audio research",
+            "speech, vision and audio",
+        ),
+        "weak": (
+            "research engineer",
+            "research scientist",
+            "member of technical staff",
+            "research staff",
+            "reality labs",
+            "research hardware",
+            "research platforms",
+            "original research",
+            "director of research",
+            "applied scientist",
+            "machine learning applied researcher",
+        ),
+    },
+    "music_production_recording": {
+        "strong": (
+            "mixing engineer",
+            "mastering engineer",
+            "recording engineer",
+            "studio engineer",
+            "music producer",
+            "pro tools",
+            "ableton",
+            "logic pro",
+            "beat making",
+            "track mixing",
+            "audio producer",
+        ),
+        "weak": (
+            "music production",
+            "studio session",
+        ),
+    },
+    "live_sound_events": {
+        "strong": (
+            "live sound",
+            "front of house",
+            "foh engineer",
+            "monitor engineer",
+            "monitor mixer",
+            "a/v technician",
+            "av technician",
+            "audio visual",
+            "concert audio",
+            "touring audio",
+            "system tech",
+            "event production",
+            "audio technician",
+            "sound engineer",
+            "production audio",
+            "broadcast audio",
+            "live audio engineer",
+            "stage audio",
+        ),
+        "weak": (
+            "rigging",
+            "event av",
+            "touring",
+        ),
+    },
+    "nvh": {
+        "strong": (
+            "nvh",
+            "noise vibration",
+            "noise and vibration",
+            "noise & vibration",
+            "vibration analysis",
+            "harshness",
+            "vibro-acoustic",
+            "vibroacoustic",
+        ),
+        "weak": (
+            "structural vibration",
+        ),
+    },
+    "psychoacoustics_perception": {
+        "strong": (
+            "psychoacoustic",
+            "listening test",
+            "perceptual audio",
+            "sound quality evaluation",
+            "hrtf",
+            "psycho-acoustic",
+            "spatial sound",
+            "auditory perception",
+            "sound perception",
+        ),
+        "weak": (
+            "auditory",
+            "listening",
+            "human perception",
+            "hearing science",
+            "subjective evaluation",
+        ),
+    },
+    "game_audio_interactive": {
+        "strong": (
+            "game audio",
+            "video game audio",
+            "interactive audio",
+            "adaptive audio",
+            "wwise",
+            "fmod",
+            "xr audio",
+            "vr audio",
+            "ar audio",
+            "dialogue implementation",
+            "game sound design",
+        ),
+        "weak": (
+            "interactive sound",
+            "audio middleware games",
+        ),
+    },
+    "sound_design": {
+        "strong": (
+            "sound designer",
+            "sound design",
+            "foley",
+            "audio designer",
+            "sound artist",
+            "sound creator",
+            "audio identity",
+            "sonic branding",
+            "sound effects",
+            "soundscapes",
+            "sound design engineer",
+        ),
+        "weak": (
+            "sonic",
+            "audio branding",
+        ),
+    },
+    "sales_marketing_cs": {
+        "strong": (
+            "partnerships manager",
+            "customer success",
+            "account executive",
+            "brand strategy",
+            "brand manager",
+            "sales director",
+            "product marketing",
+            "demand generation",
+            "go-to-market",
+            "go to market",
+            "channel partnerships",
+            "creator program",
+            "artist partnerships",
+            "songwriting camp",
+            "emerging creator",
+            "editorial & curation",
+            "director of sales",
+        ),
+        "weak": (),
+    },
+    "audiology_hearing": {
+        "strong": (
+            "audiologist",
+            "audiology",
+            "hearing instrument specialist",
+            "hearing aid",
+            "cochlear implant",
+            "tinnitus",
+            "audiometry",
+            "hearing screening",
+            "real ear measurement",
+            "hearing care practitioner",
+            "hearing care professional",
+            "doctor of audiology",
+            "hearing wellness",
+            "hearing loss",
+            "hearing evaluation",
+            "hearing clinic",
+        ),
+        "weak": (
+            "patient care coordinator",
+            "hearing care",
+            "aud fitting",
+            "hearing test",
+            "ent practice",
+            "audiology support",
+        ),
+    },
+    "audio_product_mechanical": {
+        "strong": (
+            "mechanical design engineer",
+            "product design epm",
+            "product design producer",
+            "audio product design",
+            "audio pd engineer",
+            "audio pd",
+            "product design engineer - audio",
+            "product design engineer, audio",
+            "advanced manufacturing engineer - audio",
+            "advanced manufacturing engineer, audio",
+            "audio fit",
+            "acoustic fit",
+            "audio nvh",
+            "acoustic enclosure design",
+            "transducer packaging",
+            "audio mechanical engineer",
+            "mechanical engineer, audio",
+            "npi engineer, audio",
+            "audio npi",
+            "audio new product introduction",
+        ),
+        "weak": (
+            "product design engineer",
+            "mechanical engineer",
+            "advanced manufacturing engineer",
+            "new product introduction",
+            "enclosure design",
+            "housing design",
+            "dfm",
+            "tooling engineer",
+        ),
+    },
+    "acoustics_consulting": {
+        "strong": (
+            "acoustic consultant",
+            "acoustical consultant",
+            "noise consultant",
+            "building acoustics",
+            "room acoustics",
+            "architectural acoustics",
+            "environmental acoustics",
+            "noise control",
+            "sound isolation",
+            "reverberation control",
+            "noise assessment",
+            "acoustic consultancy",
+            "acoustic design consultant",
+            "noise and vibration consultant",
+        ),
+        "weak": (
+            "acoustic consulting",
+            "noise study",
+            "reverberation",
+        ),
+    },
 }
+
+ANCHORED_CATEGORIES = {
+    "test_measurement_qa",
+    "audio_software",
+    "audio_dsp_embedded",
+    "audio_aiml",
+    "audio_research",
+    "audio_ee",
+    "audio_product_mechanical",
+}
+
+AUDIO_ANCHOR = re.compile(
+    r"\b(audio\w*|acoustic\w*|sound\w*|speech\w*|voice\w*|hearing|loudspeaker\w*|"
+    r"speaker\w*|microphone\w*|transducer\w*|headphone\w*|earbud\w*|music\w*|sonic\w*|"
+    r"psychoacoustic\w*|dsp)\b",
+    re.IGNORECASE,
+)
+
+GENDER_MARKER_PAREN_RE = re.compile(
+    r"\(\s*[mwdfhxnb]{1,2}(?:\s*[/-]\s*[mwdfhxnb]{1,2}){1,2}\s*\)",
+    re.IGNORECASE,
+)
+
+GENDER_MARKER_BARE_RE = re.compile(
+    r"\b(?:H/F/NB|H/F|F/H|M/F)\b",
+    re.IGNORECASE,
+)
+
+GENDER_MARKER_INFLECTION_RE = re.compile(
+    r"[*:_](?:innen|in|r)\b",
+    re.IGNORECASE,
+)
+
+DANGLING_SEPARATOR_LEAD_RE = re.compile(r"^[\-–—/:;,]+\s*")
+DANGLING_SEPARATOR_TRAIL_RE = re.compile(r"\s*[\-–—/:;,]+$")
+
+
+def strip_gender_markers(title: str) -> str:
+    if not title:
+        return title
+    text = GENDER_MARKER_PAREN_RE.sub("", title)
+    text = GENDER_MARKER_BARE_RE.sub("", text)
+    text = GENDER_MARKER_INFLECTION_RE.sub("", text)
+    text = re.sub(r"\s+", " ", text).strip()
+    text = DANGLING_SEPARATOR_LEAD_RE.sub("", text)
+    text = DANGLING_SEPARATOR_TRAIL_RE.sub("", text)
+    return text.strip()
+
+
+NON_ENGLISH_INTERN_TERMS = (
+    r"werkstudent|praktikant|praktikanten|praktikum|praktika|ausbildung|"
+    r"auszubildende|azubi|duales studium|masterand|bachelorand|diplomand|"
+    r"abschlussarbeit|bachelorarbeit|masterarbeit|lehrling|trainee-programm|"
+    r"stagiaire|alternance|alternant|alternante|apprenti|apprentie|"
+    r"contrat de professionnalisation|becario|becaria|prácticas|estágio|"
+    r"estagiário|tirocinio|tirocinante|stagiair|afstudeerder|praktikplats|"
+    r"traineeprogram|lærling|laerling"
+)
+
+STAGE_INTERN_FRAGMENT = (
+    r"^stage(?!\s+(?:manager|technician|hand|crew|director|designer|lighting))\b"
+)
+
+NON_ENGLISH_INTERN_RE_FRAGMENT = (
+    rf"\b(?:{NON_ENGLISH_INTERN_TERMS})\b|{STAGE_INTERN_FRAGMENT}"
+)
 
 SENIORITY_PATTERNS: list[tuple[str, str]] = [
     (r"\b(intern|internship|co-?op|trainee|apprentice|graduate|grad)\b", "entry"),
     (r"\b(entry[- ]level|junior|jr\.?)\b", "entry"),
+    (NON_ENGLISH_INTERN_RE_FRAGMENT, "entry"),
     (
-        r"\b(manager|director|vp\b|vice president|chief|head of)",
+        r"\b(manager|director|vp\b|vice president|chief|head of|leiter|leitung|"
+        r"geschäftsführer|abteilungsleiter|teamleiter|responsable|directeur|"
+        r"directrice|chef d'équipe|jefe|direttore|chef de projet)",
         "manager",
     ),
     (r"\b(lead|principal|staff|distinguished|fellow)\b", "lead"),
-    (r"\b(senior|snr\.?|sr\.?)\b", "senior"),
+    (r"\b(senior|snr\.?|sr\.?|leitender|erfahrener|sénior|señor)\b", "senior"),
 ]
 
 JOB_TYPE_PATTERNS: list[tuple[str, str]] = [
@@ -335,7 +735,10 @@ JOB_TYPE_PATTERNS: list[tuple[str, str]] = [
         r"|\bcontractor\b|\bfreelance\b|c2h|corp[- ]to[- ]corp",
         "contract",
     ),
-    (r"\bintern(ship)?\b|\bco[- ]?op\b", "internship"),
+    (
+        rf"\bintern(ship)?\b|\bco[- ]?op\b|{NON_ENGLISH_INTERN_RE_FRAGMENT}",
+        "internship",
+    ),
     (r"\btemporary\b|temp[- ]to[- ]perm|seasonal", "temporary"),
     (r"\bvolunteer\b", "volunteer"),
 ]
@@ -359,6 +762,32 @@ AUDIO_TITLE_WEAK = re.compile(
     re.IGNORECASE,
 )
 
+AUDIO_TITLE_STRONG_INTL = re.compile(
+    r"(?:akustik|akustisch|lautsprecher|tontechnik|tontechniker|tonstudio|"
+    r"tonmeister|hörgerät|hoergeraet|hörsystem|hörakustik|mikrofon|kopfhörer|"
+    r"sprachverarbeitung|audiotechnik|beschallung|acoustique|acoustiqu|"
+    r"haut-parleur|hautparleur|sonorisation|audioproth|acústic|acustic|"
+    r"altavoz|altavoces|altoparlante|sonido|audición|akoestisch|luidspreker|"
+    r"geluid|högtalare|ljudtekni|ljuddesign|ljudingenjör|højttaler|høyttaler|"
+    r"lydtekni|lydingeniør|lyddesign|akustiikka|kaiutin|äänitekni|"
+    r"(?<!ultra)schall)",
+    re.IGNORECASE,
+)
+
+AUDIO_TITLE_WEAK_INTL = re.compile(
+    r"(?:musik|musique|musica|música|geräusch|lärm|schwingung|buller|bruit|"
+    r"ruido|rumore|vibración|vibrazione|psychoakustik|psykoakustik|luisteren|"
+    r"hörtest)",
+    re.IGNORECASE,
+)
+
+AUDIO_ANCHOR_INTL = AUDIO_TITLE_STRONG_INTL
+
+
+def _anchor_hit(text: str) -> bool:
+    return bool(AUDIO_ANCHOR.search(text) or AUDIO_ANCHOR_INTL.search(text))
+
+
 AUDIO_DESC_STRONG = re.compile(
     r"\b(audio|acoustic[s]?|dsp|loudspeaker|microphone|transducer|"
     r"audiolog\w*|audiologist|hearing aid|hearing instrument|hearing science|"
@@ -372,10 +801,19 @@ AUDIO_DESC_STRONG = re.compile(
 )
 
 AUDIO_DESC_WEAK = re.compile(
-    r"\b(sound|voice|speech|hearing|listening|music\w*|studio|mixing|mastering|"
-    r"daw|noisy|noise|vibration|nvh|speaker)\b",
+    r"\b(sound|voice|speech|hearing|listening|music\w*|recording studio|"
+    r"studio monitor|studio engineer|mixing studio|mastering studio|"
+    r"mixing|mastering|daw|noisy|noise|vibration|nvh|speaker)\b",
     re.IGNORECASE,
 )
+
+NEGATIVE_SIGNALS = re.compile(
+    r"(architect of record|interior design|building design|k-12 education|"
+    r"higher education studio|entertainment release|linear channel)",
+    re.IGNORECASE,
+)
+
+NEGATIVE_SIGNAL_PENALTY = 45
 
 CORPORATE_ROLE = re.compile(
     r"\b(accountant|accounts? payable|accounts? receivable|paralegal|attorney|"
@@ -383,7 +821,8 @@ CORPORATE_ROLE = re.compile(
     r"barista|warehouse|forklift|delivery driver|truck driver|driver|real estate|"
     r"facilities|janitor|security guard|receptionist|data entry|call center|"
     r"insurance underwriter|tax|procurement|logistics|supply chain|help desk|"
-    r"fp&a|financial analyst|revenue manager|revenue analyst|revenue analytics|"
+    r"fp&a|financial analyst|finance analyst|revenue manager|revenue analyst|"
+    r"revenue analytics|"
     r"internal audit|legal counsel|legal innovation|"
     r"office assistant|administrative|library|plumber|electrician|carpenter|"
     r"groundskeeper|custodian|housekeeper|mailroom|switchboard|"
@@ -420,6 +859,8 @@ CORPORATE_ROLE = re.compile(
     r"creative operations|"
     r"creative director|"
     r"conversion rate|"
+    r"credit collections?|trade compliance|customs broker|"
+    r"buyer|incoming inspection|incoming auditor|incentive plan|"
     r"office coordinator)\b",
     re.IGNORECASE,
 )
@@ -436,8 +877,120 @@ PARTIAL_SCOPE_CATEGORIES = {
 SCOPE_THRESHOLDS = {"native": 45, "partial": 50, "all": 55}
 
 
+SCRIPT_STYLE_RE = re.compile(r"<(script|style)[^>]*>.*?</\1>", re.IGNORECASE | re.DOTALL)
+
+BLOCK_TAG_RE = re.compile(
+    r"</?(p|div|br|li|ul|ol|h[1-6]|section|article|tr|table|thead|tbody|blockquote|hr)"
+    r"[^>]*>",
+    re.IGNORECASE,
+)
+
+TAG_RE = re.compile(r"<[^>]+>")
+
+INLINE_WHITESPACE_RE = re.compile(r"[ \t\xa0]+")
+
+LINE_WHITESPACE_RE = re.compile(r"[ \t]*\n[ \t]*")
+
+EXTRA_NEWLINES_RE = re.compile(r"\n{3,}")
+
+ROLE_START_MARKERS: tuple[str, ...] = (
+    "what you'll do",
+    "what you will do",
+    "responsibilities",
+    "about the role",
+    "the role",
+    "your role",
+    "in this role",
+    "requirements",
+    "qualifications",
+    "what we're looking for",
+    "your impact",
+    "key qualifications",
+    "minimum qualifications",
+    "who you are",
+    "the opportunity",
+    "job description",
+    "duties",
+)
+
+TRAILING_BOILERPLATE_MARKERS: tuple[str, ...] = (
+    "equal opportunity employer",
+    "we are an equal",
+    "eeo",
+    "benefits include",
+    "our benefits",
+    "compensation and benefits",
+    "privacy policy",
+)
+
+
 def category_to_scope(category: str) -> str:
     return "partial" if category in PARTIAL_SCOPE_CATEGORIES else "native"
+
+
+def clean_description(raw: str | None) -> Optional[str]:
+    if not raw:
+        return None
+    text = raw
+    while True:
+        unescaped = html.unescape(text)
+        if unescaped == text:
+            break
+        text = unescaped
+    text = SCRIPT_STYLE_RE.sub(" ", text)
+    text = BLOCK_TAG_RE.sub("\n", text)
+    text = TAG_RE.sub(" ", text)
+    text = INLINE_WHITESPACE_RE.sub(" ", text)
+    text = LINE_WHITESPACE_RE.sub("\n", text)
+    text = EXTRA_NEWLINES_RE.sub("\n\n", text)
+    text = text.strip()
+    return text or None
+
+
+def _strip_trailing_boilerplate(text: str) -> str:
+    length = len(text)
+    if length == 0:
+        return text
+    zone_start = int(length * 0.6)
+    lowered = text.lower()
+    cut_at: Optional[int] = None
+    for marker in TRAILING_BOILERPLATE_MARKERS:
+        idx = lowered.find(marker, zone_start)
+        if idx != -1 and (cut_at is None or idx < cut_at):
+            cut_at = idx
+    if cut_at is not None:
+        return text[:cut_at].rstrip()
+    return text
+
+
+def extract_role_text(description: str | None) -> str:
+    cleaned = clean_description(description)
+    if not cleaned:
+        return ""
+
+    normalized = cleaned.replace("’", "'").replace("‘", "'")
+    lowered = normalized.lower()
+
+    marker_idx: Optional[int] = None
+    for marker in ROLE_START_MARKERS:
+        pos = lowered.find(marker)
+        if pos != -1 and (marker_idx is None or pos < marker_idx):
+            marker_idx = pos
+
+    if marker_idx is not None:
+        role_text = cleaned[marker_idx:]
+    else:
+        boundary = cleaned.find("\n\n")
+        if boundary == -1:
+            boundary = len(cleaned)
+        cutoff = min(boundary, 600)
+        role_text = cleaned[cutoff:].lstrip()
+
+    role_text = _strip_trailing_boilerplate(role_text)
+
+    if len(role_text) < 200:
+        return cleaned
+    return role_text
 
 
 def score_relevance(
@@ -448,17 +1001,24 @@ def score_relevance(
 ) -> tuple[int, bool]:
     score = 0
 
-    title_strong = bool(AUDIO_TITLE_STRONG.search(title))
-    title_weak = bool(AUDIO_TITLE_WEAK.search(title))
+    title_strong = bool(
+        AUDIO_TITLE_STRONG.search(title) or AUDIO_TITLE_STRONG_INTL.search(title)
+    )
+    title_weak = bool(
+        AUDIO_TITLE_WEAK.search(title) or AUDIO_TITLE_WEAK_INTL.search(title)
+    )
 
     if title_strong:
         score += 60
     elif title_weak:
         score += 30
 
-    desc_text = (description or "").lower()[:8000]
-    strong_mentions = len(AUDIO_DESC_STRONG.findall(desc_text))
-    weak_mentions = len(AUDIO_DESC_WEAK.findall(desc_text))
+    cleaned_description = clean_description(description) or ""
+    role_text = extract_role_text(description)
+    role_lower = role_text.lower()[:8000]
+
+    strong_mentions = len(AUDIO_DESC_STRONG.findall(role_lower))
+    weak_mentions = len(AUDIO_DESC_WEAK.findall(role_lower))
     if strong_mentions >= 3:
         score += 35
     elif strong_mentions >= 1:
@@ -472,10 +1032,17 @@ def score_relevance(
         else:
             score += 25
 
+    negative_context = f"{title}\n{cleaned_description}".lower()
+    negative = bool(NEGATIVE_SIGNALS.search(negative_context))
+    corporate = bool(CORPORATE_ROLE.search(title))
+
     if audio_scope == "native" and score > 0:
         score += 10
 
-    if CORPORATE_ROLE.search(title):
+    if negative:
+        score -= NEGATIVE_SIGNAL_PENALTY
+
+    if corporate and not title_strong:
         score -= 70
 
     if score <= 0:
@@ -486,12 +1053,13 @@ def score_relevance(
         threshold += 15
     return score, score >= threshold
 
+
 CURRENCY_SYMBOLS = {"$": "USD", "£": "GBP", "€": "EUR"}
 
 SALARY_RANGE_RE = re.compile(
     r"(?P<cur1>[$£€]|USD|EUR|GBP|CAD|AUD|CHF|SEK|NOK|DKK)?\s*"
     r"(?P<a>\d{1,3}(?:[,.]\d{3})+|\d+(?:\.\d+)?)\s*(?P<amult>[kK])?\s*"
-    r"(?:[-–—~]|\bto\b)\s*"
+    r"(?:[-–—~]|\bto\b|\band\b)\s*"
     r"(?P<cur2>[$£€])?\s*"
     r"(?P<b>\d{1,3}(?:[,.]\d{3})+|\d+(?:\.\d+)?)\s*(?P<bmult>[kK])?"
     r"(?:\s*(?P<code>USD|EUR|GBP|CAD|AUD|CHF|SEK|NOK|DKK))?",
@@ -510,6 +1078,7 @@ class NormalizedJob:
     url: str
     external_id: Optional[str] = None
     location: Optional[str] = None
+    country: Optional[str] = None
     description: Optional[str] = None
     remote: bool = False
     job_type: Optional[str] = None
@@ -531,12 +1100,21 @@ def detect_seniority(title: str) -> Optional[str]:
     return "mid"
 
 
-def _compile_category_patterns() -> dict[str, re.Pattern[str]]:
-    patterns: dict[str, re.Pattern[str]] = {}
-    for category_id, keywords in CATEGORY_KEYWORDS.items():
-        escaped = [re.escape(k) for k in keywords]
-        joined = "|".join(escaped)
-        patterns[category_id] = re.compile(rf"(?<!\w)(?:{joined})(?!\w)", re.IGNORECASE)
+def _keyword_pattern(keywords: tuple[str, ...]) -> Optional[re.Pattern[str]]:
+    if not keywords:
+        return None
+    escaped = sorted((re.escape(k) for k in keywords), key=len, reverse=True)
+    joined = "|".join(escaped)
+    return re.compile(rf"(?<!\w)(?:{joined})(?:s|es)?(?!\w)", re.IGNORECASE)
+
+
+def _compile_category_patterns() -> dict[str, dict[str, Optional[re.Pattern[str]]]]:
+    patterns: dict[str, dict[str, Optional[re.Pattern[str]]]] = {}
+    for category_id, tiers in CATEGORY_KEYWORDS.items():
+        patterns[category_id] = {
+            "strong": _keyword_pattern(tiers.get("strong", ())),
+            "weak": _keyword_pattern(tiers.get("weak", ())),
+        }
     return patterns
 
 
@@ -568,31 +1146,255 @@ CATEGORY_DOMINANCE: dict[str, tuple[str, ...]] = {
     "audio_aiml": (
         "audio_research",
     ),
+    "test_measurement_qa": (
+        "audio_systems",
+    ),
 }
 
+COMPANY_FALLBACK_HARDWARE = "hardware"
+COMPANY_FALLBACK_SOFTWARE = "software"
 
-def classify_categories(title: str, description: str | None) -> list[str]:
+COMPANY_CATEGORY_FALLBACK: dict[str, tuple[frozenset, Optional[str]]] = {
+    "Professional Audio & Live Sound": (frozenset({COMPANY_FALLBACK_HARDWARE}), None),
+    "Headphones & Personal Audio": (frozenset({COMPANY_FALLBACK_HARDWARE}), None),
+    "Hi-Fi & Consumer Speakers": (frozenset({COMPANY_FALLBACK_HARDWARE}), None),
+    "Transducer & Driver Manufacturers": (
+        frozenset({COMPANY_FALLBACK_HARDWARE}),
+        "transducers",
+    ),
+    "Electronic Musical Instruments": (
+        frozenset({COMPANY_FALLBACK_HARDWARE, COMPANY_FALLBACK_SOFTWARE}),
+        "music_technology",
+    ),
+    "DJ Equipment": (
+        frozenset({COMPANY_FALLBACK_HARDWARE, COMPANY_FALLBACK_SOFTWARE}),
+        "music_technology",
+    ),
+    "Car Audio": (frozenset({COMPANY_FALLBACK_HARDWARE}), "automotive_audio"),
+    "Audio Interfaces & Converters": (frozenset({COMPANY_FALLBACK_HARDWARE}), None),
+    "Hearing Aid & Hearing Tech": (
+        frozenset({COMPANY_FALLBACK_HARDWARE}),
+        "audiology_hearing",
+    ),
+    "Audio Plugins & Virtual Instruments": (
+        frozenset({COMPANY_FALLBACK_HARDWARE, COMPANY_FALLBACK_SOFTWARE}),
+        None,
+    ),
+    "DAW & Music Production Software": (
+        frozenset({COMPANY_FALLBACK_HARDWARE, COMPANY_FALLBACK_SOFTWARE}),
+        None,
+    ),
+    "Audio Middleware & SDK": (
+        frozenset({COMPANY_FALLBACK_HARDWARE, COMPANY_FALLBACK_SOFTWARE}),
+        None,
+    ),
+    "Smart Home & IoT Audio": (frozenset({COMPANY_FALLBACK_HARDWARE}), None),
+    "Audio Semiconductors": (
+        frozenset({COMPANY_FALLBACK_HARDWARE, COMPANY_FALLBACK_SOFTWARE}),
+        None,
+    ),
+}
+
+FALLBACK_ROLE_CATEGORIES: list[tuple[re.Pattern[str], str, str]] = [
+    (
+        re.compile(
+            r"\b(test|testing|validation|verification|quality|reliability|qa|"
+            r"metrology|calibration)\b|"
+            r"(?:prüf|messtechnik|qualität|qualitäts|essai|qualité|calidad|"
+            r"kvalitet|mätteknik|validierung|verifikation|kalibrier|provning)",
+            re.IGNORECASE,
+        ),
+        "test_measurement_qa",
+        COMPANY_FALLBACK_HARDWARE,
+    ),
+    (
+        re.compile(
+            r"\b(firmware|embedded|dsp|signal processing)\b|"
+            r"(?:eingebettet|embarqué|embarque|integrado)",
+            re.IGNORECASE,
+        ),
+        "audio_dsp_embedded",
+        COMPANY_FALLBACK_HARDWARE,
+    ),
+    (
+        re.compile(
+            r"\b(electrical|electronics?|analog|analogue|rf|hardware|pcb)\b|"
+            r"(?:elektronik|elektro|elektrisk|elektroteknik|électronique|"
+            r"electronique|electrónic|elettronic|hårdvar|hardvare|maskinvare)",
+            re.IGNORECASE,
+        ),
+        "audio_ee",
+        COMPANY_FALLBACK_HARDWARE,
+    ),
+    (
+        re.compile(
+            r"\b(mechanical|industrial design|manufacturing|tooling|packaging)\b|"
+            r"(?:mechanik|mechatronik|maschinenbau|mécanique|mecánic|meccanic|"
+            r"werkstoff)",
+            re.IGNORECASE,
+        ),
+        "audio_product_mechanical",
+        COMPANY_FALLBACK_HARDWARE,
+    ),
+    (
+        re.compile(
+            r"\b(software|developer|programmer|c\+\+)\b|"
+            r"(?:mjukvar|programvar|logiciel|programmier|softwareentwick|"
+            r"ohjelmisto)",
+            re.IGNORECASE,
+        ),
+        "audio_software",
+        COMPANY_FALLBACK_SOFTWARE,
+    ),
+]
+
+FALLBACK_ROLE_HEAD = re.compile(
+    r"\b(engineer|engineering|developer|scientist|technician|technologist|"
+    r"architect|designer)\b",
+    re.IGNORECASE,
+)
+
+FALLBACK_ROLE_HEAD_INTL = re.compile(
+    r"(?:ingenieur|ingénieur|ingegnere|ingeniero|ingeniera|ingenjör|ingeniør|"
+    r"insinööri|entwickler|entwicklung|techniker|tekniker|technicien|"
+    r"technicienne|technicus|teknikko|tecnico|técnico|konstrukteur|"
+    r"konstruktör|konstruktør|wissenschaftler|architekt|architecte|"
+    r"arquitecto|développeur|developpeur|desarrollador|sviluppatore|"
+    r"utvecklare|udvikler|utvikler|ontwikkelaar|kehittäjä|progettista|"
+    r"concepteur|chercheur|científico|suunnittelija)",
+    re.IGNORECASE,
+)
+
+FALLBACK_ROLE_EXCLUSIONS = re.compile(
+    r"\b(civil|structural|architectural|building|facade|geotechnical|hvac|plumbing|"
+    r"data|analytics|devops|site reliability|cloud|network|networking|infrastructure|"
+    r"security|web|frontend|front[- ]end|backend|back[- ]end|full[- ]stack|salesforce|"
+    r"sales|solutions|presales|support|field|release|erp|sap|"
+    r"developer relations|developer advocate|evangelist|devrel|"
+    r"machine learning|computer vision|llm|search|growth|marketing|platform|storage)\b",
+    re.IGNORECASE,
+)
+
+FALLBACK_ROLE_EXCLUSIONS_INTL = re.compile(
+    r"(?:commercial|vertrieb|verkauf|ventas|vendite|"
+    r"försäljning|salg|myynti|marketing|markedsføring|einkauf|beschaffung|"
+    r"buchhalt|personalwesen|kundendienst|kundenservice|service client|"
+    r"atención al cliente|réseau|netzwerk|sicherheit|sécurité|seguridad|"
+    r"datenbank|base de données|infrastruktur)",
+    re.IGNORECASE,
+)
+
+
+def _company_fallback_categories(title: str, company_category: str | None) -> list[str]:
+    if not company_category:
+        return []
+    gate = COMPANY_CATEGORY_FALLBACK.get(company_category)
+    if gate is None:
+        return []
+    allowed, domain = gate
+    if not (FALLBACK_ROLE_HEAD.search(title) or FALLBACK_ROLE_HEAD_INTL.search(title)):
+        return []
+    if (
+        FALLBACK_ROLE_EXCLUSIONS.search(title)
+        or FALLBACK_ROLE_EXCLUSIONS_INTL.search(title)
+        or CORPORATE_ROLE.search(title)
+    ):
+        return []
+    for pattern, category_id, kind in FALLBACK_ROLE_CATEGORIES:
+        if kind in allowed and pattern.search(title):
+            found = {category_id}
+            if domain:
+                found.add(domain)
+            return sorted(found)
+    return []
+
+
+def _distinct_keyword_hits(
+    text: str, pattern: Optional[re.Pattern[str]], require_anchor: bool
+) -> set[str]:
+    hits: set[str] = set()
+    if pattern is None:
+        return hits
+    for m in pattern.finditer(text):
+        keyword = m.group(0).lower()
+        if keyword in hits:
+            continue
+        if require_anchor:
+            window_start = max(0, m.start() - 200)
+            window_end = m.end() + 200
+            if not _anchor_hit(text[window_start:window_end]):
+                continue
+        hits.add(keyword)
+    return hits
+
+
+def _score_category(
+    category_id: str, title_lower: str, role_lower: str
+) -> tuple[int, bool]:
+    tiers = CATEGORY_PATTERNS[category_id]
+    strong_pattern = tiers["strong"]
+    weak_pattern = tiers["weak"]
+    anchored = category_id in ANCHORED_CATEGORIES
+    title_only = category_id == "sales_marketing_cs"
+
+    score = 0
+    title_hit = False
+
+    title_anchored = anchored and _anchor_hit(title_lower)
+
+    if strong_pattern is not None and strong_pattern.search(title_lower):
+        score += 6
+        title_hit = True
+    if weak_pattern is not None and weak_pattern.search(title_lower):
+        score += 6 if title_anchored else 3
+        title_hit = True
+
+    if not title_only:
+        strong_hits = _distinct_keyword_hits(role_lower, strong_pattern, anchored)
+        if strong_hits:
+            score += min(3 + (len(strong_hits) - 1), 5)
+
+        weak_hits = _distinct_keyword_hits(role_lower, weak_pattern, anchored)
+        if weak_hits:
+            score += min(len(weak_hits), 2)
+
+    return score, title_hit
+
+
+def classify_categories(
+    title: str, description: str | None, company_category: str | None = None
+) -> list[str]:
     title_lower = title.lower()
-    desc_lower = (description or "")[:6000].lower()
+    role_lower = extract_role_text(description).lower()[:6000]
 
-    title_matched: set[str] = set()
-    desc_matched: set[str] = set()
+    scored: dict[str, int] = {}
+    title_hits: dict[str, bool] = {}
 
     for category_id in CATEGORY_KEYWORDS:
-        pattern = CATEGORY_PATTERNS[category_id]
-        if pattern.search(title_lower):
-            title_matched.add(category_id)
-        elif pattern.search(desc_lower):
-            desc_matched.add(category_id)
+        score, title_hit = _score_category(category_id, title_lower, role_lower)
+        if score >= 5:
+            scored[category_id] = score
+            title_hits[category_id] = title_hit
 
-    _apply_software_override(title_lower, title_matched, desc_matched)
+    _apply_software_override(title_lower, scored, title_hits)
+    _apply_test_override(title_lower, scored, title_hits)
 
     for dominant, subordinates in CATEGORY_DOMINANCE.items():
-        if dominant in title_matched:
+        if title_hits.get(dominant):
             for sub in subordinates:
-                desc_matched.discard(sub)
+                if sub in scored and not title_hits.get(sub):
+                    scored.pop(sub, None)
+                    title_hits.pop(sub, None)
 
-    return sorted(title_matched | desc_matched)
+    ranked = sorted(
+        scored.items(),
+        key=lambda item: (-item[1], 0 if title_hits.get(item[0]) else 1, item[0]),
+    )
+    top = ranked[:3]
+    result = sorted(category_id for category_id, _ in top)
+    if result:
+        return result
+    return _company_fallback_categories(title, company_category)
 
 
 SOFTWARE_TITLE_RE = re.compile(
@@ -603,16 +1405,47 @@ SOFTWARE_TITLE_RE = re.compile(
 
 
 def _apply_software_override(
-    title_lower: str, title_matched: set[str], desc_matched: set[str]
+    title_lower: str, scored: dict[str, int], title_hits: dict[str, bool]
 ) -> None:
     if not SOFTWARE_TITLE_RE.search(title_lower):
         return
+    replaced = False
     for cat in ("music_production_recording", "music_technology"):
-        if cat in title_matched or cat in desc_matched:
-            title_matched.discard(cat)
-            desc_matched.discard(cat)
-            title_matched.add("audio_software")
-            return
+        if cat in scored:
+            scored.pop(cat)
+            title_hits.pop(cat, None)
+            replaced = True
+    inverted = not scored and _anchor_hit(title_lower)
+    if replaced or inverted:
+        scored["audio_software"] = max(scored.get("audio_software", 0), 6)
+        title_hits["audio_software"] = True
+
+
+TEST_ROLE_SUBJECT = (
+    r"test|testing|qa|quality|validation|verification|metrology|calibration|reliability"
+)
+
+TEST_ROLE_HOLDER = (
+    r"engineer|engineering|technician|manager|specialist|analyst|lead|developer|"
+    r"scientist|architect|director"
+)
+
+TEST_ROLE_TITLE_RE = re.compile(
+    rf"\b(?:{TEST_ROLE_SUBJECT})\b[\w\s/&,()+-]{{0,40}}?\b(?:{TEST_ROLE_HOLDER})\b"
+    rf"|\b(?:{TEST_ROLE_HOLDER})\b[\w\s/&,()+-]{{0,40}}?\b(?:{TEST_ROLE_SUBJECT})\b",
+    re.IGNORECASE,
+)
+
+
+def _apply_test_override(
+    title_lower: str, scored: dict[str, int], title_hits: dict[str, bool]
+) -> None:
+    if not scored:
+        return
+    if not TEST_ROLE_TITLE_RE.search(title_lower):
+        return
+    scored["test_measurement_qa"] = max(scored.get("test_measurement_qa", 0), 6)
+    title_hits["test_measurement_qa"] = True
 
 
 def _parse_number(raw: str) -> int:
@@ -728,35 +1561,44 @@ class Normalizer:
         except OSError:
             logger.warning("categories file missing at %s", categories_path)
 
-    def normalize(self, raw: RawJob, audio_scope: str = "native") -> NormalizedJob:
+    def normalize(
+        self,
+        raw: RawJob,
+        audio_scope: str = "native",
+        company_category: str | None = None,
+    ) -> NormalizedJob:
         salary_text = " ".join(
             part for part in (raw.title, raw.description) if part
         )
         salary_min, salary_max, salary_currency = parse_salary(salary_text)
 
-        categories = classify_categories(raw.title, raw.description)
+        title = strip_gender_markers(raw.title.strip())
+
+        categories = classify_categories(title, raw.description, company_category)
         if self.valid_ids is not None:
             categories = [c for c in categories if c in self.valid_ids]
 
         relevance_score, is_audio_related = score_relevance(
-            raw.title, raw.description, categories, audio_scope
+            title, raw.description, categories, audio_scope
         )
 
         job_type = normalize_job_type(raw.job_type)
         if job_type is None:
-            job_type = normalize_job_type(raw.title)
+            job_type = normalize_job_type(title)
         if job_type is None and raw.description:
             job_type = normalize_job_type(raw.description[:500])
 
+        location = clean_location(raw.location)
         return NormalizedJob(
-            title=raw.title.strip(),
+            title=title,
             url=raw.url.strip(),
             external_id=raw.external_id,
-            location=clean_location(raw.location),
+            location=location,
+            country=detect_country(location),
             description=raw.description,
-            remote=detect_remote(raw.location, raw.title, raw.description) or raw.remote_hint,
+            remote=detect_remote(raw.location, title, raw.description) or raw.remote_hint,
             job_type=job_type,
-            seniority=detect_seniority(raw.title),
+            seniority=detect_seniority(title),
             salary_min=salary_min,
             salary_max=salary_max,
             salary_currency=salary_currency,

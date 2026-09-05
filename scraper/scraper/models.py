@@ -17,7 +17,10 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
+from scraper.countries import country_name as lookup_country_name
+
 JobCategories = JSON().with_variant(ARRAY(Text), "postgresql")
+StringList = JSON().with_variant(ARRAY(Text), "postgresql")
 
 
 class Base(DeclarativeBase):
@@ -32,6 +35,8 @@ class Company(Base):
     slug: Mapped[str] = mapped_column(Text, unique=True)
     category: Mapped[str] = mapped_column(Text)
     careers_url: Mapped[Optional[str]] = mapped_column(Text)
+    extra_careers_urls: Mapped[Optional[list[str]]] = mapped_column(StringList)
+    open_application: Mapped[bool] = mapped_column(Boolean, default=False)
     website_url: Mapped[Optional[str]] = mapped_column(Text)
     verified: Mapped[bool] = mapped_column(Boolean, default=False)
     source: Mapped[str] = mapped_column(Text, default="auto")
@@ -64,6 +69,7 @@ class Job(Base):
     description: Mapped[Optional[str]] = mapped_column(Text)
     url: Mapped[str] = mapped_column(Text)
     location: Mapped[Optional[str]] = mapped_column(Text)
+    country: Mapped[Optional[str]] = mapped_column(Text, index=True)
     remote: Mapped[bool] = mapped_column(Boolean, default=False)
     job_type: Mapped[Optional[str]] = mapped_column(Text)
     seniority: Mapped[Optional[str]] = mapped_column(Text)
@@ -71,6 +77,8 @@ class Job(Base):
     salary_max: Mapped[Optional[int]] = mapped_column(Integer)
     salary_currency: Mapped[Optional[str]] = mapped_column(Text)
     job_categories: Mapped[list[str]] = mapped_column(JobCategories, default=list)
+    categories_override: Mapped[Optional[list[str]]] = mapped_column(JobCategories)
+    is_audio_related_override: Mapped[Optional[bool]] = mapped_column(Boolean)
     posted_date: Mapped[Optional[date]] = mapped_column(Date)
     scraped_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
@@ -89,6 +97,10 @@ class Job(Base):
     )
 
     company: Mapped[Optional[Company]] = relationship()
+
+    @property
+    def country_name(self) -> Optional[str]:
+        return lookup_country_name(self.country)
 
     def identity_key(self) -> tuple:
         return (self.company_id, self.external_id)
@@ -109,8 +121,58 @@ class JobSubmission(Base):
     salary_range: Mapped[Optional[str]] = mapped_column(Text)
     experience_level: Mapped[Optional[str]] = mapped_column(Text)
     audio_domain: Mapped[Optional[str]] = mapped_column(Text)
+    requested_days: Mapped[Optional[int]] = mapped_column(Integer)
     submitter_name: Mapped[Optional[str]] = mapped_column(Text)
     submitter_email: Mapped[Optional[str]] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(Text, default="pending", index=True)
+    submitted_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    reviewed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    reviewed_by: Mapped[Optional[str]] = mapped_column(Text)
+    reject_reason: Mapped[Optional[str]] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+class JobFeedback(Base):
+    __tablename__ = "job_feedback"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    job_id: Mapped[int] = mapped_column(ForeignKey("jobs.id"), index=True)
+    kind: Mapped[str] = mapped_column(Text, index=True)
+    suggested_categories: Mapped[Optional[list[str]]] = mapped_column(JobCategories)
+    comment: Mapped[Optional[str]] = mapped_column(Text)
+    submitter_email: Mapped[Optional[str]] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(Text, default="pending", index=True)
+    submitted_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    reviewed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    reviewed_by: Mapped[Optional[str]] = mapped_column(Text)
+    reject_reason: Mapped[Optional[str]] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+class SiteFeedback(Base):
+    __tablename__ = "site_feedback"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    kind: Mapped[str] = mapped_column(Text, index=True)
+    company_name: Mapped[Optional[str]] = mapped_column(Text)
+    company_url: Mapped[Optional[str]] = mapped_column(Text)
+    comment: Mapped[Optional[str]] = mapped_column(Text)
+    submitter_email: Mapped[Optional[str]] = mapped_column(Text)
+    page_path: Mapped[Optional[str]] = mapped_column(Text)
     status: Mapped[str] = mapped_column(Text, default="pending", index=True)
     submitted_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()

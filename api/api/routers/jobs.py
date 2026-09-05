@@ -4,7 +4,6 @@ import logging
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from scraper.models import Company, Job, JobSubmission
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
@@ -18,12 +17,27 @@ from api.schemas import (
     PaginatedJobs,
     SubmissionCreateResponse,
 )
+from scraper.models import Company, Job, JobSubmission
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/jobs", tags=["jobs"])
 
 rate_limiter = SubmissionRateLimiter()
+
+
+MAX_ID_FILTER = 200
+
+
+def _parse_ids(value: Optional[str]) -> Optional[list[int]]:
+    if value is None:
+        return None
+    parsed = []
+    for chunk in value.split(",")[:MAX_ID_FILTER]:
+        chunk = chunk.strip()
+        if chunk.isdigit():
+            parsed.append(int(chunk))
+    return parsed
 
 
 def _parse_csv(value: Optional[str]) -> Optional[list[str]]:
@@ -44,9 +58,11 @@ def list_jobs(
     salary_max: Optional[int] = Query(None, ge=0),
     company_id: Optional[int] = None,
     location: Optional[str] = None,
+    country: Optional[str] = Query(None, min_length=2, max_length=2),
     remote: Optional[bool] = None,
     include_unrelated: bool = False,
     search: Optional[str] = None,
+    ids: Optional[str] = None,
     sort: str = Query("newest", pattern="^(newest|oldest|salary_desc|salary_asc)$"),
     db: Session = Depends(get_db),
 ):
@@ -60,11 +76,15 @@ def list_jobs(
         salary_max=salary_max,
         company_id=company_id,
         location=location,
+        country=country,
         remote=remote,
         search=search,
         include_unrelated=include_unrelated,
+        ids=_parse_ids(ids),
     )
-    jobs, total = fetch_job_page(db, stmt, safe_page, safe_per, sort)
+    jobs, total = fetch_job_page(
+        db, stmt, safe_page, safe_per, sort, country_first=country
+    )
     return page_envelope(
         [JobSummary.model_validate(job) for job in jobs], total, safe_page, safe_per
     )
@@ -108,6 +128,7 @@ def submit_job(
         salary_range=payload.salary_range,
         experience_level=payload.experience_level,
         audio_domain=payload.audio_domain,
+        requested_days=payload.duration_days,
         submitter_name=payload.submitter_name,
         submitter_email=payload.submitter_email,
         status="pending",
