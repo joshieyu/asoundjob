@@ -4080,6 +4080,14 @@
     "scrape_method": "http"
   },
   {
+    "name": "Gibson",
+    "careers_url": "https://www.gibson.com/apps/adpJobRequisition/",
+    "category": "Electronic Musical Instruments",
+    "verified": true,
+    "source": "manual",
+    "scrape_method": "http"
+  },
+  {
     "name": "Gikon Audio Academy",
     "careers_url": "https://www.gikon.com/careers",
     "category": "Music Education Technology",
