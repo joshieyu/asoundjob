@@ -4,9 +4,11 @@ import unittest
 from pathlib import Path
 
 from scraper.normalizer import (
+    AUDIO_TITLE_STRONG_INTL,
     CATEGORY_KEYWORDS,
     NormalizedJob,
     Normalizer,
+    _company_fallback_categories,
     classify_categories,
     clean_description,
     detect_remote,
@@ -671,6 +673,61 @@ class TestMeasurementAndQaCategory(unittest.TestCase):
         valid = load_valid_category_ids(path)
         self.assertEqual(set(CATEGORY_KEYWORDS) - valid, set())
         self.assertIn("test_measurement_qa", valid)
+
+
+NATIVE_SCOPE_THRESHOLD = 45
+
+
+class TestInternationalTitleVocabulary(unittest.TestCase):
+    def test_non_english_audio_titles_score_above_native_threshold(self) -> None:
+        for title in (
+            "Akustik-Ingenieur für EOL-Messtechnik",
+            "Akustikingenieur",
+            "Hörsystemakustiker",
+            "Ingénieur Acoustique R&D",
+            "Ljudtekniker",
+            "Altavoz Design Engineer",
+        ):
+            with self.subTest(title=title):
+                score, related = score_relevance(title, None, [], "native")
+                self.assertGreater(score, NATIVE_SCOPE_THRESHOLD)
+                self.assertTrue(related)
+
+    def test_ultraschall_is_excluded_but_schall_compounds_still_match(self) -> None:
+        self.assertFalse(
+            AUDIO_TITLE_STRONG_INTL.search(
+                "Applikationsspezialist Ultraschall (m/w/d)"
+            )
+        )
+        self.assertTrue(
+            AUDIO_TITLE_STRONG_INTL.search("Ingenieur Schalldruckmessung")
+        )
+        self.assertTrue(AUDIO_TITLE_STRONG_INTL.search("Ingenieur Raumakustik"))
+
+    def test_plain_english_corporate_title_is_unchanged(self) -> None:
+        score, related = score_relevance(
+            "Accounts Payable Specialist", None, [], "native"
+        )
+        self.assertEqual(score, 0)
+        self.assertFalse(related)
+
+    def test_company_fallback_recognises_non_english_role_head_and_domain(
+        self,
+    ) -> None:
+        self.assertEqual(
+            _company_fallback_categories(
+                "Ingénieur Electronique R&D", "Headphones & Personal Audio"
+            ),
+            ["audio_ee"],
+        )
+
+    def test_company_fallback_excludes_non_english_sales_roles(self) -> None:
+        self.assertEqual(
+            _company_fallback_categories(
+                "Ingénieur technico-commercial", "Headphones & Personal Audio"
+            ),
+            [],
+        )
 
 
 if __name__ == "__main__":

@@ -762,6 +762,32 @@ AUDIO_TITLE_WEAK = re.compile(
     re.IGNORECASE,
 )
 
+AUDIO_TITLE_STRONG_INTL = re.compile(
+    r"(?:akustik|akustisch|lautsprecher|tontechnik|tontechniker|tonstudio|"
+    r"tonmeister|hörgerät|hoergeraet|hörsystem|hörakustik|mikrofon|kopfhörer|"
+    r"sprachverarbeitung|audiotechnik|beschallung|acoustique|acoustiqu|"
+    r"haut-parleur|hautparleur|sonorisation|audioproth|acústic|acustic|"
+    r"altavoz|altavoces|altoparlante|sonido|audición|akoestisch|luidspreker|"
+    r"geluid|högtalare|ljudtekni|ljuddesign|ljudingenjör|højttaler|høyttaler|"
+    r"lydtekni|lydingeniør|lyddesign|akustiikka|kaiutin|äänitekni|"
+    r"(?<!ultra)schall)",
+    re.IGNORECASE,
+)
+
+AUDIO_TITLE_WEAK_INTL = re.compile(
+    r"(?:musik|musique|musica|música|geräusch|lärm|schwingung|buller|bruit|"
+    r"ruido|rumore|vibración|vibrazione|psychoakustik|psykoakustik|luisteren|"
+    r"hörtest)",
+    re.IGNORECASE,
+)
+
+AUDIO_ANCHOR_INTL = AUDIO_TITLE_STRONG_INTL
+
+
+def _anchor_hit(text: str) -> bool:
+    return bool(AUDIO_ANCHOR.search(text) or AUDIO_ANCHOR_INTL.search(text))
+
+
 AUDIO_DESC_STRONG = re.compile(
     r"\b(audio|acoustic[s]?|dsp|loudspeaker|microphone|transducer|"
     r"audiolog\w*|audiologist|hearing aid|hearing instrument|hearing science|"
@@ -975,8 +1001,12 @@ def score_relevance(
 ) -> tuple[int, bool]:
     score = 0
 
-    title_strong = bool(AUDIO_TITLE_STRONG.search(title))
-    title_weak = bool(AUDIO_TITLE_WEAK.search(title))
+    title_strong = bool(
+        AUDIO_TITLE_STRONG.search(title) or AUDIO_TITLE_STRONG_INTL.search(title)
+    )
+    title_weak = bool(
+        AUDIO_TITLE_WEAK.search(title) or AUDIO_TITLE_WEAK_INTL.search(title)
+    )
 
     if title_strong:
         score += 60
@@ -1169,20 +1199,28 @@ FALLBACK_ROLE_CATEGORIES: list[tuple[re.Pattern[str], str, str]] = [
     (
         re.compile(
             r"\b(test|testing|validation|verification|quality|reliability|qa|"
-            r"metrology|calibration)\b",
+            r"metrology|calibration)\b|"
+            r"(?:prüf|messtechnik|qualität|qualitäts|essai|qualité|calidad|"
+            r"kvalitet|mätteknik|validierung|verifikation|kalibrier|provning)",
             re.IGNORECASE,
         ),
         "test_measurement_qa",
         COMPANY_FALLBACK_HARDWARE,
     ),
     (
-        re.compile(r"\b(firmware|embedded|dsp|signal processing)\b", re.IGNORECASE),
+        re.compile(
+            r"\b(firmware|embedded|dsp|signal processing)\b|"
+            r"(?:eingebettet|embarqué|embarque|integrado)",
+            re.IGNORECASE,
+        ),
         "audio_dsp_embedded",
         COMPANY_FALLBACK_HARDWARE,
     ),
     (
         re.compile(
-            r"\b(electrical|electronics?|analog|analogue|rf|hardware|pcb)\b",
+            r"\b(electrical|electronics?|analog|analogue|rf|hardware|pcb)\b|"
+            r"(?:elektronik|elektro|elektrisk|elektroteknik|électronique|"
+            r"electronique|electrónic|elettronic|hårdvar|hardvare|maskinvare)",
             re.IGNORECASE,
         ),
         "audio_ee",
@@ -1190,14 +1228,21 @@ FALLBACK_ROLE_CATEGORIES: list[tuple[re.Pattern[str], str, str]] = [
     ),
     (
         re.compile(
-            r"\b(mechanical|industrial design|manufacturing|tooling|packaging)\b",
+            r"\b(mechanical|industrial design|manufacturing|tooling|packaging)\b|"
+            r"(?:mechanik|mechatronik|maschinenbau|mécanique|mecánic|meccanic|"
+            r"werkstoff)",
             re.IGNORECASE,
         ),
         "audio_product_mechanical",
         COMPANY_FALLBACK_HARDWARE,
     ),
     (
-        re.compile(r"\b(software|developer|programmer|c\+\+)\b", re.IGNORECASE),
+        re.compile(
+            r"\b(software|developer|programmer|c\+\+)\b|"
+            r"(?:mjukvar|programvar|logiciel|programmier|softwareentwick|"
+            r"ohjelmisto)",
+            re.IGNORECASE,
+        ),
         "audio_software",
         COMPANY_FALLBACK_SOFTWARE,
     ),
@@ -1206,6 +1251,17 @@ FALLBACK_ROLE_CATEGORIES: list[tuple[re.Pattern[str], str, str]] = [
 FALLBACK_ROLE_HEAD = re.compile(
     r"\b(engineer|engineering|developer|scientist|technician|technologist|"
     r"architect|designer)\b",
+    re.IGNORECASE,
+)
+
+FALLBACK_ROLE_HEAD_INTL = re.compile(
+    r"(?:ingenieur|ingénieur|ingegnere|ingeniero|ingeniera|ingenjör|ingeniør|"
+    r"insinööri|entwickler|entwicklung|techniker|tekniker|technicien|"
+    r"technicienne|technicus|teknikko|tecnico|técnico|konstrukteur|"
+    r"konstruktör|konstruktør|wissenschaftler|architekt|architecte|"
+    r"arquitecto|développeur|developpeur|desarrollador|sviluppatore|"
+    r"utvecklare|udvikler|utvikler|ontwikkelaar|kehittäjä|progettista|"
+    r"concepteur|chercheur|científico|suunnittelija)",
     re.IGNORECASE,
 )
 
@@ -1219,6 +1275,15 @@ FALLBACK_ROLE_EXCLUSIONS = re.compile(
     re.IGNORECASE,
 )
 
+FALLBACK_ROLE_EXCLUSIONS_INTL = re.compile(
+    r"(?:commercial|vertrieb|verkauf|ventas|vendite|"
+    r"försäljning|salg|myynti|marketing|markedsføring|einkauf|beschaffung|"
+    r"buchhalt|personalwesen|kundendienst|kundenservice|service client|"
+    r"atención al cliente|réseau|netzwerk|sicherheit|sécurité|seguridad|"
+    r"datenbank|base de données|infrastruktur)",
+    re.IGNORECASE,
+)
+
 
 def _company_fallback_categories(title: str, company_category: str | None) -> list[str]:
     if not company_category:
@@ -1227,9 +1292,13 @@ def _company_fallback_categories(title: str, company_category: str | None) -> li
     if gate is None:
         return []
     allowed, domain = gate
-    if not FALLBACK_ROLE_HEAD.search(title):
+    if not (FALLBACK_ROLE_HEAD.search(title) or FALLBACK_ROLE_HEAD_INTL.search(title)):
         return []
-    if FALLBACK_ROLE_EXCLUSIONS.search(title) or CORPORATE_ROLE.search(title):
+    if (
+        FALLBACK_ROLE_EXCLUSIONS.search(title)
+        or FALLBACK_ROLE_EXCLUSIONS_INTL.search(title)
+        or CORPORATE_ROLE.search(title)
+    ):
         return []
     for pattern, category_id, kind in FALLBACK_ROLE_CATEGORIES:
         if kind in allowed and pattern.search(title):
@@ -1253,7 +1322,7 @@ def _distinct_keyword_hits(
         if require_anchor:
             window_start = max(0, m.start() - 200)
             window_end = m.end() + 200
-            if not AUDIO_ANCHOR.search(text[window_start:window_end]):
+            if not _anchor_hit(text[window_start:window_end]):
                 continue
         hits.add(keyword)
     return hits
@@ -1271,7 +1340,7 @@ def _score_category(
     score = 0
     title_hit = False
 
-    title_anchored = anchored and bool(AUDIO_ANCHOR.search(title_lower))
+    title_anchored = anchored and _anchor_hit(title_lower)
 
     if strong_pattern is not None and strong_pattern.search(title_lower):
         score += 6
@@ -1346,7 +1415,7 @@ def _apply_software_override(
             scored.pop(cat)
             title_hits.pop(cat, None)
             replaced = True
-    inverted = not scored and bool(AUDIO_ANCHOR.search(title_lower))
+    inverted = not scored and _anchor_hit(title_lower)
     if replaced or inverted:
         scored["audio_software"] = max(scored.get("audio_software", 0), 6)
         title_hits["audio_software"] = True
