@@ -2782,7 +2782,7 @@ Check the board with `check_url` before spending effort on the seed.
    | Amazon | 0 -> 59 | new amazon.jobs parser + seeded queries |
    | Demant | 0 -> 61 | new SuccessFactors parser + global search URL |
 
-   Live as of 2026-09-05: **975 board rows, 8,505 active, 95 contributing
+   Live as of 2026-09-05: **979 board rows, 8,510 active, 96 contributing
    companies, 213 uncategorized.** Audible and Oticon Medical were both
    deleted outright, seed and database; Sigma Connectivity and Delart were
    added; the seed is now 1,388 entries.
@@ -4197,3 +4197,84 @@ SOFTWARE to `Professional Audio & Live Sound` in `COMPANY_CATEGORY_FALLBACK`.
 That would change scoring for **every** pro-audio company, so it belongs with
 the three interacting precision levers and needs a blast-radius measurement
 first, not a one-company decision.
+
+## Session update (2026-09-05, later) — accordion listings, and an incident with the seed file
+
+Commits `bcfccba` (seed) and `5bf1a93` (parser). xMEMS added: **4 board rows**;
+board 975 -> 979, contributing companies 95 -> 96.
+
+### Read this first: a subagent destroyed uncommitted seed work
+
+While implementing the accordion reader, a subagent saw the uncommitted xMEMS
+entry in `git status`, **misdiagnosed it as test pollution, and ran
+`git checkout -- data/audio_companies_final.json`**, deleting it. It then
+reported this as a helpful side note, with the false explanation that "running
+the test suite syncs a xMEMS row into the seed."
+
+**That explanation is wrong.** No file under `scraper/tests/` or `api/tests/`
+references the seed at all; the only writer in the repo is
+`scripts/migrate_schema.py`, which no test runs. What it saw was hand-authored
+uncommitted work.
+
+Nothing of the owner's was lost — the seed was committed clean as of `cffc432`
+and the only uncommitted edit was minutes old and reproducible. But it would
+have been unrecoverable had it been a hand-edit.
+
+**Two rules follow, and they are cheap:**
+1. **Every subagent spec that touches this repo must state explicitly that
+   `git checkout`/`restore`/`stash`/`reset` on `data/audio_companies_final.json`
+   is forbidden, and that a modified seed in `git status` is expected and not
+   theirs to clean up.** "Do not touch the seed" is not enough — the agent
+   believed it was *restoring* the file, not touching it.
+2. **Commit seed edits before starting any agent**, rather than leaving them in
+   the working tree across a delegated task.
+
+### The parser work
+
+`xmems.com/careers/` has five roles and **not one job link** — no per-job
+anchor, no JSON-LD, no named anchors. Each is an Elementor
+`<details>/<summary>` accordion carrying a real id and 2.2k-4.8k characters of
+description. `extract_accordion_jobs` reads title, per-job fragment URL and
+description out of them, and is wired into `collect_paginated` as a **fallback
+that runs only when normal extraction found nothing**, so it cannot change any
+company that already yields rows.
+
+**The naive version matched Shopify navigation menus**, which are also built
+from `details/summary`. Against 76 live careers pages that currently yield
+nothing, it produced 27 rows of shop categories — "Home Audio", "Turntables",
+"Vinyl Records", "Cases", "Accessories". Several carry audio words and would
+plausibly have reached the board.
+
+| | Shopify nav | xMEMS careers |
+|---|---|---|
+| ancestors | all inside `<nav>` / `<header>` | none |
+| link-text ratio | 0.62 - 0.98 | 0.00 - 0.01 |
+
+Both guards are applied — skip a `<details>` under `nav`/`header`/`footer`/
+`aside`, and skip one whose body is >= 30% link text. **Re-measured on the same
+76 pages: zero rows.** xMEMS still yields its 5.
+
+**The recurring lesson, now three for three.** Every structural extraction
+change this session — named anchors, then accordions — admitted page furniture
+that the existing title filters accepted happily: `^top^`, `FEATURED`,
+"Home Audio", "Turntables". `NON_JOB_TEXT`, `is_furniture_title` and the length
+bounds are not a safety net for structural extraction. **Separate structurally,
+and measure the blast radius on live pages before committing.**
+
+### LinkedIn is now excluded wholesale
+
+`SOCIAL_DOMAIN` matched only `linkedin\.com/share`; it now matches
+`linkedin\.com`, alongside the `glassdoor` and `indeed\.com` entries beside it.
+Without this xMEMS yielded exactly one row — a link titled "here" pointing at a
+LinkedIn posting — and **a single junk row was enough to suppress the
+fallback**, the same trap as IK Multimedia's "Careers" nav row. All 7 active
+`linkedin.com` rows are chrome ("See Open Roles", "OPEN JOB POSITIONS", "LGE's
+LinkedIn job feed") and none was on the board, so the change costs nothing.
+Those 7 rows clear on each company's next scrape rather than immediately.
+
+### Known gap
+
+Accordion jobs get **no location**, so `country` is NULL for all five xMEMS
+rows and they are invisible to the country filter. The locations are in the
+titles ("..., Santa Clara", "..., Shenzhen"). Parsing them was deliberately not
+attempted; revisit if accordion companies become common.
