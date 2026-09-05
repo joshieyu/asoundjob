@@ -307,7 +307,7 @@
     "name": "Akai Professional",
     "careers_url": "https://inmusicbrands.pinpointhq.com/",
     "category": "Electronic Musical Instruments",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "http"
   },
@@ -339,7 +339,7 @@
     "name": "Alesis",
     "careers_url": "https://inmusicbrands.pinpointhq.com/",
     "category": "Audio Interfaces & Converters",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "http"
   },
@@ -2820,7 +2820,7 @@
     "name": "Denon DJ",
     "careers_url": "https://inmusicbrands.pinpointhq.com/",
     "category": "DJ Equipment",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "http"
   },
@@ -4817,7 +4817,7 @@
   {
     "name": "inMusic Brands",
     "careers_url": "https://inmusicbrands.pinpointhq.com/",
-    "category": "Professional Audio & Live Sound",
+    "category": "Electronic Musical Instruments",
     "verified": true,
     "source": "auto",
     "scrape_method": "http"
@@ -5747,7 +5747,7 @@
     "name": "M-Audio",
     "careers_url": "https://inmusicbrands.pinpointhq.com/",
     "category": "Audio Interfaces & Converters",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "http"
   },
@@ -6356,7 +6356,7 @@
     "name": "Moog Music",
     "careers_url": "https://inmusicbrands.pinpointhq.com/",
     "category": "Electronic Musical Instruments",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "http"
   },
@@ -6940,7 +6940,7 @@
     "name": "Numark",
     "careers_url": "https://inmusicbrands.pinpointhq.com/",
     "category": "DJ Equipment",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "http"
   },
@@ -7848,7 +7848,7 @@
     "name": "Rane",
     "careers_url": "https://inmusicbrands.pinpointhq.com/",
     "category": "DJ Equipment",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "http"
   },
@@ -9340,7 +9340,7 @@
     "name": "Stanton",
     "careers_url": "https://inmusicbrands.pinpointhq.com/",
     "category": "DJ Equipment",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "http"
   },
