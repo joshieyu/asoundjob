@@ -7249,14 +7249,6 @@
     "scrape_method": "playwright"
   },
   {
-    "name": "Peerless",
-    "careers_url": "https://www.dst.dk/da/OmDS/Job",
-    "category": "Transducer & Driver Manufacturers",
-    "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
-  },
-  {
     "name": "Peerless-AV",
     "careers_url": "https://www.peerlessav.com/careers",
     "category": "Audio Accessories & Cables",
@@ -10236,6 +10228,15 @@
     "scrape_method": "http"
   },
   {
+    "name": "Tymphany",
+    "careers_url": "https://tymphany.com/JoinUs.html",
+    "category": "Transducer & Driver Manufacturers",
+    "verified": true,
+    "open_application": true,
+    "source": "manual",
+    "scrape_method": "http"
+  },
+  {
     "name": "u-he Diva",
     "careers_url": "https://u-he.com/about/jobs.html",
     "category": "Audio Plugins & Virtual Instruments",
@@ -10488,7 +10489,7 @@
     "name": "Vifa",
     "careers_url": "https://www.dst.dk/da/OmDS/Job",
     "category": "Transducer & Driver Manufacturers",
-    "verified": true,
+    "verified": false,
     "source": "auto",
     "scrape_method": "playwright"
   },
