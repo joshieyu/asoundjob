@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import select
+from sqlalchemy import case, func, select
 from sqlalchemy.orm import Session, selectinload
 
 from api.database import get_db
@@ -51,19 +51,36 @@ def list_companies(
 
 @router.get("/open-applications", response_model=OpenApplicationsResponse)
 def list_open_applications(db: Session = Depends(get_db)):
-    rows = (
-        db.execute(
-            select(Company)
-            .where(Company.open_application.is_(True), Company.verified.is_(True))
-            .order_by(Company.name)
+    open_roles_subq = (
+        select(
+            Job.company_id,
+            func.sum(case((Job.is_audio_related.is_(True), 1), else_=0)).label(
+                "open_roles"
+            ),
         )
-        .scalars()
-        .all()
+        .where(Job.is_active.is_(True))
+        .group_by(Job.company_id)
+        .subquery()
     )
-    return OpenApplicationsResponse(
-        companies=[OpenApplicationCompany.model_validate(row) for row in rows],
-        total=len(rows),
-    )
+    open_roles = func.coalesce(open_roles_subq.c.open_roles, 0)
+    rows = db.execute(
+        select(Company, open_roles.label("open_roles"))
+        .outerjoin(open_roles_subq, open_roles_subq.c.company_id == Company.id)
+        .where(Company.open_application.is_(True), Company.verified.is_(True))
+        .order_by(Company.name)
+    ).all()
+    companies = [
+        OpenApplicationCompany(
+            id=company_row.id,
+            name=company_row.name,
+            slug=company_row.slug,
+            category=company_row.category,
+            careers_url=company_row.careers_url,
+            open_roles=int(roles),
+        )
+        for company_row, roles in rows
+    ]
+    return OpenApplicationsResponse(companies=companies, total=len(companies))
 
 
 @router.get("/{slug}", response_model=CompanyDetail)

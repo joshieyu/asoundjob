@@ -6,7 +6,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
 from api.routers.companies import list_open_applications, router
-from scraper.models import Base, Company
+from scraper.models import Base, Company, Job
 
 
 def company(name: str, slug: str, **kwargs) -> Company:
@@ -35,6 +35,17 @@ class TestOpenApplications(unittest.TestCase):
         for c in companies:
             self.session.add(c)
         self.session.flush()
+
+    def _job(self, company_id: int, **kwargs) -> Job:
+        base = dict(
+            company_id=company_id,
+            title="Audio Engineer",
+            url="https://example.com/job",
+            is_active=True,
+            is_audio_related=True,
+        )
+        base.update(kwargs)
+        return Job(**base)
 
     def test_returns_only_flagged_companies(self) -> None:
         self._add(
@@ -81,6 +92,33 @@ class TestOpenApplications(unittest.TestCase):
         self._add(company("Bose", "bose"))
         row = self.session.query(Company).one()
         self.assertFalse(row.open_application)
+
+    def test_company_with_no_jobs_reports_zero_open_roles(self) -> None:
+        self._add(company("Celestion", "celestion", open_application=True))
+        result = list_open_applications(db=self.session)
+        self.assertEqual(result.companies[0].open_roles, 0)
+
+    def test_open_roles_counts_only_active_audio_related_jobs(self) -> None:
+        c = company("Celestion", "celestion", open_application=True)
+        self._add(c)
+        self._add(
+            self._job(c.id, is_active=True, is_audio_related=True),
+            self._job(c.id, is_active=True, is_audio_related=True),
+            self._job(c.id, is_active=True, is_audio_related=False),
+            self._job(c.id, is_active=False, is_audio_related=True),
+        )
+        result = list_open_applications(db=self.session)
+        self.assertEqual(result.companies[0].open_roles, 2)
+
+    def test_total_counts_companies_not_roles(self) -> None:
+        c = company("Celestion", "celestion", open_application=True)
+        self._add(c)
+        self._add(
+            self._job(c.id, is_active=True, is_audio_related=True),
+            self._job(c.id, is_active=True, is_audio_related=True),
+        )
+        result = list_open_applications(db=self.session)
+        self.assertEqual(result.total, 1)
 
 
 class TestRouteOrdering(unittest.TestCase):

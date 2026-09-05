@@ -436,8 +436,8 @@
 					{openApplications.total} companies invite speculative applications
 				</h2>
 				<p class="mt-1 text-sm text-ink-soft">
-					These companies have no posted roles right now but say they want to hear from
-					you anyway. Write to them directly.
+					These companies accept speculative applications, so write to them directly even if
+					nothing above matches. Any that also have roles on the board are marked.
 				</p>
 				<ul class="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
 					{#each openApplications.companies as company (company.id)}
@@ -447,6 +447,14 @@
 								<span class="block truncate font-mono text-[10px] tracking-wide text-ink-soft uppercase">
 									{company.category}
 								</span>
+								{#if company.open_roles > 0}
+									<a
+										href="/companies/{company.slug}"
+										class="block truncate font-mono text-[10px] tracking-wide text-ink-soft uppercase hover:text-fader-deep hover:underline"
+									>
+										{company.open_roles} on the board
+									</a>
+								{/if}
 							</span>
 							{#if company.careers_url}
 								<a

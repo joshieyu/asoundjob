@@ -60,6 +60,7 @@ export interface OpenApplicationCompany {
 	slug: string;
 	category: string;
 	careers_url: string | null;
+	open_roles: number;
 }
 
 export interface OpenApplicationsResponse {

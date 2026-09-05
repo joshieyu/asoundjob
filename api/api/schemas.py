@@ -64,6 +64,7 @@ class OpenApplicationCompany(BaseModel):
     slug: str
     category: str
     careers_url: Optional[str] = None
+    open_roles: int = 0
 
 
 class OpenApplicationsResponse(BaseModel):
