@@ -2782,7 +2782,7 @@ Check the board with `check_url` before spending effort on the seed.
    | Amazon | 0 -> 59 | new amazon.jobs parser + seeded queries |
    | Demant | 0 -> 61 | new SuccessFactors parser + global search URL |
 
-   Live as of 2026-09-05: **974 board rows, 8,508 active, 95 contributing
+   Live as of 2026-09-05: **974 board rows, 8,505 active, 95 contributing
    companies, 213 uncategorized.** Audible and Oticon Medical were both
    deleted outright, seed and database; Sigma Connectivity and Delart were
    added; the seed is now 1,388 entries.
@@ -4028,3 +4028,62 @@ Adobe. **Treat a name change in the seed as a migration, never an edit.**
 in the seed and is a **different company** — tympanometry and hearing
 diagnostics, not transducers. `Tympany` and `Tymphany` differ by one letter and
 sort adjacently. Do not merge them.
+
+## Session update (2026-09-05, later) — Bang & Olufsen needs a DWR client, and is not worth one yet
+
+Commit `d21acf8`. Board unchanged at 974. **This is a deliberate non-build; read
+the payoff numbers before reopening it.**
+
+**The seeded URL was a marketing page.** `bang-olufsen.com/en/us/story/careers`
+produced three rows of navigation chrome — "Search for openings", "Early
+Careers - Students, Graduates & Internships", and a link to a single Talentech
+production-worker posting on `candidate.hr-manager.net`. None scored above 0.
+Those rows are deleted and the seed now points at the real board.
+
+**The real board is SuccessFactors, but the old flavour.**
+`career5.successfactors.eu/career?company=bangolufse` — confirmed as canonical
+by B&O's own careers page, which links to it three times. It is **not** the
+Career Site Builder flavour the `successfactors` parser handles: that parser
+matches `/search/` and `/go/<board>/<id>/`, and this is `/career?company=`.
+
+**It cannot be fetched, and this was tested rather than assumed.** The portal
+renders a search form with no results; the listing appears only after the
+"Search Jobs" button is pressed. Everything tried:
+
+- the results URL captured from a live session
+  (`&career_ns=job_listing_summary&navBarLevel=JOB_SEARCH&_s.crb=<token>`)
+  returns "No jobs" to `curl`;
+- so does the same URL with a cookie jar from the landing page **and** the
+  `_s.crb` token scraped out of that page and replayed;
+- `PlaywrightScraper` fails with "page loaded but no job links found" on both
+  the landing URL and the results URL, because it never presses the button;
+- `&career_ns=job_rss` and `/careers?company=` are 404 or empty.
+
+The network trace shows why: results arrive over
+`POST /xi/ajax/remoting/call/plaincall/careerJobSearchControllerProxy.getInitialJobSearchData.dwr`
+— **SAP DWR, a stateful RPC protocol** needing a script session id and batch
+ids, not a fetchable URL.
+
+**The payoff today is zero.** B&O has 11 openings: Student Assistant Analytics,
+three retail Sales Professional/Associate roles, three Danish apprenticeships
+(Industriteknikerlærling, Elektronikfagteknikerlærling, Elektrikerlærling),
+Automation QA Engineer, Sr. Legal Business Partner, Automation & AI Developer.
+Scored through the real Normalizer: **0 of 10 reach the board** under its
+current `Consumer Electronics & Tech` partial scope, and **1 of 10** would under
+a native audio category — "Automation QA Engineer" at 45, which is generic QA.
+**No other seeded company uses SuccessFactors v1**, so the parser would serve
+exactly one company for no rows.
+
+**Revisit when** B&O posts actual audio engineering roles — they are a real
+audio company and this will change — or when they migrate to Career Site
+Builder, at which point the existing `successfactors` parser handles them with
+a seed URL edit alone. The scrape failing in the meantime is the correct state.
+
+### Open question for the owner
+
+**B&O is filed under `Consumer Electronics & Tech`, which is partial scope**,
+alongside Google, Meta, Amazon, Qualcomm and Dolby. B&O is a far purer audio
+company than any of those, and `Hi-Fi & Consumer Speakers` is native. Changing
+it has **no effect today** because nothing scrapes, which is why it was left
+alone rather than changed quietly — but it will matter the moment the board
+becomes readable.
