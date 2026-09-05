@@ -181,6 +181,23 @@ FURNITURE_PHRASES = (
     "cookie settings",
 )
 
+LISTING_POINTER_PHRASES = (
+    "view all job",
+    "see all job",
+    "browse all job",
+    "search all job",
+    "view open positions",
+    "see open positions",
+    "view open roles",
+    "view all openings",
+    "see all openings",
+)
+
+
+def is_listing_pointer(text: str) -> bool:
+    lowered = text.lower()
+    return any(phrase in lowered for phrase in LISTING_POINTER_PHRASES)
+
 COOKIE_NOTICE_RE = re.compile(r"\bcookies?\b", re.IGNORECASE)
 
 PAGINATION_CHEVRON_RE = r"(?:«|‹|»|›|<<|>>|<|>)"
@@ -763,6 +780,9 @@ def extract_job_links(html: str, base_url: str) -> list[RawJob]:
             candidate_title, job_type = _clean_job_title_and_type(raw_candidate)
         else:
             candidate_title, job_type = "", None
+
+        if raw_candidate and is_listing_pointer(raw_candidate):
+            continue
 
         came_from_structure = False
         flat_unusable = (

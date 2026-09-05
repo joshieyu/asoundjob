@@ -964,5 +964,28 @@ class TestViewOpenPositionsFurniture(unittest.TestCase):
         self.assertFalse(is_furniture_title("Senior Audio DSP Engineer"))
 
 
+class TestListingPointerSkipped(unittest.TestCase):
+    def test_studio_directory_link_yields_no_job(self) -> None:
+        html = """
+        <html><body>
+        <div class="studio-card">
+          <h3>Bugbear Entertainment</h3>
+          <a href="/careers/bugbear">Bugbear Entertainment Helsinki,
+             Finland View Open Positions &rarr;</a>
+        </div>
+        </body></html>
+        """
+        self.assertEqual(extract_job_links(html, "https://thqnordic.com/company/careers"), [])
+
+    def test_real_job_link_still_extracted(self) -> None:
+        html = """
+        <html><body>
+        <a href="/careers/audio-dsp-engineer-88">Senior Audio DSP Engineer</a>
+        </body></html>
+        """
+        jobs = extract_job_links(html, "https://example.com/careers")
+        self.assertEqual([j.title for j in jobs], ["Senior Audio DSP Engineer"])
+
+
 if __name__ == "__main__":
     unittest.main()
