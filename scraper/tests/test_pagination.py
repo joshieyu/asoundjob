@@ -304,5 +304,52 @@ class TestDescendantPathPagination(unittest.TestCase):
         self.assertIsNone(find_next_page(html, "https://jobs.example.com/"))
 
 
+ACCORDION_START_URL = "https://xmems.com/careers/"
+
+ACCORDION_ONLY_HTML = """
+<html><body>
+<details id="e-n-accordion-item-1152">
+  <summary>Field Applications Engineer, Shenzhen</summary>
+  <p>Support customers designing audio products in the region.</p>
+</details>
+<details id="e-n-accordion-item-1153">
+  <summary>Analog Design Engineer, Santa Clara</summary>
+  <p>Design analog circuits for our next-generation audio hardware.</p>
+</details>
+</body></html>
+"""
+
+
+class TestAccordionFallback(unittest.TestCase):
+    def test_falls_back_to_accordion_jobs_when_no_links_found(self) -> None:
+        pages = {ACCORDION_START_URL: ACCORDION_ONLY_HTML}
+        jobs, _ = asyncio.run(
+            collect_paginated(make_fetch(pages), ACCORDION_START_URL)
+        )
+        self.assertEqual(len(jobs), 2)
+        urls = {job.url for job in jobs}
+        self.assertEqual(
+            urls,
+            {
+                "https://xmems.com/careers/#e-n-accordion-item-1152",
+                "https://xmems.com/careers/#e-n-accordion-item-1153",
+            },
+        )
+
+    def test_accordion_fallback_is_not_used_when_normal_extraction_finds_jobs(
+        self,
+    ) -> None:
+        html = f"""
+        <html><body>
+        {job_anchor(1)}
+        {ACCORDION_ONLY_HTML}
+        </body></html>
+        """
+        pages = {START_URL: html}
+        jobs, _ = asyncio.run(collect_paginated(make_fetch(pages), START_URL))
+        self.assertEqual(len(jobs), 1)
+        self.assertEqual(jobs[0].url, "https://example.com/careers/jobs/1")
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -22,7 +22,7 @@ NON_JOB_URL = re.compile(
 )
 
 SOCIAL_DOMAIN = re.compile(
-    r"(linkedin\.com/share|facebook\.com/(share|sharer)|twitter\.com/(intent|share)|"
+    r"(linkedin\.com|facebook\.com/(share|sharer)|twitter\.com/(intent|share)|"
     r"x\.com/intent|instagram\.com|youtube\.com|wa\.me|whatsapp\.com|t\.me/|"
     r"glassdoor|indeed\.com|mailchi|us\d+\.list-manage|google\.com/maps)",
     re.IGNORECASE,
@@ -299,6 +299,8 @@ EDGE_PUNCT = " \t-–—|,;:&"
 
 MIN_TITLE_LEN = 3
 MAX_TITLE_LEN = 90
+
+QUESTION_MARK = "?"
 
 ACRONYMS = {
     "AI",
@@ -702,6 +704,81 @@ def extract_job_links(html: str, base_url: str) -> list[RawJob]:
         RawJob(title=title, url=absolute, job_type=job_type, location=location)
         for absolute, (title, _, job_type, location) in sorted(best_by_url.items())
     ]
+
+
+ACCORDION_NAV_ANCESTOR_TAGS = frozenset({"nav", "header", "footer", "aside"})
+
+ACCORDION_MAX_LINK_TEXT_RATIO = 0.30
+
+
+def extract_accordion_jobs(html: str, base_url: str) -> list[RawJob]:
+    base_parsed = urlparse(base_url)
+    base_has_job_hint = bool(JOB_HINT.search(base_parsed.path.lower()))
+    if not base_has_job_hint:
+        return []
+
+    soup = BeautifulSoup(html, "html.parser")
+    base_without_fragment = base_url.split("#", 1)[0]
+
+    jobs: list[RawJob] = []
+    seen_urls: set[str] = set()
+
+    for details in soup.find_all("details"):
+        summary = details.find("summary", recursive=False)
+        if summary is None:
+            continue
+
+        if any(
+            isinstance(parent, Tag) and parent.name in ACCORDION_NAV_ANCESTOR_TAGS
+            for parent in details.parents
+        ):
+            continue
+
+        id_value = _clean_text(details.get("id"))
+        ident = id_value.lstrip("#")
+        if not ident:
+            continue
+
+        raw_title = _clean_text(summary.get_text(" ", strip=True))
+        title, job_type = _clean_job_title_and_type(raw_title)
+
+        if len(title) < MIN_TITLE_LEN or len(title) > MAX_TITLE_LEN:
+            continue
+        if title.lower() in NON_JOB_TEXT:
+            continue
+        if is_furniture_title(title):
+            continue
+        if title.rstrip().endswith(QUESTION_MARK):
+            continue
+
+        body_text = details.get_text(" ", strip=True)
+        link_chars = sum(
+            len(link.get_text(" ", strip=True)) for link in details.find_all("a")
+        )
+        if link_chars / max(len(body_text), 1) >= ACCORDION_MAX_LINK_TEXT_RATIO:
+            continue
+
+        url = f"{base_without_fragment}#{ident}"
+        if url in seen_urls:
+            continue
+        seen_urls.add(url)
+
+        details_copy = BeautifulSoup(str(details), "html.parser")
+        summary_copy = details_copy.find("summary")
+        if summary_copy is not None:
+            summary_copy.decompose()
+        description = details_copy.get_text(" ", strip=True)
+
+        jobs.append(
+            RawJob(
+                title=title,
+                url=url,
+                description=description or None,
+                job_type=job_type,
+            )
+        )
+
+    return jobs
 
 
 def extract_jsonld_jobs(html: str, base_url: str) -> list[RawJob]:

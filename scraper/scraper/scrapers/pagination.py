@@ -7,7 +7,11 @@ from urllib.parse import urljoin, urlparse
 from bs4 import BeautifulSoup, Tag
 
 from scraper.scrapers.base import RawJob
-from scraper.scrapers.link_extraction import extract_jobs, resolve_document_base
+from scraper.scrapers.link_extraction import (
+    extract_accordion_jobs,
+    extract_jobs,
+    resolve_document_base,
+)
 
 MAX_PAGES = 10
 
@@ -152,5 +156,8 @@ async def collect_paginated(
             break
         visited_pages.add(next_key)
         url = next_url
+
+    if not jobs and first_page_html is not None:
+        jobs = extract_accordion_jobs(first_page_html, start_url)
 
     return jobs, first_page_html

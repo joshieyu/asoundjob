@@ -9,6 +9,7 @@ from scraper.scrapers.link_extraction import (
     _clean_job_title_and_type,
     _looks_like_job_detail_path,
     clean_job_title,
+    extract_accordion_jobs,
     extract_job_links,
     extract_jobs,
     extract_jsonld_jobs,
@@ -757,6 +758,140 @@ class TestBoardChromeRejected(unittest.TestCase):
         <a href="/careers/search">Search jobs</a>
         <a href="/careers/alerts">Sign up for Job Alerts.</a>
         <a href="https://www.jobvite.com/">Powered by Jobvite</a>
+        </body></html>
+        """
+        jobs = extract_job_links(html, "https://example.com/careers")
+        self.assertEqual(len(jobs), 1)
+        self.assertEqual(jobs[0].title, "Senior Audio Engineer")
+
+
+ACCORDION_HTML = """
+<html><body>
+<details id="#ee-audio">
+  <summary class="e-n-accordion-item-title">
+    Senior Application Engineer &ndash; EE / Audio, Santa Clara
+  </summary>
+  <p>We are looking for a Senior Application Engineer to join our EE/Audio team
+  in Santa Clara. You will design and validate <a href="/audio-hardware">audio hardware</a>.</p>
+</details>
+<details id="e-n-accordion-item-1154">
+  <summary class="e-n-accordion-item-title">West Coast Sales Director, Santa Clara</summary>
+  <p>Lead our west coast sales team from our Santa Clara office and drive
+  revenue growth across the region.</p>
+</details>
+<details id="faq-1">
+  <summary class="e-n-accordion-item-title">What benefits do you offer?</summary>
+  <p>We offer health insurance, a 401k match, and unlimited PTO.</p>
+</details>
+</body></html>
+"""
+
+
+class TestAccordionExtraction(unittest.TestCase):
+    def test_only_job_titles_are_returned_with_single_hash_urls(self) -> None:
+        jobs = extract_accordion_jobs(ACCORDION_HTML, "https://xmems.com/careers/")
+        titles = [job.title for job in jobs]
+        self.assertEqual(len(jobs), 2)
+        self.assertIn("Senior Application Engineer – EE / Audio, Santa Clara", titles)
+        self.assertIn("West Coast Sales Director, Santa Clara", titles)
+        self.assertNotIn("What benefits do you offer?", titles)
+
+        urls = {job.title: job.url for job in jobs}
+        self.assertEqual(
+            urls["Senior Application Engineer – EE / Audio, Santa Clara"],
+            "https://xmems.com/careers/#ee-audio",
+        )
+        self.assertEqual(
+            urls["West Coast Sales Director, Santa Clara"],
+            "https://xmems.com/careers/#e-n-accordion-item-1154",
+        )
+
+    def test_descriptions_are_populated_and_omit_the_title(self) -> None:
+        jobs = extract_accordion_jobs(ACCORDION_HTML, "https://xmems.com/careers/")
+        for job in jobs:
+            self.assertTrue(job.description)
+            assert job.description is not None
+            self.assertFalse(job.description.startswith(job.title))
+
+    def test_details_without_id_is_skipped(self) -> None:
+        html = """
+        <html><body>
+        <details>
+          <summary>Audio Firmware Engineer, Remote</summary>
+          <p>Build firmware for our next-generation audio products.</p>
+        </details>
+        </body></html>
+        """
+        jobs = extract_accordion_jobs(html, "https://xmems.com/careers/")
+        self.assertEqual(jobs, [])
+
+    def test_base_url_without_job_hint_returns_empty(self) -> None:
+        jobs = extract_accordion_jobs(ACCORDION_HTML, "https://xmems.com/about/")
+        self.assertEqual(jobs, [])
+
+    def test_details_inside_nav_is_skipped_but_identical_item_outside_is_kept(
+        self,
+    ) -> None:
+        html = """
+        <html><body>
+        <nav>
+        <details id="nav-audio-engineer">
+          <summary>Audio Firmware Engineer, Remote</summary>
+          <p>Build firmware for our next-generation audio products.</p>
+        </details>
+        </nav>
+        <details id="audio-engineer">
+          <summary>Audio Firmware Engineer, Remote</summary>
+          <p>Build firmware for our next-generation audio products.</p>
+        </details>
+        </body></html>
+        """
+        jobs = extract_accordion_jobs(html, "https://example.com/careers/")
+        self.assertEqual(len(jobs), 1)
+        self.assertEqual(jobs[0].url, "https://example.com/careers/#audio-engineer")
+
+    def test_details_with_mostly_link_text_body_is_skipped(self) -> None:
+        html = """
+        <html><body>
+        <details id="home-audio">
+          <summary>Home Audio</summary>
+          <ul>
+            <li><a href="/collections/turntables">Turntables</a></li>
+            <li><a href="/collections/vinyl-records">Vinyl Records</a></li>
+            <li><a href="/collections/cases">Cases</a></li>
+            <li><a href="/collections/accessories">Accessories</a></li>
+          </ul>
+        </details>
+        </body></html>
+        """
+        jobs = extract_accordion_jobs(html, "https://example.com/careers/")
+        self.assertEqual(jobs, [])
+
+
+class TestLinkedInExcluded(unittest.TestCase):
+    def test_linkedin_job_view_link_rejected(self) -> None:
+        html = """
+        <html><body>
+        <a href="https://www.linkedin.com/jobs/view/4459438450/">Careers on LinkedIn</a>
+        </body></html>
+        """
+        jobs = extract_job_links(html, "https://example.com/careers")
+        self.assertEqual(jobs, [])
+
+    def test_linkedin_company_jobs_link_rejected(self) -> None:
+        html = """
+        <html><body>
+        <a href="https://www.linkedin.com/company/acme/jobs/">See Open Roles</a>
+        </body></html>
+        """
+        jobs = extract_job_links(html, "https://example.com/careers")
+        self.assertEqual(jobs, [])
+
+    def test_onsite_job_link_still_extracted_beside_linkedin_link(self) -> None:
+        html = """
+        <html><body>
+        <a href="/careers/senior-audio-engineer-4471">Senior Audio Engineer</a>
+        <a href="https://www.linkedin.com/jobs/view/4459438450/">Careers on LinkedIn</a>
         </body></html>
         """
         jobs = extract_job_links(html, "https://example.com/careers")
