@@ -2782,7 +2782,7 @@ Check the board with `check_url` before spending effort on the seed.
    | Amazon | 0 -> 59 | new amazon.jobs parser + seeded queries |
    | Demant | 0 -> 61 | new SuccessFactors parser + global search URL |
 
-   Live as of 2026-09-04: **970 board rows, 8,506 active, 94 contributing
+   Live as of 2026-09-05: **974 board rows, 8,512 active, 95 contributing
    companies, 213 uncategorized.** Audible and Oticon Medical were both
    deleted outright, seed and database; Sigma Connectivity and Delart were
    added; the seed is now 1,388 entries.
@@ -3898,3 +3898,79 @@ to the 9 -> 2 drop; the scope change alone is not the whole story.
 renaming it to "Adobe" would fail to match, insert a second company, and orphan
 the existing row along with its job history. Renaming a seeded company is not a
 safe edit.
+
+## Session update (2026-09-05) — job listings that are anchors on one page, and open applications that are not exclusive
+
+Two coupled changes (commits `3bb4344`, `ee51eb3`). IK Multimedia went from 0
+board rows to **4**; board 970 -> 974.
+
+### IK Multimedia was seeded and verified, and still yielded nothing
+
+Its single stored row was a nav link titled "Careers". The careers page lists
+every role on one page as `<a href="#it_yocto_ambedded_developer_20251031">`,
+with no per-job URL and no JSON-LD. Two independent barriers in
+`extract_job_links` dropped them:
+
+1. `if path == base_path or path == "": continue` — a `#frag` href resolves to
+   the base path, so every listing looked like a self-link.
+2. `looks_like_job` was False. `JOB_HINT` does not match "Yocto Embedded
+   Developer", and `came_from_structure` was False because the flat anchor text
+   was already a usable title.
+
+**Allowing fragments outright would have been wrong.** On that same page
+`^top^` (`#pagetop`), `FEATURED` (`#featured`) and `NEW` (`#new`) all resolve to
+the base path and **all survive the existing title filters** — checked one by
+one against `NON_JOB_TEXT`, `is_furniture_title` and the length bounds. The
+separator is structural and verified: the 10 real listings target
+`<a name="...">` elements, while `pagetop`/`featured`/`new` are `div` **ids**
+and `search` resolves to nothing. So a same-page fragment counts as a job only
+when it resolves to a **named anchor** on a job-hinted page.
+
+**Blast radius, measured on 64 live careers pages** (sampled from companies
+whose most recent http/playwright scrape succeeded — an earlier sample drawn
+from the seed by URL shape was useless, 52 of 60 URLs were dead): exactly two
+companies gained rows. IK Multimedia gained its 6 listings, and `dst.dk` gained
+one skip-link, "Gå til sidens indhold", which scores **0** and cannot reach the
+board. One non-board junk row across 64 pages.
+
+**Only 6 of the 10 listings are captured, and that is the page's fault.** The
+five Italian roles and one US role are hyperlinked; the other four US roles have
+named-anchor targets and full descriptions but **no link in the index** — IK
+wrote them as plain text. Extending extraction to unlinked `<a name>` elements
+would mean taking the title from the anchor's parent element, which is
+materially more speculative on a code path shared by ~900 companies, and it
+would buy exactly **one** more board row (*Product Owner for the Pro-Audio
+Market Segment*, 70). Not taken. Revisit only if this markup turns up again.
+
+**A hazard this created, guarded in the same commit.** Same-page anchor jobs
+share the listing page's URL. For a company with `scrape_method: http` the
+enrichment pass would re-fetch that one page once per job and assign the entire
+page text as *every* job's description, so all of them would score identically.
+`_is_same_page_anchor` now excludes those candidates. IK is `playwright`, which
+does not enrich at all, so this would not have shown up until the next company
+with this markup.
+
+### "Open applications" claimed something that was about to be false
+
+The section on the jobs page read *"These companies have no posted roles right
+now but say they want to hear from you anyway."* True only by accident: 0 of the
+38 verified `open_application` companies had a board row. IK Multimedia's 4 made
+it false the moment they landed.
+
+`/api/companies/open-applications` now returns `open_roles` per company, counted
+as `is_active AND is_audio_related` — the same definition `companies_with_counts`
+uses for `board_count`. The copy no longer asserts anything about posted roles,
+and a company with live roles gets a `N on the board` link to its company page.
+**No company is filtered out of the section**: inviting speculative CVs stays
+true whether or not roles are posted, which is the whole point.
+
+Verified against a running API and dev server: 38 companies returned, IK
+Multimedia the only one with `open_roles > 0`, its card rendering
+`4 on the board` linked to `/companies/ik-multimedia`. Checked through the DOM
+rather than a screenshot — the preview pane returned blank images.
+
+### Noticed in passing, not fixed
+
+**Peerless and Vifa are both seeded to `https://www.dst.dk/da/OmDS/Job`**, which
+is Danmarks Statistik, the Danish statistics agency — not the transducer makers.
+Two wrong seed URLs sharing one wrong destination.
