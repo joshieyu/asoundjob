@@ -5,6 +5,7 @@ import logging
 import re
 from datetime import date, timedelta
 from typing import TYPE_CHECKING, Any
+from urllib.parse import parse_qs, urlsplit
 
 from scraper.scrapers.base import BaseScraper, RawJob
 from scraper.scrapers.fetch import FetchError
@@ -69,19 +70,22 @@ class WorkdayScraper(BaseScraper):
         host, site = slug.split("/", 1)
         tenant = host.split(".")[0]
         base = _build_base(company.careers_url or "", host)
-        jobs = await self._fetch_all(base, tenant, site)
+        query = extract_query(company.careers_url or "")
+        jobs = await self._fetch_all(base, tenant, site, query)
         should_fetch_details = company.audio_scope == "native"
         await self._fetch_descriptions(
             base, tenant, site, jobs, should_fetch_details
         )
         return jobs
 
-    async def _fetch_all(self, base: str, tenant: str, site: str) -> list[RawJob]:
+    async def _fetch_all(
+        self, base: str, tenant: str, site: str, query: str = ""
+    ) -> list[RawJob]:
         jobs: list[RawJob] = []
         offset = 0
         total: int | None = None
         for page_index in range(MAX_PAGES):
-            body = {**LIST_BODY, "offset": offset}
+            body = {**LIST_BODY, "offset": offset, "searchText": query}
             url = f"{base}/wday/cxs/{tenant}/{site}/jobs"
             data = await asyncio.to_thread(
                 _post_json, url, body, self.settings
@@ -133,6 +137,12 @@ class WorkdayScraper(BaseScraper):
                     pass
 
         await asyncio.gather(*(fetch_one(j) for j in fetch_list))
+
+
+def extract_query(url: str) -> str:
+    parsed = urlsplit((url or "").strip())
+    values = parse_qs(parsed.query).get("q")
+    return values[0] if values else ""
 
 
 def _build_base(url: str, host: str) -> str:

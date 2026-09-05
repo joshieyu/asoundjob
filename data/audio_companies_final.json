@@ -217,11 +217,11 @@
   },
   {
     "name": "Adobe Audition",
-    "careers_url": "https://careers.adobe.com/us/en",
-    "category": "DAW & Music Production Software",
+    "careers_url": "https://adobe.wd5.myworkdayjobs.com/external_experienced?q=audio",
+    "category": "Consumer Electronics & Tech",
     "verified": true,
     "source": "auto",
-    "scrape_method": "playwright"
+    "scrape_method": "http"
   },
   {
     "name": "Advanced Bionics",

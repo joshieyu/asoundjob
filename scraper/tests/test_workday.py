@@ -14,6 +14,7 @@ from scraper.scrapers.ats.workday import (
     _parse_list_item,
     _parse_relative_date,
     _parse_time_type,
+    extract_query,
 )
 
 
@@ -180,6 +181,27 @@ class TestWorkdayParser(unittest.TestCase):
         )
         self.assertFalse(scraper.can_handle(make_company("")))
 
+    def test_extract_query(self) -> None:
+        self.assertEqual(
+            extract_query(
+                "https://adobe.wd5.myworkdayjobs.com/external_experienced?q=audio"
+            ),
+            "audio",
+        )
+        self.assertEqual(
+            extract_query(
+                "https://adobe.wd5.myworkdayjobs.com/external_experienced"
+            ),
+            "",
+        )
+        self.assertEqual(
+            extract_query(
+                "https://adobe.wd5.myworkdayjobs.com/external_experienced?q="
+            ),
+            "",
+        )
+        self.assertEqual(extract_query(""), "")
+
 
 def make_posting(index: int) -> dict:
     return {
@@ -267,6 +289,62 @@ class TestFetchAllPagination(unittest.TestCase):
 
         self.assertEqual(len(jobs), 25)
         self.assertEqual(calls, [0, 20])
+
+    def test_fetch_all_sends_search_text_from_query(self) -> None:
+        search_texts: list[str] = []
+
+        def fake_post_json(url, body, settings):
+            search_texts.append(body["searchText"])
+            return {"total": 0, "jobPostings": []}
+
+        with patch(
+            "scraper.scrapers.ats.workday._post_json", side_effect=fake_post_json
+        ):
+            asyncio.run(
+                self.scraper._fetch_all(
+                    self.base, self.tenant, self.site, "audio"
+                )
+            )
+
+        self.assertEqual(search_texts, ["audio"])
+
+    def test_fetch_all_sends_empty_search_text_by_default(self) -> None:
+        search_texts: list[str] = []
+
+        def fake_post_json(url, body, settings):
+            search_texts.append(body["searchText"])
+            return {"total": 0, "jobPostings": []}
+
+        with patch(
+            "scraper.scrapers.ats.workday._post_json", side_effect=fake_post_json
+        ):
+            asyncio.run(self.scraper._fetch_all(self.base, self.tenant, self.site))
+
+        self.assertEqual(search_texts, [""])
+
+
+class TestFetchJobsUsesQuery(unittest.TestCase):
+    def test_fetch_jobs_passes_q_param_through_to_search_text(self) -> None:
+        from scraper.config import load_settings
+
+        scraper = WorkdayScraper(load_settings())
+        company = make_company(
+            "https://sonos.wd1.myworkdayjobs.com/Sonos?q=audio",
+            audio_scope="partial",
+        )
+        search_texts: list[str] = []
+
+        def fake_post_json(url, body, settings):
+            search_texts.append(body["searchText"])
+            return {"total": 0, "jobPostings": []}
+
+        with patch(
+            "scraper.scrapers.ats.workday._post_json", side_effect=fake_post_json
+        ):
+            jobs = asyncio.run(scraper.fetch_jobs(company))
+
+        self.assertEqual(jobs, [])
+        self.assertEqual(search_texts, ["audio"])
 
 
 if __name__ == "__main__":
