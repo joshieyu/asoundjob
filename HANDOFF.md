@@ -2782,7 +2782,7 @@ Check the board with `check_url` before spending effort on the seed.
    | Amazon | 0 -> 59 | new amazon.jobs parser + seeded queries |
    | Demant | 0 -> 61 | new SuccessFactors parser + global search URL |
 
-   Live as of 2026-09-05: **1,005 board rows, 8,585 active, 97 contributing
+   Live as of 2026-09-05: **1,005 board rows, 8,584 active, 97 contributing
    companies, 216 uncategorized.** Audible and Oticon Medical were both
    deleted outright, seed and database; Sigma Connectivity and Delart were
    added; the seed is now 1,388 entries.
@@ -4363,3 +4363,63 @@ clinic chain with no R&D, while Cochlear designs implants and employs embedded,
 acoustics and DSP engineers, so native scope is right and the commercial tail
 is the price. If the tail is ever judged too heavy, the lever is
 `CORPORATE_ROLE` coverage, not Cochlear's category.
+
+## Session update (2026-09-05, later) — Beyerdynamic, and whether German listings are parseable at all
+
+Commit `359743d`. Beyerdynamic contributes **0 board rows** and now appears in
+the open-applications section instead; board unchanged at 1,005. Its one stored
+row, a "Jobs" nav link scoring 0, was deleted.
+
+### The German site has nothing to parse — measured twice, two separate reasons
+
+Asked whether `beyerdynamic.de/unternehmen/jobs` could be parsed given the
+listings are in German. The answer is no, and the language is only the second
+reason.
+
+**First, the page has no listings.** Its `#jobs` section is a
+`<pb-widgethtml>` custom element containing an empty `<div>`. No listings in
+the rendered DOM, none in the raw HTML, no JSON-LD, and the network trace shows
+**no jobs request at all** — only the document and one image. What looks like a
+listings link, "Stellenangebote", is an in-page jump to that empty widget.
+
+**Second, and this generalises: German titles do not score.** Scored through
+the real Normalizer under a native category, against their English equivalents:
+
+| German title | score | English equivalent | score |
+|---|---:|---|---:|
+| Entwicklungsingenieur Akustik (m/w/d) | **0** | Acoustic Development Engineer | 70 |
+| Akustikingenieur (m/w/d) | **0** | Acoustics Engineer | 105 |
+| Softwareentwickler Embedded Systeme (m/w/d) | **0** | Embedded Software Developer | 45 |
+| Werkstudent Tontechnik (m/w/d) | **0** | Working Student Sound Engineering | 70 |
+| Elektroniktechniker (m/w/d) | **0** | Electronics Technician | 45 |
+| Hardwareentwickler Elektronik (m/w/d) | **0** | Hardware Electronics Developer | 45 |
+| Praktikant Schallmessung (m/w/d) | **0** | Intern Acoustic Measurement | 105 |
+| Produktmanager Audio (m/w/d) | 70 | Audio Product Manager | 70 |
+
+**Seven of eight score zero.** The one that scores does so only because "Audio"
+is an English loanword. `Akustik`, `Tontechnik`, `Schallmessung`,
+`Elektroniktechniker` and `Hardwareentwickler` match nothing in the keyword
+vocabulary, which is English throughout — `AUDIO_TITLE_STRONG`,
+`AUDIO_DESC_STRONG`, `CATEGORY_KEYWORDS` and `FALLBACK_ROLE_CATEGORIES` alike.
+German descriptions would fail for the same reason.
+
+**This confirms, rather than discovers, a pattern already visible this
+session:** Sigma Connectivity's Swedish roles (Hårdvarukonstruktör, Senior
+Hårdvaruutvecklare, Säljande konsultchef) and Bang & Olufsen's Danish
+apprenticeships (Industriteknikerlærling, Elektronikfagteknikerlærling,
+Elektrikerlærling) all scored 0 for the same reason. **Non-English European
+boards are effectively invisible to the board today**, and no amount of parser
+work changes that — it is a vocabulary problem, not an extraction one. Adding
+German/Nordic terms to the keyword sets is a real, self-contained project worth
+scoping if European coverage matters; it is not a per-company fix.
+
+### What was done instead
+
+The seed now points at the North America jobs page, which carries the two
+current openings and an explicit "send us your résumé" invitation, and the
+entry is `open_application: true`. **The scrape fails, and that is correct** —
+the two openings, Customer Experience & Service Manager and Operations
+Assistant, are PDF downloads on `api.beyerdynamic.de` with titles carrying no
+job hint, so neither the http nor the playwright path extracts them, and both
+score 0 regardless as non-audio roles. Beyerdynamic is the 41st open-application
+company.
