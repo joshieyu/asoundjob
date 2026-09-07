@@ -126,8 +126,48 @@ Audio software and AI: **Neural DSP**, **Bitwig**, **Antelope Audio**,
 Research and standards: **Fraunhofer IDMT**, **IRCAM**, **AES**, **THX**,
 **Alliance for Open Media**.
 
-Acoustic consulting, where **Arup** leads the field: **Hoare Lea**,
-**Ramboll**, **Stantec**, **Sweco**, **Thornton Tomasetti**, **WSDG**.
+Acoustic consulting: **Hoare Lea**, **Ramboll**, **Stantec**, **Sweco**,
+**Thornton Tomasetti**, **WSDG**. Arup came off this list on 2026-09-07 — done,
+11 board rows, and **its scoping URL is the pattern to copy for the rest of
+this group.** See below.
+
+### Arup, and why a big consultancy must be scoped at the URL
+
+Arup's board carries **728 open roles**, almost all civil, structural,
+mechanical, electrical, BIM and plumbing. Seeding the unfiltered search would
+import hundreds of building-services engineers.
+
+They score 0 today only because `Acoustic Consulting & Engineering` is one of
+the eight native categories missing from `COMPANY_CATEGORY_FALLBACK`. **That is
+a fragile protection, not a design.** Adding those categories to the fallback
+map is on the table for the precision levers, and the measurement there already
+showed the failure mode: DLR Group, an architecture practice filed under the
+same category, contributes `Senior Mechanical Engineer - Gas & Energy`. Scoping
+Arup at the URL removes the risk permanently rather than relying on a gap.
+
+The board is Avature. Getting a stable scoped URL takes one trick:
+
+1. `GET /facets/job/category/auto-suggest?category_facet=a` returns **all 116
+   categories** as JSON with ids — it ignores the search term, so any term
+   works. Acoustics is two of them: **187** "Acoustics, Audio-Visual, Theatre
+   and Experiential Environments" and **51** "Acoustics".
+2. `/jobs/all/add/category/<id>` applies the facet — but it is **session
+   stateful and useless as a seed URL.** It works in a warmed browser and
+   returns nothing to a cold scraper. Both of those URLs were tried as seeds
+   first and failed with *page loaded but no job links found*.
+3. That URL **redirects to a stable saved-search id**, and *that* is what to
+   seed: `/jobs/search/20982857` (187) and `/jobs/search/20982861` (51). Both
+   work cold.
+
+The two facets cannot be combined into one URL — `/add/category/187/add/category/51`
+returns "Invalid Request" — so Arup uses `extra_careers_urls` for the second,
+which the pipeline merges.
+
+`?keyword=` on the search URL is ignored; do not bother with it. The board also
+403s plain HTTP, so `scrape_method` must be `playwright`.
+
+**The saved-search ids are Arup-internal and may rotate.** If Arup goes quiet,
+re-derive them with step 1 rather than assuming the board is empty.
 
 High-end audio with genuine DSP work: **dCS**, **Naim Audio**. Both are
 seeded to their homepages. Focal and Beyerdynamic came off this list on

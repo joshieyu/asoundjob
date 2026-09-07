@@ -700,7 +700,10 @@
   },
   {
     "name": "Arup",
-    "careers_url": "https://www.arup.com/en-us/careers/",
+    "careers_url": "https://jobs.arup.com/jobs/search/20982857",
+    "extra_careers_urls": [
+      "https://jobs.arup.com/jobs/search/20982861"
+    ],
     "category": "Acoustic Consulting & Engineering",
     "verified": true,
     "source": "auto",
