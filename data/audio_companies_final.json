@@ -4214,6 +4214,14 @@
     "scrape_method": "http"
   },
   {
+    "name": "GRAS Sound & Vibration",
+    "careers_url": "https://www.grasacoustics.com/about-us/jobs",
+    "category": "Audio Testing & Measurement",
+    "verified": true,
+    "source": "auto",
+    "scrape_method": "http"
+  },
+  {
     "name": "Grason-Stadler (GSI)",
     "careers_url": "https://www.grason-stadler.com/careers",
     "category": "Hearing Aid & Hearing Tech",
