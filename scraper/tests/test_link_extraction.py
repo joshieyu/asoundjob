@@ -750,6 +750,28 @@ class TestSamePageAnchorJobs(unittest.TestCase):
         jobs = extract_job_links(html, "https://example.com/careers/")
         self.assertEqual(jobs, [])
 
+    def test_same_page_anchor_jobs_get_distinct_external_ids(self) -> None:
+        jobs = extract_job_links(
+            SAME_PAGE_ANCHOR_HTML, "https://www.ikmultimedia.com/careers/"
+        )
+        external_ids = {job.title: job.external_id for job in jobs}
+        self.assertEqual(len(jobs), 2)
+        self.assertIsNotNone(external_ids["Firmware Engineer"])
+        self.assertIsNotNone(external_ids["Yocto Embedded Developer"])
+        self.assertNotEqual(
+            external_ids["Firmware Engineer"], external_ids["Yocto Embedded Developer"]
+        )
+
+    def test_ordinary_detail_link_with_apply_fragment_has_no_external_id(self) -> None:
+        html = """
+        <html><body>
+        <a href="/careers/audio-engineer-123#apply">Audio Engineer</a>
+        </body></html>
+        """
+        jobs = extract_job_links(html, "https://example.com/careers")
+        self.assertEqual(len(jobs), 1)
+        self.assertIsNone(jobs[0].external_id)
+
 
 class TestBoardChromeRejected(unittest.TestCase):
     def test_search_jobs_rejected(self) -> None:
@@ -885,6 +907,52 @@ class TestAccordionExtraction(unittest.TestCase):
         </body></html>
         """
         jobs = extract_accordion_jobs(html, "https://example.com/careers/")
+        self.assertEqual(jobs, [])
+
+
+ARIA_TAB_JOB_BODY = (
+    "We are looking for a DSP Engineer to join our audio team. "
+    "You will design, implement, and validate real-time audio signal "
+    "processing algorithms for embedded hardware platforms. Responsibilities "
+    "include writing efficient C and assembly code, collaborating with "
+    "hardware engineers, and tuning filters for production devices. The "
+    "ideal candidate has a strong background in digital signal processing, "
+    "fixed-point arithmetic, and embedded systems development, along with "
+    "excellent communication skills and a passion for audio quality."
+)
+
+
+def _aria_tab_html(panel_body: str) -> str:
+    return f"""
+    <html><body>
+    <p data-fake-id='#toggle-id-1' class='toggler' role='tab' tabindex='0'
+       aria-controls='toggle-id-1'>DSP Engineer<span class="toggle_icon"></span></p>
+    <div id='toggle-id-1' class='toggle_wrap'>
+      <div class='toggle_content'>{panel_body}</div>
+    </div>
+    </body></html>
+    """
+
+
+class TestAriaTabAccordionExtraction(unittest.TestCase):
+    def test_aria_tab_with_long_panel_yields_job(self) -> None:
+        self.assertGreater(len(ARIA_TAB_JOB_BODY), 400)
+        html = _aria_tab_html(ARIA_TAB_JOB_BODY)
+        jobs = extract_accordion_jobs(html, "https://listeninc.com/careers/")
+        self.assertEqual(len(jobs), 1)
+        self.assertEqual(jobs[0].title, "DSP Engineer")
+        self.assertEqual(jobs[0].description, ARIA_TAB_JOB_BODY)
+        self.assertEqual(jobs[0].url, "https://listeninc.com/careers/#toggle-id-1")
+        self.assertIsNotNone(jobs[0].external_id)
+
+    def test_aria_tab_with_short_panel_yields_nothing(self) -> None:
+        html = _aria_tab_html("About")
+        jobs = extract_accordion_jobs(html, "https://listeninc.com/careers/")
+        self.assertEqual(jobs, [])
+
+    def test_aria_tab_without_job_hint_path_yields_nothing(self) -> None:
+        html = _aria_tab_html(ARIA_TAB_JOB_BODY)
+        jobs = extract_accordion_jobs(html, "https://listeninc.com/about/")
         self.assertEqual(jobs, [])
 
 

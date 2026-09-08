@@ -842,15 +842,43 @@ def extract_job_links(html: str, base_url: str) -> list[RawJob]:
                 anchor_location(anchor),
             )
 
-    return [
-        RawJob(title=title, url=absolute, job_type=job_type, location=location)
-        for absolute, (title, _, job_type, location) in sorted(best_by_url.items())
-    ]
+    taken_external_ids: set[str] = set()
+    results: list[RawJob] = []
+    for absolute, (title, path, job_type, location) in sorted(best_by_url.items()):
+        parsed = urlparse(absolute)
+        external_id = None
+        if parsed.fragment and parsed.netloc.lower() == base_netloc and path == base_path:
+            external_id = same_page_external_id(title, taken_external_ids)
+        results.append(
+            RawJob(
+                title=title,
+                url=absolute,
+                job_type=job_type,
+                location=location,
+                external_id=external_id,
+            )
+        )
+    return results
 
 
 ACCORDION_NAV_ANCESTOR_TAGS = frozenset({"nav", "header", "footer", "aside"})
 
 ACCORDION_MAX_LINK_TEXT_RATIO = 0.30
+
+ACCORDION_MIN_PANEL_CHARS = 400
+
+SAME_PAGE_SLUG_RE = re.compile(r"[^a-z0-9]{1,40}")
+
+
+def same_page_external_id(title: str, taken: set[str]) -> str:
+    slug = SAME_PAGE_SLUG_RE.sub("-", title.lower()).strip("-") or "job"
+    candidate = f"same-page:{slug}"
+    suffix = 2
+    while candidate in taken and suffix <= 50:
+        candidate = f"same-page:{slug}-{suffix}"
+        suffix += 1
+    taken.add(candidate)
+    return candidate
 
 
 def extract_accordion_jobs(html: str, base_url: str) -> list[RawJob]:
@@ -864,6 +892,7 @@ def extract_accordion_jobs(html: str, base_url: str) -> list[RawJob]:
 
     jobs: list[RawJob] = []
     seen_urls: set[str] = set()
+    taken_external_ids: set[str] = set()
 
     for details in soup.find_all("details"):
         summary = details.find("summary", recursive=False)
@@ -917,6 +946,61 @@ def extract_accordion_jobs(html: str, base_url: str) -> list[RawJob]:
                 url=url,
                 description=description or None,
                 job_type=job_type,
+                external_id=same_page_external_id(title, taken_external_ids),
+            )
+        )
+
+    for tab in soup.find_all(True, attrs={"role": "tab"}):
+        ident = _clean_text(tab.get("aria-controls")).lstrip("#")
+        if not ident:
+            continue
+
+        panel = soup.find(id=ident)
+        if panel is None:
+            continue
+
+        if any(
+            isinstance(parent, Tag) and parent.name in ACCORDION_NAV_ANCESTOR_TAGS
+            for parent in tab.parents
+        ):
+            continue
+
+        panel_text = panel.get_text(" ", strip=True)
+        if len(panel_text) < ACCORDION_MIN_PANEL_CHARS:
+            continue
+
+        raw_title = _clean_text(tab.get_text(" ", strip=True))
+        title, job_type = _clean_job_title_and_type(raw_title)
+
+        if len(title) < MIN_TITLE_LEN or len(title) > MAX_TITLE_LEN:
+            continue
+        if title.lower() in NON_JOB_TEXT:
+            continue
+        if is_furniture_title(title):
+            continue
+        if title.rstrip().endswith(QUESTION_MARK):
+            continue
+        if is_listing_pointer(title):
+            continue
+
+        link_chars = sum(
+            len(link.get_text(" ", strip=True)) for link in panel.find_all("a")
+        )
+        if link_chars / max(len(panel_text), 1) >= ACCORDION_MAX_LINK_TEXT_RATIO:
+            continue
+
+        url = f"{base_without_fragment}#{ident}"
+        if url in seen_urls:
+            continue
+        seen_urls.add(url)
+
+        jobs.append(
+            RawJob(
+                title=title,
+                url=url,
+                description=panel_text or None,
+                job_type=job_type,
+                external_id=same_page_external_id(title, taken_external_ids),
             )
         )
 
