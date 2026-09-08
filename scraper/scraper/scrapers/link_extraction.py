@@ -31,6 +31,14 @@ SOCIAL_DOMAIN = re.compile(
 NON_JOB_TEXT = {
     "learn more",
     "read more",
+    "read more here",
+    "read full job description here",
+    "read full job description",
+    "read the full job description here",
+    "read the full job description",
+    "read job description",
+    "full job description",
+    "job description",
     "about us",
     "contact",
     "contact us",
@@ -580,7 +588,7 @@ JOB_ID_QUERY_RE = re.compile(
 
 HEADING_TAGS = ("h1", "h2", "h3", "h4", "h5", "h6")
 
-MAX_ANCESTOR_WALK = 3
+MAX_ANCESTOR_WALK = 4
 
 
 def _heading_text(node: Tag) -> Optional[str]:

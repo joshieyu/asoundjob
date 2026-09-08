@@ -495,6 +495,26 @@ class TestStructuralTitleFallback(unittest.TestCase):
         jobs = extract_job_links(html, "https://example.com/careers")
         self.assertEqual(len(jobs), 0)
 
+    def test_pdf_job_description_link_takes_heading_from_outer_frame(self) -> None:
+        html = """
+        <html><body>
+        <div class="frame frame-type-textmedia">
+          <h2>Acoustic Development Engineer</h2>
+          <div class="ce-textpic">
+            <div class="ce-bodytext">
+              <p>We are looking for an engineer to join our R&amp;D organisation.</p>
+              <p><a href="/fileadmin/Jobs/JobDescription_Acoustics_UK.pdf">
+                Read full job description here &gt;</a></p>
+            </div>
+          </div>
+        </div>
+        </body></html>
+        """
+        jobs = extract_job_links(html, "https://example.com/about-us/jobs")
+        self.assertEqual(len(jobs), 1)
+        self.assertEqual(jobs[0].title, "Acoustic Development Engineer")
+        self.assertTrue(jobs[0].url.endswith("JobDescription_Acoustics_UK.pdf"))
+
     def test_structural_fallback_does_not_fire_without_job_hint_page(self) -> None:
         html = """
         <html><body>
