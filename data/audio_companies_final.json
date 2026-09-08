@@ -5613,11 +5613,12 @@
   },
   {
     "name": "Listen Inc",
-    "careers_url": "https://www.listeninc.com/careers",
+    "careers_url": "https://www.listeninc.com/about-listen/careers/",
     "category": "Audio Testing & Measurement",
-    "verified": false,
+    "verified": true,
     "source": "auto",
-    "scrape_method": "http"
+    "scrape_method": "http",
+    "open_application": true
   },
   {
     "name": "LiveOne",
