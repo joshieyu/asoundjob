@@ -23,14 +23,15 @@
 
 	<div class="panel mt-6 p-6 sm:p-8">
 		<p class="text-[15px] leading-relaxed">
-			Some careers pages are built to keep automated readers out — a Cloudflare challenge, a
-			captcha, a flat 403. Our scraper hits the wall and stops, so any roles open at these
-			companies never make it onto this board.
+			These are companies we've checked by hand and can't read. Some refuse automated readers
+			outright — a bot block, a captcha, a flat 403. Some draw their whole job board with
+			JavaScript, or bury it in an embedded portal we can't follow. Either way our scraper comes
+			back with nothing, so roles at these companies never reach this board.
 		</p>
 		<p class="mt-4 text-[15px] leading-relaxed">
-			We're not saying any of them are hiring right now — we just can't tell either way. These
-			are real audio companies we know exist. If one of them is a fit, go look at their careers
-			page directly.
+			We're not saying any of them are hiring right now — we can't tell either way, and that's
+			the point. These are real audio companies worth watching, and their careers pages open
+			perfectly well in a normal browser. If one of them is a fit, go look for yourself.
 		</p>
 	</div>
 
@@ -61,7 +62,7 @@
 
 		{#if blocked && blocked.total > 0}
 			<h2 id="blocked-companies-heading" class="mt-3 text-sm font-bold">
-				{blocked.total} companies we can't read
+				{blocked.total} companies worth checking yourself
 			</h2>
 			<ul class="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
 				{#each blocked.companies as company (company.id)}

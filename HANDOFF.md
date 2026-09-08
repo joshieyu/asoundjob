@@ -4610,6 +4610,78 @@ change from this work.
 
 ---
 
+## Session update (2026-09-08) — the blocked-companies page, and its curated list
+
+`/companies/blocked` publishes the companies we have checked by hand and cannot
+read, so a reader can go look at those careers pages themselves. It also carries
+the LinkedIn "acoustic engineer" tip. The jobs page links to it.
+
+`scrape_blocked` is a curated seed flag, loaded and served like
+`open_application`. **It is not derived from scrape failures, and must not be.**
+The dominant failure message, `page loaded but no job links found`, covers
+bot-blocked pages AND pages with nothing posted — Audio Precision classifies
+`no_openings` and says "No current openings" on its face. Publishing a derived
+list would tell readers to go dig for roles at companies that plainly have none.
+
+`/api/companies/blocked` drops any flagged company that currently has a live
+board row, so a site that starts working falls off by itself. It does **not**
+filter on `verified`: Tesla and Bang & Olufsen are deliberately `verified:false`
+so the scraper skips them, and they are two of the clearest entries.
+
+### The list, and why each is on it
+
+Built by reading this document, not by sweeping. Every one re-checked live on
+2026-09-08.
+
+| company | why | seen |
+|---|---|---|
+| Tesla | Akamai, refuses every automated client | 403 + challenge |
+| Allen & Heath | Cloudflare, stealth included, WP REST closed | 403 + challenge |
+| Sound Devices | same Cloudflare block | 403 + challenge |
+| Peavey Electronics | Cloudflare block page | 403 + challenge |
+| Sensory | hard bot block | 403 + challenge |
+| WSP Acoustics | hard bot block | 403 + challenge |
+| Neural DSP | board is an iframe onto Revolut People, itself Cloudflared | shell loads, board unreachable |
+| Beyerdynamic | board is an iframe onto onlinebewerbungsserver.de, structurally unextractable | 200, no board in DOM |
+| Native Instruments | JS-rendered SPA, no ATS link in HTML | 200, 981KB, no links |
+| Bang & Olufsen | SuccessFactors portal cannot be read | 200, JS gate |
+
+### Two entries in this document had gone stale, and were caught by re-checking
+
+**Calrec** is recorded here as a TLS failure on
+`calrecaudioltd.livevacancies.co.uk`. The seed now points at
+`careers.calrec.com`, which **succeeds** with 3 active rows. Not blocked.
+
+**Devialet** is recorded as Welcome to the Jungle yielding only furniture. It
+now **succeeds** with 14 active rows and **2 on the board**. Not blocked.
+
+Both would have been published as unreadable. Re-check before flagging.
+
+**Explicitly not on the list:** Meta (scrapes fine, 3 board rows — the bot
+defence is on individual job links, not the board), Audinate and Fender (403 at
+the hosted board, but the Lever/Greenhouse API is clean and is what the parser
+uses), Arup (403s plain HTTP, works under Playwright), Delart (embed-only
+Greenhouse, hosted index 404s, API fine).
+
+### A seed bug found on the way: captcha redirects written back as careers URLs
+
+`discover_careers_urls` followed a SiteGround captcha redirect on 2026-08-22 and
+stored the **final** URL for eight companies, embedding the prober's IP and a
+timestamp:
+
+```
+https://www.vtl.com/.well-known/sgcaptcha/?r=%2Fcareers&y=ipr:35.145.19.103:1787434423.161
+```
+
+Every one classified as `blocked` because the probe was fetching the captcha
+page the seed pointed at. All eight are repaired from the `r=` parameter. Hertz
+Car Audio, Lectrosonics and Renkus-Heinz read fine and were never blocked; five
+repair to a 404 and need real URLs, logged in TRIAGE.md. **Nothing that writes a
+URL back into the seed rejects a `/.well-known/` or `sgcaptcha` path yet.**
+
+`validate_companies.py` did not know `open_application` or `extra_careers_urls`
+either; teaching it those plus `scrape_blocked` took warnings 112 -> 63.
+
 ## Session update (2026-09-07) — Gibson, the Audiotonix group, and Arup
 
 Four commits, all pushed. **Board 1,018 to 1,032. Seed 1,390 to 1,393.**

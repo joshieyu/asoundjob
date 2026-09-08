@@ -56,13 +56,15 @@ class TestBlockedCompanies(unittest.TestCase):
         self.assertEqual(result.total, 1)
         self.assertEqual([c.name for c in result.companies], ["Celestion"])
 
-    def test_unverified_companies_are_excluded(self) -> None:
+    def test_unverified_companies_are_still_listed(self) -> None:
         self._add(
             company("Celestion", "celestion", scrape_blocked=True),
             company("Ghost Audio", "ghost", scrape_blocked=True, verified=False),
         )
         result = list_blocked_companies(db=self.session)
-        self.assertEqual([c.name for c in result.companies], ["Celestion"])
+        self.assertEqual(
+            [c.name for c in result.companies], ["Celestion", "Ghost Audio"]
+        )
 
     def test_company_with_active_audio_job_is_excluded(self) -> None:
         c = company("Celestion", "celestion", scrape_blocked=True)

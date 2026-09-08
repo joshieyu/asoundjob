@@ -365,7 +365,8 @@
     "category": "Professional Audio & Live Sound",
     "verified": true,
     "source": "auto",
-    "scrape_method": "playwright"
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "Alliance for Open Media",
@@ -1247,8 +1248,7 @@
     "category": "Streaming & Music Services",
     "verified": true,
     "source": "auto",
-    "scrape_method": "playwright",
-    "scrape_blocked": true
+    "scrape_method": "playwright"
   },
   {
     "name": "Bandwidth",
@@ -1264,7 +1264,8 @@
     "category": "Hi-Fi & Consumer Speakers",
     "verified": false,
     "source": "manual",
-    "scrape_method": "playwright"
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "Baracoda",
@@ -1491,7 +1492,8 @@
     "verified": true,
     "open_application": true,
     "source": "manual",
-    "scrape_method": "playwright"
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "Beyma",
@@ -6676,7 +6678,8 @@
     "category": "DAW & Music Production Software",
     "verified": true,
     "source": "auto",
-    "scrape_method": "playwright"
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "NaturalReader",
@@ -6780,7 +6783,8 @@
     "category": "Professional Audio & Live Sound",
     "verified": true,
     "source": "auto",
-    "scrape_method": "playwright"
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "Neuromod Devices",
@@ -7284,7 +7288,8 @@
     "category": "Professional Audio & Live Sound",
     "verified": true,
     "source": "auto",
-    "scrape_method": "playwright"
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "Peerless-AV",
@@ -9037,7 +9042,8 @@
     "category": "Professional Audio & Live Sound",
     "verified": true,
     "source": "manual",
-    "scrape_method": "playwright"
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "Sound Oasis",
@@ -9862,7 +9868,8 @@
     "category": "Automotive OEMs",
     "verified": false,
     "source": "auto",
-    "scrape_method": "http"
+    "scrape_method": "http",
+    "scrape_blocked": true
   },
   {
     "name": "Texas Instruments",

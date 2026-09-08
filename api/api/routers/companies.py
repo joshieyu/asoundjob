@@ -100,7 +100,6 @@ def list_blocked_companies(db: Session = Depends(get_db)):
         select(Company)
         .where(
             Company.scrape_blocked.is_(True),
-            Company.verified.is_(True),
             ~active_audio_job,
         )
         .order_by(Company.name)

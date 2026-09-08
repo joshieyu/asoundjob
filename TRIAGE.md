@@ -322,10 +322,13 @@ contains `/.well-known/` or `sgcaptcha`.** That guard does not exist yet.
 ## Bandsintown's careers URL is a guess
 
 Seeded as `https://www.bandsintown.com/a/7488894`, which looks like an artist
-page, not a careers page. It is flagged `scrape_blocked` and that flag is
-correct — the whole domain returns 403 to us, and `/careers` returns the same
-5,514-byte 403 body — but because we cannot read any of it we cannot confirm
-the path. If the block ever lifts, check the URL before trusting it.
+page, not a careers page. The whole domain returns 403 to us, and `/careers`
+returns the same 5,514-byte 403 body, so the block is real — but because we
+cannot read any of it we cannot confirm the path.
+
+**Deliberately NOT flagged `scrape_blocked`.** That page publishes the seed URL
+as a link for a reader to click, and this one is a guess. Find the real careers
+URL first, then flag it.
 
 ## Working method
 
