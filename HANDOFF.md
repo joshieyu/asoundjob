@@ -2782,13 +2782,13 @@ Check the board with `check_url` before spending effort on the seed.
    | Amazon | 0 -> 59 | new amazon.jobs parser + seeded queries |
    | Demant | 0 -> 61 | new SuccessFactors parser + global search URL |
 
-   Live as of 2026-09-05 (after European language support): **1,018 board
-   rows, 8,539 active, 99 contributing companies, 225 uncategorized, 41
-   open-application companies.** The active count fell while the board rose
-   because 44 junk rows were removed in the same pass. Audible,
+   Live as of 2026-09-07: **1,032 board rows, 8,583 active, 101 contributing
+   companies, 226 uncategorized, 41 open-application companies.** Gibson and
+   Arup account for the most recent gains; MESA/Boogie was set unverified as a
+   Gibson brand sharing its feed. Audible,
    Oticon Medical and Peerless were deleted outright, seed and database;
-   Sigma Connectivity, Delart, Tymphany, xMEMS and Fender were added; the
-   seed is now **1,390 entries**.
+   Sigma Connectivity, Delart, Tymphany, xMEMS, Fender, Gibson, Sound Devices
+   and DiGiGrid were added; the seed is now **1,393 entries**.
 
    Active rows jumped from 5,363 to 8,455 in one session, mostly because the
    Workday pagination fix unpinned nine boards at once and the two new parsers
@@ -4607,6 +4607,144 @@ change from this work.
   only; scoring is unaffected because the patterns are boundary-matched.
 - Lucid Motors' six active rows are all marketing pages (`Life at Lucid`,
   press articles). Wrong seed URL, unrelated to this work.
+
+---
+
+## Session update (2026-09-07) — Gibson, the Audiotonix group, and Arup
+
+Four commits, all pushed. **Board 1,018 to 1,032. Seed 1,390 to 1,393.**
+Company triage, not parser work, except where noted.
+
+| commit | what |
+|---|---|
+| `6aed060` | TRIAGE.md: the Nordic gap, measured |
+| `3129bd8` | Gibson, via its own ADP proxy |
+| `582eb1e` | Allen & Heath's URL corrected; Audiotonix group worked |
+| `7ff618b` | Arup scoped to its two acoustics facets |
+
+### Gibson — +3 board rows, and a case where the existing parser was not enough
+
+Gibson's careers page renders client-side and gave one row reading "Careers".
+The listings come from a Shopify app proxy fronting ADP: an unauthenticated
+`POST https://www.gibson.com/apps/adpJobRequisition/` with body `{}` returns
+the whole board as JSON, descriptions included.
+
+**The existing `AdpScraper` can read Gibson** — the cid is a plain
+`workforcenow.adp.com` UUID needing no new code — **but ADP's public endpoint
+returns only 19 of the 36 requisitions**, and the 17 it withholds include both
+`Guitar Technician` and `Quality Engineer`. Measured 1 board row that way
+against 3 through the proxy, which is why `scrapers/ats/gibson.py` exists for
+one company. Verified against the public endpoint directly: 19 is genuine, not
+a paging bug.
+
+On the board: Guitar Technician (London Garage, 60), Manufacturing Engineer and
+Quality Engineer (Nashville, 45). The other 33 are the guitar factory floor —
+sanders, buffers, packers, milling operators — which is what Gibson is hiring.
+
+MESA/Boogie was already seeded to `gibson.com/pages/mesa-boogie`, a product
+page. Its roles are inside Gibson's feed (the Petaluma listing is MESA's
+plant), so **the owner set it `verified: false`.**
+
+Note for anyone revisiting the `myjobs.adp.com` rejection in TRIAGE.md: Gibson
+is a third company on an ADP surface but a *different product again*, and it
+needed no shared parser. That rejection still stands.
+
+### The Audiotonix group — mostly a negative result
+
+Allen & Heath's `current-vacancies` page links eight sister brands, which is a
+cheap way to find a group. DiGiCo (5 active / 4 board) and Solid State Logic
+(5/4) were already seeded and working; Calrec, Slate Digital and sonible were
+already seeded and quiet. **Added Sound Devices and DiGiGrid. Deliberately
+skipped Group One Limited** — the US distribution arm, no engineering, no
+openings, and its page yields one row reading "Providing entertainment services
+across the USA" that scores 45.
+
+**DO NOT REPEAT: Allen & Heath and Sound Devices are Cloudflare-blocked.**
+Both 403 to plain requests and serve a challenge or block page to Playwright
+**including the stealth scraper**, across three user agents. Their WordPress
+REST APIs are closed too (`itsec_rest_api_access_restricted`). Only a real
+browser session gets through. Allen & Heath's seed URL was corrected anyway —
+it is the right page, listing Product Specialist MI, Embedded Software Engineer
+and High Level Software Engineer — and both are left `verified: true` because
+the boards are real. This is a yield problem, not a seed error.
+
+### MEASURED AND REJECTED: relaxing the job-link URL gate
+
+Chasing the above surfaced a real gap worth recording. Both sites are WordPress
+and link to job posts whose slug *is* the title —
+`/embedded-software-engineer-madison-wi/` — which contains none of the words
+`JOB_HINT` looks for, so `looks_like_job` drops them even though the anchor
+text is a clean job title.
+
+A relaxation was prototyped: accept a same-host link from a job-hinted listing
+page when the slugified anchor text matches the final path segment and the
+title carries a role head noun. **Measured across 52 live careers pages: 10 new
+rows, 4 real and 6 junk** — and the junk included
+`Audio engineering Mix, master, and repair` at Native Instruments, which scores
+**70** and would land on the board. Requiring the links to form a **sibling
+cluster of two or more** removed all six junk rows and kept all four real ones.
+
+It went unbuilt because the two companies that motivated it are blocked anyway.
+**If picked up later, use the sibling-cluster form; the bare slug-match form is
+not safe.**
+
+### Arup — +11 board rows, and the pattern for the whole consulting tier
+
+Arup was seeded to its marketing careers page and contributed five rows reading
+"Why Arup?" and "Your life at Arup". It now contributes **eleven acoustic
+consultant roles at 105 apiece** in Berlin, Amsterdam, Dublin, Mumbai, Kuala
+Lumpur, Shanghai and Perth.
+
+**The obvious URL is the wrong one.** `jobs.arup.com` carries **728 open
+roles**, almost all civil, structural, mechanical, electrical, BIM and
+plumbing. The owner's suggested seed was that unfiltered search.
+
+Those roles score 0 today **only because `Acoustic Consulting & Engineering` is
+one of the eight native categories missing from `COMPANY_CATEGORY_FALLBACK`.
+That is a gap, not a design** — and the precision-lever measurement recorded
+earlier shows what closing it does: DLR Group, an architecture practice under
+the same category, starts contributing `Senior Mechanical Engineer - Gas &
+Energy`. Scoping Arup at the URL removes the risk permanently.
+
+Deriving a stable scoped URL on an Avature board takes three steps, and step 2
+is the trap:
+
+1. `GET /facets/job/category/auto-suggest?category_facet=a` returns **all 116
+   categories** as JSON with ids; it ignores the search term. Acoustics is two
+   of them: **187** (8 roles) and **51** (3 graduate roles).
+2. `/jobs/all/add/category/<id>` applies the facet but is **session-stateful
+   and useless as a seed URL** — it works in a warmed browser and returns
+   nothing to a cold scraper. Both were seeded and failed with *page loaded but
+   no job links found* before the cause was spotted.
+3. That URL **redirects to a stable saved-search id**, and that is what to
+   seed: `/jobs/search/20982857` and `/jobs/search/20982861`. Both work cold.
+
+The two facets cannot be combined (`/add/category/187/add/category/51` returns
+"Invalid Request"), so the second rides in `extra_careers_urls`, which
+`ScrapePipeline._scrape_every` merges. `?keyword=` on the search URL is ignored.
+The board 403s plain HTTP, so `scrape_method` must be `playwright`.
+
+**The saved-search ids are Arup-internal and may rotate.** If Arup goes quiet,
+re-derive with step 1 rather than assuming the board emptied. TRIAGE.md carries
+the same derivation, because Hoare Lea, Ramboll, Stantec and Sweco are the same
+shape of problem.
+
+### The Nordic gap, recorded in TRIAGE.md
+
+Raised after the language work. The language layer no longer blocks these
+companies; every remaining problem is upstream. **Genelec is not in the seed at
+all.** Nagra is a **misidentification** — `careers.nagra.com` is the Kudelski
+Group, digital security and IoT, not Nagra Audio, and it is filed under
+`Professional Audio & Live Sound`. Dynaudio's board is simply empty and DALI's
+seeded URL is already the real careers page, so neither is worth chasing.
+Dirac Research leads the unverified list. Full detail in TRIAGE.md.
+
+### State at handoff
+
+**1,032 board rows, 8,583 active, 101 contributing companies, 226
+uncategorized, seed 1,393 entries.** All gates green: 952 unittest, ruff, mypy
+on both `scraper` and `api`. Working tree carries only the untracked
+`seed_url_audit.md`.
 
 ---
 
