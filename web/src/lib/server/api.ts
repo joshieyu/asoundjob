@@ -5,7 +5,8 @@ import type {
 	Job,
 	Paginated,
 	CompanyRecord,
-	OpenApplicationsResponse
+	OpenApplicationsResponse,
+	BlockedCompaniesResponse
 } from '$lib/types';
 
 const API_URL = env.API_URL ?? 'http://127.0.0.1:8000';
@@ -64,6 +65,10 @@ export function getCountries(): Promise<CountriesResponse> {
 
 export function getOpenApplications(): Promise<OpenApplicationsResponse> {
 	return api<OpenApplicationsResponse>(`/api/companies/open-applications`);
+}
+
+export function getBlockedCompanies(): Promise<BlockedCompaniesResponse> {
+	return api<BlockedCompaniesResponse>(`/api/companies/blocked`);
 }
 
 export const SITE_URL = env.SITE_URL ?? 'http://localhost:5173';

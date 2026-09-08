@@ -13,6 +13,8 @@ from api.query import (
     paginate_params,
 )
 from api.schemas import (
+    BlockedCompaniesResponse,
+    BlockedCompany,
     CompanyDetail,
     CompanyResponse,
     JobSummary,
@@ -81,6 +83,30 @@ def list_open_applications(db: Session = Depends(get_db)):
         for company_row, roles in rows
     ]
     return OpenApplicationsResponse(companies=companies, total=len(companies))
+
+
+@router.get("/blocked", response_model=BlockedCompaniesResponse)
+def list_blocked_companies(db: Session = Depends(get_db)):
+    active_audio_job = (
+        select(Job.id)
+        .where(
+            Job.company_id == Company.id,
+            Job.is_active.is_(True),
+            Job.is_audio_related.is_(True),
+        )
+        .exists()
+    )
+    rows = db.execute(
+        select(Company)
+        .where(
+            Company.scrape_blocked.is_(True),
+            Company.verified.is_(True),
+            ~active_audio_job,
+        )
+        .order_by(Company.name)
+    ).scalars().all()
+    companies = [BlockedCompany.model_validate(company_row) for company_row in rows]
+    return BlockedCompaniesResponse(companies=companies, total=len(companies))
 
 
 @router.get("/{slug}", response_model=CompanyDetail)

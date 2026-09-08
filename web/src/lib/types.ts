@@ -68,6 +68,19 @@ export interface OpenApplicationsResponse {
 	total: number;
 }
 
+export interface BlockedCompany {
+	id: number;
+	name: string;
+	slug: string;
+	category: string;
+	careers_url: string | null;
+}
+
+export interface BlockedCompaniesResponse {
+	companies: BlockedCompany[];
+	total: number;
+}
+
 export interface CompanyRecord {
 	id: number;
 	name: string;

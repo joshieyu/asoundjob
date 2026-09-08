@@ -72,6 +72,21 @@ class OpenApplicationsResponse(BaseModel):
     total: int
 
 
+class BlockedCompany(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+    slug: str
+    category: str
+    careers_url: Optional[str] = None
+
+
+class BlockedCompaniesResponse(BaseModel):
+    companies: list[BlockedCompany]
+    total: int
+
+
 class CompanyResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

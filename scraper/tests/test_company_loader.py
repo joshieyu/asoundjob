@@ -83,6 +83,35 @@ class TestUnverifiedDeactivation(unittest.TestCase):
         self.assertEqual(self.active_titles(company.id), [])
 
 
+class TestScrapeBlocked(unittest.TestCase):
+    def setUp(self) -> None:
+        self.session = make_session()
+
+    def tearDown(self) -> None:
+        self.session.rollback()
+        self.session.close()
+
+    def test_seed_entry_sets_scrape_blocked_on_insert(self) -> None:
+        seed = entry("acme", verified=True)
+        seed["scrape_blocked"] = True
+        load_companies(self.session, [seed])
+        company = self.session.execute(select(Company)).scalar_one()
+        self.assertTrue(company.scrape_blocked)
+
+    def test_flipping_scrape_blocked_updates_existing_company(self) -> None:
+        load_companies(self.session, [entry("acme", verified=True)])
+        company = self.session.execute(select(Company)).scalar_one()
+        self.assertFalse(company.scrape_blocked)
+
+        seed = entry("acme", verified=True)
+        seed["scrape_blocked"] = True
+        stats = load_companies(self.session, [seed])
+
+        company = self.session.execute(select(Company)).scalar_one()
+        self.assertTrue(company.scrape_blocked)
+        self.assertEqual(stats.updated, 1)
+
+
 class TestRenameMatchedBySlug(unittest.TestCase):
     def setUp(self) -> None:
         self.session = make_session()

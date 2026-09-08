@@ -471,6 +471,15 @@
 				</ul>
 			</section>
 		{/if}
+
+		<div class="well mt-4 flex flex-wrap items-center justify-between gap-2 p-3">
+			<p class="text-sm text-ink-soft">
+				Some companies block automated readers entirely, so their roles never reach this board.
+			</p>
+			<a href="/companies/blocked" class="btn-latch shrink-0 !px-2 !py-1 text-xs">
+				See who's blocked
+			</a>
+		</div>
 	</section>
 </div>
 

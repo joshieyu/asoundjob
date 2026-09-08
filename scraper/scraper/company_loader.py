@@ -123,6 +123,7 @@ def load_companies(session: Session, companies: list[dict[str, Any]]) -> LoadSta
             entry.get("extra_careers_urls"), careers_url
         )
         open_application = bool(entry.get("open_application", False))
+        scrape_blocked = bool(entry.get("scrape_blocked", False))
 
         if existing is None:
             session.add(
@@ -133,6 +134,7 @@ def load_companies(session: Session, companies: list[dict[str, Any]]) -> LoadSta
                     careers_url=careers_url,
                     extra_careers_urls=extra_careers_urls,
                     open_application=open_application,
+                    scrape_blocked=scrape_blocked,
                     verified=verified,
                     source=source,
                     scrape_method=scrape_method,
@@ -149,6 +151,7 @@ def load_companies(session: Session, companies: list[dict[str, Any]]) -> LoadSta
                 or existing.careers_url != careers_url
                 or existing.extra_careers_urls != extra_careers_urls
                 or existing.open_application != open_application
+                or existing.scrape_blocked != scrape_blocked
                 or existing.verified != verified
                 or existing.source != source
                 or existing.scrape_method != scrape_method
@@ -160,6 +163,7 @@ def load_companies(session: Session, companies: list[dict[str, Any]]) -> LoadSta
                 existing.careers_url = careers_url
                 existing.extra_careers_urls = extra_careers_urls
                 existing.open_application = open_application
+                existing.scrape_blocked = scrape_blocked
                 existing.verified = verified
                 existing.source = source
                 existing.scrape_method = scrape_method
