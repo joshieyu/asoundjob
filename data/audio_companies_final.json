@@ -1247,7 +1247,8 @@
     "category": "Streaming & Music Services",
     "verified": true,
     "source": "auto",
-    "scrape_method": "playwright"
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "Bandwidth",
@@ -4486,7 +4487,7 @@
   },
   {
     "name": "Hertz Car Audio",
-    "careers_url": "https://www.hertzaudiovideo.com/.well-known/sgcaptcha/?r=%2Fen%2Fcareers&y=ipc:35.145.19.103:1787434054.466",
+    "careers_url": "https://www.hertzaudiovideo.com/en/careers",
     "category": "Car Audio",
     "verified": true,
     "source": "auto",
@@ -5485,7 +5486,7 @@
   },
   {
     "name": "Lectrosonics",
-    "careers_url": "https://www.lectrosonics.com/.well-known/sgcaptcha/?r=%2Fcareers&y=ipr:35.145.19.103:1787434108.932",
+    "careers_url": "https://www.lectrosonics.com/careers",
     "category": "Professional Audio & Live Sound",
     "verified": true,
     "source": "auto",
@@ -8036,7 +8037,7 @@
   },
   {
     "name": "Renkus-Heinz",
-    "careers_url": "https://www.renkus-heinz.com/.well-known/sgcaptcha/?r=%2Fcareers&y=ipr:35.145.19.103:1787434269.428",
+    "careers_url": "https://www.renkus-heinz.com/careers",
     "category": "Professional Audio & Live Sound",
     "verified": true,
     "source": "auto",
@@ -8592,7 +8593,8 @@
     "category": "Voice & Speech Technology",
     "verified": true,
     "source": "auto",
-    "scrape_method": "playwright"
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "Sequential",
@@ -9039,7 +9041,7 @@
   },
   {
     "name": "Sound Oasis",
-    "careers_url": "https://www.soundoasis.com/.well-known/sgcaptcha/?r=%2Fcareers&y=ipr:35.145.19.103:1787434336.347",
+    "careers_url": "https://www.soundoasis.com/careers",
     "category": "Audio Health & Wellness",
     "verified": true,
     "source": "auto",
@@ -9087,7 +9089,7 @@
   },
   {
     "name": "SoundCam",
-    "careers_url": "https://www.soundcam.com/.well-known/sgcaptcha/?r=%2Fen%2Fcareers&y=ipr:35.145.19.103:1787434339.963",
+    "careers_url": "https://www.soundcam.com/en/careers",
     "category": "Audio Testing & Measurement",
     "verified": true,
     "source": "auto",
@@ -9543,7 +9545,7 @@
   },
   {
     "name": "Sunset Sound",
-    "careers_url": "https://www.sunsetsound.com/.well-known/sgcaptcha/?r=%2Fcareers&y=ipr:35.145.19.103:1787434359.692",
+    "careers_url": "https://www.sunsetsound.com/careers",
     "category": "Recording Studios & Post Houses",
     "verified": true,
     "source": "auto",
@@ -10596,7 +10598,7 @@
   },
   {
     "name": "Vivosonic",
-    "careers_url": "https://www.vivosonic.com/.well-known/sgcaptcha/?r=%2Fcareers&y=ipr:35.145.19.103:1787434415.582",
+    "careers_url": "https://www.vivosonic.com/careers",
     "category": "Hearing Aid & Hearing Tech",
     "verified": true,
     "source": "auto",
@@ -10756,7 +10758,7 @@
   },
   {
     "name": "VTL",
-    "careers_url": "https://www.vtl.com/.well-known/sgcaptcha/?r=%2Fcareers&y=ipr:35.145.19.103:1787434423.161",
+    "careers_url": "https://www.vtl.com/careers",
     "category": "Hi-Fi & Consumer Speakers",
     "verified": true,
     "source": "auto",
@@ -11001,7 +11003,8 @@
     "category": "Acoustic Consulting & Engineering",
     "verified": true,
     "source": "auto",
-    "scrape_method": "playwright"
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "Wynk Music (Airtel)",

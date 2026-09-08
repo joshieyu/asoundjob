@@ -282,6 +282,51 @@ which removes them from the scrape budget and stops them reporting a
 success that means nothing. The 15 error, for-sale and press-release URLs in
 `audit_seed_urls`' bucket D belong here unless a real board is found.
 
+## The seed carried captcha redirect URLs — repaired 2026-09-08
+
+`discover_careers_urls` followed a SiteGround captcha redirect and wrote the
+*final* URL back into the seed, for eight companies, on 2026-08-22. They looked
+like this:
+
+```
+https://www.vtl.com/.well-known/sgcaptcha/?r=%2Fcareers&y=ipr:35.145.19.103:1787434423.161
+```
+
+That is a session artifact — it embeds the prober's IP and a timestamp — so it
+could never work for anyone, and it made every one of those companies classify
+as `blocked` in `diagnose_failures`, because the probe was fetching the captcha
+page the seed pointed at rather than the careers page.
+
+All eight are repaired: the `r=` parameter is the URL-encoded original path, so
+the true URL is recoverable exactly. Three now resolve and read fine —
+**Hertz Car Audio**, **Lectrosonics**, **Renkus-Heinz** — and were never
+blocked at all.
+
+**Five repair to a 404 and need a real careers URL found:**
+
+| company | repaired URL, currently 404 |
+|---|---|
+| Sound Oasis | `https://www.soundoasis.com/careers` |
+| SoundCam | `https://www.soundcam.com/en/careers` |
+| Sunset Sound | `https://www.sunsetsound.com/careers` |
+| Vivosonic | `https://www.vivosonic.com/careers` |
+| VTL | `https://www.vtl.com/careers` |
+
+`/careers` was almost certainly a guess by `discover_careers_urls` that the
+captcha redirect made look valid — a challenge page is not a 404, so the
+probe accepted it. Treat these as unverified URLs, not as blocked companies.
+
+**Anything that writes a URL back into the seed must reject a URL whose path
+contains `/.well-known/` or `sgcaptcha`.** That guard does not exist yet.
+
+## Bandsintown's careers URL is a guess
+
+Seeded as `https://www.bandsintown.com/a/7488894`, which looks like an artist
+page, not a careers page. It is flagged `scrape_blocked` and that flag is
+correct — the whole domain returns 403 to us, and `/careers` returns the same
+5,514-byte 403 body — but because we cannot read any of it we cannot confirm
+the path. If the block ever lifts, check the URL before trusting it.
+
 ## Working method
 
 Per company: `python -m scraper.check_url "<url>" --name "<Company>"` first —
