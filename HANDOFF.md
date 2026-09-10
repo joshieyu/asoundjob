@@ -2782,13 +2782,14 @@ Check the board with `check_url` before spending effort on the seed.
    | Amazon | 0 -> 59 | new amazon.jobs parser + seeded queries |
    | Demant | 0 -> 61 | new SuccessFactors parser + global search URL |
 
-   Live as of 2026-09-07: **1,032 board rows, 8,583 active, 101 contributing
-   companies, 226 uncategorized, 41 open-application companies.** Gibson and
-   Arup account for the most recent gains; MESA/Boogie was set unverified as a
-   Gibson brand sharing its feed. Audible,
+   Live as of 2026-09-10: **1,038 board rows, 8,591 active, 103 contributing
+   companies, 229 uncategorized, 42 open-application companies, 10 flagged
+   `scrape_blocked`.** The most recent gains are Listen Inc (4) and GRAS (2);
+   MESA/Boogie was set unverified as a Gibson brand sharing its feed. Audible,
    Oticon Medical and Peerless were deleted outright, seed and database;
-   Sigma Connectivity, Delart, Tymphany, xMEMS, Fender, Gibson, Sound Devices
-   and DiGiGrid were added; the seed is now **1,393 entries**.
+   Sigma Connectivity, Delart, Tymphany, xMEMS, Fender, Gibson, Sound Devices,
+   DiGiGrid and GRAS were added, and Audio Precision and Listen Inc were already
+   seeded but recategorised or repointed; the seed is now **1,394 entries**.
 
    Active rows jumped from 5,363 to 8,455 in one session, mostly because the
    Workday pagination fix unpinned nine boards at once and the two new parsers
@@ -4609,6 +4610,166 @@ change from this work.
   press articles). Wrong seed URL, unrelated to this work.
 
 ---
+
+## Session update (2026-09-08) — GRAS, Audio Precision, Listen Inc, and jobs that share one URL
+
+Board **1,032 -> 1,038**, active 8,583 -> 8,591, seed 1,393 -> 1,394.
+
+### GRAS Sound & Vibration, and taking the title from the frame heading
+
+GRAS lists each job as an `<h2>` with a single "Read full job description
+here >" PDF link under it; you apply by email. The anchor text became the
+title, so both rows scored 0.
+
+Rejecting that anchor text alone yields **zero** rows, not two. The structural
+fallback was already firing; it ran out of walk. `MAX_ANCESTOR_WALK` was 3 and
+TYPO3 wraps the link in `p > ce-bodytext > ce-textpic` before the `frame` div
+that carries the heading, so it is at depth 4.
+
+Both changes shipped: a "read full job description" family in `NON_JOB_TEXT`,
+and the walk to 4. **Measured across 98 live non-ATS careers pages carrying 465
+extracted links: one row added, none removed** — Salamander Designs'
+"Interested In Joining The Salamander Team?", which scores 0. The extra level
+is cheap only because `_has_single_job_anchor` accepts an ancestor wrapping
+exactly one link, so it can never swallow a multi-job container. That is the
+same mechanism that renamed THQ Nordic's rows to studio names; here it lands on
+the real title.
+
+GRAS: Acoustic Development Engineer 70, Manager Acoustic Metrology 105. Country
+is NULL on both — the page states no per-job location, and Danishness is not
+something the row says.
+
+### Audio Precision was seeded, and miscategorised in a way that costs recall
+
+Filed under `Consumer Electronics & Tech` — partial scope, threshold 50 plus 15
+more when the title carries no audio word. It is the audio test and measurement
+company. Now `Audio Testing & Measurement`, native, threshold 45 with the +10
+bonus. Scope synced partial -> native. A future "Test Engineer" posting needed
+~65 and now needs 45.
+
+`careers_url` moved from `ap.com` to `audioprecision.com`; the old one still
+301s, so that removed a redirect dependency rather than fixing a break.
+
+**No `open_application` flag, and this is a trap worth remembering.** "No
+current openings" plus a resume address looks exactly like the flag's use case.
+The page says the opposite: *"Audio Precision does not accept resumes unless
+it's for a current job opening."* A keyword sweep for "email your resume" would
+misfire here. `scrape_method` stays `playwright` — a superset of the http fetch,
+and how a real listing renders cannot be checked while there are none.
+
+### Listen Inc, and the bug that made same-page jobs immortal
+
+**The seed URL was the unlock, not a tidy-up.** `/careers` 301s to
+`/about-listen/careers/`, but from `/careers` the nav link to the real page is a
+*different* path, so it survived as a row titled "Careers" — and one extracted
+job is enough to stop the accordion fallback ever running. Identical to IK
+Multimedia's failure. From the canonical URL the anchor pass finds nothing and
+the fallback fires.
+
+`extract_accordion_jobs` only knew `details`/`summary`. Listen lists six jobs as
+ARIA accordions with **no per-job link at all**, so the title is the tab and the
+description is the panel. Gate: `role="tab"` + `aria-controls`, panel >= 400
+chars. Measured on the same 98 pages — only 4 have any `role="tab"`, and panel
+length separates them cleanly: Listen's six run 1878-4160 chars, the eight junk
+tabs (IK's FEATURED/NEW, DD Audio's values, Sivantos' nav) run 0-100. The
+function is a **fallback that runs only when nothing else found jobs**, which is
+what keeps this off the ~900 companies that already extract.
+
+**The bug.** `_url_identity` strips the fragment, so six jobs at `/careers/#a`
+.. `#f` share the identity `url:.../careers`. `reconcile_company_jobs` builds
+`by_identity` once from existing rows and never updates it inside the insert
+loop, so the first scrape inserts all six and every later scrape maps all six
+onto whichever row won the dict comprehension. The rest are never updated **and
+never deactivated**, because their identity is in `fetched_identities`. Proved
+in isolation: drop a three-listing page to one listing and the two removed rows
+stay `is_active` with 0 deactivations. IK Multimedia and xMEMS were carrying 11
+such rows, 8 of them on the board, all immortal.
+
+Same-page jobs now carry an `external_id`, which `identity_for_raw` prefers. It
+is **a slug of the title, not the element id** — the ids in this markup are
+positional (`toggle-id-1`, `toggle-id-2`), so inserting a job at the top would
+renumber every id and churn every row. Only true same-page anchors get one
+(fragment, same host, same path), so the ~20 ordinary detail URLs carrying
+`#apply` are untouched; measured, 6 rows change, all IK Multimedia. Re-scraping
+IK and xMEMS self-healed: 6 and 5 old rows deactivated, replaced one for one.
+
+Listen: 6 jobs, 4 on the board. DSP Engineer **140** with `audio_dsp_embedded`,
+Senior Software Engineer LabVIEW 65, Software Development Engineer 45, Technical
+Support Engineer 45. Descriptions come from the panels, so no enrichment fetch.
+`open_application: true` here — unlike Audio Precision, this page does invite
+speculative applications.
+
+## Session update (2026-09-10) — the jobs board accordions, and Impeccable installed
+
+### Open applications and blocked companies are now collapsible
+
+`web/src/lib/components/Accordion.svelte`, built on native `details`/`summary`
+rather than runes state, so it works without JavaScript and is keyboard
+operable. Both sections sit at the foot of `/jobs`, closed by default. Open
+applications had been an always-open block of 42 companies between the reader
+and the end of the page; blocked had been a teaser card. The blocked accordion
+carries a short explanation, the LinkedIn "acoustic engineer" tip, and a link
+to `/companies/blocked`, which stays as the shareable page.
+
+**Verification caveat, worth knowing before anyone re-checks this.** The
+section was confirmed structurally against the running board — both closed,
+counts 42 and 10, content correctly hidden when closed and shown when open by
+`checkVisibility`, links resolving — but **never seen rendered**. The Browser
+pane paints only the top viewport when collapsed, so every screenshot below the
+fold came back blank. Two "bugs" were chased and both were artifacts of the same
+thing: `document.visibilityState` is `hidden` there, which freezes the animation
+timeline (the chevron transition sat at `currentTime: 0` after 900ms) and makes
+`getBoundingClientRect` misleading for closed `details` content that Chrome
+hides via `::details-content`. **Do not trust height or mid-transition computed
+values in that pane; use `checkVisibility`.**
+
+### Impeccable moved from opencode to Claude Code
+
+It was at `.opencode/skills/impeccable` (v4.1.1), which Claude Code does not
+read. Installed properly with
+`npx impeccable@latest install --providers=claude-code --scope=project --no-hooks -y`,
+giving **v4.3.1** at `.claude/skills/impeccable` plus four agents in
+`.claude/agents/`. `--no-hooks` matches the opencode setup, which wired none;
+hooks would run the detector on every edit.
+
+`.claude/skills/` is gitignored — a 14MB platform binary, same shape as
+`.opencode/`. `.claude/agents/` stays tracked.
+
+**A skill installed mid-session is not invocable until the session restarts**;
+Claude Code reads its skill listing at start. `Skill(impeccable)` returns
+"Unknown skill" until then.
+
+**`impeccable detect` is a runtime DOM scanner, not a source linter.** Pointing
+it at `.css` or `.svelte` files returns zero findings, including on a
+deliberately planted 135-degree purple gradient. It needs a rendered URL and the
+dev server up. Run it as
+`.claude/skills/impeccable/scripts/impeccable detect http://localhost:5173/jobs`.
+
+Baseline, all warnings, taken 2026-09-10:
+
+| surface | findings | top rules |
+|---|---|---|
+| `/jobs` | 138 | 53 undersized-ui-text, 29 text-overflow, 22 tiny-text, 17 all-caps-body |
+| `/` | 41 | 17 undersized-ui-text, 13 tiny-text, 5 low-contrast |
+| `/companies/blocked` | 32 | 9 text-overflow, 7 undersized-ui-text, 6 all-caps-body |
+| `/about` | 16 | 4 each undersized-ui-text, low-contrast, line-length |
+
+Two of these bear on the planned overhaul. **`#ffffff` on `#d96c2c` is 3.4:1
+against a 4.5:1 requirement** — the primary button colour fails AA, on every
+page. And `cream-palette` and `dark-glow` fire on every surface.
+
+**The old Impeccable artifacts are being deleted deliberately by the owner** —
+`.impeccable/` (design.json, the surface brief, review screenshots) and the
+`.opencode` copy. Their absence is intentional, not breakage, and the doctor's
+`surface-brief-orphaned` finding goes with them. That brief named
+`src/routes/+page.svelte` while the file is at `web/src/routes/+page.svelte`,
+because the opencode run recorded paths relative to `web/` while `.impeccable/`
+sat at the repo root. **Anything that writes paths into `.impeccable/` must use
+repo-root-relative paths**; the skill now runs from the repo root.
+
+The next UI work is a **redesign, not a refinement** — the owner wants the fluff
+removed and a more modern result. The skill draws a hard line between the two
+and says never to split the difference, so the old look is an anti-reference.
 
 ## Session update (2026-09-08) — the blocked-companies page, and its curated list
 
