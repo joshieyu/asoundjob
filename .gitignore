@@ -8,6 +8,7 @@ build/
 node_modules/
 .svelte-kit/
 .opencode/
+.claude/skills/
 .mypy_cache/
 .ruff_cache/
 .DS_Store
