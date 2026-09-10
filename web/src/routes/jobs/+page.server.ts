@@ -1,6 +1,7 @@
 import type { PageServerLoad } from './$types';
 import {
 	api,
+	getBlockedCompanies,
 	getCategories,
 	getCompanies,
 	getCountries,
@@ -36,14 +37,16 @@ export const load: PageServerLoad = async ({ url }) => {
 	params['page'] = String(page);
 	if (!params.per_page) params.per_page = '20';
 
-	const [jobs, categories, companies, countries, totalResult, openApplications] = await Promise.all([
-		getJobs(params).catch(() => null),
-		getCategories().catch(() => null),
-		getCompanies({ verified_only: 'true', per_page: '100' }).catch(() => null),
-		getCountries().catch(() => null),
-		api<Paginated<Job>>('/api/jobs?per_page=1').catch(() => null),
-		getOpenApplications().catch(() => null)
-	]);
+	const [jobs, categories, companies, countries, totalResult, openApplications, blocked] =
+		await Promise.all([
+			getJobs(params).catch(() => null),
+			getCategories().catch(() => null),
+			getCompanies({ verified_only: 'true', per_page: '100' }).catch(() => null),
+			getCountries().catch(() => null),
+			api<Paginated<Job>>('/api/jobs?per_page=1').catch(() => null),
+			getOpenApplications().catch(() => null),
+			getBlockedCompanies().catch(() => null)
+		]);
 
 	return {
 		jobs,
@@ -54,6 +57,7 @@ export const load: PageServerLoad = async ({ url }) => {
 		page,
 		bookmarked,
 		openApplications,
+		blocked,
 		totalJobs: totalResult?.total ?? 0
 	};
 };

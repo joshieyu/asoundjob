@@ -3,6 +3,7 @@
 	import JobStrip from '$lib/components/JobStrip.svelte';
 	import Pagination from '$lib/components/Pagination.svelte';
 	import FeedbackDialog from '$lib/components/FeedbackDialog.svelte';
+	import Accordion from '$lib/components/Accordion.svelte';
 	import { JOB_FEEDBACK_KINDS } from '$lib/feedback';
 	import { getBookmarks } from '$lib/client';
 	import type { Paginated, Job } from '$lib/types';
@@ -11,6 +12,7 @@
 
 	const jobs: Paginated<Job> | null = $derived(data.jobs);
 	const openApplications = $derived(data.openApplications);
+	const blocked = $derived(data.blocked);
 	const params = $derived(data.params as Record<string, string>);
 
 	const categoryNames = $derived.by(() => {
@@ -423,62 +425,106 @@
 			<Pagination data={jobs} makeHref={pageHref} />
 		{/if}
 
-		{#if openApplications && openApplications.total > 0}
-			<section class="mt-10" aria-labelledby="open-applications-heading">
-				<div class="flex items-center gap-3">
-					<span class="h-px flex-1 bg-ink-soft/25"></span>
-					<span class="font-mono text-[10px] tracking-[0.14em] text-ink-soft uppercase">
-						Open applications
-					</span>
-					<span class="h-px flex-1 bg-ink-soft/25"></span>
-				</div>
-				<h2 id="open-applications-heading" class="mt-3 text-sm font-bold">
-					{openApplications.total} companies invite speculative applications
-				</h2>
-				<p class="mt-1 text-sm text-ink-soft">
-					These companies accept speculative applications, so write to them directly even if
-					nothing above matches. Any that also have roles on the board are marked.
-				</p>
-				<ul class="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-					{#each openApplications.companies as company (company.id)}
-						<li class="well flex items-center justify-between gap-3 p-3">
-							<span class="min-w-0">
-								<span class="block truncate text-sm font-semibold">{company.name}</span>
-								<span class="block truncate font-mono text-[10px] tracking-wide text-ink-soft uppercase">
-									{company.category}
+		<div class="mt-10 flex flex-col gap-3">
+			{#if openApplications && openApplications.total > 0}
+				<Accordion
+					label="OPEN APPLICATIONS"
+					title="Companies that invite speculative applications"
+					count={openApplications.total}
+				>
+					<p class="text-sm text-ink-soft">
+						These companies accept speculative applications, so write to them directly even if
+						nothing above matches. Any that also have roles on the board are marked.
+					</p>
+					<ul class="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+						{#each openApplications.companies as company (company.id)}
+							<li class="well flex items-center justify-between gap-3 p-3">
+								<span class="min-w-0">
+									<span class="block truncate text-sm font-semibold">{company.name}</span>
+									<span class="block truncate font-mono text-[10px] tracking-wide text-ink-soft uppercase">
+										{company.category}
+									</span>
+									{#if company.open_roles > 0}
+										<a
+											href="/companies/{company.slug}"
+											class="block truncate font-mono text-[10px] tracking-wide text-ink-soft uppercase hover:text-fader-deep hover:underline"
+										>
+											{company.open_roles} on the board
+										</a>
+									{/if}
 								</span>
-								{#if company.open_roles > 0}
+								{#if company.careers_url}
 									<a
-										href="/companies/{company.slug}"
-										class="block truncate font-mono text-[10px] tracking-wide text-ink-soft uppercase hover:text-fader-deep hover:underline"
+										href={company.careers_url}
+										target="_blank"
+										rel="noopener noreferrer"
+										class="btn-latch shrink-0 !px-2 !py-1 text-xs"
 									>
-										{company.open_roles} on the board
+										Apply
 									</a>
 								{/if}
-							</span>
-							{#if company.careers_url}
-								<a
-									href={company.careers_url}
-									target="_blank"
-									rel="noopener noreferrer"
-									class="btn-latch shrink-0 !px-2 !py-1 text-xs"
-								>
-									Apply
-								</a>
-							{/if}
-						</li>
-					{/each}
-				</ul>
-			</section>
-		{/if}
+							</li>
+						{/each}
+					</ul>
+				</Accordion>
+			{/if}
 
-		<div class="well mt-4 flex flex-wrap items-center justify-between gap-2 p-3">
-			<p class="text-sm text-ink-soft">
-				Some companies block automated readers entirely, so their roles never reach this board.
-			</p>
-			<a href="/companies/blocked" class="btn-latch shrink-0 !px-2 !py-1 text-xs">
-				See who's blocked
-			</a>
+			{#if blocked && blocked.total > 0}
+				<Accordion
+					label="CAN'T SCRAPE"
+					title="Companies worth checking yourself"
+					count={blocked.total}
+				>
+					<p class="text-sm text-ink-soft">
+						These are companies we've checked by hand and can't read — some refuse automated
+						readers outright, some draw their board with JavaScript, and some bury it in an
+						embedded portal — so their roles never reach this board even though the careers page
+						opens fine in a normal browser.
+					</p>
+					<div class="well mt-3 p-3">
+						<p class="text-sm">
+							Searching <strong>"acoustic engineer"</strong> on
+							<a
+								href="https://www.linkedin.com/jobs/search/?keywords=acoustic%20engineer"
+								target="_blank"
+								rel="noopener noreferrer"
+								class="font-semibold text-fader-deep hover:underline"
+							>
+								LinkedIn
+							</a>
+							surfaces a lot of roles that never reach a company careers page.
+						</p>
+					</div>
+					<ul class="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+						{#each blocked.companies as company (company.id)}
+							<li class="well flex items-center justify-between gap-3 p-3">
+								<span class="min-w-0">
+									<span class="block truncate text-sm font-semibold">{company.name}</span>
+									<span class="block truncate font-mono text-[10px] tracking-wide text-ink-soft uppercase">
+										{company.category}
+									</span>
+								</span>
+								{#if company.careers_url}
+									<a
+										href={company.careers_url}
+										target="_blank"
+										rel="noopener noreferrer"
+										class="btn-latch shrink-0 !px-2 !py-1 text-xs"
+									>
+										Careers
+									</a>
+								{/if}
+							</li>
+						{/each}
+					</ul>
+					<a
+						href="/companies/blocked"
+						class="mt-4 inline-block font-mono text-xs font-semibold tracking-wide hover:text-fader-deep"
+					>
+						Why these are here →
+					</a>
+				</Accordion>
+			{/if}
 		</div>
 	</section>
 </div>
