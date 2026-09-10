@@ -7,14 +7,17 @@ import sys
 import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from typing import Optional
 
 from sqlalchemy import select
 
+from scraper.company_loader import careers_urls_for
 from scraper.config import Settings, load_settings
 from scraper.database import dispose_engine, init_db, session_scope
 from scraper.deduplicator import ReconcileStats, reconcile_company_jobs
 from scraper.models import Company, Job, ScrapeLog
 from scraper.normalizer import Normalizer
+from scraper.scrapers.ats_discovery import discover
 from scraper.scrapers.base import ScrapeResult
 from scraper.scrapers.pipeline import ScrapePipeline
 
@@ -82,10 +85,20 @@ def persist_result(
         if managed is None:
             return 0, None
         normalized_jobs = [
-            normalizer.normalize(raw, audio_scope=managed.audio_scope or "native")
+            normalizer.normalize(
+                raw,
+                audio_scope=managed.audio_scope or "native",
+                company_category=managed.category,
+            )
             for raw in result.jobs
         ]
-        stats = reconcile_company_jobs(session, managed, normalized_jobs, result.trust_empty)
+        stats = reconcile_company_jobs(
+            session,
+            managed,
+            normalized_jobs,
+            result.trust_empty,
+            allow_deactivation=not result.partial,
+        )
         finished_at = datetime.now(timezone.utc)
         session.add(
             ScrapeLog(
@@ -131,6 +144,7 @@ async def run_cycle(
                 slug=c.slug,
                 category=c.category,
                 careers_url=c.careers_url,
+                extra_careers_urls=c.extra_careers_urls,
                 website_url=c.website_url,
                 verified=c.verified,
                 source=c.source,
@@ -216,16 +230,45 @@ def _dedupe_shared_urls(
     companies: list[Company],
 ) -> tuple[list[Company], list[Company]]:
     seen_urls: set[str] = set()
+    seen_boards: set[tuple[str, str]] = set()
     scrape_list: list[Company] = []
     skip_list: list[Company] = []
     for c in companies:
         url = (c.careers_url or "").strip().lower()
+        board = (
+            ((c.ats_type or "").strip().lower(), (c.ats_slug or "").strip().lower())
+            if c.ats_type
+            else None
+        )
         if url in seen_urls:
             skip_list.append(c)
-        else:
-            seen_urls.add(url)
-            scrape_list.append(c)
+            continue
+        if board is not None and board in seen_boards:
+            logger.info(
+                "dedup: skipping %s, board %s/%s already claimed",
+                c.name,
+                board[0],
+                board[1],
+            )
+            skip_list.append(c)
+            continue
+        for extra in careers_urls_for(c):
+            seen_urls.add(extra.strip().lower())
+        seen_urls.add(url)
+        if board is not None and _url_corroborates_board(c.careers_url, board):
+            seen_boards.add(board)
+        scrape_list.append(c)
     return scrape_list, skip_list
+
+
+def _url_corroborates_board(careers_url: Optional[str], board: tuple[str, str]) -> bool:
+    url = (careers_url or "").strip()
+    if not url:
+        return False
+    for ats_type, ats_slug in discover(url, url):
+        if (ats_type.strip().lower(), ats_slug.strip().lower()) == board:
+            return True
+    return False
 
 
 def _deactivate_duplicate_jobs(companies: list[Company]) -> None:

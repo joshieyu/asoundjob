@@ -82,7 +82,7 @@ class TestWorkableParser(unittest.TestCase):
         self.assertEqual(first.job_type, "full-time")
         self.assertEqual(first.posted_date, date(2026, 8, 20))
         self.assertEqual(
-            first.url, "https://apply.workable.com/focusrite/jobs/view/7FAF091965"
+            first.url, "https://apply.workable.com/focusrite/j/7FAF091965"
         )
         self.assertIsNone(first.description)
 
@@ -98,6 +98,29 @@ class TestWorkableParser(unittest.TestCase):
             "7FAF091965",
         )
         self.assertIsNone(_extract_job_id("https://example.com"))
+
+    def test_extract_job_id_reads_the_public_shape(self) -> None:
+        self.assertEqual(
+            _extract_job_id("https://apply.workable.com/focusrite/j/842450A0CB"),
+            "842450A0CB",
+        )
+
+    def test_stored_url_is_the_human_page_not_the_markdown_endpoint(self) -> None:
+        for job in parse_jobs_md(JOBS_MD, "focusrite"):
+            self.assertNotIn("/jobs/view/", job.url)
+            self.assertRegex(
+                job.url, r"^https://apply\.workable\.com/focusrite/j/[A-F0-9]+$"
+            )
+
+    def test_external_id_is_unchanged_by_the_url_shape(self) -> None:
+        ids = [job.external_id for job in parse_jobs_md(JOBS_MD, "focusrite")]
+        self.assertEqual(ids, ["7FAF091965", "7DC37844DE", "ABC123DEF0"])
+
+    def test_the_slug_reaches_the_url(self) -> None:
+        jobs = parse_jobs_md(JOBS_MD, "audiostack")
+        self.assertEqual(
+            jobs[0].url, "https://apply.workable.com/audiostack/j/7FAF091965"
+        )
 
     def test_extract_description(self) -> None:
         desc = _extract_description(DETAIL_MD)

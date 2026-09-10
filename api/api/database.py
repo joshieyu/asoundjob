@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from collections.abc import Generator
 
-from scraper.database import get_session_factory, init_db
 from sqlalchemy.orm import Session
+
+from scraper.database import get_session_factory, init_db
 
 
 def get_db() -> Generator[Session, None, None]:

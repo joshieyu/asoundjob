@@ -21,6 +21,7 @@ class TestCategoryScope(unittest.TestCase):
             "Professional Audio & Live Sound",
             "Headphones & Personal Audio",
             "Transducer & Driver Manufacturers",
+            "Audio Semiconductors",
         ):
             self.assertEqual(category_to_scope(cat), "native", cat)
 
@@ -63,6 +64,35 @@ class TestScoreRelevance(unittest.TestCase):
     def test_noncorporate_role_at_native_company_no_desc_hidden(self) -> None:
         _, related = score_relevance("Studio Manager", None, [], "native")
         self.assertFalse(related)
+
+    def test_back_office_role_at_native_company_hidden(self) -> None:
+        boilerplate = (
+            "Shure is a leading audio company. Our microphones and wireless "
+            "audio systems are used worldwide. We build audio products."
+        )
+        for title in (
+            "Senior Credit Collections Specialist",
+            "Associate Director, Trade Compliance",
+            "Buyer I, Tactical",
+            "Auditor, Incoming Inspection",
+            "Senior Incentive Plan Administrator",
+        ):
+            _, related = score_relevance(title, boilerplate, [], "native")
+            self.assertFalse(related, title)
+
+    def test_technical_role_admitted_on_company_context_alone(self) -> None:
+        boilerplate = (
+            "Shure is a leading audio company. Our microphones and wireless "
+            "audio systems are used worldwide. We build audio products."
+        )
+        for title in (
+            "Senior Systems Engineer",
+            "Sr. NPI Engineer",
+            "Engineer Sr, Metrology",
+            "Senior Process Engineer",
+        ):
+            _, related = score_relevance(title, boilerplate, [], "native")
+            self.assertTrue(related, title)
 
     def test_corporate_role_at_native_company_hidden(self) -> None:
         _, related = score_relevance("Human Resources", None, [], "native")
@@ -128,6 +158,25 @@ class TestScoreRelevance(unittest.TestCase):
             "partial",
         )
         self.assertTrue(related)
+
+    def test_corporate_role_exempted_by_strong_audio_title(self) -> None:
+        _, related = score_relevance("Audio Project Manager", None, [], "native")
+        self.assertTrue(related)
+
+    def test_studio_leader_at_architecture_firm_not_related(self) -> None:
+        desc = (
+            "DLR Group is an integrated design firm delivering architecture, "
+            "engineering, interiors, and planning for clients nationwide. "
+            "About K-12 Education at DLR Group: our team of architects, "
+            "engineers, and interior designers draw from evidence-based design "
+            "to help schools improve outcomes for students. Position Summary: "
+            "as a Studio Leader you will lead business development and manage "
+            "client relationships across our K-12 Education practice."
+        )
+        _, related = score_relevance(
+            "Studio Leader, K-12 Education", desc, [], "native"
+        )
+        self.assertFalse(related)
 
 
 if __name__ == "__main__":

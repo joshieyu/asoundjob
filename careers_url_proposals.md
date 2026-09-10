@@ -1,0 +1,794 @@
+# Careers URL discovery proposals
+
+Approved lines must be applied by hand to data/audio_companies_final.json — this tool never writes that file.
+
+Outcome counts:
+- no_candidate: 499
+- domain_dead: 250
+- keep_current: 160
+- replace: 13
+
+160 companies already point at the best URL found and need no change.
+
+Reason breakdown (why nothing was found):
+- no_careers_link: 334
+- domain_dead: 250
+- (none): 173
+- blocked: 86
+- candidates_failed: 65
+- weak_signal_only: 13
+- third_party_slug: 1
+
+## high confidence (5)
+
+- [ ] **Brain.fm** — `https://www.brain.fm/jobs` -> `https://brain.recruitee.com`  (recruitee embed, 2 job links)
+- [ ] **BYD** — `https://www.bydauto.com/en/careers` -> `https://boards.greenhouse.io/byd`  (greenhouse embed, 23 job links)
+- [ ] **Genius** — `https://genius.com/Careers` -> `https://genius.com/jobs`  (greenhouse embed, 1 job links)
+- [ ] **Integra** — `https://www.integrahometheater.com/us/careers` -> `https://boards.greenhouse.io/integra`  (greenhouse embed, 5 job links)
+- [ ] **Vonage** — `https://www.vonage.com/careers` -> `https://boards.greenhouse.io/vonage`  (greenhouse embed, 38 job links)
+
+## medium confidence (6)
+
+- [ ] **Acer** — `https://careers.acer.com/` -> `https://careers.acer.com/go/All-Jobs/7865610/`  (30 job links)
+- [ ] **Audison** — `https://www.audison.eu/en/careers` -> `https://elettromedia.com/careers`  (7 job links)
+- [ ] **Creative Assembly** — `https://careers.sega.co.uk/` -> `https://careers.sega.co.uk/vacancies`  (25 job links)
+- [ ] **Sega** — `https://careers.sega.co.uk/` -> `https://careers.sega.co.uk/vacancies`  (25 job links)
+- [ ] **Sports Interactive** — `https://careers.sega.co.uk/` -> `https://careers.sega.co.uk/vacancies`  (25 job links)
+- [ ] **Zoom** — `https://careers.zoom.us/home` -> `https://careers.zoom.us/jobs/search`  (30 job links)
+
+## low confidence (2)
+
+- [ ] **American Tinnitus Association** — `https://www.ata.org/careers` -> `https://www.ata.org/about-tinnitus/join-the-ata/`  (1 job links)
+- [ ] **University of York Audio Lab** — `https://www.york.ac.uk/study/work/` -> `https://www.york.ac.uk/study/careers/`  (4 job links)
+
+## Domain dead or no candidate found
+
+- 8x8
+- Abbey Road Studios
+- Abyss Headphones
+- Accentize
+- Access Music
+- Accuphase
+- ACON Acoustics
+- Acoustic Dimensions
+- Acoustic Research Drivers
+- Acoustic Signature
+- Acoustics By Design
+- Acoustics Engineering
+- Acoustics First
+- Acoustune
+- Actran (MSC Software)
+- Acustica Audio
+- Adaptive Sound Technologies
+- AECOM
+- AET (Acoustical Engineering Technology)
+- Aisin AW
+- AKG
+- Alfa Romeo
+- Allen & Heath
+- ALM/Busy Circuits
+- AlphaTheta
+- Alpine Electronics
+- AMD
+- American Bass
+- American Musical Supply
+- Amper Music
+- Amphenol Audio
+- AMS Neve
+- Analog Obsession
+- Anker Cables
+- Anthem Electronics
+- API (plugins)
+- Apisonic Labs
+- Apogee Electronics
+- Applied Acoustics Systems (AAS)
+- Aquatic AV
+- Arrakis Systems
+- ARTA Software
+- Artlist
+- AskVideo
+- Astell&Kern
+- Aston Microphones
+- ATC Racks
+- Atkins
+- Audax
+- Audentity Records
+- Audeze
+- Audicus
+- Audient
+- Audientes
+- Audified
+- Audigy
+- Audinate
+- Audio Acoustics Consultants
+- Audio Alchemy
+- Audio Ltd
+- Audio Service
+- Audio-Technica
+- Audiobulb
+- AudioBuy
+- AudioFuture
+- AudioGaming
+- Audiokinetic (Wwise)
+- Audiomack
+- Audiomodern
+- Audionamix
+- AudioQuest
+- Audiotool
+- AudioTracer
+- Audiowerk
+- Audyssey Laboratories
+- Auralex Acoustics
+- Auro Technologies
+- Avid Technology
+- Avid Turntables
+- AVL Sound
+- AWAL (Sony)
+- B&H Photo Video
+- B2 Audio
+- Bakoon Products
+- Bandsintown
+- Bandwidth
+- Bark AI
+- Bax-shop
+- BDI
+- Beat Games
+- Becker
+- Behringer
+- Bel Canto Design
+- Benchmark Media Systems
+- Benson Medical
+- Bespoke Software
+- Best Buy
+- Best Service
+- Binaural Robotics
+- Bitwig
+- Black Rooster Audio
+- Bluesound
+- BluOS
+- Blyss
+- Bogen Communications
+- Bogner Amplification
+- Bonneville
+- Boodha
+- Boom Library
+- Boomplay (Transsnet)
+- Bosch Security
+- Boss Corporation
+- Boulder Amplifiers
+- Brainworx
+- Brax
+- Broadcast Electronics
+- Broadcom
+- Bruton Music
+- Bryston
+- BSS Audio
+- Bugatti
+- Bugera
+- Bugs Music
+- Burl Audio
+- Buro Happold
+- Cabasse
+- Cableguys
+- CAD Audio
+- Cadence Design Systems
+- CAE Software Systems
+- Calrec Audio
+- Cambridge Acoustics
+- Camco
+- Campfire Audio
+- Cape Acoustics
+- Capitol Studios
+- Caterpillar
+- Cavanaugh Tocci Associates
+- Cayin
+- CCA Audio
+- ccMixter
+- CCW Acoustics
+- Celemony (Melodyne)
+- Celestion
+- Censeo Acoustics
+- Cerami & Associates
+- Cerwin-Vega
+- CH Precision
+- Changan Automobile
+- Charlberto Acoustics
+- Charles M. Salter Associates
+- Chase Bliss Audio
+- Cherokee Studios
+- Chord Electronics
+- Cirrus Logic
+- Citroen
+- Clair Brothers
+- Clearaudio
+- ClearOne
+- Cleverbot
+- Clio (Audiomatica)
+- Clockaudio
+- CME Xkey
+- Cockos (REAPER)
+- CODA Audio
+- Community Loudspeakers
+- Conrad Johnson
+- Constellation Audio
+- Conway Recording
+- Coqui AI
+- Coselgi
+- CR2 Records
+- Crane Song (converters)
+- Crescendo Audio
+- Critter and Guitari
+- Crown Audio
+- Crunch
+- Crutchfield
+- Custom Audio
+- Cycling '74
+- Cylon Acoustics
+- d&b audiotechnik
+- Dan Clark Audio
+- Dangerous Music (converters)
+- Danley Sound Labs
+- data physics
+- DaVinci Resolve Audio (Blackmagic)
+- Dayton Audio
+- DB Drive
+- dB Technologies
+- dbx Professional
+- dCS
+- Decibels
+- Definitive Technology
+- Dell Technologies
+- Devolver Digital
+- DiGiCo
+- DigiTech
+- Dirac Research
+- Direct Sound
+- Discogs
+- Discord
+- Ditto Music
+- DJ.Studio
+- Doepfer Musikelektronik
+- Dongfeng Motor
+- Dreadbox
+- Drop
+- Ducati Motor
+- Dunu
+- DV247
+- Dynacord
+- Dysonics
+- EarBuddy
+- EarFun
+- EarSonics
+- Earthquake Sound
+- Earthworks Audio
+- EastWest Studios
+- EBU
+- Echometrics
+- Edifier
+- Eighteen Sound
+- Elac
+- Electric Lady Studios
+- Electro-Harmonix
+- Electrocompaniet
+- Elipson
+- EMI Acoustics
+- Eminence Speaker
+- Empress Effects
+- Endel
+- Energy Speakers
+- ENIGMAcoustics
+- EPC Acoustics
+- Epic Games
+- Equator Sound
+- ESI Audio
+- ESPN Audio
+- Etymotic Research
+- Eventide
+- Expert Sleepers
+- Exposure
+- Extron Electronics
+- FaitalPro
+- Faust (GRAME)
+- FAW Group
+- FBT
+- Fender Play
+- Fiat
+- FiiO
+- Final Audio Design
+- Firelight Technologies (FMOD)
+- Fishman Transducers
+- FitEar
+- Fluance
+- Flux Audio
+- Focus@Will
+- Fosi Audio
+- Fostex
+- Free Field Technologies
+- Free Music Archive
+- Friedman Amplification
+- Fujitsu Ten (Eclipse)
+- Full Compass Systems
+- Full Sail University
+- GAC Group
+- GameDial
+- GameSynth
+- Gator Cases
+- Gearbox Software
+- GenAudio
+- General Motors
+- German Physiks
+- GForce Software
+- Gikon Audio Academy
+- Gladen Audio
+- Goertek
+- GoldenEar Technology
+- Goldmund
+- Goldsmith Acoustics
+- Goldwood
+- Gotham Audio
+- Grado Labs
+- Grason-Stadler (GSI)
+- Gravity Stands
+- Ground Zero
+- Guitar Center
+- Guitar Tricks
+- Hann Tucker Associates
+- Harmonai
+- HARMusic
+- HearLab
+- HearSource
+- Heavyocity
+- Heowgood Acoustics
+- HiBy Music
+- Hidizs
+- HiFiMan
+- Himalaya
+- HiVi
+- HK Audio
+- Hollyberry Audio
+- Horentek
+- Hungama
+- iBasso Audio
+- id Software
+- IEEE Signal Processing
+- iFi Audio
+- iFlytek
+- Ignite Amps
+- Immersive Audio
+- In2Hear
+- Incompetech
+- Indian Motorcycle
+- Insomniac Games
+- Intel
+- Intelligent Hearing Solutions
+- Intellijel Designs
+- Inter-M
+- IOAudio Academy
+- ION Audio
+- iRiver
+- Jamo Speakers
+- JBL
+- JH Audio
+- JHS Pedals
+- Jolida
+- K&M (König & Meyer)
+- Kaces Bags
+- Kanto Audio
+- Kazrog
+- Kemper Amps
+- Kimber Kable
+- Kinetics Noise Control
+- Kirkegaard Associates
+- Klark Teknik
+- Klipsch
+- Koala Sampler
+- Koe Recast
+- Koei Tecmo
+- Krell Industries
+- Krix Loudspeakers
+- Krotos Audio
+- KTM (Pierer Mobility)
+- Kurzweil Music Systems
+- KV331 Audio
+- KZ Acoustics
+- Lab.gruppen
+- LALAL.AI
+- Lauten Audio
+- Lavry Engineering
+- LectroFan
+- Lehle
+- LennarDigital
+- Lenovo
+- LePou Plugins
+- Lessonface
+- Lewitt Audio
+- Lexicon Pro
+- Libratone
+- Lindemann Audio
+- Line Magnetic
+- LMDE (Ardour)
+- Loopcloud
+- Loopmasters
+- Lordstown Motors
+- Lotoo
+- Lovo AI
+- Loxjie Audio
+- LR Baggs
+- Lucid Technology
+- Lumin Music
+- Luxman
+- Lyngdorf Audio
+- m+p international
+- MacProVideo
+- Magico
+- Magna International
+- Magnatone
+- Make Noise
+- MAN Truck & Bus
+- Maor Audio
+- Mark Levinson
+- Marshall Day Acoustics
+- Martin Audio
+- MartinLogan
+- Maserati
+- Massive Audio
+- Master & Dynamic
+- McCune Audio/Video
+- McKay Conant Hoover
+- McLaren Automotive
+- Melda MAudioDynamics
+- MeldaProduction
+- Melon (Kakao)
+- Mercuriall Audio
+- Meridian Audio Automotive
+- Metropolitan Acoustics
+- Micca
+- Micro-DSP
+- Microchip Technology
+- Micromega
+- Miktek
+- Mirage Speakers
+- Misco
+- Miselu
+- MLSSA
+- ModeAudio
+- ModWright Instruments
+- Monitor Audio
+- MonkeyMachine
+- Monoprice Audio
+- Monster Cable
+- Montarbo
+- Morel
+- Mott MacDonald
+- Mubert
+- Music Dealers
+- Music Hall
+- Music Store
+- Music Tribe
+- Music123
+- Musical Fidelity
+- Musicnotes
+- Musopia
+- Musway
+- Mutable Instruments
+- MUTO
+- Mytek Digital
+- Mäag Audio
+- NAD Electronics
+- Nakamichi
+- NanoStudio
+- Native Instruments
+- NaturalReader
+- Natus Medical
+- Naughty Dog
+- NDSE Audio
+- Nembrini Audio
+- NetEase Cloud Music
+- Newson Brown Acoustics
+- Nexo
+- NHT Loudspeakers
+- Niche Audio
+- Nikola Corporation
+- Noble Audio
+- Noise Engineering
+- NoiseTrade
+- Nokia
+- Nordost
+- Norsk Audio
+- NTi Audio
+- NXP Semiconductors
+- Ocean Way Studios
+- Octave Audio
+- Oladance
+- Olive Union
+- OmniMic
+- Omnimount
+- On-Stage Stands
+- Onkyo
+- Ooma
+- Optocore
+- Orange Amplifiers
+- Outline
+- Output
+- Overloud
+- P-Audio
+- Pacemaker
+- Panamax
+- Panasonic
+- Paradigm
+- Pass Labs
+- Path Medical
+- Peachtree Audio
+- Peavey Electronics
+- Peerless-AV
+- Pelican Cases
+- Pelton Marsh Kinsella
+- Peluso Microphone Lab
+- Peugeot
+- Philips
+- Phonic
+- Photoservice
+- Pillow
+- Pinewood Studios
+- Pioneer
+- Pioneer DJ
+- Pittsburgh Modular
+- PlayHT
+- PlayStation Studios
+- Plinius Audio
+- Plugin Alliance
+- Pocket Casts
+- Polk Audio
+- Pond5 Audio
+- Positive Grid
+- Powersoft
+- Praxis (Librarian)
+- PreSonus
+- Pride Audio
+- PrimaLuna
+- Prism Sound
+- Pro Audio Star
+- Pro-Ject Audio
+- ProAc
+- Producer Loops
+- ProLine Stands
+- ProTec Cases
+- PRV Audio
+- PS Audio
+- PSB Speakers
+- PSP Audioware
+- Pulsar Audio
+- Pump Audio
+- Pure Radio
+- Purifi
+- Q Acoustics
+- QSC
+- Questyle
+- QuickMount
+- Quik-Lok
+- Radio Design Labs
+- Rainbow Car Audio
+- Rauland Borg
+- Raxxess
+- Raycon
+- RBH Sound
+- Realme
+- Reason Studios
+- Record Plant
+- RecorDyn Academy
+- Relax Melodies
+- Renoise
+- Replica Studios
+- Resident Advisor
+- Resonance
+- Resso (ByteDance)
+- RestorEar
+- Reunion Blues
+- Reveal Sound
+- Reverb
+- Revo
+- RF Venue
+- RHA Technologies
+- Riedel & Associates
+- Riot Games
+- Rivera Amplification
+- RMBAV
+- RME
+- Roberts Radio
+- Roblox
+- Rock Heritage
+- Rode Microphones
+- Roger Linn Design
+- Roli
+- Rolls-Royce Motor Cars
+- Room EQ Wizard
+- Rosson Audio
+- Rotel
+- Roxio
+- RPG Diffusion Systems
+- Ruark Audio
+- Rupert Neve Designs
+- Salter (Acoustics)
+- Sam Ash Music
+- Sample Magic
+- SampleScience
+- Saramonic
+- SB Satori
+- Scan-Speak
+- sE Electronics
+- SEAS
+- Sensaphonics
+- Sensel
+- Sequential
+- Shanling
+- Sheet Music Direct
+- Shen Milsom & Wilke
+- Shepperton Studios
+- Shokz
+- Siebein Associates
+- Signet Audio
+- Silver Flute
+- Simaudio (Moon)
+- Simply Piano
+- SKB Cases
+- Skylight Music
+- Slate Digital
+- Sleep Tracker Audio
+- SleepPhones
+- Sonantic
+- Sonible
+- Sonic Librarian
+- Sonosax
+- Sonus Faber
+- Sony
+- Soulution
+- Sound City Studios
+- Sound Sleep
+- Sound Yeti
+- Sound+ Sleep
+- Soundation
+- Soundcraft
+- SoundCure
+- SoundEasy
+- SOUNDFlow
+- Soundfly
+- SoundGym
+- SoundHound
+- SounDigital
+- Soundly
+- SoundPEATS
+- Soundproofing Company
+- SoundSpot
+- Soundtoys
+- Soyuz Microphones
+- Spectral Shaping
+- Speechelo
+- Spendor Audio
+- Spitch
+- Spitfire Audio
+- Square Enix
+- Stability AI Audio
+- Stage Stands
+- Steinway Lyngdorf
+- Stem
+- STL Tones
+- STMicroelectronics
+- StormAudio
+- Stride Hearing
+- Strymon
+- Studer
+- Studio Devil
+- Studio Rigz
+- Sundown Audio
+- SunVox
+- Supro
+- Suzuki Motor
+- Symetrix
+- Synaptics
+- Synclavier Digital
+- Synthesys
+- T+A Elektronik
+- Tabriz
+- TAD Labs
+- Take-Two Interactive
+- Takealot Audio
+- TakeLessons
+- Talaske Acoustics
+- Tang Band
+- Tannoy
+- Taramps
+- Tascam
+- TC Electronic
+- TC Helicon
+- Technics
+- TEF (Gold Line)
+- Tektronix
+- Telefunken Elektroakustik
+- Tempo Semiconductor
+- Tempotec
+- Tesla
+- Text to Speech (TTS)
+- TFZ
+- The Village Studios
+- Theatre Projects
+- Thorens
+- Three-Body Tech
+- THX Ltd
+- Tillery Acoustics
+- Tinnitus Talk
+- Tiptop Audio
+- Tivoli Audio
+- TOA Electronics
+- Togu Audio Line
+- ToneGym
+- Toolroom Records
+- Toontrack
+- Tortoise TTS
+- Tracktion
+- Traxsource
+- Triangle Loudspeakers
+- Tribit
+- Trinnov Audio
+- TrueRTA
+- TSE Audio
+- TTS Service
+- Turbosound
+- Twitch Audio
+- Tympany
+- Unfiltered Audio
+- Unique Melody
+- USB-IF
+- UVI
+- V-Moda
+- VAC (Valve Amplification)
+- Valhalla DSP
+- Van Damme Cable
+- Veneklasen Associates
+- Victory Amplifiers
+- Viking Electronics
+- Visteon
+- VocalRemover.org
+- Vocalware
+- Voice AI
+- Voicebox Technologies
+- Voicery
+- Voiser
+- Vox Amplification
+- Voxengo
+- Voximplant
+- VUE Audiotechnik
+- W.A. Production
+- Waldorf Music
+- Walrus Audio
+- Wampler Pedals
+- Ward-Beck Systems
+- Wave Alchemy
+- Wavecor
+- Wavesfactory
+- Weiss Engineering
+- Westlake Audio
+- Westone Audio
+- Wheatstone
+- Whirlwind
+- Whisper AI
+- Wiley Consulting
+- Wilson Audio
+- Wisycom
+- WMD (William Matthew Device)
+- World Wide Stereo
+- WSDG (Walters-Storyk Design Group)
+- WSP Acoustics
+- Wynk Music (Airtel)
+- Wyred4Sound
+- xDuoo
+- Xfer Serum
+- Xiaomi
+- Xiph.Org Foundation
+- XMOS
+- Xperi (DTS)
+- Yandex Music
+- Yousician
+- Z-Vex Effects
+- ZenEar
+- Zenhiser
+- ZZounds

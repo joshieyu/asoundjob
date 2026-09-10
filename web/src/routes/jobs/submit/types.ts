@@ -11,4 +11,5 @@ export interface JobSubmissionRequest {
 	audio_domain?: string;
 	submitter_name?: string;
 	submitter_email?: string;
+	duration_days?: number;
 }

@@ -19,7 +19,8 @@
 		experience_level: '',
 		audio_domain: '',
 		submitter_name: '',
-		submitter_email: ''
+		submitter_email: '',
+		duration_days: undefined
 	});
 
 	async function onSubmit(event: SubmitEvent) {
@@ -111,6 +112,11 @@
 				<label class="block">
 					<span class="mb-1 block font-mono text-[10px] tracking-[0.14em] text-ink-soft uppercase">Salary range</span>
 					<input maxlength="100" bind:value={form.salary_range} placeholder="e.g. $80k–$110k" class="well h-10 w-full px-3 font-mono text-sm" />
+				</label>
+				<label class="block">
+					<span class="mb-1 block font-mono text-[10px] tracking-[0.14em] text-ink-soft uppercase">How long should this stay up? (days)</span>
+					<input type="number" min="1" max="365" bind:value={form.duration_days} placeholder="30" class="well h-10 w-full px-3 text-sm" />
+					<span class="mt-1 block text-xs text-ink-soft">Defaults to 30 days if left blank.</span>
 				</label>
 			</div>
 

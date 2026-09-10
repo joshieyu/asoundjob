@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import time
 import unittest
 
 from scraper.scrapers.ats_discovery import discover, first_discovery
@@ -64,7 +65,7 @@ class TestATSDiscovery(unittest.TestCase):
 
     def test_workday_link(self) -> None:
         results = discover(WORKDAY_LINK)
-        self.assertEqual(results[0], ("workday", "Acme_Careers"))
+        self.assertEqual(results[0], ("workday", "acme.wd1/Acme_Careers"))
 
     def test_multiple_ats(self) -> None:
         results = discover(MULTIPLE_ATS)
@@ -86,6 +87,51 @@ class TestATSDiscovery(unittest.TestCase):
 
     def test_first_discovery_none(self) -> None:
         self.assertIsNone(first_discovery(NO_ATS))
+
+    def test_greenhouse_js_embed_variant(self) -> None:
+        html = '<script src="https://boards.greenhouse.io/embed/job_board/js?for=dspconcepts"></script>'
+        self.assertEqual(first_discovery(html), ("greenhouse", "dspconcepts"))
+
+    def test_greenhouse_eu_region_host(self) -> None:
+        html = '<script src="https://boards.eu.greenhouse.io/embed/job_board/js?for=nothing"></script>'
+        self.assertEqual(first_discovery(html), ("greenhouse", "nothing"))
+
+    def test_greenhouse_eu_region_direct_board(self) -> None:
+        html = '<a href="https://boards.eu.greenhouse.io/dicefm-careers">Jobs</a>'
+        self.assertEqual(first_discovery(html), ("greenhouse", "dicefm-careers"))
+
+    def test_workday_slug_includes_tenant(self) -> None:
+        html = '<a href="https://spectris.wd3.myworkdayjobs.com/HBK_Careers">Jobs</a>'
+        self.assertEqual(first_discovery(html), ("workday", "spectris.wd3/HBK_Careers"))
+
+    def test_workday_slug_skips_locale_segment(self) -> None:
+        html = '<a href="https://fullsail.wd1.myworkdayjobs.com/en-US/External/">Jobs</a>'
+        self.assertEqual(first_discovery(html), ("workday", "fullsail.wd1/External"))
+
+    def test_workday_slug_matches_parser_expectation(self) -> None:
+        from scraper.scrapers.ats.workday import WorkdayScraper
+
+        url = "https://deseretmanagement.wd1.myworkdayjobs.com/BonSaltLake"
+        discovered = first_discovery(f'<a href="{url}">Jobs</a>')
+        assert discovered is not None
+        self.assertEqual(discovered[1], WorkdayScraper.extract_slug(url))
+
+    def test_recruitee_analytics_host_is_not_a_board(self) -> None:
+        html = '{"analyticsBaseUrl":"https://careers-analytics.recruitee.com"}'
+        self.assertIsNone(first_discovery(html))
+
+    def test_cdn_subdomain_is_not_a_board(self) -> None:
+        html = (
+            '<script src="https://assets-cdn.breezy.hr/x.js"></script>'
+            '<a href="https://flowkey.breezy.hr/">Jobs</a>'
+        )
+        self.assertEqual(first_discovery(html), ("breezy", "flowkey"))
+
+    def test_long_word_run_is_not_quadratic(self) -> None:
+        page = '<img src="data:image/png;base64,' + "iVBORw0KGgoAAAANSUhEUgAA" * 2000 + '">'
+        started = time.monotonic()
+        self.assertEqual(discover(page), [])
+        self.assertLess(time.monotonic() - started, 2.0)
 
     def test_dedupe(self) -> None:
         html = '<a href="https://jobs.lever.co/acme">1</a><a href="https://jobs.lever.co/acme/123">2</a>'

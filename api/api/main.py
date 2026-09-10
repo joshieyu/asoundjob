@@ -8,7 +8,16 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from api.config import CORS_ORIGINS
 from api.database import init_db
-from api.routers import admin, categories, companies, jobs, resources, search
+from api.routers import (
+    admin,
+    categories,
+    companies,
+    countries,
+    feedback,
+    jobs,
+    resources,
+    search,
+)
 
 logging.basicConfig(level=logging.INFO)
 
@@ -36,8 +45,10 @@ app.add_middleware(
 app.include_router(jobs.router)
 app.include_router(companies.router)
 app.include_router(categories.router)
+app.include_router(countries.router)
 app.include_router(search.router)
 app.include_router(resources.router)
+app.include_router(feedback.router)
 app.include_router(admin.router)
 
 

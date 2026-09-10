@@ -11,8 +11,8 @@ if TYPE_CHECKING:
     from scraper.models import Company
 
 URL_PATTERN = re.compile(
-    r"^https?://(?:[a-z0-9-]+\.)*(?:(?:job-)?boards)\.greenhouse\.io/"
-    r"(?P<slug>[^/?#]+)",
+    r"^https?://(?:[a-z0-9-]{1,63}\.){0,3}(?:job-)?boards(?:\.[a-z]{2,4})?"
+    r"\.greenhouse\.io/(?P<slug>[^/?#]+)",
     re.IGNORECASE,
 )
 

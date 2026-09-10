@@ -15,12 +15,14 @@
 		audio_domain: string | null;
 		status: string;
 		submitted_at: string;
+		requested_days: number | null;
 	}
 
 	let submissions = $state<Submission[]>([]);
 	let loading = $state(true);
 	let message = $state('');
 	let busyId = $state<number | null>(null);
+	let overrideDays = $state<Record<number, number | undefined>>({});
 
 	async function load() {
 		loading = true;
@@ -29,6 +31,9 @@
 				'/api/admin/submissions?status=pending&per_page=50'
 			);
 			submissions = result.items;
+			for (const s of submissions) {
+				overrideDays[s.id] = s.requested_days ?? undefined;
+			}
 		} catch (err) {
 			message = err instanceof Error ? err.message : 'Failed to load queue';
 		} finally {
@@ -44,9 +49,15 @@
 		busyId = id;
 		message = '';
 		try {
+			let body: Record<string, unknown> = {};
+			if (action === 'reject') {
+				body = { reason: 'Rejected from admin console' };
+			} else if (overrideDays[id] != null) {
+				body = { expires_days: overrideDays[id] };
+			}
 			await clientApi(`/api/admin/submissions/${id}/${action}`, {
 				method: 'POST',
-				body: action === 'reject' ? { reason: 'Rejected from admin console' } : {}
+				body
 			});
 			await load();
 			message = `Submission #${id} ${action}d.`;
@@ -79,6 +90,7 @@
 							<p class="text-sm text-ink-soft">
 								{s.company_name}{#if s.location} · {s.location}{/if}{#if s.remote} · remote{/if}
 								· submitted {new Date(s.submitted_at).toLocaleDateString()}
+								· requested: {s.requested_days != null ? `${s.requested_days} days` : 'default (30 days)'}
 							</p>
 						</div>
 						<a href={s.url} target="_blank" rel="noopener noreferrer" class="btn-latch !normal-case !tracking-normal">
@@ -86,10 +98,21 @@
 						</a>
 					</div>
 					<p class="mt-2 line-clamp-3 max-w-3xl text-sm leading-relaxed text-ink-soft">{s.description}</p>
-					<div class="mt-3 flex flex-wrap gap-2">
+					<div class="mt-3 flex flex-wrap items-center gap-2">
 						<button type="button" class="btn-primary !py-1.5" disabled={busyId === s.id} onclick={() => act(s.id, 'approve')}>
 							Approve → live
 						</button>
+						<label class="flex items-center gap-1.5 text-xs text-ink-soft" for={`days-${s.id}`}>
+							Days
+							<input
+								id={`days-${s.id}`}
+								type="number"
+								min="1"
+								max="365"
+								bind:value={overrideDays[s.id]}
+								class="well h-8 w-16 px-2 font-mono text-xs"
+							/>
+						</label>
 						<button
 							type="button"
 							class="btn-latch"

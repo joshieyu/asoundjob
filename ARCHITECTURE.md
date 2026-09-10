@@ -122,7 +122,20 @@ CREATE TABLE companies (
     name        TEXT NOT NULL UNIQUE,
     slug        TEXT NOT NULL UNIQUE,       -- URL-friendly name
     category    TEXT NOT NULL,
-    careers_url TEXT,
+    careers_url TEXT,                      -- Primary board. Required in the seed.
+    extra_careers_urls JSONB,              -- Optional: additional boards scraped and merged
+                                           --   into this company's single job set. Used for
+                                           --   boards that only answer search queries (Harman:
+                                           --   audio, acoustic, dsp, transducer, sound) and for
+                                           --   separate regional careers sites. Capped at
+                                           --   MAX_CAREERS_URLS including the primary. A URL
+                                           --   that fails makes the scrape partial, which
+                                           --   suppresses deactivation for the whole company.
+    open_application BOOLEAN DEFAULT FALSE,-- The company posts no roles but invites speculative
+                                           --   applications in its own words. Set by hand after
+                                           --   reading the page; a page saying it has no
+                                           --   openings is NOT an invitation. Rendered as a
+                                           --   board section, never as a job row.
     website_url TEXT,                      -- Optional: main company website
     verified    BOOLEAN DEFAULT FALSE,
     source      TEXT DEFAULT 'auto',       -- 'manual' or 'auto'
@@ -136,6 +149,14 @@ CREATE TABLE companies (
                                             --   only roles with audio signals shown), 'all'
                                             --   (show everything). Derived from category by the
                                             --   loader; admin overrides set source='manual'.
+    ats_type    TEXT,                       -- ATS platform resolved by discovery, e.g. 'greenhouse'
+    ats_slug    TEXT,                       -- Board identity on that platform. Together these
+                                            --   de-duplicate two companies sharing one board, but
+                                            --   only when the company's own careers_url resolves
+                                            --   to the same identity - an HTML-discovered value
+                                            --   can lose a collision, never win one.
+    last_scraped_at TIMESTAMPTZ,            -- Written ONLY on success. NULL means every attempt
+                                            --   failed; it does not mean the company was skipped.
     created_at  TIMESTAMPTZ DEFAULT NOW(),
     updated_at  TIMESTAMPTZ DEFAULT NOW()
 );
@@ -158,8 +179,23 @@ CREATE TABLE jobs (
     salary_currency TEXT,                 -- e.g. 'USD', 'EUR'
     job_categories TEXT[],                -- Array of category IDs from audio_job_categories.json
                                            -- e.g. ['audio_dsp', 'audio_systems']
+    categories_override TEXT[],            -- Set by an approved 'wrong_category' report. When
+                                           --   present it REPLACES the computed categories at
+                                           --   every site that rewrites them, so a hand fix
+                                           --   survives the next scrape and backfill.
+    is_audio_related_override BOOLEAN,     -- Same, for an approved 'not_audio' report. Consulted
+                                           --   via scraper/overrides.py at all three write
+                                           --   sites; a fourth site must be wired in or
+                                           --   corrections silently revert.
+    country       TEXT,                    -- ISO alpha-2, parsed from location at normalize time.
+                                           --   Ambiguity resolves to NULL, never to a guess: the
+                                           --   board shows NULL rows under every country filter,
+                                           --   so a wrong country hides a job while no country
+                                           --   never does.
     posted_date   DATE,
-    scraped_date  TIMESTAMPTZ DEFAULT NOW(),
+    scraped_at    TIMESTAMPTZ DEFAULT NOW(),  -- Set on insert, never re-stamped on update.
+    created_at    TIMESTAMPTZ DEFAULT NOW(),
+    updated_at    TIMESTAMPTZ DEFAULT NOW(),
     expires_date  DATE,                   -- For community jobs: set to now()+30d on insert.
                                            -- For scraped jobs: NULL (deactivation is driven by
                                            --   the scraper detecting the job is gone, not by date).

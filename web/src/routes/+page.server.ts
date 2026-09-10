@@ -2,32 +2,16 @@ import type { PageServerLoad } from './$types';
 import { api, getJobs, getCategories } from '$lib/server/api';
 import type { Paginated, Job } from '$lib/types';
 
-const ALL_CATEGORY_IDS = [
-	'audio_dsp_embedded',
-	'audio_software',
-	'audio_ee',
-	'transducers',
-	'microphones_recording',
-	'live_sound_events',
-	'music_technology',
-	'audio_systems',
-	'automotive_audio',
-	'audio_aiml',
-	'audio_research',
-	'nvh',
-	'psychoacoustics_perception',
-	'game_audio_interactive',
-	'music_production_recording',
-	'sound_design',
-	'sales_marketing_cs'
-].join(',');
-
 export const load: PageServerLoad = async ({ fetch }) => {
-	const [specialtyJobs, categories, totalResult] = await Promise.all([
-		getJobs({ category: ALL_CATEGORY_IDS, per_page: '8', sort: 'newest' }).catch(() => null),
+	const [categories, totalResult] = await Promise.all([
 		getCategories().catch(() => null),
 		api<Paginated<Job>>('/api/jobs?per_page=1').catch(() => null)
 	]);
+
+	const allCategoryIds = (categories?.categories ?? []).map((c) => c.id).join(',');
+	const specialtyJobs = allCategoryIds
+		? await getJobs({ category: allCategoryIds, per_page: '8', sort: 'newest' }).catch(() => null)
+		: null;
 
 	let featured = specialtyJobs;
 	if (!featured || featured.items.length < 4) {

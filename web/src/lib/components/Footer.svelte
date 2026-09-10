@@ -1,8 +1,14 @@
 <script lang="ts">
+	import { page } from '$app/state';
 	import discordLink from '$lib/data/discord-link.txt?raw';
+	import { SITE_FEEDBACK_KINDS } from '$lib/feedback';
+	import FeedbackDialog from './FeedbackDialog.svelte';
 
 	const discord = discordLink.trim();
 	const year = new Date().getFullYear();
+
+	let feedbackOpen = $state(false);
+	const pagePath = $derived(page.url.pathname);
 </script>
 
 <footer class="mt-auto border-t border-seam bg-panel">
@@ -47,10 +53,21 @@
 	</div>
 	<div class="border-t border-seam">
 		<div
-			class="mx-auto flex max-w-6xl flex-col gap-1 px-4 py-3 font-mono text-[11px] tracking-wide text-ink-soft sm:flex-row sm:items-center sm:justify-between sm:px-6"
+			class="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-3 font-mono text-[11px] tracking-wide text-ink-soft sm:flex-row sm:items-center sm:justify-between sm:px-6"
 		>
 			<span>© {year} ASoundJob · Young Audio Professionals</span>
-			<span>Listings refresh nightly · Community posts are reviewed before publishing</span>
+			<span class="flex flex-wrap items-center gap-3">
+				<span>Listings refresh nightly · Community posts are reviewed before publishing</span>
+				<button
+					type="button"
+					class="btn-latch !py-1 !text-[11px]"
+					onclick={() => (feedbackOpen = true)}
+				>
+					Send feedback
+				</button>
+			</span>
 		</div>
 	</div>
 </footer>
+
+<FeedbackDialog mode="site" kinds={SITE_FEEDBACK_KINDS} pagePath={pagePath} bind:open={feedbackOpen} />

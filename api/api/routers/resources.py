@@ -3,13 +3,13 @@ from __future__ import annotations
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from scraper.models import CareerResource
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from api.database import get_db
 from api.query import page_envelope, paginate_params
 from api.schemas import PaginatedResources, ResourceDetail, ResourceSummary
+from scraper.models import CareerResource
 
 router = APIRouter(prefix="/api/resources", tags=["resources"])
 

@@ -9,26 +9,33 @@ from datetime import date, datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from scraper.config import load_settings
-from scraper.models import Company, Job, JobSubmission, ScrapeLog
-from scraper.normalizer import Normalizer
-from scraper.scrapers.base import RawJob
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select, update
 from sqlalchemy.orm import Session
 
 from api.auth import LoginRequest, TokenResponse, create_token, require_admin, verify_credentials
-from api.config import COMMUNITY_JOB_TTL_DAYS, SCRAPER_DIR
+from api.config import COMMUNITY_JOB_TTL_DAYS, MAX_COMMUNITY_JOB_DAYS, SCRAPER_DIR
 from api.database import get_db
 from api.query import page_envelope, paginate_params
 from api.schemas import (
     AdminCompanyCreate,
     AdminCompanyUpdate,
+    AdminJobFeedback,
+    AdminSiteFeedback,
     AdminSubmission,
+    ApproveRequest,
+    ApproveResponse,
+    FeedbackApproveResponse,
     RejectRequest,
     ScrapeLogEntry,
     ScrapeStatus,
     StatsResponse,
 )
+from scraper.company_loader import parse_extra_careers_urls
+from scraper.config import load_settings
+from scraper.models import Company, Job, JobFeedback, JobSubmission, ScrapeLog, SiteFeedback
+from scraper.normalizer import Normalizer
+from scraper.overrides import effective_categories, effective_is_audio
+from scraper.scrapers.base import RawJob
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +43,18 @@ router = APIRouter(prefix="/api/admin", tags=["admin"])
 
 _scrape_lock = threading.Lock()
 _scrape_process: Optional[subprocess.Popen] = None
+
+LOADER_MANAGED_FIELDS = frozenset(
+    {
+        "name",
+        "category",
+        "careers_url",
+        "extra_careers_urls",
+        "open_application",
+        "verified",
+        "scrape_method",
+    }
+)
 
 
 @router.post("/login", response_model=TokenResponse)
@@ -113,6 +132,8 @@ def admin_list_companies(
     per_page: int = Query(25, ge=1, le=100),
     search: Optional[str] = None,
     verified: Optional[bool] = None,
+    sort: str = Query("name", pattern="^(name|jobs|board|verified)$"),
+    direction: str = Query("asc", pattern="^(asc|desc)$"),
     db: Session = Depends(get_db),
     _: str = Depends(require_admin),
 ):
@@ -125,7 +146,9 @@ def admin_list_companies(
     if search:
         pattern = f"%{search}%"
         stmt = stmt.where(Company.name.ilike(pattern))
-    items, total = companies_with_counts(db, stmt, safe_page, safe_per)
+    items, total = companies_with_counts(
+        db, stmt, safe_page, safe_per, sort=sort, direction=direction
+    )
     return page_envelope(items, total, safe_page, safe_per)
 
 
@@ -158,6 +181,9 @@ def admin_create_company(
         slug=slug,
         category=payload.category,
         careers_url=payload.careers_url,
+        extra_careers_urls=parse_extra_careers_urls(
+            payload.extra_careers_urls, payload.careers_url
+        ),
         website_url=payload.website_url,
         verified=bool(payload.verified),
         source="manual",
@@ -185,17 +211,83 @@ def admin_update_company(
         raise HTTPException(status_code=404, detail="Company not found")
 
     updates = payload.model_dump(exclude_unset=True, exclude_none=True)
-    updates.pop("name", None)
+
+    if "name" in updates:
+        new_name = updates["name"].strip()
+        if not new_name:
+            raise HTTPException(status_code=422, detail="Company name cannot be empty")
+        collision = db.execute(
+            select(Company).where(
+                func.lower(Company.name) == new_name.lower(), Company.id != company.id
+            )
+        ).scalar_one_or_none()
+        if collision is not None:
+            raise HTTPException(status_code=409, detail="Company already exists")
+        updates["name"] = new_name
+
+    if "careers_url" in updates:
+        updates["careers_url"] = updates["careers_url"].strip() or None
+
+    if "extra_careers_urls" in updates:
+        primary = updates.get("careers_url", company.careers_url)
+        updates["extra_careers_urls"] = parse_extra_careers_urls(
+            updates["extra_careers_urls"], primary
+        )
+
     scope_changed = "audio_scope" in updates and updates["audio_scope"] != company.audio_scope
     for field, value in updates.items():
         setattr(company, field, value)
-    if updates.get("verified") or updates.get("careers_url") or scope_changed:
+    if (updates.keys() & LOADER_MANAGED_FIELDS) or scope_changed:
         company.source = "manual"
     if scope_changed:
         rescore_company_jobs(db, company)
     db.flush()
     logger.info("admin=%s updated company %s: %s", admin, company.slug, list(updates.keys()))
     return {"id": company.id, "updated_fields": sorted(updates.keys())}
+
+
+@router.delete("/companies/{company_id}")
+def admin_delete_company(
+    company_id: int,
+    db: Session = Depends(get_db),
+    admin: str = Depends(require_admin),
+):
+    company = db.get(Company, company_id)
+    if company is None:
+        raise HTTPException(status_code=404, detail="Company not found")
+
+    jobs_deleted = db.execute(
+        select(func.count(Job.id)).where(Job.company_id == company.id)
+    ).scalar_one()
+    db.execute(delete(Job).where(Job.company_id == company.id))
+
+    scrape_logs_deleted = db.execute(
+        select(func.count(ScrapeLog.id)).where(ScrapeLog.company_id == company.id)
+    ).scalar_one()
+    db.execute(delete(ScrapeLog).where(ScrapeLog.company_id == company.id))
+
+    submissions_detached = db.execute(
+        select(func.count(JobSubmission.id)).where(JobSubmission.company_id == company.id)
+    ).scalar_one()
+    db.execute(
+        update(JobSubmission)
+        .where(JobSubmission.company_id == company.id)
+        .values(company_id=None)
+    )
+
+    name = company.name
+    slug = company.slug
+    db.delete(company)
+    db.flush()
+    logger.info("admin=%s deleted company %s", admin, slug)
+    return {
+        "deleted": {
+            "company": name,
+            "jobs": int(jobs_deleted),
+            "scrape_logs": int(scrape_logs_deleted),
+            "submissions_detached": int(submissions_detached),
+        }
+    }
 
 
 def rescore_company_jobs(db: Session, company: Company) -> None:
@@ -214,9 +306,13 @@ def rescore_company_jobs(db: Session, company: Company) -> None:
             description=job.description,
             job_type=job.job_type,
         )
-        normalized = scorer.normalize(raw, audio_scope=company.audio_scope or "native")
+        normalized = scorer.normalize(
+            raw,
+            audio_scope=company.audio_scope or "native",
+            company_category=company.category,
+        )
         job.relevance_score = normalized.relevance_score
-        job.is_audio_related = normalized.is_audio_related
+        job.is_audio_related = effective_is_audio(job, normalized.is_audio_related)
 
 
 @router.get("/submissions")
@@ -247,9 +343,52 @@ def admin_list_submissions(
     )
 
 
-@router.post("/submissions/{submission_id}/approve")
+def find_live_community_job(db: Session, submission: JobSubmission) -> Optional[Job]:
+    url = submission.url.strip().lower()
+    stmt = select(Job).where(
+        Job.source == "community",
+        Job.is_active.is_(True),
+        func.lower(Job.url) == url,
+    )
+    if submission.company_id is not None:
+        stmt = stmt.where(Job.company_id == submission.company_id)
+    else:
+        stmt = stmt.where(Job.company_id.is_(None))
+    return db.execute(stmt.order_by(Job.id)).scalars().first()
+
+
+def refresh_community_job(row: Job, replacement: Job, normalized) -> None:
+    row.title = replacement.title
+    row.description = replacement.description
+    row.location = replacement.location
+    row.country = normalized.country
+    row.remote = replacement.remote
+    row.job_type = replacement.job_type
+    row.seniority = replacement.seniority
+    row.salary_min = replacement.salary_min
+    row.salary_max = replacement.salary_max
+    row.salary_currency = replacement.salary_currency
+    row.job_categories = effective_categories(row, normalized.job_categories)
+    row.relevance_score = normalized.relevance_score
+    row.is_audio_related = effective_is_audio(row, normalized.is_audio_related)
+    row.expires_date = replacement.expires_date
+    row.is_active = True
+
+
+def resolve_expiry_days(
+    override: Optional[int], requested: Optional[int]
+) -> tuple[int, str]:
+    if override is not None:
+        return max(1, min(override, MAX_COMMUNITY_JOB_DAYS)), "moderator"
+    if requested is not None:
+        return max(1, min(requested, MAX_COMMUNITY_JOB_DAYS)), "submitter"
+    return COMMUNITY_JOB_TTL_DAYS, "default"
+
+
+@router.post("/submissions/{submission_id}/approve", response_model=ApproveResponse)
 def approve_submission(
     submission_id: int,
+    payload: Optional[ApproveRequest] = None,
     db: Session = Depends(get_db),
     admin: str = Depends(require_admin),
 ):
@@ -260,6 +399,12 @@ def approve_submission(
         raise HTTPException(
             status_code=409, detail=f"Submission already {submission.status}"
         )
+
+    expires_days, expires_source = resolve_expiry_days(
+        payload.expires_days if payload is not None else None,
+        submission.requested_days,
+    )
+    expires_date = date.today() + timedelta(days=expires_days)
 
     normalizer = Normalizer(load_settings())
     raw = RawJob(
@@ -272,11 +417,16 @@ def approve_submission(
     )
 
     scope = "native"
+    company_category: str | None = None
     if submission.company_id is not None:
         company = db.get(Company, submission.company_id)
-        if company is not None and company.audio_scope:
-            scope = company.audio_scope
-    normalized = normalizer.normalize(raw, audio_scope=scope)
+        if company is not None:
+            if company.audio_scope:
+                scope = company.audio_scope
+            company_category = company.category
+    normalized = normalizer.normalize(
+        raw, audio_scope=scope, company_category=company_category
+    )
 
     job = Job(
         company_id=submission.company_id,
@@ -284,6 +434,7 @@ def approve_submission(
         description=submission.description,
         url=submission.url,
         location=normalized.location,
+        country=normalized.country,
         remote=submission.remote or normalized.remote,
         job_type=normalized.job_type or submission.job_type,
         seniority=normalized.seniority,
@@ -293,42 +444,47 @@ def approve_submission(
         job_categories=normalized.job_categories,
         relevance_score=normalized.relevance_score,
         is_audio_related=normalized.is_audio_related,
-        expires_date=date.today() + timedelta(days=COMMUNITY_JOB_TTL_DAYS),
+        expires_date=expires_date,
         is_active=True,
         external_id=None,
         source="community",
     )
 
-    duplicate = None
-    if submission.company_id is not None:
-        duplicate = db.execute(
-            select(Job).where(
-                Job.company_id == submission.company_id,
-                Job.source == "community",
-                Job.is_active.is_(True),
-                func.lower(Job.url) == submission.url.strip().lower(),
-            )
-        ).scalar_one_or_none()
+    duplicate = find_live_community_job(db, submission)
 
     now = datetime.now(timezone.utc)
     submission.status = "approved"
     submission.reviewed_at = now
     submission.reviewed_by = admin
     if duplicate is not None:
+        refresh_community_job(duplicate, job, normalized)
         logger.info(
-            "admin=%s approved submission %s; community duplicate %s superseded",
+            "admin=%s approved submission %s; refreshed live job %s in place",
             admin,
             submission_id,
             duplicate.id,
         )
-        duplicate.is_active = False
     else:
         db.add(job)
 
     db.flush()
-    job_id = None if duplicate is not None else job.id
-    logger.info("admin=%s approved submission %s as job %s", admin, submission_id, job_id)
-    return {"status": "approved", "job_id": job_id}
+    job_id = duplicate.id if duplicate is not None else job.id
+    logger.info(
+        "admin=%s approved submission %s as job %s, expires %s (%s, %d days)",
+        admin,
+        submission_id,
+        job_id,
+        expires_date,
+        expires_source,
+        expires_days,
+    )
+    return ApproveResponse(
+        status="approved",
+        job_id=job_id,
+        expires_date=expires_date,
+        expires_days=expires_days,
+        expires_source=expires_source,
+    )
 
 
 @router.post("/submissions/{submission_id}/reject")
@@ -352,6 +508,169 @@ def reject_submission(
     submission.reject_reason = payload.reason or None
     db.flush()
     logger.info("admin=%s rejected submission %s", admin, submission_id)
+    return {"status": "rejected"}
+
+
+@router.get("/job-feedback")
+def admin_list_job_feedback(
+    status: str = Query("pending", pattern="^(pending|approved|rejected|all)$"),
+    page: int = Query(1, ge=1),
+    per_page: int = Query(25, ge=1, le=100),
+    db: Session = Depends(get_db),
+    _: str = Depends(require_admin),
+):
+    safe_page, safe_per = paginate_params(page, per_page)
+    stmt = (
+        select(JobFeedback, Job.title, Company.name)
+        .join(Job, JobFeedback.job_id == Job.id)
+        .outerjoin(Company, Job.company_id == Company.id)
+        .order_by(JobFeedback.submitted_at.desc())
+    )
+    if status != "all":
+        stmt = stmt.where(JobFeedback.status == status)
+    total = db.execute(
+        select(func.count()).select_from(stmt.subquery())
+    ).scalar_one()
+    rows = db.execute(stmt.offset((safe_page - 1) * safe_per).limit(safe_per)).all()
+    items = []
+    for feedback, job_title, company_name in rows:
+        data = {
+            column.name: getattr(feedback, column.name)
+            for column in JobFeedback.__table__.columns
+        }
+        data["job_title"] = job_title
+        data["company_name"] = company_name
+        items.append(AdminJobFeedback.model_validate(data))
+    return page_envelope(items, int(total), safe_page, safe_per)
+
+
+@router.post("/job-feedback/{feedback_id}/approve", response_model=FeedbackApproveResponse)
+def approve_job_feedback(
+    feedback_id: int,
+    db: Session = Depends(get_db),
+    admin: str = Depends(require_admin),
+):
+    feedback = db.get(JobFeedback, feedback_id)
+    if feedback is None:
+        raise HTTPException(status_code=404, detail="Feedback not found")
+    if feedback.status != "pending":
+        raise HTTPException(status_code=409, detail=f"Feedback already {feedback.status}")
+
+    job = db.get(Job, feedback.job_id)
+    applied = "no changes"
+    if feedback.kind == "not_audio":
+        if job is not None:
+            job.is_audio_related_override = False
+            job.is_audio_related = False
+        applied = "marked not audio-related"
+    elif feedback.kind == "wrong_category":
+        if job is not None and feedback.suggested_categories:
+            job.categories_override = feedback.suggested_categories
+            job.job_categories = feedback.suggested_categories
+            applied = f"categories set to {', '.join(feedback.suggested_categories)}"
+        else:
+            applied = "no categories suggested"
+    elif feedback.kind in ("broken_description", "broken_link"):
+        applied = "marked handled, no job changes"
+
+    now = datetime.now(timezone.utc)
+    feedback.status = "approved"
+    feedback.reviewed_at = now
+    feedback.reviewed_by = admin
+    db.flush()
+    logger.info("admin=%s approved job feedback %s: %s", admin, feedback_id, applied)
+    return FeedbackApproveResponse(status="approved", applied=applied)
+
+
+@router.post("/job-feedback/{feedback_id}/reject")
+def reject_job_feedback(
+    feedback_id: int,
+    payload: RejectRequest,
+    db: Session = Depends(get_db),
+    admin: str = Depends(require_admin),
+):
+    feedback = db.get(JobFeedback, feedback_id)
+    if feedback is None:
+        raise HTTPException(status_code=404, detail="Feedback not found")
+    if feedback.status != "pending":
+        raise HTTPException(status_code=409, detail=f"Feedback already {feedback.status}")
+    now = datetime.now(timezone.utc)
+    feedback.status = "rejected"
+    feedback.reviewed_at = now
+    feedback.reviewed_by = admin
+    feedback.reject_reason = payload.reason or None
+    db.flush()
+    logger.info("admin=%s rejected job feedback %s", admin, feedback_id)
+    return {"status": "rejected"}
+
+
+@router.get("/site-feedback")
+def admin_list_site_feedback(
+    status: str = Query("pending", pattern="^(pending|approved|rejected|all)$"),
+    page: int = Query(1, ge=1),
+    per_page: int = Query(25, ge=1, le=100),
+    db: Session = Depends(get_db),
+    _: str = Depends(require_admin),
+):
+    safe_page, safe_per = paginate_params(page, per_page)
+    stmt = select(SiteFeedback).order_by(SiteFeedback.submitted_at.desc())
+    if status != "all":
+        stmt = stmt.where(SiteFeedback.status == status)
+    total = db.execute(
+        select(func.count()).select_from(stmt.subquery())
+    ).scalar_one()
+    rows = (
+        db.execute(stmt.offset((safe_page - 1) * safe_per).limit(safe_per))
+        .scalars()
+        .all()
+    )
+    return page_envelope(
+        [AdminSiteFeedback.model_validate(r) for r in rows],
+        int(total),
+        safe_page,
+        safe_per,
+    )
+
+
+@router.post("/site-feedback/{feedback_id}/resolve")
+def resolve_site_feedback(
+    feedback_id: int,
+    db: Session = Depends(get_db),
+    admin: str = Depends(require_admin),
+):
+    feedback = db.get(SiteFeedback, feedback_id)
+    if feedback is None:
+        raise HTTPException(status_code=404, detail="Feedback not found")
+    if feedback.status != "pending":
+        raise HTTPException(status_code=409, detail=f"Feedback already {feedback.status}")
+    now = datetime.now(timezone.utc)
+    feedback.status = "approved"
+    feedback.reviewed_at = now
+    feedback.reviewed_by = admin
+    db.flush()
+    logger.info("admin=%s resolved site feedback %s", admin, feedback_id)
+    return {"status": "approved"}
+
+
+@router.post("/site-feedback/{feedback_id}/reject")
+def reject_site_feedback(
+    feedback_id: int,
+    payload: RejectRequest,
+    db: Session = Depends(get_db),
+    admin: str = Depends(require_admin),
+):
+    feedback = db.get(SiteFeedback, feedback_id)
+    if feedback is None:
+        raise HTTPException(status_code=404, detail="Feedback not found")
+    if feedback.status != "pending":
+        raise HTTPException(status_code=409, detail=f"Feedback already {feedback.status}")
+    now = datetime.now(timezone.utc)
+    feedback.status = "rejected"
+    feedback.reviewed_at = now
+    feedback.reviewed_by = admin
+    feedback.reject_reason = payload.reason or None
+    db.flush()
+    logger.info("admin=%s rejected site feedback %s", admin, feedback_id)
     return {"status": "rejected"}
 
 

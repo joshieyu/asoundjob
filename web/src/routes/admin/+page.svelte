@@ -60,4 +60,12 @@
 			LAST SCRAPE STARTED: {stats.last_scrape_at ? new Date(stats.last_scrape_at).toLocaleString() : 'never'}
 		</p>
 	</section>
+
+	<section class="panel mt-6 p-5">
+		<h2 class="legend">USER FEEDBACK</h2>
+		<p class="mt-2 text-sm text-ink-soft">
+			Review reported job listings and general site feedback from visitors.
+		</p>
+		<a href="/admin/feedback" class="btn-latch mt-3">Open feedback queue →</a>
+	</section>
 {/if}

@@ -3,13 +3,13 @@ from __future__ import annotations
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
-from scraper.models import Job
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from api.database import get_db
 from api.query import apply_job_filters, fetch_job_page, page_envelope, paginate_params
 from api.schemas import JobSummary, PaginatedJobs
+from scraper.models import Job
 
 router = APIRouter(prefix="/api/search", tags=["search"])
 

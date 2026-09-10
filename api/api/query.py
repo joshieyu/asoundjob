@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from typing import Optional
 
-from scraper.models import Company, Job
-from sqlalchemy import String, func, or_, select
+from sqlalchemy import String, case, func, or_, select
 from sqlalchemy.orm import Session, selectinload
 
 from api.config import MAX_PER_PAGE
+from scraper.models import Company, Job
 
 
 def paginate_params(page: int, per_page: int) -> tuple[int, int]:
@@ -35,11 +35,15 @@ def apply_job_filters(
     salary_max: Optional[int] = None,
     company_id: Optional[int] = None,
     location: Optional[str] = None,
+    country: Optional[str] = None,
     remote: Optional[bool] = None,
     search: Optional[str] = None,
     include_unrelated: bool = False,
+    ids: Optional[list[int]] = None,
 ):
     stmt = stmt.where(Job.is_active.is_(True))
+    if ids is not None:
+        stmt = stmt.where(Job.id.in_(ids))
     if not include_unrelated:
         stmt = stmt.where(Job.is_audio_related.is_(True))
     if seniority:
@@ -52,6 +56,10 @@ def apply_job_filters(
         stmt = stmt.where(Job.remote.is_(remote))
     if location:
         stmt = stmt.where(Job.location.ilike(f"%{location}%"))
+    if country:
+        stmt = stmt.where(
+            or_(Job.country == country.upper(), Job.country.is_(None))
+        )
     if salary_min is not None:
         stmt = stmt.where(or_(Job.salary_max.is_(None), Job.salary_max >= salary_min))
     if salary_max is not None:
@@ -87,8 +95,11 @@ def fetch_job_page(
     page: int,
     per_page: int,
     sort: str = "newest",
+    country_first: Optional[str] = None,
 ):
-    order_by = SORT_OPTIONS.get(sort, SORT_OPTIONS["newest"])
+    order_by = list(SORT_OPTIONS.get(sort, SORT_OPTIONS["newest"]))
+    if country_first:
+        order_by.insert(0, case((Job.country == country_first.upper(), 0), else_=1))
     total = session.execute(
         select(func.count()).select_from(base_stmt.subquery())
     ).scalar_one()
@@ -105,20 +116,63 @@ def fetch_job_page(
     return list(rows), int(total)
 
 
-def companies_with_counts(session: Session, base_stmt, page: int, per_page: int):
+COMPANY_SORTS = ("name", "jobs", "board", "verified")
+SORT_DIRECTIONS = ("asc", "desc")
+
+
+def companies_with_counts(
+    session: Session,
+    base_stmt,
+    page: int,
+    per_page: int,
+    sort: str = "name",
+    direction: str = "asc",
+):
     counts_subq = (
-        select(Job.company_id, func.count(Job.id).label("job_count"))
+        select(
+            Job.company_id,
+            func.count(Job.id).label("job_count"),
+            func.sum(case((Job.is_audio_related.is_(True), 1), else_=0)).label(
+                "board_count"
+            ),
+        )
         .where(Job.is_active.is_(True))
         .group_by(Job.company_id)
         .subquery()
     )
+    job_count = func.coalesce(counts_subq.c.job_count, 0)
+    board_count = func.coalesce(counts_subq.c.board_count, 0)
+    if sort not in COMPANY_SORTS:
+        sort = "name"
+    if direction not in SORT_DIRECTIONS:
+        direction = "asc"
+    descending = direction == "desc"
+    if sort == "jobs":
+        order_by = [
+            job_count.desc() if descending else job_count.asc(),
+            Company.name.asc(),
+        ]
+    elif sort == "board":
+        order_by = [
+            board_count.desc() if descending else board_count.asc(),
+            Company.name.asc(),
+        ]
+    elif sort == "verified":
+        order_by = [
+            Company.verified.desc() if descending else Company.verified.asc(),
+            Company.name.asc(),
+        ]
+    else:
+        order_by = [Company.name.desc() if descending else Company.name.asc()]
     total = session.execute(
         select(func.count()).select_from(base_stmt.subquery())
     ).scalar_one()
     rows = session.execute(
-        base_stmt.add_columns(func.coalesce(counts_subq.c.job_count, 0).label("job_count"))
+        base_stmt.add_columns(
+            job_count.label("job_count"), board_count.label("board_count")
+        )
         .outerjoin(counts_subq, counts_subq.c.company_id == Company.id)
-        .order_by(Company.name)
+        .order_by(*order_by)
         .offset((page - 1) * per_page)
         .limit(per_page)
     ).all()
@@ -126,8 +180,8 @@ def companies_with_counts(session: Session, base_stmt, page: int, per_page: int)
     items = []
     for row in rows:
         company = row[0]
-        count = row[-1]
         data = {c.name: getattr(company, c.name) for c in Company.__table__.columns}
-        data["active_jobs_count"] = int(count)
+        data["active_jobs_count"] = int(row[-2])
+        data["board_jobs_count"] = int(row[-1])
         items.append(data)
     return items, int(total)

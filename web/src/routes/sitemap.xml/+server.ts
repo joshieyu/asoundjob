@@ -8,7 +8,15 @@ interface CompanySlug {
 }
 
 export const GET: RequestHandler = async () => {
-	const staticRoutes = ['', '/jobs', '/jobs/submit', '/companies', '/resources', '/about'];
+	const staticRoutes = [
+		'',
+		'/jobs',
+		'/jobs/submit',
+		'/companies',
+		'/companies/blocked',
+		'/resources',
+		'/about'
+	];
 
 	const jobEntries: string[] = [];
 	try {

@@ -38,6 +38,7 @@ VALID_CATEGORIES = {
     "Audio Middleware & SDK",
     "Audio Plugins & Virtual Instruments",
     "Audio Retailers & Distributors",
+    "Audio Semiconductors",
     "Audio Testing & Measurement",
     "Automotive OEMs",
     "Car Audio",
@@ -59,7 +60,13 @@ VALID_CATEGORIES = {
 }
 
 REQUIRED_FIELDS = {"name", "careers_url", "category", "verified", "source"}
-OPTIONAL_FIELDS = {"scrape_method", "notes"}
+OPTIONAL_FIELDS = {
+    "scrape_method",
+    "notes",
+    "extra_careers_urls",
+    "open_application",
+    "scrape_blocked",
+}
 ALL_ALLOWED_FIELDS = REQUIRED_FIELDS | OPTIONAL_FIELDS
 
 

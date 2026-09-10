@@ -1,5 +1,8 @@
 <script lang="ts">
 	import JobStrip from '$lib/components/JobStrip.svelte';
+	import FeedbackDialog from '$lib/components/FeedbackDialog.svelte';
+	import { JOB_FEEDBACK_KINDS } from '$lib/feedback';
+	import type { Job } from '$lib/types';
 
 	let { data } = $props();
 
@@ -12,12 +15,29 @@
 			.sort((a, b) => b.count - a.count)
 	);
 	const maxCount = $derived(topCategories[0]?.count ?? 1);
+	const openCategories = $derived(topCategories.filter((c) => c.count > 0));
+	const visibleSpecialtyChips = $derived(openCategories.slice(0, 12));
+	const moreSpecialtyCount = $derived(Math.max(0, openCategories.length - 12));
 
 	const categoryNames = $derived.by(() => {
 		const map = new Map<string, string>();
 		for (const c of categoryMeta) map.set(c.id, c.name);
 		return map;
 	});
+
+	const categoryOptions = $derived(categoryMeta.map((c) => ({ id: c.id, name: c.name })));
+
+	const reportKinds = JOB_FEEDBACK_KINDS.filter(
+		(k) => k.value === 'wrong_category' || k.value === 'not_audio'
+	);
+
+	let reportJob = $state<Job | null>(null);
+	let reportOpen = $state(false);
+
+	function onReport(job: Job) {
+		reportJob = job;
+		reportOpen = true;
+	}
 </script>
 
 <svelte:head>
@@ -66,7 +86,7 @@
 					Filter by specialty
 				</p>
 				<ul class="flex flex-wrap gap-1.5">
-					{#each topCategories.slice(0, 10) as cat (cat.id)}
+					{#each visibleSpecialtyChips as cat (cat.id)}
 						<li>
 							<a
 								href="/jobs?category={cat.id}"
@@ -75,12 +95,19 @@
 							>
 								{cat.name}
 								<span
-									class="rounded-sm border border-seam bg-panel-recessed px-1 font-mono text-[10px] {''}"
+									class="rounded-sm border border-seam bg-panel-recessed px-1 font-mono text-[10px]"
 									>{cat.count}</span
 								>
 							</a>
 						</li>
 					{/each}
+					{#if moreSpecialtyCount > 0}
+						<li>
+							<a href="/jobs" class="btn-latch !normal-case !tracking-normal">
+								+{moreSpecialtyCount} more →
+							</a>
+						</li>
+					{/if}
 					<li>
 						<a href="/jobs" class="btn-latch is-on !normal-case !tracking-normal">All jobs →</a>
 					</li>
@@ -115,7 +142,7 @@
 
 	<div class="mt-4 grid gap-3 md:grid-cols-2">
 		{#each featured as job (job.id)}
-			<JobStrip {job} {categoryNames} />
+			<JobStrip {job} {categoryNames} {onReport} />
 		{:else}
 			<p class="panel col-span-full p-6 text-sm text-ink-soft">
 				Listings are warming up — the board is syncing with the backend.
@@ -161,3 +188,14 @@
 	</div>
 	<a href="/jobs/submit" class="btn-primary shrink-0">Submit a job</a>
 </section>
+
+{#if reportJob}
+	<FeedbackDialog
+		mode="job"
+		jobId={reportJob.id}
+		jobTitle={reportJob.title}
+		kinds={reportKinds}
+		categories={categoryOptions}
+		bind:open={reportOpen}
+	/>
+{/if}

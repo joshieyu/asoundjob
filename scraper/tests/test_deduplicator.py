@@ -135,6 +135,36 @@ class TestReconcile(unittest.TestCase):
         self.assertEqual(stats2.inserted, 0)
         self.assertEqual(stats2.updated, 1)
 
+    def test_same_page_jobs_with_distinct_external_ids_deactivate_independently(
+        self,
+    ) -> None:
+        url = "https://example.com/careers/"
+        reconcile_company_jobs(
+            self.session,
+            self.company,
+            [
+                nj("Job One", url, "same-page:job-one"),
+                nj("Job Two", url, "same-page:job-two"),
+                nj("Job Three", url, "same-page:job-three"),
+            ],
+            trust_empty=True,
+        )
+        self.session.flush()
+        self.assertEqual(len(self.all_jobs()), 3)
+
+        stats = reconcile_company_jobs(
+            self.session,
+            self.company,
+            [nj("Job One", url, "same-page:job-one")],
+            trust_empty=True,
+        )
+        self.session.flush()
+        self.assertEqual(stats.deactivated, 2)
+        rows = {j.title: j.is_active for j in self.all_jobs()}
+        self.assertTrue(rows["Job One"])
+        self.assertFalse(rows["Job Two"])
+        self.assertFalse(rows["Job Three"])
+
     def test_never_touches_community_jobs(self) -> None:
         community = Job(
             company_id=self.company.id,

@@ -5,6 +5,7 @@ import logging
 import re
 from datetime import date, timedelta
 from typing import TYPE_CHECKING, Any
+from urllib.parse import parse_qs, urlsplit
 
 from scraper.scrapers.base import BaseScraper, RawJob
 from scraper.scrapers.fetch import FetchError
@@ -15,13 +16,16 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 URL_PATTERN = re.compile(
-    r"^https?://(?P<tenant>[a-z0-9]+)\.wd\d+\.myworkdayjobs\.com"
+    r"^https?://(?P<tenant>[a-z0-9]+)\.(?P<dc>wd\d+)\.myworkdayjobs\.com"
     r"(?:/[a-z]{2}-[a-z]{2})?/(?P<site>[^/?#]+)",
     re.IGNORECASE,
 )
 
+HOST_WITH_DC_RE = re.compile(r"^[a-z0-9]{1,63}\.wd\d+$", re.IGNORECASE)
+
 LIST_BODY = {"appliedFacets": {}, "limit": 20, "offset": 0, "searchText": ""}
 PAGE_SIZE = 20
+MAX_PAGES = 50
 MAX_DETAIL_FETCHES = 100
 
 AUDIO_TITLE_RE = re.compile(
@@ -57,26 +61,31 @@ class WorkdayScraper(BaseScraper):
         site = match.group("site").rstrip("/")
         if site.lower() == "jobs":
             return None
-        return f"{tenant}/{site}"
+        return f"{tenant}.{match.group('dc')}/{site}"
 
     async def fetch_jobs(self, company: Company) -> list[RawJob]:
         slug = company.ats_slug or self.extract_slug(company.careers_url or "")
         if not slug:
             raise ValueError(f"No workday slug in {company.careers_url}")
-        tenant, site = slug.split("/", 1)
-        base = _build_base(company.careers_url or "", tenant, site)
-        jobs = await self._fetch_all(base, tenant, site)
+        host, site = slug.split("/", 1)
+        tenant = host.split(".")[0]
+        base = _build_base(company.careers_url or "", host)
+        query = extract_query(company.careers_url or "")
+        jobs = await self._fetch_all(base, tenant, site, query)
         should_fetch_details = company.audio_scope == "native"
         await self._fetch_descriptions(
             base, tenant, site, jobs, should_fetch_details
         )
         return jobs
 
-    async def _fetch_all(self, base: str, tenant: str, site: str) -> list[RawJob]:
+    async def _fetch_all(
+        self, base: str, tenant: str, site: str, query: str = ""
+    ) -> list[RawJob]:
         jobs: list[RawJob] = []
         offset = 0
-        while True:
-            body = {**LIST_BODY, "offset": offset}
+        total: int | None = None
+        for page_index in range(MAX_PAGES):
+            body = {**LIST_BODY, "offset": offset, "searchText": query}
             url = f"{base}/wday/cxs/{tenant}/{site}/jobs"
             data = await asyncio.to_thread(
                 _post_json, url, body, self.settings
@@ -85,13 +94,20 @@ class WorkdayScraper(BaseScraper):
             if not postings:
                 break
             for item in postings:
-                parsed = _parse_list_item(item, base)
+                parsed = _parse_list_item(item, base, site)
                 if parsed:
                     jobs.append(parsed)
-            total = data.get("total", 0)
+            page_total = data.get("total", 0)
+            if total is None and page_total:
+                total = page_total
             offset += len(postings)
-            if offset >= total or len(postings) < PAGE_SIZE:
+            if (total is not None and offset >= total) or len(postings) < PAGE_SIZE:
                 break
+            if page_index == MAX_PAGES - 1:
+                logger.info(
+                    "workday: hit MAX_PAGES=%d cap for %s/%s, jobs may be truncated",
+                    MAX_PAGES, tenant, site,
+                )
         return jobs
 
     async def _fetch_descriptions(
@@ -123,7 +139,13 @@ class WorkdayScraper(BaseScraper):
         await asyncio.gather(*(fetch_one(j) for j in fetch_list))
 
 
-def _build_base(url: str, tenant: str, site: str) -> str:
+def extract_query(url: str) -> str:
+    parsed = urlsplit((url or "").strip())
+    values = parse_qs(parsed.query).get("q")
+    return values[0] if values else ""
+
+
+def _build_base(url: str, host: str) -> str:
     m = re.match(
         r"^(https?://[a-z0-9]+\.wd\d+\.myworkdayjobs\.com)",
         url.strip(),
@@ -131,7 +153,9 @@ def _build_base(url: str, tenant: str, site: str) -> str:
     )
     if m:
         return m.group(1)
-    return f"https://{tenant}.wd1.myworkdayjobs.com"
+    if HOST_WITH_DC_RE.match(host):
+        return f"https://{host}.myworkdayjobs.com"
+    return f"https://{host}.wd1.myworkdayjobs.com"
 
 
 def _post_json(url: str, body: dict, settings) -> Any:
@@ -174,12 +198,12 @@ def _fetch_detail(
     return response.json()
 
 
-def _parse_list_item(item: dict[str, Any], base: str) -> RawJob | None:
+def _parse_list_item(item: dict[str, Any], base: str, site: str) -> RawJob | None:
     title = (item.get("title") or "").strip()
     external_path = item.get("externalPath") or ""
     if not title or not external_path:
         return None
-    url = f"{base}{external_path}"
+    url = f"{base}/{site}{external_path}"
     job_type = _parse_time_type(item.get("timeType"))
     posted = _parse_relative_date(item.get("postedOn"))
     return RawJob(

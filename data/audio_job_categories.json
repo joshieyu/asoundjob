@@ -28,7 +28,12 @@
     {
       "id": "audio_systems",
       "name": "Audio Systems",
-      "description": "End-to-end integration, measurement, and tuning of audio subsystems within consumer electronics, wearables, automotive cabins, and smart speakers. Includes acoustic design, system-level performance optimization, audio test plans, and transducer evaluation."
+      "description": "End-to-end integration and tuning of audio subsystems within consumer electronics, wearables, automotive cabins, and smart speakers. Includes acoustic design, system-level performance optimization, and owning how the audio path behaves across a whole product."
+    },
+    {
+      "id": "test_measurement_qa",
+      "name": "Test, Measurement & QA",
+      "description": "Verifying that audio hardware and software actually perform. Roles cover electroacoustic and acoustic measurement, test plan authoring, test automation and fixtures, anechoic chamber and lab work, calibration, reliability and production quality assurance."
     },
     {
       "id": "automotive_audio",
@@ -84,6 +89,21 @@
       "id": "sales_marketing_cs",
       "name": "Sales, Marketing & Customer Success",
       "description": "Commercial roles at audio companies — partnerships, business development, account management, customer success, marketing, and brand strategy for audio products and services. These are industry-specific commercial roles, not generic corporate functions."
+    },
+    {
+      "id": "audiology_hearing",
+      "name": "Audiology & Hearing Health",
+      "description": "Clinical and commercial hearing care. Includes audiologists, hearing instrument specialists, hearing aid fitting and dispensing, audiometry, cochlear implants, tinnitus care, hearing screening, real ear measurement, and patient care roles at hearing clinics and hearing health companies."
+    },
+    {
+      "id": "audio_product_mechanical",
+      "name": "Audio Product & Mechanical Engineering",
+      "description": "Mechanical, industrial, and manufacturing engineering for audio hardware. Includes acoustic fit, enclosure and housing design, materials selection, tooling, design-for-manufacturing (DFM), new product introduction (NPI), and advanced manufacturing for audio devices."
+    },
+    {
+      "id": "acoustics_consulting",
+      "name": "Architectural & Environmental Acoustics",
+      "description": "Building and room acoustics, noise control, and environmental acoustic consultancy. Includes sound isolation, reverberation control, environmental noise assessment, and acoustic consulting for architecture, construction, and infrastructure projects. Distinct from transducer engineering (device-level) and audio systems (product-level)."
     }
   ],
   "schema_usage_example": {

@@ -2,11 +2,17 @@
 	import { page } from '$app/state';
 	import JobStrip from '$lib/components/JobStrip.svelte';
 	import Pagination from '$lib/components/Pagination.svelte';
+	import FeedbackDialog from '$lib/components/FeedbackDialog.svelte';
+	import Accordion from '$lib/components/Accordion.svelte';
+	import { JOB_FEEDBACK_KINDS } from '$lib/feedback';
+	import { getBookmarks } from '$lib/client';
 	import type { Paginated, Job } from '$lib/types';
 
 	let { data } = $props();
 
 	const jobs: Paginated<Job> | null = $derived(data.jobs);
+	const openApplications = $derived(data.openApplications);
+	const blocked = $derived(data.blocked);
 	const params = $derived(data.params as Record<string, string>);
 
 	const categoryNames = $derived.by(() => {
@@ -14,6 +20,74 @@
 		for (const c of data.categories?.categories ?? []) map.set(c.id, c.name);
 		return map;
 	});
+
+	const categoryOptions = $derived(
+		(data.categories?.categories ?? []).map((c) => ({ id: c.id, name: c.name }))
+	);
+
+	const reportKinds = JOB_FEEDBACK_KINDS.filter(
+		(k) => k.value === 'wrong_category' || k.value === 'not_audio'
+	);
+
+	let reportJob = $state<Job | null>(null);
+	let reportOpen = $state(false);
+
+	let bookmarkedOnly = $state(false);
+	let bookmarkIds = $state<number[]>([]);
+
+	$effect(() => {
+		bookmarkedOnly = data.bookmarked;
+	});
+
+	$effect(() => {
+		bookmarkIds = [...getBookmarks()];
+	});
+
+	const bookmarkFieldValue = $derived(bookmarkIds.join(',') || '0');
+
+	function onReport(job: Job) {
+		reportJob = job;
+		reportOpen = true;
+	}
+
+	let selectedCategories = $state<string[]>(params.category ? params.category.split(',') : []);
+	let showZeroCategories = $state(false);
+
+	$effect(() => {
+		selectedCategories = params.category ? params.category.split(',') : [];
+	});
+
+	function toggleCategory(id: string, checked: boolean) {
+		if (checked) {
+			if (!selectedCategories.includes(id)) selectedCategories = [...selectedCategories, id];
+		} else {
+			selectedCategories = selectedCategories.filter((c) => c !== id);
+		}
+	}
+
+	const categoryFieldValue = $derived(selectedCategories.join(','));
+
+	const countryOptions = $derived(data.countries?.countries ?? []);
+	const unknownCountryCount = $derived(data.countries?.unknown_count ?? 0);
+	const unplacedStartIndex = $derived.by(() => {
+		if (!params.country) return -1;
+		return data.jobs?.items.findIndex((job) => job.country === null) ?? -1;
+	});
+	const selectedCountryName = $derived(
+		countryOptions.find((c) => c.code === params.country)?.name ?? params.country ?? ''
+	);
+
+	const unselectedZeroCategories = $derived(
+		(data.categories?.categories ?? []).filter(
+			(c) => c.job_count === 0 && !selectedCategories.includes(c.id)
+		)
+	);
+
+	const visibleCategories = $derived(
+		(data.categories?.categories ?? []).filter(
+			(c) => c.job_count > 0 || showZeroCategories || selectedCategories.includes(c.id)
+		)
+	);
 
 	function href(overrides: Record<string, string | undefined>): string {
 		const next = new URLSearchParams(page.url.searchParams);
@@ -27,14 +101,21 @@
 	}
 
 	const activeFilters = $derived.by(() => {
-		const labels: { key: string; label: string; value: string }[] = [];
+		const labels: { key: string; label: string; value: string; id?: string }[] = [];
 		if (params.q) labels.push({ key: 'q', label: 'Search', value: `“${params.q}”` });
 		if (params.category)
 			for (const c of params.category.split(','))
-				labels.push({ key: 'category', label: 'Specialty', value: categoryNames.get(c) ?? c });
+				labels.push({
+					key: 'category',
+					label: 'Specialty',
+					value: categoryNames.get(c) ?? c,
+					id: c
+				});
 		if (params.seniority)
 			labels.push({ key: 'seniority', label: 'Level', value: params.seniority });
 		if (params.job_type) labels.push({ key: 'job_type', label: 'Type', value: params.job_type });
+		if (params.country)
+			labels.push({ key: 'country', label: 'Country', value: selectedCountryName });
 		if (params.location)
 			labels.push({ key: 'location', label: 'Near', value: params.location });
 		if (params.remote) labels.push({ key: 'remote', label: '', value: 'Remote only' });
@@ -62,7 +143,10 @@
 		return out;
 	}
 
-	const totalSegments = $derived(Math.round(((jobs?.total ?? 0) / 3200) * 16));
+	const boardTotal = $derived(data.totalJobs || 1);
+	const totalSegments = $derived(
+		Math.min(16, Math.max(0, Math.round(((jobs?.total ?? 0) / boardTotal) * 16)))
+	);
 
 	function pageHref(p: number): string {
 		const next = new URLSearchParams(page.url.searchParams);
@@ -92,14 +176,32 @@
 			<legend class="mb-1.5 font-mono text-[10px] tracking-[0.14em] text-ink-soft uppercase">
 				Specialty
 			</legend>
-			<select name="category" class="well h-9 w-full px-2 text-sm">
-				<option value="">All specialties</option>
-				{#each data.categories?.categories ?? [] as cat (cat.id)}
-					<option value={cat.id} selected={params.category === cat.id}>
-						{cat.name} ({cat.job_count})
-					</option>
+			<input type="hidden" name="category" value={categoryFieldValue} />
+			<div class="well max-h-64 overflow-y-auto p-1.5">
+				{#each visibleCategories as cat (cat.id)}
+					<label class="flex items-center gap-2 rounded-sm px-1.5 py-1 text-sm hover:bg-panel-recessed">
+						<input
+							type="checkbox"
+							checked={selectedCategories.includes(cat.id)}
+							onchange={(e) => toggleCategory(cat.id, e.currentTarget.checked)}
+							class="h-4 w-4 shrink-0 accent-fader"
+						/>
+						<span class="min-w-0 flex-1 truncate">{cat.name}</span>
+						<span class="shrink-0 font-mono text-[10px] text-ink-soft">({cat.job_count})</span>
+					</label>
 				{/each}
-			</select>
+				{#if unselectedZeroCategories.length > 0}
+					<button
+						type="button"
+						class="mt-1 w-full rounded-sm px-1.5 py-1 text-left font-mono text-[10px] tracking-wide text-ink-soft hover:text-fader-deep"
+						onclick={() => (showZeroCategories = !showZeroCategories)}
+					>
+						{showZeroCategories
+							? 'Hide specialties with no open roles'
+							: `Show ${unselectedZeroCategories.length} specialties with no open roles`}
+					</button>
+				{/if}
+			</div>
 		</fieldset>
 
 		<fieldset class="mt-3">
@@ -128,6 +230,26 @@
 
 		<fieldset class="mt-3">
 			<legend class="mb-1.5 font-mono text-[10px] tracking-[0.14em] text-ink-soft uppercase">
+				Country
+			</legend>
+			<select name="country" class="well h-9 w-full px-2 text-sm">
+				<option value="">Anywhere</option>
+				{#each countryOptions as c (c.code)}
+					<option value={c.code} selected={params.country === c.code}>
+						{c.name} ({c.job_count})
+					</option>
+				{/each}
+			</select>
+			{#if params.country && unknownCountryCount > 0}
+				<p class="mt-1.5 text-xs text-ink-soft">
+					Matching roles come first, then {unknownCountryCount} whose location we could not
+					place — so nothing in {selectedCountryName} is hidden.
+				</p>
+			{/if}
+		</fieldset>
+
+		<fieldset class="mt-3">
+			<legend class="mb-1.5 font-mono text-[10px] tracking-[0.14em] text-ink-soft uppercase">
 				Location contains
 			</legend>
 			<input
@@ -146,6 +268,22 @@
 				/>
 				Remote only
 			</label>
+			<label class="mt-1.5 flex items-center gap-2 text-sm font-semibold">
+				<input
+					type="checkbox"
+					name="bookmarked"
+					value="true"
+					bind:checked={bookmarkedOnly}
+					class="h-4 w-4 accent-fader"
+				/>
+				Bookmarked only
+				<span class="font-mono text-[11px] font-normal text-ink-soft">
+					({bookmarkIds.length})
+				</span>
+			</label>
+			{#if bookmarkedOnly}
+				<input type="hidden" name="ids" value={bookmarkFieldValue} />
+			{/if}
 			<label class="mt-1.5 flex items-start gap-2 text-sm font-semibold">
 				<input
 					type="checkbox"
@@ -250,7 +388,7 @@
 				{#each activeFilters as f (f.key + f.value)}
 					<li>
 						<a
-							href={href(removeFilter(f.key, f.value))}
+							href={href(removeFilter(f.key, f.id ?? f.value))}
 							class="btn-latch !normal-case !tracking-normal is-on !py-1 !text-xs"
 						>
 							{#if f.label}<span class="opacity-70">{f.label}:</span>{/if}
@@ -262,8 +400,17 @@
 		{/if}
 
 		<div class="mt-4 grid gap-3 xl:grid-cols-2">
-			{#each jobs?.items ?? [] as job (job.id)}
-				<JobStrip {job} {categoryNames} />
+			{#each jobs?.items ?? [] as job, i (job.id)}
+				{#if i === unplacedStartIndex}
+					<div class="col-span-full mt-2 flex items-center gap-3">
+						<span class="h-px flex-1 bg-ink-soft/25"></span>
+						<span class="font-mono text-[10px] tracking-[0.14em] text-ink-soft uppercase">
+							Location not parsed — may still be in {selectedCountryName}
+						</span>
+						<span class="h-px flex-1 bg-ink-soft/25"></span>
+					</div>
+				{/if}
+				<JobStrip {job} {categoryNames} {onReport} />
 			{:else}
 				<div class="panel col-span-full p-8 text-center">
 					<p class="font-mono text-sm text-ink-soft">
@@ -277,5 +424,118 @@
 		{#if jobs}
 			<Pagination data={jobs} makeHref={pageHref} />
 		{/if}
+
+		<div class="mt-10 flex flex-col gap-3">
+			{#if openApplications && openApplications.total > 0}
+				<Accordion
+					label="OPEN APPLICATIONS"
+					title="Companies that invite speculative applications"
+					count={openApplications.total}
+				>
+					<p class="text-sm text-ink-soft">
+						These companies accept speculative applications, so write to them directly even if
+						nothing above matches. Any that also have roles on the board are marked.
+					</p>
+					<ul class="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+						{#each openApplications.companies as company (company.id)}
+							<li class="well flex items-center justify-between gap-3 p-3">
+								<span class="min-w-0">
+									<span class="block truncate text-sm font-semibold">{company.name}</span>
+									<span class="block truncate font-mono text-[10px] tracking-wide text-ink-soft uppercase">
+										{company.category}
+									</span>
+									{#if company.open_roles > 0}
+										<a
+											href="/companies/{company.slug}"
+											class="block truncate font-mono text-[10px] tracking-wide text-ink-soft uppercase hover:text-fader-deep hover:underline"
+										>
+											{company.open_roles} on the board
+										</a>
+									{/if}
+								</span>
+								{#if company.careers_url}
+									<a
+										href={company.careers_url}
+										target="_blank"
+										rel="noopener noreferrer"
+										class="btn-latch shrink-0 !px-2 !py-1 text-xs"
+									>
+										Apply
+									</a>
+								{/if}
+							</li>
+						{/each}
+					</ul>
+				</Accordion>
+			{/if}
+
+			{#if blocked && blocked.total > 0}
+				<Accordion
+					label="CAN'T SCRAPE"
+					title="Companies worth checking yourself"
+					count={blocked.total}
+				>
+					<p class="text-sm text-ink-soft">
+						These are companies we've checked by hand and can't read — some refuse automated
+						readers outright, some draw their board with JavaScript, and some bury it in an
+						embedded portal — so their roles never reach this board even though the careers page
+						opens fine in a normal browser.
+					</p>
+					<div class="well mt-3 p-3">
+						<p class="text-sm">
+							Searching <strong>"acoustic engineer"</strong> on
+							<a
+								href="https://www.linkedin.com/jobs/search/?keywords=acoustic%20engineer"
+								target="_blank"
+								rel="noopener noreferrer"
+								class="font-semibold text-fader-deep hover:underline"
+							>
+								LinkedIn
+							</a>
+							surfaces a lot of roles that never reach a company careers page.
+						</p>
+					</div>
+					<ul class="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+						{#each blocked.companies as company (company.id)}
+							<li class="well flex items-center justify-between gap-3 p-3">
+								<span class="min-w-0">
+									<span class="block truncate text-sm font-semibold">{company.name}</span>
+									<span class="block truncate font-mono text-[10px] tracking-wide text-ink-soft uppercase">
+										{company.category}
+									</span>
+								</span>
+								{#if company.careers_url}
+									<a
+										href={company.careers_url}
+										target="_blank"
+										rel="noopener noreferrer"
+										class="btn-latch shrink-0 !px-2 !py-1 text-xs"
+									>
+										Careers
+									</a>
+								{/if}
+							</li>
+						{/each}
+					</ul>
+					<a
+						href="/companies/blocked"
+						class="mt-4 inline-block font-mono text-xs font-semibold tracking-wide hover:text-fader-deep"
+					>
+						Why these are here →
+					</a>
+				</Accordion>
+			{/if}
+		</div>
 	</section>
 </div>
+
+{#if reportJob}
+	<FeedbackDialog
+		mode="job"
+		jobId={reportJob.id}
+		jobTitle={reportJob.title}
+		kinds={reportKinds}
+		categories={categoryOptions}
+		bind:open={reportOpen}
+	/>
+{/if}
