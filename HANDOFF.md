@@ -71,6 +71,14 @@ python -m scraper.audit_seed_urls
 # Tests + lint + typecheck
 python -m unittest discover -s tests && ruff check . && mypy scraper
 
+# API tests + lint (134 tests). NOTE: `mypy api tests` currently reports 16
+# pre-existing errors in test_feedback.py, test_submission_duration.py and
+# test_reapproval.py; `mypy api` alone is clean.
+cd ../api && python -m unittest discover -s tests && ruff check .
+
+# Frontend unit tests
+cd ../web && npm test
+
 # Start API
 cd ../api && ../venv/bin/uvicorn api.main:app --port 8000
 

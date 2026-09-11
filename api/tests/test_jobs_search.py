@@ -5,11 +5,11 @@ import re
 import unittest
 from pathlib import Path
 
-from scraper.models import Base, Job
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from api.routers.jobs import list_jobs
+from scraper.models import Base, Job
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 JOBS_LOADER = REPO_ROOT / "web" / "src" / "routes" / "jobs" / "+page.server.ts"
