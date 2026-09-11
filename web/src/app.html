@@ -4,6 +4,24 @@
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<meta name="theme-color" content="#f9f9f8" />
+		<script>
+			// Runs before first paint so the page never flashes the wrong ground.
+			// Also stamps data-js, which is what reveals the .js-only theme control —
+			// a reader with no JS still gets prefers-color-scheme, just no override.
+			(function () {
+				var root = document.documentElement;
+				try {
+					var stored = localStorage.getItem('asj:theme');
+					var dark =
+						stored === 'dark' ||
+						(stored !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+					root.dataset.theme = dark ? 'dark' : 'light';
+					var meta = document.querySelector('meta[name="theme-color"]');
+					if (meta) meta.setAttribute('content', dark ? '#131314' : '#f9f9f8');
+				} catch (e) {}
+				root.dataset.js = 'on';
+			})();
+		</script>
 		<link rel="icon" type="image/png" sizes="32x32" href="%sveltekit.assets%/favicon-32.png" />
 		<link rel="apple-touch-icon" sizes="180x180" href="%sveltekit.assets%/favicon-180.png" />
 		%sveltekit.head%

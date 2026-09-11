@@ -21,10 +21,54 @@
 	--radius-none: 0;
 }
 
+/*
+ * Dark mode. The two blocks below are ONE palette and must be edited together —
+ * CSS cannot share a declaration block across a media query, so the values are
+ * duplicated on purpose. The media query serves readers with no JS (and the
+ * first paint before the head script runs); the attribute rule lets an explicit
+ * choice win in both directions.
+ *
+ * Note the accent swap: Foundry Blue #0033ff measures 2.6:1 on this ground and
+ * is unusable, so the two accent tokens trade places. The Inverted Accent Rule
+ * is unchanged — it still says "accent on an ink-filled surface is accent-inv";
+ * ink is simply the light colour here.
+ */
+@media (prefers-color-scheme: dark) {
+	:root:not([data-theme='light']) {
+		color-scheme: dark;
+		--color-ground: #131314;
+		--color-ground-tint: #1c1c1e;
+		--color-ink: #f2f2f0;
+		--color-muted: #9c9ca2;
+		--color-accent: #5c7bff;
+		--color-accent-inv: #0033ff;
+		--color-rule: #2e2e30;
+	}
+}
+
+:root[data-theme='dark'] {
+	color-scheme: dark;
+	--color-ground: #131314;
+	--color-ground-tint: #1c1c1e;
+	--color-ink: #f2f2f0;
+	--color-muted: #9c9ca2;
+	--color-accent: #5c7bff;
+	--color-accent-inv: #0033ff;
+	--color-rule: #2e2e30;
+}
+
+:root[data-theme='light'] {
+	color-scheme: light;
+}
+
 @layer base {
 	html {
 		background-color: var(--color-ground);
 		color: var(--color-ink);
+	}
+
+	:root {
+		color-scheme: light;
 	}
 
 	fieldset {
@@ -235,6 +279,14 @@
 	.axis:hover::-moz-range-thumb,
 	.axis:focus-visible::-moz-range-thumb {
 		background: var(--color-accent);
+	}
+
+	.js-only {
+		visibility: hidden;
+	}
+
+	:root[data-js='on'] .js-only {
+		visibility: visible;
 	}
 
 	.link {

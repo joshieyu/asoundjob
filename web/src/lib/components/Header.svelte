@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import discordLink from '$lib/data/discord-link.txt?raw';
+	import ThemeToggle from './ThemeToggle.svelte';
 
 	const discord = discordLink.trim();
 	const links = [
@@ -56,18 +57,22 @@
 					Discord<span class="sr-only"> (opens in a new tab)</span>
 				</a>
 			{/if}
+			<ThemeToggle />
 			<a href="/jobs/submit" class="btn btn-primary">Submit a job</a>
 		</nav>
 
-		<button
+		<div class="ml-auto flex items-center gap-2 md:hidden">
+			<ThemeToggle />
+			<button
 			type="button"
-			class="btn btn-quiet ml-auto md:hidden"
+			class="btn btn-quiet"
 			aria-expanded={menuOpen}
 			aria-controls="mobile-nav"
 			onclick={() => (menuOpen = !menuOpen)}
 		>
 			{menuOpen ? 'Close' : 'Menu'}
-		</button>
+			</button>
+		</div>
 	</div>
 
 	<nav
