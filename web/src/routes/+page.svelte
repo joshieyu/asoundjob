@@ -9,13 +9,12 @@
 	const total = $derived(data.totalJobs);
 	const featured = $derived(data.featured?.items ?? []);
 	const categoryMeta = $derived(data.categories?.categories ?? []);
-	const topCategories = $derived(
+	const openCategories = $derived(
 		[...categoryMeta]
 			.map((c) => ({ ...c, count: c.job_count }))
+			.filter((c) => c.count > 0)
 			.sort((a, b) => b.count - a.count)
 	);
-	const maxCount = $derived(topCategories[0]?.count ?? 1);
-	const openCategories = $derived(topCategories.filter((c) => c.count > 0));
 	const visibleSpecialtyChips = $derived(openCategories.slice(0, 12));
 	const moreSpecialtyCount = $derived(Math.max(0, openCategories.length - 12));
 
@@ -43,150 +42,115 @@
 <svelte:head>
 	<title>{data.meta.title}</title>
 	<meta name="description" content={data.meta.description} />
-	<link rel="canonical" href="http://localhost:5173/" />
+	<link rel="canonical" href="{data.siteUrl}/" />
 </svelte:head>
 
-<section
-	class="panel mt-4 overflow-hidden"
-	aria-labelledby="hero-heading"
->
-	<div class="border-b border-seam bg-panel-recessed px-4 py-2 sm:px-6">
-		<h1 id="hero-heading" class="legend !text-ink">MASTER SECTION — AUDIO JOBS</h1>
-	</div>
+<section class="mt-10 sm:mt-16" aria-labelledby="hero-heading">
+	<h1 id="hero-heading" class="sr-only">Audio industry jobs</h1>
 
-	<div class="grid gap-6 p-4 sm:p-6 lg:grid-cols-[auto_1fr]">
-		<div class="well flex flex-col justify-between rounded-md bg-ink px-6 py-5 text-panel sm:min-w-[16rem]">
-			<p class="font-mono text-[11px] tracking-[0.14em] text-panel/60 uppercase">Open roles</p>
-			<p
-				class="readout readout-power mt-2 text-6xl leading-none font-semibold text-lit sm:text-7xl"
-				style="text-shadow: 0 0 12px rgb(47 143 87 / 0.45)"
-			>
-				{total.toLocaleString('en-US')}
-			</p>
-			<p class="mt-3 font-mono text-[11px] tracking-wide text-panel/60">
-				refreshed nightly from verified audio companies
-			</p>
-		</div>
+	<p class="specimen">{total.toLocaleString('en-US')}</p>
+	<p class="mt-3 text-display leading-tight font-light text-balance">
+		open audio roles, re&#8288;-read every night.
+	</p>
+	<p class="coord mt-4 text-muted">
+		{categoryMeta.length} specialties · verified companies only
+	</p>
 
-		<div class="flex flex-col gap-4">
-			<form action="/jobs" method="get" role="search" class="flex flex-col gap-2 sm:flex-row">
-				<label class="sr-only" for="q">Search jobs</label>
-				<input
-					id="q"
-					name="q"
-					type="search"
-					placeholder="Search titles, skills, companies…"
-					class="well h-11 w-full px-3.5 text-sm outline-none placeholder:text-ink-soft"
-				/>
-				<button type="submit" class="btn-primary h-11 shrink-0">Find jobs</button>
-			</form>
+	<form action="/jobs" method="get" role="search" class="mt-10 flex max-w-2xl flex-col gap-3 sm:flex-row">
+		<label class="sr-only" for="q">Search jobs</label>
+		<input
+			id="q"
+			name="q"
+			type="search"
+			placeholder="Search titles, skills, companies…"
+			class="field flex-1"
+		/>
+		<button type="submit" class="btn btn-primary shrink-0">Find jobs</button>
+	</form>
 
-			<div>
-				<p class="mb-2 font-mono text-[11px] tracking-[0.14em] text-ink-soft uppercase">
-					Filter by specialty
-				</p>
-				<ul class="flex flex-wrap gap-1.5">
-					{#each visibleSpecialtyChips as cat (cat.id)}
-						<li>
-							<a
-								href="/jobs?category={cat.id}"
-								class="btn-latch !normal-case !tracking-normal"
-								title="{cat.name} — {cat.count} open roles"
-							>
-								{cat.name}
-								<span
-									class="rounded-sm border border-seam bg-panel-recessed px-1 font-mono text-[10px]"
-									>{cat.count}</span
-								>
-							</a>
-						</li>
-					{/each}
-					{#if moreSpecialtyCount > 0}
-						<li>
-							<a href="/jobs" class="btn-latch !normal-case !tracking-normal">
-								+{moreSpecialtyCount} more →
-							</a>
-						</li>
-					{/if}
+	{#if openCategories.length > 0}
+		<div class="mt-12">
+			<h2 class="axis-label">Browse by specialty</h2>
+			<ul class="mt-4 grid gap-x-8 gap-y-2 sm:grid-cols-2 lg:grid-cols-3">
+				{#each visibleSpecialtyChips as cat (cat.id)}
 					<li>
-						<a href="/jobs" class="btn-latch is-on !normal-case !tracking-normal">All jobs →</a>
+						<a
+							href="/jobs?category={cat.id}"
+							class="group flex items-baseline gap-3 py-1 hover:text-accent"
+						>
+							<span class="min-w-0 flex-1 truncate text-meta font-semibold group-hover:underline"
+								>{cat.name}</span
+							>
+							<span class="coord shrink-0 text-muted">{cat.count}</span>
+						</a>
 					</li>
-				</ul>
-			</div>
+				{/each}
+			</ul>
+			<p class="mt-5 flex flex-wrap items-center gap-x-6 gap-y-2">
+				{#if moreSpecialtyCount > 0}
+					<a href="/jobs" class="link text-meta font-semibold">{moreSpecialtyCount} more specialties</a>
+				{/if}
+				<a href="/jobs" class="link text-meta font-semibold">All {total.toLocaleString('en-US')} roles</a>
+			</p>
 		</div>
-	</div>
-
-	<div class="flex items-center gap-3 border-t border-seam bg-panel px-4 py-2 sm:px-6">
-		<span class="font-mono text-[11px] tracking-[0.14em] text-ink-soft uppercase">Signal</span>
-		{#each topCategories.slice(0, 8) as cat (cat.id)}
-			<span
-				class="h-2 flex-1 rounded-sm bg-led-0"
-				style="background: linear-gradient(to right, var(--color-fader) {(cat.count /
-					maxCount) * 100}%, var(--color-led-0) {(cat.count / maxCount) * 100}%)"
-				title="{cat.name}: {cat.count}"
-			></span>
-		{/each}
-		<span class="hidden font-mono text-[10px] tracking-wide text-ink-soft sm:inline">
-			jobs by specialty
-		</span>
-	</div>
+	{/if}
 </section>
 
-<section class="mt-10" aria-labelledby="featured-heading">
-	<div class="flex items-end justify-between gap-4">
-		<h2 id="featured-heading" class="legend !text-sm">FRESH ON THE BOARD</h2>
-		<a href="/jobs" class="font-mono text-xs font-semibold tracking-wide hover:text-fader-deep">
-			Browse all {total.toLocaleString('en-US')} →
+<section class="mt-20" aria-labelledby="featured-heading">
+	<div class="flex items-end justify-between gap-4 border-b border-rule pb-3">
+		<h2 id="featured-heading" class="text-title font-semibold">Fresh on the board</h2>
+		<a href="/jobs" class="link text-meta font-semibold whitespace-nowrap">
+			Browse all {total.toLocaleString('en-US')}
 		</a>
 	</div>
 
-	<div class="mt-4 grid gap-3 md:grid-cols-2">
+	<div class="mt-2 divide-y divide-rule">
 		{#each featured as job (job.id)}
 			<JobStrip {job} {categoryNames} {onReport} />
 		{:else}
-			<p class="panel col-span-full p-6 text-sm text-ink-soft">
-				Listings are warming up — the board is syncing with the backend.
+			<p class="py-10 text-meta text-muted" role={data.boardUnavailable ? 'alert' : undefined}>
+				{data.boardUnavailable
+					? "We couldn't read the board just now — the listings service didn't answer. Refresh in a moment."
+					: 'No listings to show yet.'}
 			</p>
 		{/each}
 	</div>
 </section>
 
-<section class="mt-12 grid gap-3 sm:grid-cols-3" aria-label="Why ASoundJob">
-	<div class="panel p-5">
-		<p class="font-mono text-2xl font-semibold">{total ? 'NIGHTLY' : '—'}</p>
-		<h3 class="mt-1 text-sm font-bold tracking-wide uppercase">Refreshed, not stale</h3>
-		<p class="mt-1.5 text-sm text-ink-soft">
+<section class="mt-20 grid gap-10 sm:grid-cols-3" aria-labelledby="why-heading">
+	<h2 id="why-heading" class="sr-only">Why ASoundJob</h2>
+	<div>
+		<h3 class="text-title font-semibold">Refreshed, not stale</h3>
+		<p class="mt-2 text-meta text-muted">
 			A scraper re-checks every verified company's careers page each night. When a
 			job disappears from the source, it disappears here.
 		</p>
 	</div>
-	<div class="panel p-5">
-		<p class="font-mono text-2xl font-semibold">{categoryMeta.length}</p>
-		<h3 class="mt-1 text-sm font-bold tracking-wide uppercase">Audio specialties</h3>
-		<p class="mt-1.5 text-sm text-ink-soft">
+	<div>
+		<h3 class="text-title font-semibold">{categoryMeta.length} audio specialties</h3>
+		<p class="mt-2 text-meta text-muted">
 			DSP, live sound, acoustics, transducers, game audio — filter by the work you
 			actually do, not keyword soup.
 		</p>
 	</div>
-	<div class="panel p-5">
-		<p class="font-mono text-2xl font-semibold">30 DAYS</p>
-		<h3 class="mt-1 text-sm font-bold tracking-wide uppercase">Community reviewed</h3>
-		<p class="mt-1.5 text-sm text-ink-soft">
+	<div>
+		<h3 class="text-title font-semibold">Community reviewed</h3>
+		<p class="mt-2 text-meta text-muted">
 			Every community submission is approved by a human moderator before it goes
 			live, and expires after a month.
 		</p>
 	</div>
 </section>
 
-<section class="panel mt-12 flex flex-col items-start justify-between gap-4 p-6 sm:flex-row sm:items-center">
+<section class="mt-20 flex flex-col items-start justify-between gap-6 border-t border-rule pt-10 sm:flex-row sm:items-center">
 	<div>
-		<h2 class="text-lg font-bold tracking-tight">Hiring in audio?</h2>
-		<p class="mt-1 max-w-lg text-sm text-ink-soft">
+		<h2 class="text-display font-light">Hiring in audio?</h2>
+		<p class="mt-2 max-w-lg text-meta text-muted">
 			Put your opening in front of the people who speak this language. Submissions
 			are free and reviewed by the Young Audio Professionals community within days.
 		</p>
 	</div>
-	<a href="/jobs/submit" class="btn-primary shrink-0">Submit a job</a>
+	<a href="/jobs/submit" class="btn btn-primary shrink-0">Submit a job</a>
 </section>
 
 {#if reportJob}

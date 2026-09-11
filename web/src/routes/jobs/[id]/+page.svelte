@@ -22,12 +22,12 @@
 <svelte:head>
 	<title>{data.meta.title}</title>
 	<meta name="description" content={data.meta.description} />
-	<link rel="canonical" href="http://localhost:5173/jobs/{job.id}" />
+	<link rel="canonical" href="{data.siteUrl}/jobs/{job.id}" />
 	{@html `<script type="application/ld+json">${JSON.stringify(data.jsonLd)}<\/script>`}
 </svelte:head>
 
-<nav aria-label="Breadcrumb" class="mt-6 font-mono text-xs tracking-wide text-ink-soft">
-	<a href="/jobs" class="hover:text-fader-deep">JOBS</a>
+<nav aria-label="Breadcrumb" class="mt-6 coord text-muted">
+	<a href="/jobs" class="hover:text-accent">Jobs</a>
 	<span aria-hidden="true"> / </span>
 	{#if job.company}
 		<span class="text-ink">{job.company.name}</span>
@@ -37,44 +37,44 @@
 </nav>
 
 <div class="mt-3 grid gap-6 lg:grid-cols-[1fr_18rem]">
-	<article class="panel min-w-0">
-		<header class="border-b border-seam bg-panel-recessed px-5 py-4 sm:px-7 sm:py-5">
-			<h1 class="text-xl font-black tracking-tight text-balance sm:text-3xl">{job.title}</h1>
-			<p class="mt-1.5 text-sm font-semibold text-ink-soft">
+	<article class="min-w-0">
+		<header class="pb-6">
+			<h1 class="text-display leading-tight font-semibold tracking-tight text-balance">{job.title}</h1>
+			<p class="mt-2 text-meta font-semibold text-muted">
 				{#if job.company}{job.company.name}{/if}
 				{#if job.location}<span aria-hidden="true"> · </span>{job.location}{/if}
-				{#if job.remote}<span aria-hidden="true"> · </span><span class="text-lit">Remote OK</span>{/if}
+				{#if job.remote}<span aria-hidden="true"> · </span><span class="text-ink">Remote OK</span>{/if}
 			</p>
 		</header>
 
 		<dl
-			class="grid grid-cols-2 gap-x-4 gap-y-2 border-b border-seam px-5 py-4 font-mono text-xs sm:grid-cols-4 sm:px-7"
+			class="coord grid grid-cols-2 gap-x-6 gap-y-3 border-y border-rule py-5 sm:grid-cols-4"
 		>
 			<div>
-				<dt class="tracking-[0.12em] text-ink-soft uppercase">Salary</dt>
+				<dt class="axis-label">Salary</dt>
 				<dd class="mt-0.5 font-semibold">{salary || '—'}</dd>
 			</div>
 			<div>
-				<dt class="tracking-[0.12em] text-ink-soft uppercase">Type</dt>
-				<dd class="mt-0.5">{job.job_type ?? '—'}</dd>
+				<dt class="axis-label">Type</dt>
+				<dd class="mt-0.5">{job.job_type || '—'}</dd>
 			</div>
 			<div>
-				<dt class="tracking-[0.12em] text-ink-soft uppercase">Level</dt>
+				<dt class="axis-label">Level</dt>
 				<dd class="mt-0.5">{job.seniority ?? '—'}</dd>
 			</div>
 			<div>
-				<dt class="tracking-[0.12em] text-ink-soft uppercase">Posted</dt>
+				<dt class="axis-label">Posted</dt>
 				<dd class="mt-0.5">{timeAgo(job.posted_date ?? job.scraped_at)}</dd>
 			</div>
 		</dl>
 
 		{#if job.job_categories.length > 0}
-			<ul class="flex flex-wrap gap-1.5 border-b border-seam px-5 py-3 sm:px-7" aria-label="Specialties">
+			<ul class="flex flex-wrap gap-x-4 gap-y-2 border-b border-rule py-4" aria-label="Specialties">
 				{#each job.job_categories as cat (cat)}
 					<li>
 						<a
 							href="/jobs?category={cat}"
-							class="rounded-sm border border-seam bg-panel-recessed px-1.5 py-0.5 font-mono text-[10px] tracking-wide text-ink-soft hover:border-fader hover:text-fader-deep"
+							class="coord text-muted underline decoration-rule underline-offset-4 hover:text-accent hover:decoration-accent"
 						>
 							{categoryNames.get(cat) ?? cat.replaceAll('_', ' ')}
 						</a>
@@ -83,9 +83,9 @@
 			</ul>
 		{/if}
 
-		<div class="px-5 py-6 sm:px-7">
+		<div class="py-7">
 			{#if data.description}
-				<div class="job-description max-w-none space-y-3 text-[15px] leading-relaxed [&_h2]:mt-6 [&_h2]:text-lg [&_h2]:font-bold [&_h3]:mt-4 [&_h3]:font-bold [&_li]:ml-5 [&_p]:min-h-4 [&_ul]:list-disc">
+				<div class="job-description max-w-none space-y-3 text-[15px] leading-relaxed [&_h2]:mt-6 [&_h2]:text-title [&_h2]:font-bold [&_h3]:mt-4 [&_h3]:font-bold [&_li]:ml-5 [&_p]:min-h-4 [&_ul]:list-disc">
 					{@html data.description}
 				</div>
 			{:else if data.plainDescription}
@@ -93,15 +93,15 @@
 					{data.plainDescription}
 				</p>
 			{:else}
-				<p class="text-sm text-ink-soft">
+				<p class="text-meta text-muted">
 					The employer didn't include a description — follow the link to see the full posting.
 				</p>
 			{/if}
 
-			<p class="mt-8 border-t border-seam pt-4 font-mono text-[11px] tracking-wide text-ink-soft">
+			<p class="coord mt-8 border-t border-rule pt-4 text-muted">
 				Scraped {formatDate(job.scraped_at)}
 				{#if job.source === 'community'}
-					· <span class="text-fader-deep">Community submission, reviewed by moderators</span>
+					· <span class="font-bold">Community submission, reviewed by moderators</span>
 					{#if job.expires_date}· expires {formatDate(job.expires_date)}{/if}
 				{/if}
 			</p>
@@ -113,32 +113,32 @@
 			href={job.url}
 			target="_blank"
 			rel="noopener noreferrer"
-			class="btn-primary w-full !py-3.5 !text-base"
+			class="btn btn-primary w-full !py-3.5 !text-base"
 		>
-			Apply at source ↗
+			Apply at source<svg width="11" height="11" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h7v7M13 3L6.5 9.5M11 11v2H3V5h2"/></svg>
 		</a>
-		<p class="well p-3 font-mono text-[11px] leading-relaxed tracking-wide text-ink-soft">
+		<p class="coord leading-relaxed text-muted">
 			This listing links directly to the employer's site. ASoundJob never takes a cut
 			or stands between you and the application.
 		</p>
 		{#if job.company}
-			<div class="panel p-4">
-				<p class="legend">ABOUT THE COMPANY</p>
-				<p class="mt-2 text-lg font-bold">{job.company.name}</p>
+			<div class="p-4">
+				<p class="text-meta font-bold">About the company</p>
+				<p class="mt-2 text-title font-bold">{job.company.name}</p>
 				<a
 					href="/companies/{job.company.slug}"
-					class="mt-1 inline-block font-mono text-xs font-semibold text-fader-deep hover:underline"
+					class="mt-1 inline-block coord font-semibold text-accent hover:underline"
 				>
 					View company page →
 				</a>
 			</div>
 		{/if}
-		<div class="panel p-4">
-			<p class="legend">SEE A PROBLEM?</p>
-			<p class="mt-2 text-sm text-ink-soft">
+		<div class="p-4">
+			<p class="text-meta font-bold">See a problem?</p>
+			<p class="mt-2 text-meta text-muted">
 				Flag a category mistake, a broken link, or anything else off about this listing.
 			</p>
-			<button type="button" class="btn-latch mt-3 w-full" onclick={() => (reportOpen = true)}>
+			<button type="button" class="btn btn-quiet mt-3 w-full" onclick={() => (reportOpen = true)}>
 				Report an issue
 			</button>
 		</div>

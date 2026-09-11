@@ -3,6 +3,7 @@
 
 	let { data }: { data: PageData } = $props();
 
+	// `blocked` is null when the API call failed — an unknown list, not an empty one.
 	const blocked = $derived(data.blocked);
 </script>
 
@@ -12,82 +13,81 @@
 		name="description"
 		content="Audio companies whose careers pages block automated readers — their roles never reach this board, so it's worth checking them directly."
 	/>
-	<link rel="canonical" href="http://localhost:5173/companies/blocked" />
+	<link rel="canonical" href="{data.siteUrl}/companies/blocked" />
 </svelte:head>
 
-<div class="mx-auto mt-8 max-w-3xl">
-	<p class="legend">CAN'T SCRAPE</p>
-	<h1 class="mt-3 text-4xl font-black tracking-tight text-balance sm:text-5xl">
+<div class="mx-auto mt-16 mb-32 max-w-3xl sm:mt-24">
+	<h1 class="text-display font-light tracking-tight text-balance">
 		Companies our scraper can't read.
 	</h1>
 
-	<div class="panel mt-6 p-6 sm:p-8">
-		<p class="text-[15px] leading-relaxed">
+	<div class="mt-12 max-w-[68ch] space-y-6 text-body leading-relaxed">
+		<p>
 			These are companies we've checked by hand and can't read. Some refuse automated readers
 			outright — a bot block, a captcha, a flat 403. Some draw their whole job board with
 			JavaScript, or bury it in an embedded portal we can't follow. Either way our scraper comes
 			back with nothing, so roles at these companies never reach this board.
 		</p>
-		<p class="mt-4 text-[15px] leading-relaxed">
+		<p>
 			We're not saying any of them are hiring right now — we can't tell either way, and that's
 			the point. These are real audio companies worth watching, and their careers pages open
 			perfectly well in a normal browser. If one of them is a fit, go look for yourself.
 		</p>
 	</div>
 
-	<div class="well mt-6 p-6 sm:p-8">
-		<p class="font-mono text-[10px] tracking-[0.14em] text-ink-soft uppercase">One more thing</p>
-		<p class="mt-2 text-[15px] leading-relaxed">
-			Searching <strong>"acoustic engineer"</strong> on LinkedIn surfaces a lot of roles that never
-			make it onto a company's own careers page, blocked or not.
+	<div class="mt-16 max-w-[68ch]">
+		<p class="text-body leading-relaxed">
+			Searching <strong class="font-semibold">"acoustic engineer"</strong> on LinkedIn surfaces a
+			lot of roles that never make it onto a company's own careers page, blocked or not.
 		</p>
 		<a
 			href="https://www.linkedin.com/jobs/search/?keywords=acoustic%20engineer"
 			target="_blank"
 			rel="noopener noreferrer"
-			class="btn-latch mt-4"
+			class="btn btn-quiet mt-6"
 		>
-			Search LinkedIn ↗
+			Search LinkedIn<svg width="11" height="11" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h7v7M13 3L6.5 9.5M11 11v2H3V5h2"/></svg>
 		</a>
 	</div>
 
-	<section class="mt-10" aria-labelledby="blocked-companies-heading">
-		<div class="flex items-center gap-3">
-			<span class="h-px flex-1 bg-ink-soft/25"></span>
-			<span class="font-mono text-[10px] tracking-[0.14em] text-ink-soft uppercase">
-				Blocked companies
-			</span>
-			<span class="h-px flex-1 bg-ink-soft/25"></span>
-		</div>
+	<section class="mt-24" aria-labelledby="blocked-companies-heading">
+		<h2 id="blocked-companies-heading" class="text-title font-medium tracking-tight">
+			Blocked companies
+		</h2>
 
-		{#if blocked && blocked.total > 0}
-			<h2 id="blocked-companies-heading" class="mt-3 text-sm font-bold">
+		{#if !blocked}
+			<p class="mt-4 max-w-[68ch] text-body leading-relaxed text-muted">
+				We couldn't load this list right now. Refresh in a moment and it should come back.
+			</p>
+		{:else if blocked.total > 0}
+			<p class="coord mt-3 text-muted">
 				{blocked.total} companies worth checking yourself
-			</h2>
-			<ul class="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+			</p>
+
+			<ul class="mt-8 border-t border-rule">
 				{#each blocked.companies as company (company.id)}
-					<li class="well flex items-center justify-between gap-3 p-3">
+					<li
+						class="flex items-baseline justify-between gap-4 border-b border-rule py-3"
+					>
 						<span class="min-w-0">
-							<span class="block truncate text-sm font-semibold">{company.name}</span>
-							<span class="block truncate font-mono text-[10px] tracking-wide text-ink-soft uppercase">
-								{company.category}
-							</span>
+							<span class="block truncate font-medium">{company.name}</span>
+							<span class="axis-label mt-0.5 block truncate">{company.category}</span>
 						</span>
 						{#if company.careers_url}
 							<a
 								href={company.careers_url}
 								target="_blank"
 								rel="noopener noreferrer"
-								class="btn-latch shrink-0 !px-2 !py-1 text-xs"
+								class="link shrink-0 text-meta"
 							>
-								Careers
+								Careers<svg width="11" height="11" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h7v7M13 3L6.5 9.5M11 11v2H3V5h2"/></svg>
 							</a>
 						{/if}
 					</li>
 				{/each}
 			</ul>
 		{:else}
-			<p class="mt-4 text-sm text-ink-soft">
+			<p class="mt-4 max-w-[68ch] text-body leading-relaxed text-muted">
 				Nothing is currently on this list — every company we track is readable right now.
 			</p>
 		{/if}

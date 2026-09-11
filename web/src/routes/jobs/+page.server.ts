@@ -1,13 +1,5 @@
 import type { PageServerLoad } from './$types';
-import {
-	api,
-	getBlockedCompanies,
-	getCategories,
-	getCompanies,
-	getCountries,
-	getJobs,
-	getOpenApplications
-} from '$lib/server/api';
+import { api, getBlockedCompanies, getCategories, getCompanies, getCountries, getJobs, getOpenApplications, SITE_URL } from '$lib/server/api';
 import type { Paginated, Job } from '$lib/types';
 
 const ALLOWED = [
@@ -49,7 +41,9 @@ export const load: PageServerLoad = async ({ url }) => {
 		]);
 
 	return {
+		siteUrl: SITE_URL,
 		jobs,
+		boardUnavailable: jobs === null,
 		categories,
 		companies,
 		countries,

@@ -52,6 +52,7 @@ export const load: PageServerLoad = async ({ params }) => {
 	};
 
 	return {
+		siteUrl: SITE_URL,
 		job,
 		description,
 		plainDescription,

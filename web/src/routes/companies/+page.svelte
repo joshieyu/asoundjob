@@ -4,11 +4,14 @@
 
 <svelte:head>
 	<title>Company directory | ASoundJob</title>
-	<meta name="description" content="Browse 1,385 audio companies — coming soon to ASoundJob." />
+	<meta
+		name="description"
+		content="Browse the audio companies ASoundJob indexes — coming soon."
+	/>
 </svelte:head>
 
 <Wip title="The company directory">
-	<p class="mt-4 font-mono text-xs tracking-wide text-ink-soft">
-		1,385 audio companies are already indexed and will land here, browsable by specialty.
+	<p class="mt-6 max-w-[68ch] text-body leading-relaxed text-muted">
+		Every audio company we index will land here, browsable by specialty.
 	</p>
 </Wip>

@@ -1,5 +1,5 @@
 import type { PageServerLoad } from './$types';
-import { api, getJobs, getCategories } from '$lib/server/api';
+import { api, getJobs, getCategories, SITE_URL } from '$lib/server/api';
 import type { Paginated, Job } from '$lib/types';
 
 export const load: PageServerLoad = async ({ fetch }) => {
@@ -14,8 +14,10 @@ export const load: PageServerLoad = async ({ fetch }) => {
 		: null;
 
 	let featured = specialtyJobs;
+	let fallbackFailed = false;
 	if (!featured || featured.items.length < 4) {
 		const fallback = await getJobs({ per_page: '8', sort: 'newest' }).catch(() => null);
+		fallbackFailed = fallback === null;
 		const merged = [...(featured?.items ?? []), ...(fallback?.items ?? [])];
 		const seen = new Set<number>();
 		featured = {
@@ -28,6 +30,8 @@ export const load: PageServerLoad = async ({ fetch }) => {
 	}
 
 	return {
+		siteUrl: SITE_URL,
+		boardUnavailable: specialtyJobs === null && fallbackFailed,
 		featured,
 		categories,
 		totalJobs: totalResult?.total ?? 0,

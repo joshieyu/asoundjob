@@ -1,8 +1,9 @@
 import type { PageServerLoad } from './$types';
-import { getBlockedCompanies } from '$lib/server/api';
+import { getBlockedCompanies, SITE_URL } from '$lib/server/api';
 
 export const load: PageServerLoad = async () => {
 	const blocked = await getBlockedCompanies().catch(() => null);
 
-	return { blocked };
+	return {
+		siteUrl: SITE_URL, blocked };
 };

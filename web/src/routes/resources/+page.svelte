@@ -8,7 +8,7 @@
 </svelte:head>
 
 <Wip title="Career resources">
-	<p class="mt-4 font-mono text-xs tracking-wide text-ink-soft">
+	<p class="mt-6 max-w-[68ch] text-body leading-relaxed text-muted">
 		Resume guides, salary data, career paths and freelancing notes for audio work.
 	</p>
 </Wip>
