@@ -5310,6 +5310,33 @@ header renders two toggles; component-local state let them desynchronise.
 horizontal overflow at 375px. Tightest pair in the system is now the specialty
 chip at 4.69:1 (muted on tint) — re-measure if either token moves.
 
+### Follow-up (same day): three-line titles, scrollable filter rail
+
+Titles clamp at 3 lines, not 2 — clipped titles on a 20-row page went 6 -> 1.
+
+**The filter rail was worse than it looked.** 1131px of controls, 804px of
+space below the sticky offset, a 327px overhang — and because `sticky` pins the
+element, that overhang never scrolled into view. Apply and Reset sit 1094px down
+the rail and were unreachable until you scrolled the whole board. It now caps at
+`calc(100vh-8rem)`, scrolls its own body, and pins the action row below a
+hairline.
+
+Three things there are load-bearing and easy to undo by accident:
+- **`lg:min-h-0` on the scroll body.** A flex child will not shrink below its
+  content without it, and the max-height silently does nothing.
+- **`8rem`, not `7rem`.** The rail's natural top is 17px below its sticky
+  offset, so sizing against the offset alone clipped the last pixel of Apply at
+  scroll position zero.
+- **`lg:max-h-none` on the specialty list.** The rail owns the scrolling now;
+  leaving the inner `max-h-72` gives two nested scrollbars that chain into each
+  other. Below `lg` the cap stays — it is what stops 21 checkboxes pushing
+  results off a phone screen.
+
+**Another audit trap.** Auditing pages by loading them into a hidden iframe and
+stamping `data-theme` reported **124 dark-mode failures** after a change that
+touched no colour; the same audit run on the real page reported 0. Do not trust
+the iframe harness — navigate for real and inject the script into the live page.
+
 ## Still open
 
 - Two toggles, no "system" option: once a reader picks light or dark it sticks
