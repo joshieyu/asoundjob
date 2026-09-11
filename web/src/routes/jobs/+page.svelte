@@ -195,20 +195,30 @@
 <h1 class="sr-only">Audio industry jobs</h1>
 
 <div class="mt-6 grid gap-6 lg:grid-cols-[17rem_1fr]">
-	<form method="get" action="/jobs" class="h-fit lg:sticky lg:top-24" aria-label="Job filters">
+	<form
+		method="get"
+		action="/jobs"
+		class="h-fit lg:sticky lg:top-24 lg:flex lg:max-h-[calc(100vh-8rem)] lg:flex-col"
+		aria-label="Job filters"
+	>
 		<h2 class="text-title font-semibold">Filters</h2>
 
 		{#if params.q}
 			<input type="hidden" name="q" value={params.q} />
 		{/if}
 
+		<!-- The rail is ~1130px of controls. Sticky alone pinned it and left the
+		     bottom third — Apply and Reset included — permanently below the fold,
+		     reachable only by scrolling the entire board. This scrolls on its own.
+		     min-h-0 is required: a flex child will not shrink below content without it. -->
+		<div class="lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:overscroll-contain lg:pr-3">
 		<fieldset class="mt-4">
 			<legend class="axis-label mb-2">
 				Specialty
 			</legend>
 			<input type="hidden" name="category" value={categoryFieldValue} />
 			<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-			<div class="max-h-72 overflow-y-auto border-y border-rule py-1" tabindex="0" role="region" aria-label="Specialty options">
+			<div class="max-h-72 overflow-y-auto border-y border-rule py-1 lg:max-h-none" tabindex="0" role="region" aria-label="Specialty options">
 				{#each visibleCategories as cat (cat.id)}
 					<label class="flex items-center gap-2.5 py-1.5 text-meta hover:text-accent">
 						<input
@@ -403,7 +413,9 @@
 			</select>
 		</fieldset>
 
-		<div class="mt-4 flex items-center gap-2">
+		</div>
+
+		<div class="mt-4 flex items-center gap-2 lg:shrink-0 lg:border-t lg:border-rule lg:pt-4">
 			<button type="submit" class="btn btn-primary flex-1">Apply</button>
 			<a href="/jobs" class="btn btn-quiet">Reset</a>
 		</div>

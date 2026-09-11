@@ -30,7 +30,7 @@
 >
 	<div class="flex items-start gap-2">
 		<h3 class="min-w-0 flex-1 text-title font-semibold leading-tight text-balance">
-			<a href="/jobs/{job.id}" class="line-clamp-2 hover:text-accent hover:underline">
+			<a href="/jobs/{job.id}" class="line-clamp-3 hover:text-accent hover:underline">
 				{job.title}
 			</a>
 		</h3>
