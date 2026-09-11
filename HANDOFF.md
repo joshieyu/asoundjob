@@ -5455,9 +5455,27 @@ under load now keeps its jobs instead of losing them, but it still does not get
 refreshed that cycle. Re-running the single company fixes it
 (`--company demant-oticon-bernafon`).
 
-Also unexplained: only 58 of 1,394 companies had a stored `ats_type` before that
-run, though Samsung demonstrably scraped via Workday on 2026-09-04. Something
-cleared them. Discovery re-found 6 during the two passes.
+**Correction — `ats_type` is a cache, not the routing mechanism.** An earlier
+version of this entry claimed ~1,336 companies had "lost their ATS routing"
+because only 58 had a stored `ats_type`. That was a misreading. Every ATS
+scraper's `can_handle()` also matches on `careers_url` shape, so a company needs
+no stored `ats_type` to be routed correctly. Verified by nulling `ats_type` on
+all six affected companies and re-running the claim check: Samsung, Logitech,
+Razer and McGill still resolve to `workday` (their URLs are literally
+`*.myworkdayjobs.com/...`), Demant and Belden to `successfactors`. The stored
+column is an optimisation, and a low count is normal, not damage.
+
+That also means run 2 did **not** recover those boards because discovery had
+re-found their slugs — they would have routed the same way in run 1.
+
+**Still unexplained:** why `workday` was never attempted for Samsung in run 1.
+It has a single careers URL, so the multi-URL path is not involved, and Workday
+failures *are* logged (Fisker and Nissan both appear), so it was not a silent
+failure — the scraper simply does not appear in that company's log line at all,
+which went `http` then `playwright`. No explanation from the logs; recorded as
+open rather than guessed at. The committed fix does not depend on knowing the
+cause: it stops a truncated fallback from deleting jobs whatever made the real
+scraper fail.
 
 ## Still open
 
