@@ -212,72 +212,86 @@
 	}
 </script>
 
-<section class="mt-6">
-	<h1 class="legend">COMPANY MANAGEMENT</h1>
+<section class="mt-10">
+	<h1 class="text-title font-semibold">Company management</h1>
 
-	<div class="mt-4 flex flex-wrap items-center gap-3">
+	<div class="mt-6 flex flex-wrap items-center gap-3">
 		<label class="sr-only" for="company-search">Search companies</label>
 		<input
 			id="company-search"
 			bind:value={search}
 			oninput={onSearch}
 			placeholder="Search by name…"
-			class="well h-10 w-full max-w-xs px-3 text-sm sm:w-72"
+			class="field h-10 w-full max-w-xs sm:w-72"
 		/>
 	</div>
 
-	{#if message}<p class="mt-3 font-mono text-xs tracking-wide" role="status">{message}</p>{/if}
+	{#if message}<p class="coord mt-4" role="status">{message}</p>{/if}
 
-	<div class="panel mt-4 overflow-x-auto">
-		<table class="w-full min-w-[72rem] text-left text-sm">
+	<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+	<div
+		class="mt-6 overflow-x-auto"
+		tabindex="0"
+		role="region"
+		aria-label="Companies, scrollable table"
+	>
+		<table class="w-full min-w-[72rem] text-left text-meta">
+			<caption class="sr-only">
+				Companies with their category, scraped job count, count on the public board, careers URLs, verified state and row actions
+			</caption>
 			<thead>
-				<tr class="border-b border-seam font-mono text-[10px] tracking-[0.12em] text-ink-soft uppercase">
-					<th scope="col" class="px-4 py-2.5" aria-sort={ariaSort('name')}>
-						<button type="button" class="uppercase tracking-[0.12em] hover:underline" onclick={() => sortBy('name')}>
+				<tr class="axis-label border-b border-muted">
+					<th scope="col" class="px-4 py-2.5 font-medium" aria-sort={ariaSort('name')}>
+						<button type="button" class="hover:underline" onclick={() => sortBy('name')}>
 							Company{sortMark('name')}
 						</button>
 					</th>
-					<th scope="col" class="px-4 py-2.5">Category</th>
-					<th scope="col" class="px-4 py-2.5" aria-sort={ariaSort('jobs')}>
-						<button type="button" class="uppercase tracking-[0.12em] hover:underline" onclick={() => sortBy('jobs')} title="Rows the scraper is holding, junk included">
+					<th scope="col" class="px-4 py-2.5 font-medium">Category</th>
+					<th scope="col" class="px-4 py-2.5 font-medium" aria-sort={ariaSort('jobs')}>
+						<button type="button" class="hover:underline" onclick={() => sortBy('jobs')} title="Rows the scraper is holding, junk included">
 							Scraped{sortMark('jobs')}
 						</button>
 					</th>
-					<th scope="col" class="px-4 py-2.5" aria-sort={ariaSort('board')}>
-						<button type="button" class="uppercase tracking-[0.12em] hover:underline" onclick={() => sortBy('board')} title="Rows a reader actually sees on the public board">
+					<th scope="col" class="px-4 py-2.5 font-medium" aria-sort={ariaSort('board')}>
+						<button type="button" class="hover:underline" onclick={() => sortBy('board')} title="Rows a reader actually sees on the public board">
 							On board{sortMark('board')}
 						</button>
 					</th>
-					<th scope="col" class="px-4 py-2.5">Careers URL</th>
-					<th scope="col" class="px-4 py-2.5" aria-sort={ariaSort('verified')}>
-						<button type="button" class="uppercase tracking-[0.12em] hover:underline" onclick={() => sortBy('verified')}>
+					<th scope="col" class="px-4 py-2.5 font-medium">Careers URL</th>
+					<th scope="col" class="px-4 py-2.5 font-medium" aria-sort={ariaSort('verified')}>
+						<button type="button" class="hover:underline" onclick={() => sortBy('verified')}>
 							Verified{sortMark('verified')}
 						</button>
 					</th>
-					<th scope="col" class="px-4 py-2.5">Actions</th>
+					<th scope="col" class="px-4 py-2.5 font-medium">Actions</th>
 				</tr>
 			</thead>
 			<tbody>
 				{#each companies as row (row.id)}
-					<tr class="border-b border-seam/60 align-top last:border-0">
-						<td class="px-4 py-3 font-semibold">
+					<tr class="border-b border-rule align-top last:border-0">
+						<th scope="row" class="px-4 py-3 font-semibold">
 							{#if editingId === row.id && editingKind === 'name'}
 								<span class="flex items-center gap-1.5">
-									<input bind:value={nameValue} class="well h-8 w-44 px-2 text-xs font-normal" />
-									<button type="button" class="btn-latch !py-1" onclick={() => saveName(row)}>Save</button>
-									<button type="button" class="btn-latch !py-1" onclick={cancelEdit}>Cancel</button>
+									<input bind:value={nameValue} class="field h-8 w-44 font-normal" />
+									<button type="button" class="btn btn-quiet px-2 py-1" onclick={() => saveName(row)}>Save</button>
+									<button type="button" class="btn btn-quiet px-2 py-1" onclick={cancelEdit}>Cancel</button>
 								</span>
 							{:else}
 								<span class="flex items-center gap-1.5">
 									{row.name}
-									<button type="button" class="btn-latch !py-1 !normal-case" onclick={() => startEditName(row)}>Edit</button>
+									<button type="button" class="btn btn-quiet px-2 py-1" onclick={() => startEditName(row)}>Edit</button>
 								</span>
 							{/if}
-						</td>
-						<td class="px-4 py-3 text-xs text-ink-soft">{row.category}</td>
-						<td class="readout px-4 py-3">{row.active_jobs_count}</td>
-						<td class="readout px-4 py-3 {row.active_jobs_count > 0 && row.board_jobs_count === 0 ? 'text-ink-soft' : ''}">
+						</th>
+						<td class="coord px-4 py-3 text-muted">{row.category}</td>
+						<td class="coord px-4 py-3">{row.active_jobs_count}</td>
+						<td class="coord px-4 py-3">
 							{row.board_jobs_count}
+							{#if row.active_jobs_count > 0 && row.board_jobs_count === 0}
+								<span class="block text-muted" title="Every scraped job for this company is filtered off the public board">
+									all filtered off
+								</span>
+							{/if}
 						</td>
 						<td class="px-4 py-3">
 							{#if editingId === row.id && editingKind === 'url'}
@@ -286,11 +300,11 @@
 										bind:value={editValue}
 										rows="3"
 										placeholder="https://example.com/careers"
-										class="well w-72 px-2 py-1.5 font-mono text-xs"
+										class="field coord w-72"
 									></textarea>
 									<span class="flex gap-1.5">
-										<button type="button" class="btn-latch !py-1" onclick={() => saveUrls(row)}>Save</button>
-										<button type="button" class="btn-latch !py-1" onclick={cancelEdit}>Cancel</button>
+										<button type="button" class="btn btn-quiet px-2 py-1" onclick={() => saveUrls(row)}>Save</button>
+										<button type="button" class="btn btn-quiet px-2 py-1" onclick={cancelEdit}>Cancel</button>
 									</span>
 								</span>
 							{:else if row.careers_url}
@@ -300,16 +314,16 @@
 											href={row.careers_url}
 											target="_blank"
 											rel="noopener noreferrer"
-											class="max-w-[16rem] truncate font-mono text-xs text-fader-deep hover:underline"
+											class="link coord max-w-[16rem] truncate"
 										>
 											{row.careers_url}
 										</a>
 										{#if row.extra_careers_urls?.length}
-											<span class="font-mono text-[10px] text-ink-soft" title="{row.extra_careers_urls.length} additional careers URL(s)">
+											<span class="coord text-muted" title="{row.extra_careers_urls.length} additional careers URL(s)">
 												+{row.extra_careers_urls.length}
 											</span>
 										{/if}
-										<button type="button" class="btn-latch !py-1" onclick={() => startEditUrls(row)}>Edit</button>
+										<button type="button" class="btn btn-quiet px-2 py-1" onclick={() => startEditUrls(row)}>Edit</button>
 									</span>
 									{#if row.extra_careers_urls?.length}
 										<span class="flex flex-col gap-0.5">
@@ -318,7 +332,7 @@
 													href={extra}
 													target="_blank"
 													rel="noopener noreferrer"
-													class="max-w-[16rem] truncate font-mono text-[10px] text-ink-soft hover:underline"
+													class="coord max-w-[16rem] truncate text-muted underline"
 												>
 													{extra}
 												</a>
@@ -327,36 +341,42 @@
 									{/if}
 								</span>
 							{:else}
-								<button type="button" class="btn-latch !py-1" onclick={() => startEditUrls(row)}>Add URL</button>
+								<button type="button" class="btn btn-quiet px-2 py-1" onclick={() => startEditUrls(row)}>Add URL</button>
 							{/if}
 						</td>
 						<td class="px-4 py-3">
-							<button type="button" class="btn-latch !py-1 {row.verified ? 'is-on' : ''}" onclick={() => toggleVerified(row)}>
-								{row.verified ? 'Yes' : 'No'}
-							</button>
-							{#if row.source === 'manual'}
-								<span class="ml-1.5 font-mono text-[10px] text-fader-deep" title="Manually verified">M</span>
-							{/if}
+							<span class="flex items-center gap-1.5">
+								<button
+									type="button"
+									class="btn btn-quiet px-2 py-1 {row.verified ? 'is-on' : ''}"
+									onclick={() => toggleVerified(row)}
+								>
+									{row.verified ? 'Yes' : 'No'}
+								</button>
+								{#if row.source === 'manual'}
+									<span class="coord text-ink" title="Manually verified">M<span class="sr-only"> — manually verified</span></span>
+								{/if}
+							</span>
 						</td>
 						<td class="px-4 py-3">
 							{#if deletingId === row.id}
 								<span class="flex flex-col gap-1.5">
-									<span class="max-w-[14rem] font-mono text-[10px] text-ink-soft">
+									<span class="coord max-w-[14rem] text-muted">
 										Really delete {row.name}? Removes the company, {row.active_jobs_count} scraped job{row.active_jobs_count === 1 ? '' : 's'}, and its scrape history.
 									</span>
 									<span class="flex gap-1.5">
-										<button type="button" class="btn-latch !py-1" onclick={() => deleteCompany(row)}>Yes</button>
-										<button type="button" class="btn-latch !py-1" onclick={cancelDelete}>No</button>
+										<button type="button" class="btn btn-quiet px-2 py-1" onclick={() => deleteCompany(row)}>Yes</button>
+										<button type="button" class="btn btn-quiet px-2 py-1" onclick={cancelDelete}>No</button>
 									</span>
 								</span>
 							{:else}
-								<button type="button" class="btn-latch !py-1" onclick={() => startDelete(row)}>Delete</button>
+								<button type="button" class="btn btn-quiet px-2 py-1" onclick={() => startDelete(row)}>Delete</button>
 							{/if}
 						</td>
 					</tr>
 				{:else}
 					<tr>
-						<td colspan="7" class="px-4 py-6 text-center font-mono text-sm text-ink-soft">
+						<td colspan="7" class="px-4 py-6 text-center text-meta text-muted">
 							{loading ? 'Loading…' : 'No companies match.'}
 						</td>
 					</tr>
@@ -365,15 +385,15 @@
 		</table>
 	</div>
 
-	<div class="mt-3 flex items-center justify-center gap-3">
-		<button type="button" class="btn-latch" disabled={page <= 1} onclick={prevPage}>← Prev</button>
-		<span class="font-mono text-xs text-ink-soft">
+	<div class="mt-6 flex items-center justify-center gap-3">
+		<button type="button" class="btn btn-quiet" disabled={page <= 1} onclick={prevPage}><svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13 8H3M7 4L3 8l4 4"/></svg>Prev</button>
+		<span class="coord text-muted">
 			Page {pageData.page} of {pageData.pages} · {pageData.total} companies
 		</span>
-		<button type="button" class="btn-latch" disabled={page >= pageData.pages} onclick={nextPage}>Next →</button>
+		<button type="button" class="btn btn-quiet" disabled={page >= pageData.pages} onclick={nextPage}>Next<svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg></button>
 	</div>
 
-	<p class="mt-2 font-mono text-[11px] tracking-wide text-ink-soft">
+	<p class="mt-10 max-w-prose text-meta leading-relaxed text-muted">
 		Edits flip a row to source=manual, so the nightly reload of
 		data/audio_companies_final.json skips it — renames and other edits persist. That seed
 		file itself still holds the old values, and a deleted company isn't protected at all:

@@ -53,62 +53,68 @@
 	}
 </script>
 
-<section class="mt-6">
-	<h1 class="legend">SCRAPER CONTROL</h1>
+<section class="mt-10">
+	<h1 class="text-title font-semibold">Scraper control</h1>
 
-	<div class="panel mt-4 flex flex-wrap items-center gap-4 p-5">
-		<div class="well flex items-center gap-3 px-4 py-3">
+	<div class="mt-6 flex flex-wrap items-center gap-x-8 gap-y-4">
+		<div class="flex items-center gap-2.5">
 			<span
-				class="inline-block h-3 w-3 rounded-full transition-colors {status?.running
-					? 'animate-pulse bg-lit'
-					: 'bg-led-0'}"
+				class="inline-block h-3 w-3 rounded-full border transition-colors {status?.running ? 'animate-pulse border-accent bg-accent'
+					: 'border-muted bg-transparent'}"
 			></span>
-			<span class="font-mono text-sm font-semibold tracking-wide uppercase">
+			<span class="coord">
 				{status?.running ? 'Cycle running' : 'Idle'}
 			</span>
 		</div>
 
-		<label class="flex items-center gap-2 text-sm font-semibold">
+		<label class="flex items-center gap-2 text-meta font-semibold">
 			Limit companies
-			<input type="number" min="1" bind:value={limit} placeholder="all" class="well h-9 w-24 px-2 font-mono text-sm" />
+			<input type="number" min="1" bind:value={limit} placeholder="all" class="field h-9 w-24" />
 		</label>
 
-		<button type="button" class="btn-primary" disabled={triggering || (status?.running ?? false)} onclick={trigger}>
+		<button type="button" class="btn btn-primary" disabled={triggering || (status?.running ?? false)} onclick={trigger}>
 			{status?.running ? 'Running…' : 'Start cycle'}
 		</button>
 
-		{#if message}<p class="font-mono text-xs tracking-wide" role="status">{message}</p>{/if}
+		{#if message}<p class="coord" role="status">{message}</p>{/if}
 	</div>
 
-	<h2 class="legend mt-8">RECENT ACTIVITY</h2>
-	<div class="panel mt-3 overflow-x-auto">
-		<table class="w-full min-w-[36rem] text-left font-mono text-xs">
+	<h2 class="mt-14 text-title font-semibold">Recent activity</h2>
+	<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+	<div
+		class="mt-4 overflow-x-auto"
+		tabindex="0"
+		role="region"
+		aria-label="Recent scrape activity, scrollable table"
+	>
+		<table class="coord w-full min-w-[36rem] text-left">
+			<caption class="sr-only">The 15 most recent scrape cycles, with method, status, jobs found and any error</caption>
 			<thead>
-				<tr class="border-b border-seam tracking-[0.12em] text-ink-soft uppercase">
-					<th scope="col" class="px-4 py-2.5">Started</th>
-					<th scope="col" class="px-4 py-2.5">Method</th>
-					<th scope="col" class="px-4 py-2.5">Status</th>
-					<th scope="col" class="px-4 py-2.5">Jobs</th>
-					<th scope="col" class="px-4 py-2.5">Error</th>
+				<tr class="border-b border-muted text-muted">
+					<th scope="col" class="px-4 py-2.5 font-medium">Started</th>
+					<th scope="col" class="px-4 py-2.5 font-medium">Method</th>
+					<th scope="col" class="px-4 py-2.5 font-medium">Status</th>
+					<th scope="col" class="px-4 py-2.5 font-medium">Jobs</th>
+					<th scope="col" class="px-4 py-2.5 font-medium">Error</th>
 				</tr>
 			</thead>
 			<tbody>
 				{#each status?.recent.slice(0, 15) ?? [] as entry (entry.id)}
-					<tr class="border-b border-seam/60 last:border-0">
+					<tr class="border-b border-rule last:border-0">
 						<td class="px-4 py-2">{new Date(entry.started_at).toLocaleString()}</td>
 						<td class="px-4 py-2">{entry.scrape_method ?? '—'}</td>
 						<td class="px-4 py-2">
-							<span class={entry.status === 'success' ? 'text-lit' : 'text-fader-deep'}>
+							<span class={entry.status === 'success' ? '' : 'font-semibold'}>
 								{entry.status}
 							</span>
 						</td>
-						<td class="px-4 py-2">{entry.jobs_found}</td>
-						<td class="max-w-[16rem] truncate px-4 py-2 text-ink-soft" title={entry.error_message ?? ''}>
+						<td class="px-4 py-2 tabular-nums">{entry.jobs_found}</td>
+						<td class="max-w-[16rem] truncate px-4 py-2 text-muted" title={entry.error_message ?? ''}>
 							{entry.error_message ?? '—'}
 						</td>
 					</tr>
 				{:else}
-					<tr><td colspan="5" class="px-4 py-4 text-ink-soft">No scrape activity yet.</td></tr>
+					<tr><td colspan="5" class="px-4 py-4 text-muted">No scrape activity yet.</td></tr>
 				{/each}
 			</tbody>
 		</table>

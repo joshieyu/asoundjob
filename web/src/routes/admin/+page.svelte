@@ -33,39 +33,39 @@
 </script>
 
 {#if error}
-	<p class="panel mt-6 p-4 text-sm font-semibold text-fader-deep" role="alert">{error}</p>
+	<p class="mt-10 text-meta font-semibold text-ink" role="alert">{error}</p>
 {:else if !stats}
-	<p class="mt-6 font-mono text-sm text-ink-soft">Loading console readouts…</p>
+	<p class="mt-10 text-meta text-muted">Loading…</p>
 {:else}
-	<div class="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+	<dl class="mt-10 grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-3 lg:grid-cols-5">
 		{#each cards as [label, value] (label)}
-			<div class="well p-4">
-				<p class="readout text-2xl font-semibold">{value.toLocaleString('en-US')}</p>
-				<p class="mt-0.5 font-mono text-[10px] tracking-[0.12em] text-ink-soft uppercase">{label}</p>
+			<div class="flex flex-col-reverse">
+				<dt class="axis-label mt-1">{label}</dt>
+				<dd class="text-title font-semibold tabular-nums">{value.toLocaleString('en-US')}</dd>
 			</div>
 		{/each}
-	</div>
+	</dl>
 
-	<section class="panel mt-6 p-5">
-		<h2 class="legend">JOBS BY LEVEL</h2>
-		<div class="mt-3 flex flex-wrap gap-2">
+	<section class="mt-14">
+		<h2 class="text-title font-semibold">Jobs by level</h2>
+		<dl class="mt-4 flex flex-wrap gap-x-8 gap-y-4">
 			{#each Object.entries(stats.jobs_by_seniority) as [level, count] (level)}
-				<span class="btn-latch !cursor-default !normal-case !tracking-normal">
-					{level}
-					<span class="rounded-sm border border-seam bg-panel-recessed px-1 font-mono text-[10px]">{count}</span>
-				</span>
+				<div>
+					<dt class="axis-label">{level}</dt>
+					<dd class="mt-0.5 text-meta font-semibold tabular-nums">{count}</dd>
+				</div>
 			{/each}
-		</div>
-		<p class="mt-4 font-mono text-[11px] tracking-wide text-ink-soft">
-			LAST SCRAPE STARTED: {stats.last_scrape_at ? new Date(stats.last_scrape_at).toLocaleString() : 'never'}
+		</dl>
+		<p class="mt-6 text-meta text-muted">
+			Last scrape started: {stats.last_scrape_at ? new Date(stats.last_scrape_at).toLocaleString() : 'never'}
 		</p>
 	</section>
 
-	<section class="panel mt-6 p-5">
-		<h2 class="legend">USER FEEDBACK</h2>
-		<p class="mt-2 text-sm text-ink-soft">
+	<section class="mt-14">
+		<h2 class="text-title font-semibold">User feedback</h2>
+		<p class="mt-2 max-w-prose text-meta text-muted">
 			Review reported job listings and general site feedback from visitors.
 		</p>
-		<a href="/admin/feedback" class="btn-latch mt-3">Open feedback queue →</a>
+		<a href="/admin/feedback" class="btn btn-quiet mt-4">Open feedback queue<svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a>
 	</section>
 {/if}

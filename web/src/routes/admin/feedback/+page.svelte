@@ -128,25 +128,25 @@
 	}
 </script>
 
-<section class="mt-6">
-	<h1 class="legend">JOB FEEDBACK QUEUE</h1>
+<section class="mt-10">
+	<h1 class="text-title font-semibold">Job feedback queue</h1>
 
 	{#if jobMessage}
-		<p class="panel mt-3 p-3 text-sm font-semibold" role="status">{jobMessage}</p>
+		<p class="mt-4 text-meta font-semibold" role="status">{jobMessage}</p>
 	{/if}
 
 	{#if jobLoading}
-		<p class="mt-4 font-mono text-sm text-ink-soft">Loading queue…</p>
+		<p class="mt-6 text-meta text-muted">Loading queue…</p>
 	{:else if jobFeedback.length === 0}
-		<p class="panel mt-4 p-6 font-mono text-sm text-ink-soft">QUEUE EMPTY — nothing pending review.</p>
+		<p class="mt-6 text-meta text-muted">Queue empty — nothing pending review.</p>
 	{:else}
-		<div class="mt-4 space-y-3">
+		<div class="mt-8 space-y-8">
 			{#each jobFeedback as f (f.id)}
-				<article class="panel p-4">
-					<div class="flex flex-wrap items-start justify-between gap-2">
+				<article class="border-t border-rule pt-8 first:border-0 first:pt-0">
+					<div class="flex flex-wrap items-start justify-between gap-3">
 						<div class="min-w-0">
-							<h2 class="font-bold">{f.job_title}</h2>
-							<p class="text-sm text-ink-soft">
+							<h2 class="font-semibold">{f.job_title}</h2>
+							<p class="mt-1 text-meta text-muted">
 								{f.company_name ?? 'Unknown company'} · {JOB_KIND_LABELS[f.kind] ?? f.kind}
 								· submitted {new Date(f.submitted_at).toLocaleDateString()}
 							</p>
@@ -155,34 +155,38 @@
 							href="/jobs/{f.job_id}"
 							target="_blank"
 							rel="noopener noreferrer"
-							class="btn-latch !normal-case !tracking-normal"
+							class="btn btn-quiet"
 						>
-							Open listing ↗
+							Open listing<svg width="11" height="11" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h7v7M13 3L6.5 9.5M11 11v2H3V5h2"/></svg>
 						</a>
 					</div>
 					{#if f.suggested_categories && f.suggested_categories.length > 0}
-						<p class="mt-2 font-mono text-xs tracking-wide text-ink-soft">
-							SUGGESTED: {f.suggested_categories.join(', ')}
+						<p class="mt-3 text-meta text-muted">
+							<span class="axis-label">Suggested categories</span>
+							{f.suggested_categories.join(', ')}
 						</p>
 					{/if}
 					{#if f.comment}
-						<p class="mt-2 max-w-3xl text-sm leading-relaxed text-ink-soft">{f.comment}</p>
+						<p class="mt-3 max-w-3xl text-meta leading-relaxed text-muted">{f.comment}</p>
 					{/if}
 					{#if f.submitter_email}
-						<p class="mt-1 font-mono text-xs tracking-wide text-ink-soft">FROM: {f.submitter_email}</p>
+						<p class="mt-2 text-meta text-muted">
+							<span class="axis-label">From</span>
+							{f.submitter_email}
+						</p>
 					{/if}
-					<div class="mt-3 flex flex-wrap gap-2">
+					<div class="mt-5 flex flex-wrap gap-3">
 						<button
 							type="button"
-							class="btn-primary !py-1.5"
+							class="btn btn-primary"
 							disabled={jobBusyId === f.id}
 							onclick={() => actJob(f.id, 'approve')}
 						>
-							Approve → apply
+							Approve and apply
 						</button>
 						<button
 							type="button"
-							class="btn-latch"
+							class="btn btn-quiet"
 							disabled={jobBusyId === f.id}
 							onclick={() => actJob(f.id, 'reject')}
 						>
@@ -195,25 +199,25 @@
 	{/if}
 </section>
 
-<section class="mt-8">
-	<h1 class="legend">SITE FEEDBACK QUEUE</h1>
+<section class="mt-16">
+	<h2 class="text-title font-semibold">Site feedback queue</h2>
 
 	{#if siteMessage}
-		<p class="panel mt-3 p-3 text-sm font-semibold" role="status">{siteMessage}</p>
+		<p class="mt-4 text-meta font-semibold" role="status">{siteMessage}</p>
 	{/if}
 
 	{#if siteLoading}
-		<p class="mt-4 font-mono text-sm text-ink-soft">Loading queue…</p>
+		<p class="mt-6 text-meta text-muted">Loading queue…</p>
 	{:else if siteFeedback.length === 0}
-		<p class="panel mt-4 p-6 font-mono text-sm text-ink-soft">QUEUE EMPTY — nothing pending review.</p>
+		<p class="mt-6 text-meta text-muted">Queue empty — nothing pending review.</p>
 	{:else}
-		<div class="mt-4 space-y-3">
+		<div class="mt-8 space-y-8">
 			{#each siteFeedback as f (f.id)}
-				<article class="panel p-4">
-					<div class="flex flex-wrap items-start justify-between gap-2">
+				<article class="border-t border-rule pt-8 first:border-0 first:pt-0">
+					<div class="flex flex-wrap items-start justify-between gap-3">
 						<div class="min-w-0">
-							<h2 class="font-bold">{SITE_KIND_LABELS[f.kind] ?? f.kind}</h2>
-							<p class="text-sm text-ink-soft">
+							<h3 class="font-semibold">{SITE_KIND_LABELS[f.kind] ?? f.kind}</h3>
+							<p class="mt-1 text-meta text-muted">
 								{#if f.company_name}{f.company_name} · {/if}
 								submitted {new Date(f.submitted_at).toLocaleDateString()}
 								{#if f.page_path} · from {f.page_path}{/if}
@@ -224,22 +228,25 @@
 								href={f.company_url}
 								target="_blank"
 								rel="noopener noreferrer"
-								class="btn-latch !normal-case !tracking-normal"
+								class="btn btn-quiet"
 							>
-								Open link ↗
+								Open link<svg width="11" height="11" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h7v7M13 3L6.5 9.5M11 11v2H3V5h2"/></svg>
 							</a>
 						{/if}
 					</div>
 					{#if f.comment}
-						<p class="mt-2 max-w-3xl text-sm leading-relaxed text-ink-soft">{f.comment}</p>
+						<p class="mt-3 max-w-3xl text-meta leading-relaxed text-muted">{f.comment}</p>
 					{/if}
 					{#if f.submitter_email}
-						<p class="mt-1 font-mono text-xs tracking-wide text-ink-soft">FROM: {f.submitter_email}</p>
+						<p class="mt-2 text-meta text-muted">
+							<span class="axis-label">From</span>
+							{f.submitter_email}
+						</p>
 					{/if}
-					<div class="mt-3 flex flex-wrap gap-2">
+					<div class="mt-5 flex flex-wrap gap-3">
 						<button
 							type="button"
-							class="btn-primary !py-1.5"
+							class="btn btn-primary"
 							disabled={siteBusyId === f.id}
 							onclick={() => actSite(f.id, 'resolve')}
 						>
@@ -247,7 +254,7 @@
 						</button>
 						<button
 							type="button"
-							class="btn-latch"
+							class="btn btn-quiet"
 							disabled={siteBusyId === f.id}
 							onclick={() => actSite(f.id, 'reject')}
 						>

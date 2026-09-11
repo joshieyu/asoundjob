@@ -51,33 +51,42 @@
 
 {#if !token}
 	<div class="mx-auto mt-16 max-w-sm">
-		<form class="panel space-y-4 p-6" onsubmit={login}>
-			<h1 class="legend">CONSOLE ACCESS</h1>
-			<p class="text-sm text-ink-soft">Admin sign-in for the ASoundJob backend.</p>
+		<form class="space-y-6" onsubmit={login}>
+			<div class="space-y-1">
+				<h1 class="text-title font-semibold">Admin sign in</h1>
+				<p class="text-meta text-muted">Admin sign-in for the ASoundJob backend.</p>
+			</div>
 			<label class="block">
-				<span class="mb-1 block font-mono text-[10px] tracking-[0.14em] uppercase">Username</span>
-				<input bind:value={username} autocomplete="username" class="well h-10 w-full px-3 text-sm" required />
+				<span class="axis-label mb-1 block">Username</span>
+				<input bind:value={username} autocomplete="username" class="field h-10" required />
 			</label>
 			<label class="block">
-				<span class="mb-1 block font-mono text-[10px] tracking-[0.14em] uppercase">Password</span>
-				<input type="password" bind:value={password} autocomplete="current-password" class="well h-10 w-full px-3 text-sm" required />
+				<span class="axis-label mb-1 block">Password</span>
+				<input type="password" bind:value={password} autocomplete="current-password" class="field h-10" required />
 			</label>
-			{#if error}<p class="text-sm font-semibold text-fader-deep" role="alert">{error}</p>{/if}
-			<button type="submit" disabled={busy} class="btn-primary w-full disabled:opacity-60">
+			{#if error}<p class="text-meta font-semibold text-ink" role="alert">{error}</p>{/if}
+			<button type="submit" disabled={busy} class="btn btn-primary w-full">
 				{busy ? 'Checking…' : 'Sign in'}
 			</button>
 		</form>
 	</div>
 {:else}
-	<nav aria-label="Admin sections" class="mt-6 flex flex-wrap gap-1.5">
+	<nav aria-label="Admin sections" class="mt-6 flex flex-wrap items-center gap-1.5">
 		{#each sections as [href, label] (href)}
-			<a href={href} class="btn-latch !normal-case !tracking-normal" aria-current={isActive(href) ? 'page' : undefined}>
+			<a
+				href={href}
+				class="btn btn-quiet"
+				class:is-on={isActive(href)}
+				class:underline={isActive(href)}
+				class:underline-offset-4={isActive(href)}
+				aria-current={isActive(href) ? 'page' : undefined}
+			>
 				{label}
 			</a>
 		{/each}
 		<button
 			type="button"
-			class="btn-latch ml-auto"
+			class="btn btn-quiet ml-auto"
 			onclick={() => {
 				setToken(null);
 				token = null;

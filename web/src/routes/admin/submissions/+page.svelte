@@ -69,40 +69,40 @@
 	}
 </script>
 
-<section class="mt-6">
-	<h1 class="legend">SUBMISSION QUEUE</h1>
+<section class="mt-10">
+	<h1 class="text-title font-semibold">Submission queue</h1>
 
 	{#if message}
-		<p class="panel mt-3 p-3 text-sm font-semibold" role="status">{message}</p>
+		<p class="mt-4 text-meta font-semibold" role="status">{message}</p>
 	{/if}
 
 	{#if loading}
-		<p class="mt-4 font-mono text-sm text-ink-soft">Loading queue…</p>
+		<p class="mt-6 text-meta text-muted">Loading queue…</p>
 	{:else if submissions.length === 0}
-		<p class="panel mt-4 p-6 font-mono text-sm text-ink-soft">QUEUE EMPTY — nothing pending review.</p>
+		<p class="mt-6 text-meta text-muted">Queue empty — nothing pending review.</p>
 	{:else}
-		<div class="mt-4 space-y-3">
+		<div class="mt-8 space-y-8">
 			{#each submissions as s (s.id)}
-				<article class="panel p-4">
-					<div class="flex flex-wrap items-start justify-between gap-2">
+				<article class="border-t border-rule pt-8 first:border-0 first:pt-0">
+					<div class="flex flex-wrap items-start justify-between gap-3">
 						<div class="min-w-0">
-							<h2 class="font-bold">{s.title}</h2>
-							<p class="text-sm text-ink-soft">
+							<h2 class="font-semibold">{s.title}</h2>
+							<p class="mt-1 text-meta text-muted">
 								{s.company_name}{#if s.location} · {s.location}{/if}{#if s.remote} · remote{/if}
 								· submitted {new Date(s.submitted_at).toLocaleDateString()}
 								· requested: {s.requested_days != null ? `${s.requested_days} days` : 'default (30 days)'}
 							</p>
 						</div>
-						<a href={s.url} target="_blank" rel="noopener noreferrer" class="btn-latch !normal-case !tracking-normal">
-							Open posting ↗
+						<a href={s.url} target="_blank" rel="noopener noreferrer" class="btn btn-quiet">
+							Open posting<svg width="11" height="11" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h7v7M13 3L6.5 9.5M11 11v2H3V5h2"/></svg>
 						</a>
 					</div>
-					<p class="mt-2 line-clamp-3 max-w-3xl text-sm leading-relaxed text-ink-soft">{s.description}</p>
-					<div class="mt-3 flex flex-wrap items-center gap-2">
-						<button type="button" class="btn-primary !py-1.5" disabled={busyId === s.id} onclick={() => act(s.id, 'approve')}>
-							Approve → live
+					<p class="mt-3 line-clamp-3 max-w-3xl text-meta leading-relaxed text-muted">{s.description}</p>
+					<div class="mt-5 flex flex-wrap items-center gap-3">
+						<button type="button" class="btn btn-primary" disabled={busyId === s.id} onclick={() => act(s.id, 'approve')}>
+							Approve and publish
 						</button>
-						<label class="flex items-center gap-1.5 text-xs text-ink-soft" for={`days-${s.id}`}>
+						<label class="flex items-center gap-2 text-meta text-muted" for={`days-${s.id}`}>
 							Days
 							<input
 								id={`days-${s.id}`}
@@ -110,12 +110,12 @@
 								min="1"
 								max="365"
 								bind:value={overrideDays[s.id]}
-								class="well h-8 w-16 px-2 font-mono text-xs"
+								class="field h-8 w-16"
 							/>
 						</label>
 						<button
 							type="button"
-							class="btn-latch"
+							class="btn btn-quiet"
 							disabled={busyId === s.id}
 							onclick={() => act(s.id, 'reject')}
 						>
