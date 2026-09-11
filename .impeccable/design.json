@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-11T14:05:41.546730Z",
+  "generatedAt": "2026-09-11T19:18:55.140020Z",
   "title": "Design System: ASoundJob",
   "extensions": {
     "colorMeta": {
@@ -257,6 +257,19 @@
         ],
         "kept": "The Sentence-Case Label Rule \u2014 the reference screenshot used all-caps coordinate keys and they were not reinstated.",
         "verification": "8 routes x 2 settings, 815 text nodes, 0 WCAG AA failures, no horizontal overflow at 375px."
+      },
+      {
+        "date": "2026-09-11 (later)",
+        "source": "user request",
+        "changes": [
+          "Level axis slider -> checkbox set; only the salary axis remains.",
+          "Job type select -> checkbox set, with an in-place warning that 45% of listings carry no job_type.",
+          "Company select (100 of 722 reachable) -> free-text filter; new `company` param added to /api/jobs.",
+          "Salary ceiling filter removed; the floor axis remains.",
+          "Sort moved from the rail to the results header as its own GET form carrying the active filters."
+        ],
+        "fixed": "Board grid items had default min-width:auto, so the nowrap coordinate readout forced /jobs to scroll horizontally at 375px. Present since the redesign shipped and previously mis-reported as clean.",
+        "verification": "152 API tests, 0 svelte-check errors and 0 warnings, 520 text nodes measured per theme with 0 AA failures, no-JS multi-select verified server-side via curl."
       }
     ]
   },

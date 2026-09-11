@@ -49,21 +49,29 @@
 		reportOpen = true;
 	}
 
-	let selectedCategories = $state<string[]>(params.category ? params.category.split(',') : []);
+	let selectedCategories = $derived(params.category ? params.category.split(',') : []);
 	let showZeroCategories = $state(false);
 
-	const LEVELS = ['', 'entry', 'mid', 'senior', 'lead', 'manager'];
-	let levelIndex = $state(0);
+	// Ordered low-to-high so the checkbox column still reads as a ladder, even
+	// though it is now a set rather than a position on an axis.
+	const LEVELS = ['entry', 'mid', 'senior', 'lead', 'manager'];
+	const JOB_TYPES = ['full-time', 'part-time', 'contract', 'internship', 'temporary'];
+
+	let selectedLevels = $derived(params.seniority ? params.seniority.split(',') : []);
+	let selectedTypes = $derived(params.job_type ? params.job_type.split(',') : []);
 	let salaryFloor = $state(0);
 
-	$effect(() => {
-		levelIndex = Math.max(0, LEVELS.indexOf(data.params.seniority ?? ''));
-	});
 	$effect(() => {
 		salaryFloor = Number(data.params.salary_min ?? 0) || 0;
 	});
 
-	const levelValue = $derived(LEVELS[levelIndex] ?? '');
+	function toggleIn(list: string[], value: string, checked: boolean): string[] {
+		if (checked) return list.includes(value) ? list : [...list, value];
+		return list.filter((v) => v !== value);
+	}
+
+	const levelFieldValue = $derived(selectedLevels.join(','));
+	const typeFieldValue = $derived(selectedTypes.join(','));
 	const coordinates = $derived.by(() => {
 		const parts: string[] = [`${(jobs?.total ?? 0).toLocaleString('en-US')} open`];
 		parts.push(
@@ -71,7 +79,20 @@
 				? `cat ${selectedCategories.length}/${categoryOptions.length}`
 				: `cat all/${categoryOptions.length}`
 		);
-		parts.push(levelValue ? `lvl ${levelValue}` : 'lvl any');
+		parts.push(
+			selectedLevels.length === 0
+				? 'lvl any'
+				: selectedLevels.length === 1
+					? `lvl ${selectedLevels[0]}`
+					: `lvl ${selectedLevels.length}/${LEVELS.length}`
+		);
+		parts.push(
+			selectedTypes.length === 0
+				? 'type any'
+				: selectedTypes.length === 1
+					? `type ${selectedTypes[0]}`
+					: `type ${selectedTypes.length}/${JOB_TYPES.length}`
+		);
 		parts.push(salaryFloor > 0 ? `sal ${Math.round(salaryFloor / 1000)}k+` : 'sal any');
 		if (params.country) parts.push(`country ${params.country}`);
 		if (params.remote) parts.push('remote');
@@ -84,10 +105,6 @@
 	const salaryLabel = $derived(
 		salaryFloor > 0 ? `${Math.round(salaryFloor / 1000)}k and up` : 'any salary'
 	);
-
-	$effect(() => {
-		selectedCategories = params.category ? params.category.split(',') : [];
-	});
 
 	function toggleCategory(id: string, checked: boolean) {
 		if (checked) {
@@ -144,8 +161,11 @@
 					id: c
 				});
 		if (params.seniority)
-			labels.push({ key: 'seniority', label: 'Level', value: params.seniority });
-		if (params.job_type) labels.push({ key: 'job_type', label: 'Type', value: params.job_type });
+			for (const lvl of params.seniority.split(','))
+				labels.push({ key: 'seniority', label: 'Level', value: lvl, id: lvl });
+		if (params.job_type)
+			for (const t of params.job_type.split(','))
+				labels.push({ key: 'job_type', label: 'Type', value: t, id: t });
 		if (params.country)
 			labels.push({ key: 'country', label: 'Country', value: selectedCountryName });
 		if (params.location)
@@ -155,26 +175,49 @@
 			labels.push({ key: 'include_unrelated', label: '', value: 'Including non-audio roles' });
 		if (params.salary_min)
 			labels.push({ key: 'salary_min', label: 'Pays at least', value: `$${params.salary_min}` });
-		if (params.company_id) {
-			const name = data.companies?.items.find((c) => String(c.id) === params.company_id)?.name;
-			labels.push({ key: 'company_id', label: 'Company', value: name ?? `#${params.company_id}` });
-		}
+		if (params.company) labels.push({ key: 'company', label: 'Company', value: params.company });
 		return labels;
 	});
 
+	// Filters whose value is a CSV set: removing one chip must drop that one
+	// value, not the whole filter.
+	const CSV_FILTERS = ['category', 'seniority', 'job_type'];
+
 	function removeFilter(key: string, value?: string): Record<string, string | undefined> {
-		if (key === 'category' && params.category?.includes(',')) {
-			const rest = params.category
+		if (CSV_FILTERS.includes(key) && params[key]?.includes(',')) {
+			const rest = params[key]
 				.split(',')
-				.filter((c) => c !== value)
+				.filter((v) => v !== value)
 				.join(',');
-			return { category: rest };
+			return { [key]: rest };
 		}
 		const out: Record<string, string | undefined> = {};
 		out[key] = undefined;
 		return out;
 	}
 
+
+	const SORTS: [string, string][] = [
+		['newest', 'Newest first'],
+		['oldest', 'Oldest first'],
+		['salary_desc', 'Salary, high to low'],
+		['salary_asc', 'Salary, low to high']
+	];
+
+	// The sort control is its own GET form, outside the filter rail, so it has to
+	// carry the current filters itself or changing the order would clear them.
+	// Read from the URL rather than `params`, which omits `bookmarked` and has
+	// `page`/`per_page` injected by the loader.
+	const sortCarry = $derived.by(() => {
+		const out: [string, string][] = [];
+		for (const [key, value] of page.url.searchParams) {
+			// Empty values are what a GET form submits for untouched fields; carrying
+			// them forward would grow the URL on every sort change.
+			if (key === 'sort' || key === 'page' || !value) continue;
+			out.push([key, value]);
+		}
+		return out;
+	});
 
 	function pageHref(p: number): string {
 		const next = new URLSearchParams(page.url.searchParams);
@@ -248,39 +291,80 @@
 
 		<fieldset class="mt-6">
 			<legend class="axis-label mb-2">Level</legend>
-			<input type="hidden" name="seniority" value={levelValue} />
-			<label class="sr-only" for="level-axis">Level</label>
-			<input
-				id="level-axis"
-				type="range"
-				min="0"
-				max="5"
-				step="1"
-				bind:value={levelIndex}
-				class="axis"
-				aria-valuetext={levelValue || 'any level'}
-			/>
-			<p class="coord mt-1.5" aria-live="polite">{levelValue || 'any level'}</p>
+			<!-- Multi-select, so the one CSV field carries the whole set. The visible
+			     boxes are unnamed; without JS the <noscript> set below submits instead. -->
+			<input type="hidden" name="seniority" value={levelFieldValue} />
+			{#each LEVELS as lvl (lvl)}
+				<label class="flex items-center gap-2.5 py-1 text-meta hover:text-accent">
+					<input
+						type="checkbox"
+						class="h-4 w-4 accent-accent"
+						checked={selectedLevels.includes(lvl)}
+						onchange={(e) =>
+							(selectedLevels = toggleIn(selectedLevels, lvl, e.currentTarget.checked))}
+					/>
+					{lvl}
+				</label>
+			{/each}
+			<p class="coord mt-1.5 text-muted" aria-live="polite">
+				{selectedLevels.length === 0 ? 'any level' : selectedLevels.join(', ')}
+			</p>
 			<noscript>
-				<select name="seniority" class="field mt-2">
-					<option value="">Any level</option>
-					{#each ['entry', 'mid', 'senior', 'lead', 'manager'] as lvl (lvl)}
-						<option value={lvl} selected={params.seniority === lvl}>{lvl}</option>
+				<div class="mt-1">
+					{#each LEVELS as lvl (lvl)}
+						<label class="flex items-center gap-2.5 py-1 text-meta">
+							<input
+								type="checkbox"
+								name="seniority"
+								value={lvl}
+								checked={(params.seniority ?? '').split(',').includes(lvl)}
+								class="h-4 w-4 accent-accent"
+							/>
+							{lvl}
+						</label>
 					{/each}
-				</select>
+				</div>
 			</noscript>
 		</fieldset>
 
-		<fieldset class="mt-3">
+		<fieldset class="mt-4">
 			<legend class="axis-label mb-2">
 				Type
 			</legend>
-			<select name="job_type" class="field">
-				<option value="">Any type</option>
-				{#each ['full-time', 'part-time', 'contract', 'internship', 'temporary'] as t (t)}
-					<option value={t} selected={params.job_type === t}>{t}</option>
-				{/each}
-			</select>
+			<input type="hidden" name="job_type" value={typeFieldValue} />
+			{#each JOB_TYPES as t (t)}
+				<label class="flex items-center gap-2.5 py-1 text-meta hover:text-accent">
+					<input
+						type="checkbox"
+						class="h-4 w-4 accent-accent"
+						checked={selectedTypes.includes(t)}
+						onchange={(e) =>
+							(selectedTypes = toggleIn(selectedTypes, t, e.currentTarget.checked))}
+					/>
+					{t}
+				</label>
+			{/each}
+			{#if selectedTypes.length > 0}
+				<p class="mt-1.5 text-coord text-muted">
+					Roles with no listed type are hidden while this is set.
+				</p>
+			{/if}
+			<noscript>
+				<div class="mt-1">
+					{#each JOB_TYPES as t (t)}
+						<label class="flex items-center gap-2.5 py-1 text-meta">
+							<input
+								type="checkbox"
+								name="job_type"
+								value={t}
+								checked={(params.job_type ?? '').split(',').includes(t)}
+								class="h-4 w-4 accent-accent"
+							/>
+							{t}
+						</label>
+					{/each}
+				</div>
+			</noscript>
 		</fieldset>
 
 		<fieldset class="mt-3">
@@ -372,46 +456,26 @@
 				class="axis"
 				aria-valuetext={salaryLabel}
 			/>
-			<p class="coord mt-1.5 mb-3" aria-live="polite">{salaryLabel}</p>
-			<div class="flex items-center gap-2">
-				<label class="axis-label shrink-0" for="salary-max">Ceiling</label>
-				<input
-					id="salary-max"
-					type="number"
-					name="salary_max"
-					min="0"
-					step="5000"
-					value={params.salary_max ?? ''}
-					placeholder="Max"
-					class="field"
-				/>
-			</div>
+			<p class="coord mt-1.5" aria-live="polite">{salaryLabel}</p>
 		</fieldset>
 
 		<fieldset class="mt-3">
 			<legend class="axis-label mb-2">
-				Company
+				Company contains
 			</legend>
-			<select name="company_id" class="field">
-				<option value="">All companies</option>
-				{#each data.companies?.items ?? [] as company (company.id)}
-					<option value={company.id} selected={params.company_id === String(company.id)}>
-						{company.name}
-					</option>
-				{/each}
-			</select>
+			<input
+				name="company"
+				value={params.company ?? ''}
+				placeholder="e.g. Dolby"
+				class="field"
+			/>
 		</fieldset>
 
-		<fieldset class="mt-3">
-			<legend class="axis-label mb-2">
-				Sort
-			</legend>
-			<select name="sort" class="field">
-				{#each [['newest', 'Newest first'], ['oldest', 'Oldest first'], ['salary_desc', 'Salary, high to low'], ['salary_asc', 'Salary, low to high']] as [value, labelText] (value)}
-					<option value={value} selected={(params.sort ?? 'newest') === value}>{labelText}</option>
-				{/each}
-			</select>
-		</fieldset>
+		{#if params.sort}
+			<!-- Sort lives beside the result count now, not in the rail. Carried here
+			     so applying a filter does not silently reset the chosen order. -->
+			<input type="hidden" name="sort" value={params.sort} />
+		{/if}
 
 		</div>
 
@@ -429,7 +493,7 @@
 		>
 			{coordinates}
 		</p>
-		<div class="flex flex-wrap items-center justify-between gap-3">
+		<div class="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
 			<p class="flex items-baseline gap-3">
 				<span class="text-display leading-none font-light">
 					{(jobs?.total ?? 0).toLocaleString('en-US')}
@@ -438,9 +502,32 @@
 					{(jobs?.total ?? 0) === 1 ? 'open role' : 'open roles'}
 				</span>
 			</p>
-			<a href="/jobs/submit" class="link text-meta font-semibold">
-				Know a missing role? Submit it
-			</a>
+
+			<div class="flex flex-wrap items-center gap-x-5 gap-y-2">
+				<form method="get" action="/jobs" class="flex items-center gap-2">
+					{#each sortCarry as [key, value], i (key + i)}
+						<input type="hidden" name={key} value={value} />
+					{/each}
+					<label class="axis-label shrink-0" for="sort-select">Sort</label>
+					<select
+						id="sort-select"
+						name="sort"
+						class="field w-auto"
+						onchange={(e) => e.currentTarget.form?.requestSubmit()}
+					>
+						{#each SORTS as [value, labelText] (value)}
+							<option {value} selected={(params.sort ?? 'newest') === value}>{labelText}</option>
+						{/each}
+					</select>
+					<noscript>
+						<button type="submit" class="btn btn-quiet">Go</button>
+					</noscript>
+				</form>
+
+				<a href="/jobs/submit" class="link text-meta font-semibold">
+					Know a missing role? Submit it
+				</a>
+			</div>
 		</div>
 
 		{#if activeFilters.length > 0}

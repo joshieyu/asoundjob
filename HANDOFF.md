@@ -5337,8 +5337,62 @@ stamping `data-theme` reported **124 dark-mode failures** after a change that
 touched no colour; the same audit run on the real page reported 0. Do not trust
 the iframe harness — navigate for real and inject the script into the live page.
 
+### Follow-up: filters become sets, sort leaves the rail
+
+- **Salary ceiling removed.** Floor axis stays.
+- **Level and Job type are multi-select checkboxes.** Values OR within a filter
+  and AND across filters. Needed an API change: `seniority` and `job_type` are
+  now CSV-parsed and use `IN`. `apply_job_filters` accepts a string *or* a list
+  via `_as_list`, because `routers/search.py` still passes a bare string.
+- **Company is free text.** New `company` param on `/api/jobs` doing a
+  case-insensitive substring match on the company name. The old dropdown only
+  loaded 100 of 722 verified companies. `company_id` still works in the API; the
+  board no longer sends it, and the board no longer fetches the company list at
+  all — one fewer API call per page load.
+- **Sort sits beside the result count**, as its own GET form. It carries the
+  active filters as hidden inputs and the rail carries `sort` back; without both
+  halves, changing one clears the other.
+
+**URLs stay backward compatible.** `?seniority=senior` still works. The loader
+accepts CSV *and* repeated params, because the `<noscript>` checkboxes submit
+`seniority=entry&seniority=senior` while the enhanced form submits
+`seniority=entry,senior`. `get()` would have kept only the first.
+
+**`salary_min=0` is now dropped in the loader.** The axis always submits, so
+untouched it arrived as `"0"` — truthy — and produced a "Pays at least: $0" chip
+that rode along in every shared URL.
+
+**Writable `$derived` replaced `$state` + a syncing `$effect`** for the three
+filter sets. That is what cleared the two long-standing
+`state_referenced_locally` warnings; `npm --prefix web run check` is now **0
+errors, 0 warnings**.
+
+### Correction to an earlier entry in this file
+
+`/jobs` **has had a horizontal scrollbar at 375px since the redesign shipped.**
+Verified by stashing the current work and re-measuring at the previous commit:
+`document.body.scrollWidth` 488 against a 375 viewport. Earlier notes here
+claiming "no horizontal overflow at 375px" were wrong.
+
+Cause: the board's two grid items had the default `min-width: auto`, so the
+nowrap `.coord` readout set the column's minimum (468px in a 343px container)
+and stretched the whole grid. Fixed with `minmax(0,1fr)` on the track plus
+`min-w-0` on both items — which is also what finally lets `truncate` on that
+line truncate. **Any grid item that can hold a nowrap or truncated line needs
+`min-w-0`.**
+
+### Third measurement trap
+
+Auditing contrast immediately after flipping `data-theme` at runtime reported
+**52 failures that do not exist** — the elements were mid CSS transition, and the
+same elements measure 18:1 once settled. Always audit after a real page load.
+That is now three tools that have lied this session: the oklab regex, the iframe
+harness, and the runtime theme flip.
+
 ## Still open
 
+- Selecting any job type hides the 45% of listings with no `job_type` recorded.
+  The UI warns in place. The real fix is better extraction at scrape time.
 - Two toggles, no "system" option: once a reader picks light or dark it sticks
   until they pick the other. Following the OS again means clearing
   `localStorage['asj:theme']`. A three-state control was judged not worth the

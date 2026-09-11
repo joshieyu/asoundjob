@@ -140,7 +140,7 @@ components:
 
 **Creative North Star: "The Type Specimen"**
 
-ASoundJob is laid out the way a foundry lays out a type specimen sheet: one family, one ink, enormous scale contrast, and nothing decorative between the reader and the data. The thesis is that filters are axis sliders that continuously remap the board, that the board reports its own coordinates back to you, and that hierarchy comes from scale contrast alone. The home page opens with the live job count set at `clamp(3rem, 9vw, 6rem)` in weight 300 against a near-white ground — a number, not a headline — and everything below it is a smaller reading of the same instrument. The page never decorates; it registers.
+ASoundJob is laid out the way a foundry lays out a type specimen sheet: one family, one ink, enormous scale contrast, and nothing decorative between the reader and the data. The thesis is that the board reports its own coordinates back to you and that hierarchy comes from scale contrast alone. Axis sliders were originally the whole filter language; one survives (salary), because most of the board's filters turned out to be sets rather than positions. The home page opens with the live job count set at `clamp(3rem, 9vw, 6rem)` in weight 300 against a near-white ground — a number, not a headline — and everything below it is a smaller reading of the same instrument. The page never decorates; it registers.
 
 The family is Recursive Variable, loaded once, and its MONO axis carries the whole sans-to-mono relationship. Readouts are not a font swap to a second family; they are an axis move from `'MONO' 0` (body) to `'MONO' 1` (`.coord`, `.axis-label`). Only the `mono.css` slice ships (MONO 0–1, wght 300–1000, ~70 KB); the 297 KB `full.css` was rejected because the CASL, CRSV and slnt axes are unused. That single-family economy is why a board with 21 specialty categories can stay legible without a second voice.
 
@@ -276,7 +276,7 @@ The character across the board is flat, square, and quiet at rest — nothing is
 ### Axis Slider (`.axis`)
 The literal form of the thesis: a filter that continuously remaps the board. A native `input[type=range]` stripped of its chrome down to two marks — a 1px Muted Ink track and a 2px by 14px ink hairline as the thumb, square, no fill, no radius, no shadow. Since the recency tick was removed this is the system's only remaining plotted mark, and it is the reference for any future one. Hover and `:focus-visible` turn the thumb Foundry Blue; nothing grows or lifts. It is 24px tall so the pointer target stays comfortable while the ink stays 1px.
 
-Two ship on the board rail: **Level** (a 0–5 integer index over entry/mid/senior/lead/manager) and **Minimum salary** (0–300,000 in 10,000 steps). Each is captioned by an `.axis-label` legend above and answers with a `.coord` readout below marked `aria-live="polite"` — the axis is set, the board reports back its new coordinate. The visible control carries a screen-reader-only `<label>` and an `aria-valuetext` that speaks the human value ("senior", "any level") rather than the raw index, and the Level axis ships a `<noscript>` `.field` select so the filter still works without JS. A slider is only correct for an ordered domain; unordered filters (specialty, country, company) stay as checkboxes and selects.
+**One** ships on the board rail: **Minimum salary** (0–300,000 in 10,000 steps). Level was the second until 2026-09-11, when it became a multi-select; see *Amendments*. Each is captioned by an `.axis-label` legend above and answers with a `.coord` readout below marked `aria-live="polite"` — the axis is set, the board reports back its new coordinate. The visible control carries a screen-reader-only `<label>` and an `aria-valuetext` that speaks the human value ("senior", "any level") rather than the raw index, and the Level axis ships a `<noscript>` `.field` select so the filter still works without JS. A slider is only correct for an ordered domain **and a single value**. Level is ordered but is now a set — a reader open to senior *or* manager but not lead cannot say so on an axis — so it is checkboxes. Specialty and job type are checkboxes for the same reason; country is a select; company is free text, because 722 verified companies is not a menu.
 
 ### Links
 - **Style:** Foundry Blue with a persistent underline, offset 0.18em, thickness from the font's own metric.
@@ -325,6 +325,8 @@ Admin shares the token layer exactly — same ground, same ink, same accent, sam
 - **Do** use `{colors.accent-inv}` (5.30:1) whenever accent must sit on an ink-filled surface.
 - **Do** keep `fieldset { min-inline-size: 0 }` in the base layer; without it the filter rail escapes its grid track.
 - **Do** pair every axis slider with an `.axis-label` legend above and an `aria-live="polite"` `.coord` readout below, plus `aria-valuetext` speaking the human value.
+- **Do** give multi-select filters the same `aria-live` `.coord` readout an axis gets — the checkbox set answers back (`senior, lead`) exactly as the slider did.
+- **Do** put `min-w-0` on every grid item that can contain a `truncate`d line; `min-width: auto` is the default and a nowrap child will set the whole track's minimum.
 - **Do** state hierarchy with scale: a coordinate readout and a specimen numeral are the two ends of a single ramp roughly 8x apart.
 
 ### Don't:
@@ -341,6 +343,7 @@ Admin shares the token layer exactly — same ground, same ink, same accent, sam
 - **Don't** make salary the structural spine of any board view; 80% of rows have none.
 - **Don't** put an unordered set on an axis slider; a slider implies a rank, so specialty, country and company stay as checkboxes and selects.
 - **Don't** give a slider a filled track, a round thumb, or a value bubble — the thumb is a 1px ink hairline standing on a 1px track.
+- **Don't** reach for a slider on a filter a reader may want more than one value from. That is a set, and sets are checkboxes.
 - **Don't** rely on colour alone for any state — every state in this system has a second, non-chromatic cue.
 
 ## Amendments
@@ -385,3 +388,43 @@ reads the L/a/b floats as RGB channels and reports confident nonsense — it
 scored near-black for the header and produced 7 fabricated failures. The audit
 paints each colour into a 1x1 canvas and reads the pixel back instead. Any
 future contrast script must do the same.
+
+### 2026-09-11 (later) — filters become sets, sort leaves the rail
+
+**Requested by the user.** Four changes, one design consequence.
+
+1. **Level is no longer an axis.** It is a checkbox set, because a reader open to
+   senior *or* manager but not lead cannot express that as a position on a line.
+   This leaves **one** axis slider on the board (salary), where the direction
+   contract in `app.html` originally imagined filters as axis sliders generally.
+   The contract is a historical record and is left as written; this document is
+   the live one. What survives of the idea is the *readout*: every multi-select
+   still answers back through an `aria-live` `.coord` line, so the board still
+   reports its own coordinates.
+
+2. **Job type is a checkbox set** for the same reason. It carries a warning the
+   others do not need: 45% of listings have no `job_type` at all, so any
+   selection hides them. The UI says so in place rather than letting a reader
+   conclude the board is empty.
+
+3. **Company is free text, not a select.** The dropdown only ever loaded 100 of
+   722 verified companies, so 86% were unreachable. This needed a new `company`
+   API filter — there was only `company_id` before.
+
+4. **Sort moved out of the rail** to sit beside the result count, and is its own
+   GET form. It therefore has to carry the active filters as hidden inputs, and
+   the rail has to carry `sort` back, or each would clear the other.
+
+**Salary ceiling removed** entirely; the floor axis remains.
+
+**A layout bug this exposed, present since the redesign shipped:** the board's
+two grid items had the default `min-width: auto`, so the nowrap coordinate
+readout set the column's minimum and pushed the whole page wider than a phone
+screen — `/jobs` had a horizontal scrollbar at 375px the whole time. Earlier
+verification in this project reported "no horizontal overflow at 375px", and
+that was wrong. The track is now `minmax(0,1fr)` with `min-w-0` on both items,
+which is also what finally lets `truncate` on that line truncate.
+
+**A third measurement trap.** Auditing contrast immediately after flipping
+`data-theme` at runtime reported 52 failures that do not exist; the elements
+were mid-transition. Measure after a real page load, not after a runtime flip.

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Optional
+from typing import Optional, Union
 
 from sqlalchemy import String, case, func, or_, select
 from sqlalchemy.orm import Session, selectinload
@@ -26,14 +26,28 @@ def page_envelope(items: list, total: int, page: int, per_page: int) -> dict:
     }
 
 
+def _as_list(value: Union[str, list[str], None]) -> Optional[list[str]]:
+    """Accept a single value or a list, and return a lowercased list.
+
+    Callers predate multi-select and still pass plain strings (see
+    routers/search.py), so both shapes stay valid.
+    """
+    if value is None:
+        return None
+    values = [value] if isinstance(value, str) else list(value)
+    cleaned = [v.strip().lower() for v in values if v and v.strip()]
+    return cleaned or None
+
+
 def apply_job_filters(
     stmt,
     category: Optional[list[str]] = None,
-    seniority: Optional[str] = None,
-    job_type: Optional[str] = None,
+    seniority: Union[str, list[str], None] = None,
+    job_type: Union[str, list[str], None] = None,
     salary_min: Optional[int] = None,
     salary_max: Optional[int] = None,
     company_id: Optional[int] = None,
+    company: Optional[str] = None,
     location: Optional[str] = None,
     country: Optional[str] = None,
     remote: Optional[bool] = None,
@@ -46,12 +60,16 @@ def apply_job_filters(
         stmt = stmt.where(Job.id.in_(ids))
     if not include_unrelated:
         stmt = stmt.where(Job.is_audio_related.is_(True))
-    if seniority:
-        stmt = stmt.where(Job.seniority == seniority.lower())
-    if job_type:
-        stmt = stmt.where(Job.job_type == job_type.lower())
+    seniorities = _as_list(seniority)
+    if seniorities:
+        stmt = stmt.where(Job.seniority.in_(seniorities))
+    job_types = _as_list(job_type)
+    if job_types:
+        stmt = stmt.where(Job.job_type.in_(job_types))
     if company_id is not None:
         stmt = stmt.where(Job.company_id == company_id)
+    if company and company.strip():
+        stmt = stmt.where(Job.company.has(Company.name.ilike(f"%{company.strip()}%")))
     if remote is not None:
         stmt = stmt.where(Job.remote.is_(remote))
     if location:
