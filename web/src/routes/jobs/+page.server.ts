@@ -18,6 +18,10 @@ const ALLOWED = [
 	'ids'
 ] as const;
 
+const API_PARAM_ALIASES: Record<string, string> = {
+	q: 'search'
+};
+
 export const load: PageServerLoad = async ({ url }) => {
 	const params: Record<string, string> = {};
 	for (const key of ALLOWED) {
@@ -29,9 +33,14 @@ export const load: PageServerLoad = async ({ url }) => {
 	params['page'] = String(page);
 	if (!params.per_page) params.per_page = '20';
 
+	const apiParams: Record<string, string> = {};
+	for (const [key, value] of Object.entries(params)) {
+		apiParams[API_PARAM_ALIASES[key] ?? key] = value;
+	}
+
 	const [jobs, categories, companies, countries, totalResult, openApplications, blocked] =
 		await Promise.all([
-			getJobs(params).catch(() => null),
+			getJobs(apiParams).catch(() => null),
 			getCategories().catch(() => null),
 			getCompanies({ verified_only: 'true', per_page: '100' }).catch(() => null),
 			getCountries().catch(() => null),
