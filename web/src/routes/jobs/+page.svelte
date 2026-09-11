@@ -237,11 +237,11 @@
 
 <h1 class="sr-only">Audio industry jobs</h1>
 
-<div class="mt-6 grid gap-6 lg:grid-cols-[17rem_1fr]">
+<div class="mt-6 grid gap-6 lg:grid-cols-[17rem_minmax(0,1fr)]">
 	<form
 		method="get"
 		action="/jobs"
-		class="h-fit lg:sticky lg:top-24 lg:flex lg:max-h-[calc(100vh-8rem)] lg:flex-col"
+		class="h-fit min-w-0 lg:sticky lg:top-24 lg:flex lg:max-h-[calc(100vh-8rem)] lg:flex-col"
 		aria-label="Job filters"
 	>
 		<h2 class="text-title font-semibold">Filters</h2>
@@ -485,7 +485,7 @@
 		</div>
 	</form>
 
-	<section aria-label="Job results">
+	<section class="min-w-0" aria-label="Job results">
 		<p
 			class="coord sticky top-16 z-30 -mx-1 mb-4 truncate border-b border-muted bg-ground/95 px-1 py-2 backdrop-blur"
 			aria-live="polite"
