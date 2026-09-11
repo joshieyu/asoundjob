@@ -1,139 +1,401 @@
 {
-	"schemaVersion": 2,
-	"generatedAt": "2026-08-26T00:00:00Z",
-	"title": "Design System: ASoundJob",
-	"extensions": {
-		"colorMeta": {
-			"fader": {
-				"role": "primary",
-				"displayName": "Fader Cap Orange",
-				"canonical": "#d96c2c",
-				"tonalRamp": ["#2a1305", "#54260c", "#7e3a12", "#a84e1c", "#d96c2c", "#e58a50", "#efa97b", "#f6c7a8"]
-			},
-			"lit": {
-				"role": "tertiary",
-				"displayName": "Signal Green",
-				"canonical": "#2f8f57",
-				"tonalRamp": ["#0c2a18", "#144025", "#1d5a34", "#2f8f57", "#4daf74", "#74c795", "#9fdcb6", "#c9efd7"]
-			},
-			"panel": {
-				"role": "neutral",
-				"displayName": "Panel Silver",
-				"canonical": "#e9e7e1",
-				"tonalRamp": ["#57534b", "#7a766d", "#a19d93", "#c9c6bd", "#dedcd4", "#e9e7e1", "#f5f3ef", "#fbfaf7"]
-			},
-			"ink": {
-				"role": "neutral",
-				"displayName": "Hardware Ink",
-				"canonical": "#23262b",
-				"tonalRamp": ["#0b0c0e", "#16181c", "#23262b", "#3a3e45", "#575b61", "#7e8288", "#abaeb2", "#d6d8db"]
-			}
-		},
-		"typographyMeta": {
-			"display": { "displayName": "Display", "purpose": "Page titles and the hero job count only." },
-			"readout": { "displayName": "Readout", "purpose": "Every scannable number: counts, salaries, timestamps." },
-			"label": { "displayName": "Legend", "purpose": "Console-style section labels and spec pairs (SAL/TYPE/LVL)." }
-		},
-		"shadows": [
-			{
-				"name": "cap",
-				"value": "inset 0 1px 0 rgb(255 255 255 / 0.75), inset 0 -1px 0 rgb(35 38 43 / 0.08), 0 1px 2px rgb(35 38 43 / 0.08)",
-				"purpose": "Raised controls and panels at rest."
-			},
-			{
-				"name": "recessed",
-				"value": "inset 0 2px 4px rgb(35 38 43 / 0.12), inset 0 -1px 0 rgb(255 255 255 / 0.6)",
-				"purpose": "Inputs and meter bays."
-			}
-		],
-		"motion": [
-			{ "name": "state", "value": "120ms ease", "purpose": "Latch/button state transitions." },
-			{ "name": "meter-sweep", "value": "600ms ease-out, 40ms per-segment stagger", "purpose": "Result-count LED meters light left to right on load." },
-			{ "name": "readout-power", "value": "900ms ease-out", "purpose": "Hero count powers on once; glow settles." },
-			{ "name": "reduced-motion", "value": "prefers-reduced-motion: reduce → animation: none", "purpose": "All authored motion is guarded." }
-		],
-		"breakpoints": [
-			{ "name": "sm", "value": "640px" },
-			{ "name": "md", "value": "768px" },
-			{ "name": "lg", "value": "1024px" },
-			{ "name": "xl", "value": "1280px" }
-		]
-	},
-	"components": [
-		{
-			"name": "Primary Button",
-			"kind": "button",
-			"refersTo": "button-primary",
-			"description": "The one live-orange action per view.",
-			"html": "<button class=\"ds-btn-primary\">FIND JOBS</button>",
-			"css": ".ds-btn-primary{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 20px;font:700 0.875rem/1 'Archivo Variable',system-ui,sans-serif;letter-spacing:0.05em;text-transform:uppercase;color:#fff;background:#d96c2c;border:1px solid #a84e1c;border-radius:2px;box-shadow:inset 0 1px 0 rgb(255 255 255/.75),0 1px 2px rgb(35 38 43/.08);cursor:pointer;transition:background 120ms ease}.ds-btn-primary:hover{background:#a84e1c}.ds-btn-primary:focus-visible{outline:2px solid #23262b;outline-offset:2px}"
-		},
-		{
-			"name": "Latch Button",
-			"kind": "button",
-			"refersTo": "button-latch",
-			"description": "Secondary control; fills orange when active (backlit latch).",
-			"html": "<button class=\"ds-btn-latch\">AUDIO DSP</button> <button class=\"ds-btn-latch is-on\">LATCHED</button>",
-			"css": ".ds-btn-latch{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;font:600 0.8125rem/1 'Archivo Variable',system-ui,sans-serif;letter-spacing:0.04em;text-transform:uppercase;color:#23262b;background:linear-gradient(to bottom,#f5f3ef,#e9e7e1);border:1px solid #c9c6bd;border-radius:2px;box-shadow:inset 0 1px 0 rgb(255 255 255/.75),inset 0 -1px 0 rgb(35 38 43/.08),0 1px 2px rgb(35 38 43/.08);cursor:pointer;transition:all 120ms ease}.ds-btn-latch:hover{border-color:#a84e1c}.ds-btn-latch.is-on{background:#d96c2c;border-color:#a84e1c;color:#fff;box-shadow:inset 0 1px 3px rgb(0 0 0/.25)}.ds-btn-latch:focus-visible{outline:2px solid #23262b;outline-offset:2px}"
-		},
-		{
-			"name": "Well Input",
-			"kind": "input",
-			"refersTo": "input-well",
-			"description": "Recessed field; sinks into the panel.",
-			"html": "<input class=\"ds-input-well\" placeholder=\"Search titles, skills, companies…\" />",
-			"css": ".ds-input-well{height:44px;width:100%;padding:8px 14px;font:400 0.875rem/1.4 'Archivo Variable',system-ui,sans-serif;color:#23262b;background:#dedcd4;border:1px solid #c9c6bd;border-radius:6px;box-shadow:inset 0 2px 4px rgb(35 38 43/.12),inset 0 -1px 0 rgb(255 255 255/.6);outline:none}.ds-input-well::placeholder{color:#575b61}.ds-input-well:focus-visible{outline:2px solid #23262b;outline-offset:2px}"
-		},
-		{
-			"name": "Panel Card",
-			"kind": "card",
-			"refersTo": "card-panel",
-			"description": "Raised surface for strips, forms, sections.",
-			"html": "<div class=\"ds-panel\" style=\"width:280px\"><strong style=\"display:block;margin-bottom:4px\">Senior DSP Engineer</strong><span style=\"font:400 0.8125rem/1.4 'Archivo Variable',system-ui,sans-serif;color:#575b61\">Bose · Boston, MA</span></div>",
-			"css": ".ds-panel{background:#f5f3ef;border:1px solid #c9c6bd;border-radius:6px;box-shadow:inset 0 1px 0 rgb(255 255 255/.75),inset 0 -1px 0 rgb(35 38 43/.08),0 1px 2px rgb(35 38 43/.08);padding:16px;font:400 0.9375rem/1.6 'Archivo Variable',system-ui,sans-serif;color:#23262b}"
-		},
-		{
-			"name": "Legend Label",
-			"kind": "custom",
-			"refersTo": "label",
-			"description": "Console section label: orange tick, tracked mono caps, hairline tail.",
-			"html": "<div class=\"ds-legend\">FILTER RACK</div>",
-			"css": ".ds-legend{display:flex;align-items:center;gap:10px;font:600 0.6875rem/1.4 'Spline Sans Mono Variable',ui-monospace,monospace;letter-spacing:0.14em;text-transform:uppercase;color:#575b61}.ds-legend::before{content:'';width:8px;height:3px;background:#d96c2c;border-radius:1px}.ds-legend::after{content:'';flex:1;height:1px;background:#c9c6bd}"
-		},
-		{
-			"name": "LED Meter",
-			"kind": "custom",
-			"refersTo": "readout",
-			"description": "Segmented level meter; green fills, amber/red crest, gray when dark.",
-			"html": "<div class=\"ds-meter\" style=\"height:48px\"><span></span><span></span><span></span><span></span><span></span><span></span><span class=\"amber\"></span><span class=\"off\"></span><span class=\"off\"></span><span class=\"off\"></span></div>",
-			"css": ".ds-meter{display:flex;flex-direction:column-reverse;gap:2px;width:12px}.ds-meter span{flex:1;border-radius:1px;background:#2f8f57}.ds-meter span.amber{background:#d9a13b}.ds-meter span.off{background:#cdcdc6}.ds-meter span:first-child{border-radius:1px 1px 3px 3px}"
-		}
-	],
-	"narrative": {
-		"northStar": "The Session Console",
-		"overview": "ASoundJob's interface is a light mixing console: warm silver panels, recessed wells for inputs, raised caps for controls, and one fader-cap orange that lights up when something is live. The world is hardware-flat — bevels are single-pixel top highlights, never gradients or gloss. Every scannable number sets in a tabular monospace readout, the way meters and counters do on real gear.",
-		"keyCharacteristics": [
-			"Light hardware world; dark only inside display windows",
-			"One interactive hue; state shown by illumination",
-			"Mono carries data, Archivo carries voice",
-			"Depth = affordance: wells sink, caps rise"
-		],
-		"rules": [
-			{ "name": "The One Fader Rule", "body": "Orange marks interaction and nothing else; under 10% of any screen.", "section": "colors" },
-			{ "name": "The Readout Rule", "body": "Any scanned number sets in Spline Sans Mono tabular figures; body prose never uses mono.", "section": "typography" },
-			{ "name": "The Spec Block Rule", "body": "Job metadata renders as labeled mono pairs, never prose sentences.", "section": "typography" },
-			{ "name": "The Recess Rule", "body": "Things you type into sink; things you press rise.", "section": "elevation" }
-		],
-		"dos": [
-			"Do set every scannable number in Spline Sans Mono tabular figures.",
-			"Do express active state by filling the control orange, paired with aria-pressed or aria-current.",
-			"Do keep dark values inside display windows; pages stay light."
-		],
-		"donts": [
-			"Don't introduce a second interactive hue.",
-			"Don't use gradients, glass, or gloss.",
-			"Don't stack a legend label above a large display heading.",
-			"Don't render meter decoration without real data behind it."
-		]
-	}
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-11T02:43:00Z",
+  "title": "Design System: ASoundJob",
+  "extensions": {
+    "colorMeta": {
+      "ground": {
+        "role": "neutral",
+        "displayName": "Paper Ground",
+        "canonical": "#f9f9f8",
+        "tonalRamp": [
+          "#262623",
+          "#3d3d39",
+          "#565650",
+          "#706f68",
+          "#8b8a82",
+          "#a8a79e",
+          "#c6c5bb",
+          "#f9f9f8"
+        ]
+      },
+      "ground-tint": {
+        "role": "neutral",
+        "displayName": "Tinted Paper",
+        "canonical": "#f1f1ef",
+        "tonalRamp": [
+          "#242422",
+          "#3a3a37",
+          "#52524e",
+          "#6c6b66",
+          "#868580",
+          "#a1a09a",
+          "#bebdb6",
+          "#f1f1ef"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "#0d0d0f",
+        "tonalRamp": [
+          "#0d0d0f",
+          "#25252a",
+          "#3d3d44",
+          "#57575f",
+          "#71717a",
+          "#8d8d96",
+          "#aaaab2",
+          "#c8c8cf"
+        ]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Muted Ink",
+        "canonical": "#6b6b70",
+        "tonalRamp": [
+          "#1b1b1d",
+          "#2f2f32",
+          "#454548",
+          "#5b5b5f",
+          "#6b6b70",
+          "#93939a",
+          "#b6b6bc",
+          "#dadade"
+        ]
+      },
+      "accent": {
+        "role": "primary",
+        "displayName": "Foundry Blue",
+        "canonical": "#0033ff",
+        "tonalRamp": [
+          "#000f4d",
+          "#001670",
+          "#001f94",
+          "#0028b9",
+          "#0033ff",
+          "#3f63ff",
+          "#8ba1ff",
+          "#d3dcff"
+        ]
+      },
+      "accent-inv": {
+        "role": "primary",
+        "displayName": "Inverted Foundry Blue",
+        "canonical": "#5c7bff",
+        "tonalRamp": [
+          "#0b1a52",
+          "#122777",
+          "#1a369d",
+          "#2447c4",
+          "#3b5eea",
+          "#5c7bff",
+          "#96abff",
+          "#d6deff"
+        ]
+      },
+      "rule": {
+        "role": "neutral",
+        "displayName": "Register Rule",
+        "canonical": "#dededc",
+        "tonalRamp": [
+          "#242423",
+          "#393937",
+          "#50504d",
+          "#686864",
+          "#83837e",
+          "#9e9e98",
+          "#bbbbb4",
+          "#dededc"
+        ]
+      }
+    },
+    "contrast": [
+      {
+        "pair": "ink on ground",
+        "ratio": "18.43:1",
+        "verdict": "AA/AAA, all sizes"
+      },
+      {
+        "pair": "muted on ground",
+        "ratio": "5.03:1",
+        "verdict": "AA, all sizes — lightest ink permitted to carry meaning"
+      },
+      {
+        "pair": "accent on ground",
+        "ratio": "6.83:1",
+        "verdict": "AA, all sizes"
+      },
+      {
+        "pair": "ground on accent",
+        "ratio": "6.83:1",
+        "verdict": "AA, all sizes — primary button fill"
+      },
+      {
+        "pair": "accent on ink",
+        "ratio": "2.70:1",
+        "verdict": "FAIL — use accent-inv instead"
+      },
+      {
+        "pair": "accent-inv on ink",
+        "ratio": "5.30:1",
+        "verdict": "AA — inverted contexts only"
+      },
+      {
+        "pair": "rule on ground",
+        "ratio": "1.28:1",
+        "verdict": "decorative only, may never carry meaning"
+      }
+    ],
+    "typographyMeta": {
+      "specimen": {
+        "displayName": "Specimen",
+        "purpose": "The one oversized figure on a page — the live job count, an error code. Never two per page."
+      },
+      "display": {
+        "displayName": "Display",
+        "purpose": "The sentence naming the specimen numeral, and the result count on the board. Always weight 300."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Job titles, section headings, the wordmark, admin stat values."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Default document text, set on body at MONO 0."
+      },
+      "meta": {
+        "displayName": "Meta",
+        "purpose": "Company and location lines, nav and footer links, all button and field text."
+      },
+      "coord": {
+        "displayName": "Coordinate",
+        "purpose": "Live data readouts only — salary, level, type, age, counts. MONO 1, tabular figures."
+      },
+      "label": {
+        "displayName": "Axis Label",
+        "purpose": "The name of an axis, not a value. MONO 1, muted, deliberately sentence case — never uppercase."
+      }
+    },
+    "fonts": [
+      {
+        "name": "Recursive Variable",
+        "source": "@fontsource-variable/recursive/mono.css",
+        "axes": "MONO 0–1, wght 300–1000",
+        "weight": "~70 KB",
+        "note": "full.css (297 KB) rejected: CASL, CRSV and slnt are unused. One family for the entire system."
+      }
+    ],
+    "shadows": [],
+    "motion": [
+      {
+        "name": "state-120",
+        "value": "120ms ease",
+        "purpose": "The only transition in the system: background-color, border-color and color on buttons; border-color on fields. Nothing moves, scales or lifts."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "prefers-reduced-motion: reduce → 0.01ms",
+        "purpose": "Global clamp on every animation and transition, plus scroll-behavior: auto."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "sm",
+        "value": "640px"
+      },
+      {
+        "name": "md",
+        "value": "768px"
+      },
+      {
+        "name": "lg",
+        "value": "1024px"
+      },
+      {
+        "name": "container",
+        "value": "72rem (max-w-6xl)"
+      }
+    ],
+    "normalizations": [
+      {
+        "selector": "fieldset",
+        "value": "min-inline-size: 0",
+        "purpose": "Browsers give fieldset an implicit min-content floor that ignores grid track sizing; without this the filter rail escapes its 17rem column."
+      }
+    ],
+    "variations": [
+      {
+        "name": "Admin",
+        "purpose": "Shares the token layer exactly and spends none of the specimen grammar — no axis sliders, no coordinate readouts on hero figures, no specimen-scale display type. Explicit user decision, not drift. WCAG 2.1 AA still binding."
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The single committing action on a surface: submit, search, post a job.",
+      "html": "<button class=\"ds-btn ds-btn-primary\" type=\"button\">Submit a job</button>",
+      "css": ".ds-btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; font-family: var(--font-sans, 'Recursive Variable', ui-sans-serif, system-ui, sans-serif); font-size: 0.8125rem; font-weight: 600; font-variation-settings: 'MONO' 0; padding: 0.5rem 0.875rem; border: 1px solid transparent; border-radius: 0; cursor: pointer; transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease; } .ds-btn-primary { background: var(--color-accent, #0033ff); color: var(--color-ground, #f9f9f8); border-color: var(--color-accent, #0033ff); } .ds-btn-primary:hover { background: var(--color-ink, #0d0d0f); border-color: var(--color-ink, #0d0d0f); } .ds-btn-primary:focus-visible { outline: 2px solid var(--color-accent, #0033ff); outline-offset: 2px; }"
+    },
+    {
+      "name": "Quiet Button",
+      "kind": "button",
+      "refersTo": "button-quiet",
+      "description": "Every secondary action; also the base for toggles and active-filter chips.",
+      "html": "<button class=\"ds-btn ds-btn-quiet\" type=\"button\">Clear all filters</button>\n<button class=\"ds-btn ds-btn-quiet\" type=\"button\" aria-pressed=\"true\">Verified</button>\n<button class=\"ds-btn ds-btn-quiet\" type=\"button\" disabled>Unavailable</button>",
+      "css": ".ds-btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; font-family: var(--font-sans, 'Recursive Variable', ui-sans-serif, system-ui, sans-serif); font-size: 0.8125rem; font-weight: 600; font-variation-settings: 'MONO' 0; padding: 0.5rem 0.875rem; border: 1px solid transparent; border-radius: 0; cursor: pointer; transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease; } .ds-btn-quiet { background: transparent; color: var(--color-ink, #0d0d0f); border-color: var(--color-muted, #6b6b70); } .ds-btn-quiet:hover:not(:disabled) { border-color: var(--color-ink, #0d0d0f); background: var(--color-ground-tint, #f1f1ef); } .ds-btn-quiet[aria-pressed='true'] { background: var(--color-ink, #0d0d0f); color: var(--color-ground, #f9f9f8); border-color: var(--color-ink, #0d0d0f); } .ds-btn-quiet:disabled { cursor: not-allowed; background: transparent; color: var(--color-muted, #6b6b70); border-color: var(--color-rule, #dededc); text-decoration: line-through; } .ds-btn-quiet:focus-visible { outline: 2px solid var(--color-accent, #0033ff); outline-offset: 2px; }"
+    },
+    {
+      "name": "Underline Field",
+      "kind": "input",
+      "refersTo": "field",
+      "description": "Every text, search, number and select control: a stroke under the text, never a filled well.",
+      "html": "<input class=\"ds-field\" type=\"search\" placeholder=\"Search titles, skills, companies…\" aria-label=\"Search jobs\" />\n<input class=\"ds-field\" type=\"text\" value=\"Not a salary\" aria-invalid=\"true\" aria-label=\"Minimum salary\" />\n<input class=\"ds-field\" type=\"text\" value=\"Locked\" disabled aria-label=\"Disabled example\" />",
+      "css": ".ds-field { display: block; width: 100%; margin-bottom: 0.75rem; background: transparent; color: var(--color-ink, #0d0d0f); font-family: var(--font-sans, 'Recursive Variable', ui-sans-serif, system-ui, sans-serif); font-size: 0.8125rem; font-variation-settings: 'MONO' 0; border: 0; border-bottom: 1px solid var(--color-muted, #6b6b70); border-radius: 0; padding: 0.4375rem 0.125rem; transition: border-color 120ms ease; } .ds-field::placeholder { color: var(--color-muted, #6b6b70); } .ds-field:hover:not(:disabled) { border-bottom-color: var(--color-ink, #0d0d0f); } .ds-field:focus { outline: none; border-bottom-width: 2px; border-bottom-color: var(--color-accent, #0033ff); padding-bottom: calc(0.4375rem - 1px); } .ds-field:disabled { color: var(--color-muted, #6b6b70); border-bottom-style: dashed; cursor: not-allowed; } .ds-field[aria-invalid='true'] { border-bottom-width: 2px; border-bottom-style: dotted; border-bottom-color: var(--color-ink, #0d0d0f); padding-bottom: calc(0.4375rem - 1px); }"
+    },
+    {
+      "name": "Axis Slider",
+      "kind": "input",
+      "refersTo": "axis-slider",
+      "description": "The thesis made literal: an ordered filter that continuously remaps the board, captioned by an axis label and answered by a live coordinate readout.",
+      "html": "<fieldset class=\"ds-axis-field\">\n  <legend class=\"ds-axis-label\">Annual salary (USD)</legend>\n  <label class=\"ds-sr\" for=\"ds-salary-axis\">Minimum salary</label>\n  <input id=\"ds-salary-axis\" class=\"ds-axis\" type=\"range\" min=\"0\" max=\"300000\" step=\"10000\" value=\"90000\" aria-valuetext=\"$90,000 and up\" />\n  <p class=\"ds-coord\" aria-live=\"polite\">$90,000 and up</p>\n</fieldset>",
+      "css": ".ds-axis-field { border: 0; margin: 0; padding: 0; min-inline-size: 0; width: 17rem; font-family: var(--font-sans, 'Recursive Variable', ui-sans-serif, system-ui, sans-serif); } .ds-axis-label { font-variation-settings: 'MONO' 1; font-size: 0.75rem; font-weight: 500; letter-spacing: 0.01em; color: var(--color-muted, #6b6b70); margin-bottom: 0.5rem; padding: 0; } .ds-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; } .ds-axis { width: 100%; height: 1.5rem; background: transparent; appearance: none; -webkit-appearance: none; cursor: pointer; } .ds-axis::-webkit-slider-runnable-track { height: 1px; background: var(--color-muted, #6b6b70); } .ds-axis::-moz-range-track { height: 1px; background: var(--color-muted, #6b6b70); } .ds-axis::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 2px; height: 0.875rem; margin-top: -0.4375rem; background: var(--color-ink, #0d0d0f); border: 0; border-radius: 0; } .ds-axis::-moz-range-thumb { width: 2px; height: 0.875rem; background: var(--color-ink, #0d0d0f); border: 0; border-radius: 0; } .ds-axis:hover::-webkit-slider-thumb, .ds-axis:focus-visible::-webkit-slider-thumb { background: var(--color-accent, #0033ff); } .ds-axis:hover::-moz-range-thumb, .ds-axis:focus-visible::-moz-range-thumb { background: var(--color-accent, #0033ff); } .ds-axis:focus-visible { outline: 2px solid var(--color-accent, #0033ff); outline-offset: 2px; } .ds-coord { margin: 0.375rem 0 0; font-variation-settings: 'MONO' 1; font-size: 0.75rem; font-weight: 500; font-variant-numeric: tabular-nums; color: var(--color-ink, #0d0d0f); }"
+    },
+    {
+      "name": "Axis Label + Coordinate",
+      "kind": "custom",
+      "refersTo": "label",
+      "description": "The two mono-axis roles: the name of an axis, and the value read off it.",
+      "html": "<div class=\"ds-axis-block\">\n  <span class=\"ds-axis-label\">Annual salary (USD)</span>\n  <span class=\"ds-coord\">$95,000 – $130,000</span>\n</div>",
+      "css": ".ds-axis-block { display: flex; flex-direction: column; gap: 0.375rem; } .ds-axis-label { font-family: var(--font-sans, 'Recursive Variable', ui-sans-serif, system-ui, sans-serif); font-variation-settings: 'MONO' 1; font-size: 0.75rem; font-weight: 500; letter-spacing: 0.01em; color: var(--color-muted, #6b6b70); } .ds-coord { font-family: var(--font-sans, 'Recursive Variable', ui-sans-serif, system-ui, sans-serif); font-variation-settings: 'MONO' 1; font-size: 0.75rem; font-weight: 500; font-variant-numeric: tabular-nums; letter-spacing: 0; color: var(--color-ink, #0d0d0f); }"
+    },
+    {
+      "name": "Specimen Numeral",
+      "kind": "custom",
+      "refersTo": "specimen",
+      "description": "The one oversized figure on a page, with its Display line naming it beneath.",
+      "html": "<div class=\"ds-specimen-block\">\n  <p class=\"ds-specimen\">1,038</p>\n  <p class=\"ds-specimen-sub\">open audio roles, re&#8288;-read every night.</p>\n  <p class=\"ds-coord\">21 specialties · verified companies only</p>\n</div>",
+      "css": ".ds-specimen-block { color: var(--color-ink, #0d0d0f); } .ds-specimen { font-family: var(--font-sans, 'Recursive Variable', ui-sans-serif, system-ui, sans-serif); font-size: clamp(3rem, 9vw, 6rem); font-variation-settings: 'MONO' 0; font-weight: 300; letter-spacing: -0.03em; line-height: 0.86; font-variant-numeric: tabular-nums; margin: 0; } .ds-specimen-sub { font-family: var(--font-sans, 'Recursive Variable', ui-sans-serif, system-ui, sans-serif); font-size: clamp(1.75rem, 4.5vw, 2.75rem); font-weight: 300; line-height: 1.25; margin: 0.75rem 0 0; } .ds-specimen-block .ds-coord { display: block; margin-top: 1rem; font-family: var(--font-sans, 'Recursive Variable', ui-sans-serif, system-ui, sans-serif); font-variation-settings: 'MONO' 1; font-size: 0.75rem; font-weight: 500; font-variant-numeric: tabular-nums; color: var(--color-muted, #6b6b70); }"
+    },
+    {
+      "name": "Job Strip",
+      "kind": "card",
+      "refersTo": "job-strip",
+      "description": "A job listing as one register on the specimen sheet: no border, no fill, hairline-separated.",
+      "html": "<article class=\"ds-strip\">\n  <div class=\"ds-strip-main\">\n    <h3 class=\"ds-strip-title\"><a href=\"#\">Senior DSP Engineer, Spatial Audio</a></h3>\n    <p class=\"ds-strip-meta\"><span class=\"ds-strip-company\">Listen Inc.</span><span> · </span>Boston, MA · Remote</p>\n    <dl class=\"ds-strip-coords\">\n      <dd>$140,000 – $175,000</dd><dd>senior</dd><dd>full-time</dd>\n    </dl>\n    <p class=\"ds-strip-specialties\">DSP · Acoustics · Transducers</p>\n    <div class=\"ds-strip-recency\">\n      <span class=\"ds-coord-muted\">4 days ago</span>\n      <span class=\"ds-tick\"><span class=\"ds-tick-mark\" style=\"left: 4.4%\"></span></span>\n    </div>\n  </div>\n  <div class=\"ds-strip-actions\">\n    <button class=\"ds-icon-btn\" type=\"button\" aria-pressed=\"true\" aria-label=\"Remove bookmark\"><svg width=\"11\" height=\"14\" viewBox=\"0 0 12 14\" aria-hidden=\"true\"><path d=\"M2.25 1h7.5a.75.75 0 0 1 .75.75v10.9a.4.4 0 0 1-.62.33L6 10.2l-3.88 2.78a.4.4 0 0 1-.62-.33V1.75A.75.75 0 0 1 2.25 1Z\" fill=\"currentColor\" stroke=\"currentColor\" stroke-width=\"1.3\" stroke-linejoin=\"round\"/></svg></button>\n    <button class=\"ds-icon-btn\" type=\"button\" aria-label=\"Report an issue\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 16 16\" fill=\"currentColor\" aria-hidden=\"true\"><path d=\"M8 1 1 14h14L8 1Zm0 4.5c.41 0 .75.34.75.75v3.5a.75.75 0 0 1-1.5 0v-3.5c0-.41.34-.75.75-.75Zm0 6.75a.9.9 0 1 1 0 1.8.9.9 0 0 1 0-1.8Z\"/></svg></button>\n  </div>\n</article>",
+      "css": ".ds-strip { display: grid; grid-template-columns: 1fr auto; column-gap: 1rem; padding: 1.75rem 0; border-bottom: 1px solid var(--color-rule, #dededc); font-family: var(--font-sans, 'Recursive Variable', ui-sans-serif, system-ui, sans-serif); color: var(--color-ink, #0d0d0f); } .ds-strip-main { min-width: 0; } .ds-strip-title { font-size: 1.375rem; font-weight: 600; line-height: 1.25; margin: 0; } .ds-strip-title a { color: inherit; text-decoration: none; } .ds-strip-title a:hover { color: var(--color-accent, #0033ff); text-decoration: underline; text-underline-offset: 0.18em; } .ds-strip-meta { margin: 0.25rem 0 0; font-size: 0.8125rem; color: var(--color-muted, #6b6b70); } .ds-strip-company { font-weight: 600; color: var(--color-ink, #0d0d0f); } .ds-strip-coords { display: grid; grid-template-columns: minmax(0,9rem) minmax(0,6rem) minmax(0,1fr); column-gap: 1rem; row-gap: 0.25rem; margin: 0.75rem 0 0; font-variation-settings: 'MONO' 1; font-size: 0.75rem; font-weight: 500; font-variant-numeric: tabular-nums; } .ds-strip-coords dd { margin: 0; } .ds-strip-specialties { margin: 0.5rem 0 0; font-size: 0.8125rem; color: var(--color-muted, #6b6b70); } .ds-strip-recency { display: flex; align-items: center; gap: 0.75rem; margin-top: 0.75rem; } .ds-coord-muted { font-variation-settings: 'MONO' 1; font-size: 0.75rem; font-weight: 500; font-variant-numeric: tabular-nums; color: var(--color-muted, #6b6b70); flex-shrink: 0; } .ds-tick { position: relative; display: block; width: 7rem; height: 1px; background: var(--color-rule, #dededc); flex-shrink: 0; } .ds-tick-mark { position: absolute; top: 50%; display: block; width: 1px; height: 0.5rem; transform: translateY(-50%); background: var(--color-ink, #0d0d0f); } .ds-strip-actions { display: flex; align-items: flex-start; gap: 0.25rem; flex-shrink: 0; } .ds-icon-btn { display: flex; height: 2rem; width: 2rem; align-items: center; justify-content: center; background: transparent; border: 1px solid transparent; border-radius: 0; color: var(--color-muted, #6b6b70); cursor: pointer; transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease; } .ds-icon-btn:hover { border-color: var(--color-muted, #6b6b70); color: var(--color-ink, #0d0d0f); } .ds-icon-btn[aria-pressed='true'] { background: var(--color-ink, #0d0d0f); border-color: var(--color-ink, #0d0d0f); color: var(--color-ground, #f9f9f8); } .ds-icon-btn:focus-visible { outline: 2px solid var(--color-accent, #0033ff); outline-offset: 2px; }"
+    },
+    {
+      "name": "Recency Tick",
+      "kind": "custom",
+      "refersTo": "recency-tick",
+      "description": "The shared graticule: one board-wide 0–90 day domain, plotted identically on every row.",
+      "html": "<div class=\"ds-ticks\">\n  <span class=\"ds-tick\"><span class=\"ds-tick-mark\" style=\"left: 2%\"></span></span>\n  <span class=\"ds-tick\"><span class=\"ds-tick-mark\" style=\"left: 31%\"></span></span>\n  <span class=\"ds-tick\"><span class=\"ds-tick-mark\" style=\"left: 78%\"></span></span>\n</div>",
+      "css": ".ds-ticks { display: flex; flex-direction: column; gap: 1.25rem; } .ds-tick { position: relative; display: block; width: 7rem; height: 1px; background: var(--color-rule, #dededc); } .ds-tick-mark { position: absolute; top: 50%; display: block; width: 1px; height: 0.5rem; transform: translateY(-50%); background: var(--color-ink, #0d0d0f); }"
+    },
+    {
+      "name": "Primary Navigation",
+      "kind": "nav",
+      "refersTo": "nav",
+      "description": "The sticky header: wordmark with a coordinate sub-line, muted links, ink underline on the current page.",
+      "html": "<header class=\"ds-header\">\n  <a class=\"ds-wordmark\" href=\"#\"><span class=\"ds-wordmark-name\">ASoundJob</span><span class=\"ds-wordmark-sub\">by Young Audio Professionals</span></a>\n  <nav class=\"ds-nav\" aria-label=\"Primary\">\n    <a href=\"#\" aria-current=\"page\">Jobs</a>\n    <a href=\"#\">Companies</a>\n    <a href=\"#\">Resources</a>\n    <a href=\"#\">About</a>\n    <a class=\"ds-btn ds-btn-primary\" href=\"#\">Submit a job</a>\n  </nav>\n</header>",
+      "css": ".ds-header { display: flex; align-items: center; gap: 1rem; height: 4rem; padding: 0 1.5rem; background: color-mix(in srgb, var(--color-ground, #f9f9f8) 95%, transparent); border-bottom: 1px solid var(--color-rule, #dededc); font-family: var(--font-sans, 'Recursive Variable', ui-sans-serif, system-ui, sans-serif); } .ds-wordmark { display: flex; flex-direction: column; line-height: 1; text-decoration: none; color: var(--color-ink, #0d0d0f); } .ds-wordmark-name { font-size: 1.375rem; font-weight: 700; letter-spacing: -0.01em; } .ds-wordmark-sub { margin-top: 0.125rem; font-variation-settings: 'MONO' 1; font-size: 0.75rem; font-weight: 500; color: var(--color-muted, #6b6b70); } .ds-nav { margin-left: auto; display: flex; align-items: center; gap: 1.25rem; } .ds-nav a { font-size: 0.8125rem; font-weight: 600; color: var(--color-muted, #6b6b70); text-decoration: none; transition: color 120ms ease; } .ds-nav a:hover { color: var(--color-accent, #0033ff); } .ds-nav a[aria-current='page'] { color: var(--color-ink, #0d0d0f); text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 6px; } .ds-btn { display: inline-flex; align-items: center; justify-content: center; font-size: 0.8125rem; font-weight: 600; padding: 0.5rem 0.875rem; border: 1px solid transparent; border-radius: 0; } .ds-nav a.ds-btn-primary { background: var(--color-accent, #0033ff); color: var(--color-ground, #f9f9f8); border-color: var(--color-accent, #0033ff); text-decoration: none; } .ds-nav a.ds-btn-primary:hover { background: var(--color-ink, #0d0d0f); border-color: var(--color-ink, #0d0d0f); color: var(--color-ground, #f9f9f8); }"
+    },
+    {
+      "name": "Active Filter Chip",
+      "kind": "chip",
+      "refersTo": "button-quiet-pressed",
+      "description": "A filter currently remapping the board: a quiet button in its pressed state, removable.",
+      "html": "<ul class=\"ds-chips\" aria-label=\"Active filters\">\n  <li><a class=\"ds-chip\" href=\"#\"><span class=\"ds-chip-key\">Specialty:</span> Game Audio</a></li>\n  <li><a class=\"ds-chip\" href=\"#\"><span class=\"ds-chip-key\">Level:</span> senior</a></li>\n  <li><a class=\"ds-chip\" href=\"#\">Remote only</a></li>\n</ul>",
+      "css": ".ds-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 0.375rem; list-style: none; margin: 0; padding: 0; } .ds-chip { display: inline-flex; align-items: center; gap: 0.5rem; font-family: var(--font-sans, 'Recursive Variable', ui-sans-serif, system-ui, sans-serif); font-variation-settings: 'MONO' 1; font-size: 0.75rem; font-weight: 500; padding: 0.25rem 0.875rem; background: var(--color-ink, #0d0d0f); color: var(--color-ground, #f9f9f8); border: 1px solid var(--color-ink, #0d0d0f); border-radius: 0; text-decoration: none; transition: background-color 120ms ease, color 120ms ease; } .ds-chip-key { opacity: 0.7; } .ds-chip:hover { background: var(--color-accent, #0033ff); border-color: var(--color-accent, #0033ff); } .ds-chip:focus-visible { outline: 2px solid var(--color-accent, #0033ff); outline-offset: 2px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Type Specimen",
+    "overview": "ASoundJob is laid out the way a foundry lays out a type specimen sheet: one family, one ink, enormous scale contrast, and nothing decorative between the reader and the data. The thesis is that filters are axis sliders that continuously remap the board, that the board reports its own coordinates back to you, and that hierarchy comes from scale contrast alone. The home page opens with the live job count set at `clamp(3rem, 9vw, 6rem)` in weight 300 against a near-white ground — a number, not a headline — and everything below it is a smaller reading of the same instrument. The page never decorates; it registers.\n\nThe family is Recursive Variable, loaded once, and its MONO axis carries the whole sans-to-mono relationship. Readouts are not a font swap to a second family; they are an axis move from `'MONO' 0` (body) to `'MONO' 1` (`.coord`, `.axis-label`). Only the `mono.css` slice ships (MONO 0–1, wght 300–1000, ~70 KB); the 297 KB `full.css` was rejected because the CASL, CRSV and slnt axes are unused. That single-family economy is why a board with 21 specialty categories can stay legible without a second voice.\n\nTwo disciplines were donated from directions that lost and both are binding. **One shared graticule:** every value on the board is measured against the same grid, never against its own private maximum — the recency tick on every job row plots the same 0–90 day scale, so two rows are directly comparable at a glance. **Structural voids:** division is done with deep gaps (40–80px), not with rules, boxes, cards, or panels. Where a hairline does appear it is a decorative register mark and carries no meaning. The confirmed visual anti-reference is the incumbent mixing-console world this replaced in full — panels, wells, latch buttons, bevel and recess shadows, LED meters, decorative monospace, and all-caps micro-labels are all rejected, not softened.",
+    "keyCharacteristics": [
+      "One typeface (Recursive Variable), one accent (#0033FF), zero secondary hues.",
+      "Zero radius, zero shadow, zero cards — the page is flat paper with type on it.",
+      "Hierarchy by scale contrast: an 8x jump from coordinate readout to specimen numeral.",
+      "Recency, not salary, is the spine every row registers against.",
+      "Deep structural voids divide; hairlines only decorate.",
+      "Monospace is an axis move (`'MONO' 1`), reserved for live data and small labels.",
+      "WCAG 2.1 AA is binding on every surface, admin included."
+    ],
+    "rules": [
+      {
+        "name": "The Single Ink Rule",
+        "body": "One accent, no second hue, ever. Specialty, seniority, job type and status encode by position and scale, never by colour. This is what lets 21 categories coexist on one board without becoming badge soup. If a new surface needs to distinguish two things, move one of them or resize it — do not tint it.",
+        "section": "colors"
+      },
+      {
+        "name": "The Rule Rule",
+        "body": "`{colors.rule}` measures 1.28:1 against the ground, far under any legibility threshold, so it may never carry meaning. It is decorative register only: dividers, tracks, frames. Anything meaning-bearing — a value, a state, a plotted position — uses `{colors.muted}` (5.03:1) or `{colors.ink}` (18.43:1).",
+        "section": "colors"
+      },
+      {
+        "name": "The Inverted Accent Rule",
+        "body": "Foundry Blue is forbidden on ink (2.70:1). On any ink-filled surface the accent is `{colors.accent-inv}` (5.30:1) or it is not accent at all.",
+        "section": "colors"
+      },
+      {
+        "name": "The Axis-Move Rule",
+        "body": "Monospace is a variation axis, never a font swap and never decoration. `'MONO' 1` is permitted on exactly two classes: `.coord` for live data readouts and `.axis-label` for the names of axes. Tailwind's `font-mono` is banned outright — it no longer resolves to the brand family and would introduce a second voice.",
+        "section": "typography"
+      },
+      {
+        "name": "The Sentence-Case Label Rule",
+        "body": "`.axis-label` is not uppercase and must not be made uppercase. The rejected console world's 10px all-caps mono micro-label was both a legibility failure and a screen-reader failure; sentence case at 0.75rem with muted ink is the replacement, and it is the rule.",
+        "section": "typography"
+      },
+      {
+        "name": "The Scale-Contrast Rule",
+        "body": "Hierarchy is produced by size and weight only. There is roughly an 8x range between coordinate and specimen; use it. Do not reach for colour, uppercase, a badge, or a rule to promote something — reach for the next step up the ramp.",
+        "section": "typography"
+      },
+      {
+        "name": "The Structural Void Rule",
+        "body": "Deep gaps divide. No rules, no boxes, no cards. A section boundary is 64–80px of ground; if a boundary needs more emphasis than that, it needs more space, not a border.",
+        "section": "layout"
+      },
+      {
+        "name": "The One Graticule Rule",
+        "body": "Every value is measured against the same grid, never its own private scale. Column positions in a job row are identical from row to row so the eye can read down a register, and the recency tick uses one board-wide 0–90 day domain. A component that rescales itself per record is not comparable and does not ship.",
+        "section": "layout"
+      },
+      {
+        "name": "The No-Shadow Rule",
+        "body": "This system has no shadow vocabulary and must not acquire one. Bevels, recesses, inner glows and hard offset shadows are the rejected console world; a raised or inset surface is not available in this world at any size. Depth comes from tone, hairline, and void.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** set every surface in Recursive Variable and reach the mono voice through `font-variation-settings: 'MONO' 1`, never through a second family.",
+      "**Do** divide sections with 64–80px structural voids and let the ground do the work.",
+      "**Do** keep meaning-bearing values in `{colors.ink}` (18.43:1) or `{colors.muted}` (5.03:1), and keep `{colors.rule}` (1.28:1) purely decorative.",
+      "**Do** plot every comparable value against one board-wide scale — the recency tick's 0–90 day domain is shared by every row on the page.",
+      "**Do** encode state with shape as well as colour: dotted underline for invalid, dashed underline for disabled, strike-through for a disabled button label.",
+      "**Do** use `{colors.accent-inv}` (5.30:1) whenever accent must sit on an ink-filled surface.",
+      "**Do** keep `fieldset { min-inline-size: 0 }` in the base layer; without it the filter rail escapes its grid track.",
+      "**Do** pair every axis slider with an `.axis-label` legend above and an `aria-live=\"polite\"` `.coord` readout below, plus `aria-valuetext` speaking the human value.",
+      "**Do** state hierarchy with scale: a coordinate readout and a specimen numeral are the two ends of a single ramp roughly 8x apart."
+    ],
+    "donts": [
+      "**Don't** introduce a second hue. Specialty, seniority and status encode by position and scale, never by colour.",
+      "**Don't** use `font-mono` or any Tailwind mono utility; it no longer maps to the brand family.",
+      "**Don't** use monospace decoratively — `'MONO' 1` belongs to live data readouts and axis labels only.",
+      "**Don't** uppercase `.axis-label`; the all-caps micro-label was a legibility and screen-reader failure and was removed on purpose.",
+      "**Don't** add a radius. Every corner in this system is square and there is no radius scale to pick from.",
+      "**Don't** add shadows of any kind — ambient, offset, bevel, recess, or inner glow. There is no shadow vocabulary here.",
+      "**Don't** build cards, panels, wells, latch buttons, or LED-style meters; that is the rejected console world in full.",
+      "**Don't** let a component scale itself against its own private maximum. The retired per-company meter did exactly that and made rows non-comparable.",
+      "**Don't** make salary the structural spine of any board view; 80% of rows have none.",
+      "**Don't** put an unordered set on an axis slider; a slider implies a rank, so specialty, country and company stay as checkboxes and selects.",
+      "**Don't** give a slider a filled track, a round thumb, or a value bubble — the thumb is the same 1px ink hairline the recency tick uses.",
+      "**Don't** rely on colour alone for any state — every state in this system has a second, non-chromatic cue."
+    ]
+  }
 }
