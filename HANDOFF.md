@@ -5255,9 +5255,71 @@ type). Do not "fix" this.
   deliberately NOT built, because it would have been a control that filters
   nothing. Building it requires backend work first.
 
+## Session update (2026-09-11, later) — user-requested UI revisions
+
+Four changes on top of the Type Specimen redesign, all committed.
+
+**1. Bookmarks were broken (`bookmarks.svelte.ts`).** The store held its ids in
+`$state(new Set())`. Svelte only deep-proxies objects whose prototype is
+`Object.prototype` or `Array.prototype` (`svelte/src/internal/client/proxy.js:47`
+returns anything else untouched), so the `Set` was never reactive and
+`.add()`/`.delete()` notified nobody. Three symptoms, one cause: the button never
+repainted, the "Bookmarked only (N)" counter never counted, and the hidden `ids`
+field carrying the filter to the server stayed empty. Now backed by a proxied
+array. **`SvelteSet` was tried first and also failed to repaint** — I could not
+isolate why (my minimal harness was invalid: its control case failed too), so the
+array is the version that was actually verified working end to end. If you ever
+reach for `SvelteSet` in this codebase, prove it repaints before trusting it.
+
+**2. Board is two-up cards with specialty chips.** `JobStrip` rebuilt as a
+bordered card; specialties are a real `<ul>` of framed chips. The list grid is a
+**container query** (`@container` + `@3xl:grid-cols-2`), not a viewport one,
+because the same component renders beside the 17rem filter rail on `/jobs` and
+full-bleed on `/` — a viewport breakpoint is right on one page and wrong on the
+other.
+
+**3. `RecencyTick.svelte` is deleted.** The recency graticule could not survive
+the halved column. Recency is still the spine and still the default sort, but it
+reads as text now. This retires The One Graticule Rule; see DESIGN.md
+*Amendments*.
+
+**4. Dark mode.** Seven tokens, an inline head script that resolves before first
+paint, a `prefers-color-scheme` fallback for no-JS, and `color-scheme` so native
+controls follow. The accent tokens **trade places** — `#0033ff` is 2.6:1 on the
+dark ground and unusable. Theme state is shared in `theme.svelte.ts` because the
+header renders two toggles; component-local state let them desynchronise.
+
+### DO NOT REPEAT (this session's traps)
+
+- **Never regex a computed colour.** Tailwind v4 serialises them as `oklab(...)`
+  and `color-mix(...)`; pulling the floats out reads L/a/b as RGB and reports
+  confident nonsense. It scored the header at 1.08:1 and produced 7 fabricated
+  failures. Paint into a 1x1 canvas and read the pixel back instead.
+- **Don't trust a debug harness whose control case fails.** Mine "proved" a
+  cross-chunk Svelte runtime duplication; the control proved the harness was
+  broken. It was discarded, not reported.
+- **Two module instances exist in dev.** A `await import('/src/lib/x.svelte.ts')`
+  from the console is a *different* instance than the app's. Module-level state
+  read that way is meaningless — instrument the component instead.
+- **Check which way the toggle should go before calling it a bug.** The dev
+  machine's OS is in dark mode, which made a correct dark->light flip look wrong.
+
+### Verified
+
+8 routes x 2 themes, 815 text nodes measured, **0 WCAG AA failures**, no
+horizontal overflow at 375px. Tightest pair in the system is now the specialty
+chip at 4.69:1 (muted on tint) — re-measure if either token moves.
+
 ## Still open
 
-- **Nothing is committed.** Whole branch is uncommitted working tree.
+- Two toggles, no "system" option: once a reader picks light or dark it sticks
+  until they pick the other. Following the OS again means clearing
+  `localStorage['asj:theme']`. A three-state control was judged not worth the
+  header space; revisit if asked.
+- Titles clamp to two lines and 14% of them (max 89 chars) now clip in the
+  narrower two-up column on `/jobs`. The home page column is wide enough.
+- Specialty chips are not links. Making them filter the board is an obvious
+  next step but changes the card's affordances — deliberately not done.
 - Two fixes were spun off as separate tasks and are independent of this branch:
   **(1)** stored XSS — `JSON.stringify` does not escape `/`, and unsanitized
   scraped `job.title` / `company.name` go into the JSON-LD `<script>` at

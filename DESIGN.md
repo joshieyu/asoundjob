@@ -144,20 +144,23 @@ ASoundJob is laid out the way a foundry lays out a type specimen sheet: one fami
 
 The family is Recursive Variable, loaded once, and its MONO axis carries the whole sans-to-mono relationship. Readouts are not a font swap to a second family; they are an axis move from `'MONO' 0` (body) to `'MONO' 1` (`.coord`, `.axis-label`). Only the `mono.css` slice ships (MONO 0–1, wght 300–1000, ~70 KB); the 297 KB `full.css` was rejected because the CASL, CRSV and slnt axes are unused. That single-family economy is why a board with 21 specialty categories can stay legible without a second voice.
 
-Two disciplines were donated from directions that lost and both are binding. **One shared graticule:** every value on the board is measured against the same grid, never against its own private maximum — the recency tick on every job row plots the same 0–90 day scale, so two rows are directly comparable at a glance. **Structural voids:** division is done with deep gaps (40–80px), not with rules, boxes, cards, or panels. Where a hairline does appear it is a decorative register mark and carries no meaning. The confirmed visual anti-reference is the incumbent mixing-console world this replaced in full — panels, wells, latch buttons, bevel and recess shadows, LED meters, decorative monospace, and all-caps micro-labels are all rejected, not softened.
+Two disciplines were donated from directions that lost. **One shared graticule** — every value measured against the same grid, never its own private maximum — was retired on 2026-09-11 when the board went two-up (see *Amendments*); its surviving trace is that coordinate values still read in a consistent order across rows. **Structural voids** — division by deep gaps (40–80px) — still governs the page, but no longer governs the board itself, which is now a grid of bordered cards. Where a hairline appears it is a decorative register mark and carries no meaning. The confirmed visual anti-reference is the incumbent mixing-console world this replaced in full — panels, wells, latch buttons, bevel and recess shadows, LED meters, decorative monospace, and all-caps micro-labels are all rejected, not softened.
 
 **Key Characteristics:**
 - One typeface (Recursive Variable), one accent (#0033FF), zero secondary hues.
-- Zero radius, zero shadow, zero cards — the page is flat paper with type on it.
+- Zero radius, zero shadow. Cards exist on the board and nowhere else.
 - Hierarchy by scale contrast: an 8x jump from coordinate readout to specimen numeral.
-- Recency, not salary, is the spine every row registers against.
-- Deep structural voids divide; hairlines only decorate.
+- Recency, not salary, is the spine — now read as text rather than plotted.
+- Deep structural voids divide the page; the board divides with 1px card borders.
+- Light and dark are one palette in two settings; seven tokens carry both.
 - Monospace is an axis move (`'MONO' 1`), reserved for live data and small labels.
 - WCAG 2.1 AA is binding on every surface, admin included.
 
 ## Colors
 
 A near-white paper ground, near-black ink, one grey for secondary text, and exactly one saturated foundry blue — the palette of a specimen sheet, not of an interface chrome kit.
+
+Since 2026-09-11 the same seven tokens carry a second setting. Every value below is the light setting; the dark setting is in **Dark Mode** at the end of this section. No component names a colour outside these seven, which is the only reason a second setting was seven lines of CSS instead of a sweep.
 
 ### Primary
 - **Foundry Blue** (`{colors.accent}`): The single accent. It is the caret colour, the focus-ring colour, the selection highlight, the link colour, the primary button fill, the checkbox `accent-color`, and the hover colour for interactive text. Measured 6.83:1 against the ground and 6.83:1 for ground-on-accent, so it is safe for both button fill and body-size link text. It is never used to classify — a community-submitted listing is the one place it labels anything, and it labels provenance, not category.
@@ -166,16 +169,33 @@ A near-white paper ground, near-black ink, one grey for secondary text, and exac
 ### Neutral
 - **Paper Ground** (`{colors.ground}`): The page. Warm near-white, also the browser theme colour and the scrollbar track. The sticky header sits on it at 95% with a backdrop blur.
 - **Tinted Paper** (`{colors.ground-tint}`): One half-step down from the ground. The only fill used for a hover wash on quiet buttons and for the inline notice block. It is a tonal shift, never a card.
-- **Ink** (`{colors.ink}`): All primary text, the pressed/selected fill for toggles and the current pagination page, and the recency tick itself. 18.43:1 on ground.
+- **Ink** (`{colors.ink}`): All primary text, the pressed/selected fill for toggles and the current pagination page, and the axis-slider thumb. 18.43:1 on ground.
 - **Muted Ink** (`{colors.muted}`): Secondary text, placeholders, axis labels, inactive nav, and the resting underline of a field. 5.03:1 on ground — the lightest ink permitted to carry meaning.
-- **Register Rule** (`{colors.rule}`): The hairline. Header and footer boundaries, row dividers, the recency track, the scrollbar thumb. 1.28:1 against the ground.
+- **Register Rule** (`{colors.rule}`): The hairline. Header and footer boundaries, job-card and chip frames, the scrollbar thumb. 1.28:1 against the ground.
+
+### Dark Mode
+One palette, two settings — not a second design. The tokens take these values under `:root[data-theme='dark']`, and under `@media (prefers-color-scheme: dark)` guarded by `:not([data-theme='light'])` so a reader with no JS still gets it and an explicit choice still wins. The two blocks are duplicated on purpose: CSS cannot share a declaration block across a media query. Edit them together.
+
+| Token | Light | Dark | Dark contrast |
+| --- | --- | --- | --- |
+| `ground` | `#f9f9f8` | `#131314` | — |
+| `ground-tint` | `#f1f1ef` | `#1c1c1e` | — |
+| `ink` | `#0d0d0f` | `#f2f2f0` | 16.8:1 on ground |
+| `muted` | `#6b6b70` | `#9c9ca2` | 6.9:1 on ground, 6.6:1 on tint |
+| `accent` | `#0033ff` | `#5c7bff` | 5.1:1 on ground |
+| `accent-inv` | `#5c7bff` | `#0033ff` | for ink-filled surfaces |
+| `rule` | `#dededc` | `#2e2e30` | 1.39:1 — decorative, as intended |
+
+The accents **trade places**. Foundry Blue measures 2.6:1 on the dark ground and is unusable there. `color-scheme` is declared with each setting so native selects, checkboxes, range inputs and scrollbars follow without extra styling.
 
 ### Named Rules
 **The Single Ink Rule.** One accent, no second hue, ever. Specialty, seniority, job type and status encode by position and scale, never by colour. This is what lets 21 categories coexist on one board without becoming badge soup. If a new surface needs to distinguish two things, move one of them or resize it — do not tint it.
 
 **The Rule Rule.** `{colors.rule}` measures 1.28:1 against the ground, far under any legibility threshold, so it may never carry meaning. It is decorative register only: dividers, tracks, frames. Anything meaning-bearing — a value, a state, a plotted position — uses `{colors.muted}` (5.03:1) or `{colors.ink}` (18.43:1).
 
-**The Inverted Accent Rule.** Foundry Blue is forbidden on ink (2.70:1). On any ink-filled surface the accent is `{colors.accent-inv}` (5.30:1) or it is not accent at all.
+**The Inverted Accent Rule.** Foundry Blue is forbidden on ink (2.70:1). On any ink-filled surface the accent is `{colors.accent-inv}` or it is not accent at all. This holds in both settings without amendment — in dark, ink is simply the light colour and the two accent tokens have swapped to match.
+
+**The Two-Setting Rule.** A colour may only enter this system as one of the seven tokens, because every one of them has to answer in both settings. A raw hex, a `gray-*` utility or a `bg-white` is a light-mode-only decision and will be wrong in dark; there are currently zero of them in the components and that is the number to keep.
 
 ## Typography
 
@@ -205,16 +225,18 @@ A near-white paper ground, near-black ink, one grey for secondary text, and exac
 
 A single centred column, `max-w-6xl` (72rem), with `px-4` rising to `px-6` at the `sm` breakpoint and `pt-6 pb-16` on `main`. There is no page-level grid chrome; the container is the only frame.
 
-Vertical rhythm is a 4px base with a deliberately bimodal distribution. Inside a block, spacing is small and even (4/8/12/16/24px — `mt-1` through `mt-6` carry most of the page). Between blocks, spacing jumps straight to a structural void (40/64/80px — `mt-10`, `mt-16`, `mt-20`). There is almost nothing in between, and that gap in the scale *is* the division system: sections on the home page are separated by 80px of nothing, not by a rule or a container. Job rows breathe on 28px (`py-7`) and are separated by a single register hairline via `divide-y divide-rule`.
+Vertical rhythm is a 4px base with a deliberately bimodal distribution. Inside a block, spacing is small and even (4/8/12/16/24px — `mt-1` through `mt-6` carry most of the page). Between blocks, spacing jumps straight to a structural void (40/64/80px — `mt-10`, `mt-16`, `mt-20`). There is almost nothing in between, and that gap in the scale *is* the division system: sections on the home page are separated by 80px of nothing, not by a rule or a container. Job cards breathe on 16–20px of internal padding (`p-4 sm:p-5`) and are separated by a 12px grid gap plus their own 1px border.
 
-Two-column behaviour appears in exactly two places. The board is `lg:grid-cols-[17rem_1fr]` with a 24px gutter — a sticky filter rail at `lg:top-24` beside the results. Job rows are `grid-cols-[1fr_auto]`: content left, a fixed action cluster right. The coordinate row inside a job strip is itself a grid that grows a third column at `sm` (`minmax(0,9rem) minmax(0,6rem) minmax(0,1fr)`), so salary, level and type stay in the same vertical registers across every row on the board. The header collapses its nav to a `Menu` toggle below `md`; the footer is 1 → 2 → 4 columns across `sm` and `lg`.
+The board is `lg:grid-cols-[17rem_1fr]` with a 24px gutter — a sticky filter rail at `lg:top-24` beside the results. The job list inside it is a **container query**, not a viewport one: `@container` on the wrapper, `@3xl:grid-cols-2` on the grid, so the list goes two-up whenever it personally clears 48rem. This is required, not stylistic — the same component renders beside the 17rem rail on `/jobs` and full-bleed on `/`, so a viewport breakpoint would be right on one page and wrong on the other. Full-width interruptions inside the grid (the "location not parsed" divider, empty and outage states) carry `col-span-full`. The header collapses its nav to a `Menu` toggle below `md`; the footer is 1 → 2 → 4 columns across `sm` and `lg`.
 
 One global normalization is load-bearing: `fieldset { min-inline-size: 0 }`. Browsers give `fieldset` an implicit min-content floor that ignores grid track sizing, which broke the filter rail out of its 17rem column. Keep it.
 
 ### Named Rules
-**The Structural Void Rule.** Deep gaps divide. No rules, no boxes, no cards. A section boundary is 64–80px of ground; if a boundary needs more emphasis than that, it needs more space, not a border.
+**The Structural Void Rule** *(amended 2026-09-11)*. Deep gaps divide **the page**. A section boundary is 64–80px of ground; if a boundary needs more emphasis than that, it needs more space, not a border. The board is the one exemption: job cards are boxes, by explicit product decision. The exemption does not generalise — nothing else in this system gets a card because the board has one.
 
-**The One Graticule Rule.** Every value is measured against the same grid, never its own private scale. Column positions in a job row are identical from row to row so the eye can read down a register, and the recency tick uses one board-wide 0–90 day domain. A component that rescales itself per record is not comparable and does not ship.
+**The One Graticule Rule** *(retired 2026-09-11)*. Superseded by the two-up board; see *Amendments*. The half of it worth keeping: no component may rescale itself against its own private maximum. That is why `LedMeter` was deleted and why nothing has replaced it.
+
+**The Per-Record Scale Ban** *(the surviving half, binding)*. A component that measures a record against a maximum derived from that record's own group is not comparable across rows and does not ship.
 
 ## Elevation & Depth
 
@@ -229,7 +251,7 @@ Motion is equally thin: a 120ms ease on `background-color`, `border-color` and `
 
 Radius is 0 throughout. The token layer defines exactly one radius value, `--radius-none: 0`, and every component sets `border-radius: 0` explicitly — buttons, fields, the icon toggles, the accordion summary. There is no radius scale to choose from and none should be invented.
 
-The form language is a paper-and-rule vocabulary. Borders are 1px and only ever do one of two jobs: a full 1px box around a button or an icon toggle, or a single 1px bottom edge under a field. Fields are underlines, not boxes — a stroke under the text, never a filled well with corners. Nothing is clipped, masked, or given a silhouette. The only recurring geometry beyond the rectangle is the recency tick: a 1px horizontal track with a 8px vertical hairline standing on it.
+The form language is a paper-and-rule vocabulary. Borders are 1px and do exactly three jobs: a full box around a button or an icon toggle, a single bottom edge under a field, and — since 2026-09-11 — a full box around a job card or a specialty chip. Fields remain underlines, not boxes: a stroke under the text, never a filled well with corners. Nothing is clipped, masked, or given a silhouette, and radius stays 0 on every one of those boxes, which is what keeps a card reading as a registered frame rather than a UI kit tile.
 
 ## Components
 
@@ -252,7 +274,7 @@ The character across the board is flat, square, and quiet at rest — nothing is
 - **Checkboxes:** Native 16px boxes with `accent-color` set to Foundry Blue — the one place the browser's own control is left intact.
 
 ### Axis Slider (`.axis`)
-The literal form of the thesis: a filter that continuously remaps the board. A native `input[type=range]` stripped of its chrome down to the same two marks the recency tick uses — a 1px Muted Ink track and a 2px by 14px ink hairline as the thumb, square, no fill, no radius, no shadow. Hover and `:focus-visible` turn the thumb Foundry Blue; nothing grows or lifts. It is 24px tall so the pointer target stays comfortable while the ink stays 1px.
+The literal form of the thesis: a filter that continuously remaps the board. A native `input[type=range]` stripped of its chrome down to two marks — a 1px Muted Ink track and a 2px by 14px ink hairline as the thumb, square, no fill, no radius, no shadow. Since the recency tick was removed this is the system's only remaining plotted mark, and it is the reference for any future one. Hover and `:focus-visible` turn the thumb Foundry Blue; nothing grows or lifts. It is 24px tall so the pointer target stays comfortable while the ink stays 1px.
 
 Two ship on the board rail: **Level** (a 0–5 integer index over entry/mid/senior/lead/manager) and **Minimum salary** (0–300,000 in 10,000 steps). Each is captioned by an `.axis-label` legend above and answers with a `.coord` readout below marked `aria-live="polite"` — the axis is set, the board reports back its new coordinate. The visible control carries a screen-reader-only `<label>` and an `aria-valuetext` that speaks the human value ("senior", "any level") rather than the raw index, and the Level axis ships a `<noscript>` `.field` select so the filter still works without JS. A slider is only correct for an ordered domain; unordered filters (specialty, country, company) stay as checkboxes and selects.
 
@@ -271,11 +293,21 @@ The one oversized object on a page, and effectively always a figure. Weight 300,
 ### Coordinate Readout (`.coord`)
 The board reporting its own position. `'MONO' 1`, 0.75rem, weight 500, tabular figures so digits stack into columns down a list. Used for salary/level/type in a job row, category counts, pagination numbers, timestamps, and the footer status line. Missing values render as an em dash in muted ink rather than being omitted — an empty coordinate is still a coordinate.
 
-### Job Strip (signature)
-A job listing as one register on the specimen sheet, not a card. No border, no fill, no radius: a `1fr auto` grid with 28px of vertical breathing room, separated from its neighbours by a single hairline. Title at Title size links to the detail page and goes Foundry Blue with an underline on hover, clamped to two lines. Company name in ink weight 600 sits inline with location and remote status at meta size in muted ink. Below that the coordinate row plots salary, level and type into fixed columns with screen-reader-only `<dt>` terms, so a sighted reader gets a graticule and a screen reader gets a definition list. Specialties are a middot-joined muted string — there are 21 of them, and under The Single Ink Rule none of them is a coloured badge. The right cluster is two 32px square transparent icon buttons (bookmark, report) whose borders appear only on hover, with the bookmark's pressed state carrying an ink fill and `aria-pressed`. Both SVGs are inline paths with real `aria-label`s.
+### Job Card (signature)
+*Rebuilt 2026-09-11; was the borderless Job Strip.* A 1px Register Rule box on the ground, radius 0, `p-4 sm:p-5`, border going Muted Ink on hover. It is a `flex flex-col` so it can stretch to its grid row and bottom-align its chips, which is what makes a two-up row scan as a row rather than as two ragged columns.
 
-### Recency Tick (signature)
-The spine of the board. A 1px Register Rule track, 7rem wide, carrying one 8px ink hairline positioned by percentage: `days / maxDays` clamped to 0–100, with `maxDays` defaulting to 90 and passed identically to every row on a page. Recency, not salary, is the shared axis — 829 of 1,038 measured board rows carry no salary at all, so salary is a coordinate plotted where it exists and can never be the structure. The tick renders nothing when age is unknown rather than guessing a position. The track is decorative (Register Rule); the plotted mark is meaning-bearing and is therefore ink, per The Rule Rule.
+Title at Title size links to the detail page, goes Foundry Blue with an underline on hover, and clamps to two lines. The action cluster — two 32px square icon buttons, bookmark and report, borders appearing only on hover, the bookmark carrying an ink fill and `aria-pressed` — sits inline with the title rather than in its own grid column. Company name in ink weight 600 sits inline with location and remote status at meta size in muted ink.
+
+The coordinate row is a wrapping `<dl>` of labelled pairs: a sentence-case `.axis-label` key beside a `.coord` value. **Pairs a job doesn't have are omitted, not em-dashed** — 76% of the board carries no salary and 26% no specialty, so fixed columns were mostly plotting absence. `seen` always renders, so a card is never coordinate-less.
+
+### Specialty Chip
+*Added 2026-09-11.* A `<ul aria-label="Specialties">` of 1px-framed chips on Tinted Paper, `.coord` at 0.75rem in Muted Ink, `px-1.5 py-0.5`, radius 0. Measured 4.69:1 on its fill — AA at that size, with the least headroom of any pair in the system, so darkening the tint or lightening the muted token needs re-measuring. Chips are `mt-auto` so they sit on the card's bottom edge and align across a row. Monochrome by The Single Ink Rule: 21 specialties, none of them tinted, which is what keeps a chip row from becoming badge soup.
+
+### Theme Toggle
+*Added 2026-09-11.* A 32px icon button in the header, in the same vocabulary as the bookmark and report toggles — transparent border appearing on hover, `aria-pressed`, a label naming the destination rather than the state. The glyph is a half-filled disc: the tone axis at its two ends, deliberately not a sun and not a moon. It carries `.js-only`, which hides it with `visibility` — space reserved so hydration doesn't shift the header, and never focusable when the head script hasn't run. State lives in a shared module store because the header renders two of these, desktop and mobile.
+
+### Recency Tick (removed 2026-09-11)
+Deleted with the two-up rebuild; see *Amendments*. Recency is still the spine and still the default sort, but it now reads as a `.coord` value (`seen 3 days ago`) rather than a plotted position. Do not reinstate a per-row plot without re-reading The Per-Record Scale Ban.
 
 ### Admin (documented variation)
 Admin shares the token layer exactly — same ground, same ink, same accent, same `.btn`, `.field`, `.axis-label`, same zero radius — and spends none of the specimen grammar. No axis sliders, no coordinate readouts on hero figures, no specimen-scale display type; admin stat figures top out at Title size in a `flex-col-reverse` pair with an axis label beneath. This is an explicit user decision and is correct, not drift. WCAG 2.1 AA remains binding here.
@@ -284,9 +316,11 @@ Admin shares the token layer exactly — same ground, same ink, same accent, sam
 
 ### Do:
 - **Do** set every surface in Recursive Variable and reach the mono voice through `font-variation-settings: 'MONO' 1`, never through a second family.
-- **Do** divide sections with 64–80px structural voids and let the ground do the work.
+- **Do** divide page sections with 64–80px structural voids and let the ground do the work; the board's card borders are a scoped exemption, not a precedent.
 - **Do** keep meaning-bearing values in `{colors.ink}` (18.43:1) or `{colors.muted}` (5.03:1), and keep `{colors.rule}` (1.28:1) purely decorative.
-- **Do** plot every comparable value against one board-wide scale — the recency tick's 0–90 day domain is shared by every row on the page.
+- **Do** refuse any component that scales a record against its own group's maximum; that is what got `LedMeter` deleted.
+- **Do** answer both settings when adding any colour, and re-run the contrast audit in dark as well as light.
+- **Do** reach for a container query when a component renders at two different widths on two pages — the board does, and a viewport breakpoint would be wrong on one of them.
 - **Do** encode state with shape as well as colour: dotted underline for invalid, dashed underline for disabled, strike-through for a disabled button label.
 - **Do** use `{colors.accent-inv}` (5.30:1) whenever accent must sit on an ink-filled surface.
 - **Do** keep `fieldset { min-inline-size: 0 }` in the base layer; without it the filter rail escapes its grid track.
@@ -298,11 +332,56 @@ Admin shares the token layer exactly — same ground, same ink, same accent, sam
 - **Don't** use `font-mono` or any Tailwind mono utility; it no longer maps to the brand family.
 - **Don't** use monospace decoratively — `'MONO' 1` belongs to live data readouts and axis labels only.
 - **Don't** uppercase `.axis-label`; the all-caps micro-label was a legibility and screen-reader failure and was removed on purpose.
-- **Don't** add a radius. Every corner in this system is square and there is no radius scale to pick from.
+- **Don't** add a radius. Every corner in this system is square, cards and chips included, and there is no radius scale to pick from.
+- **Don't** write a raw hex, a `gray-*`, a `bg-white` or a `text-black` into a component; it is a light-mode-only decision. There are zero today.
+- **Don't** give anything outside the board a card. The exemption is scoped to the job list.
 - **Don't** add shadows of any kind — ambient, offset, bevel, recess, or inner glow. There is no shadow vocabulary here.
 - **Don't** build cards, panels, wells, latch buttons, or LED-style meters; that is the rejected console world in full.
 - **Don't** let a component scale itself against its own private maximum. The retired per-company meter did exactly that and made rows non-comparable.
 - **Don't** make salary the structural spine of any board view; 80% of rows have none.
 - **Don't** put an unordered set on an axis slider; a slider implies a rank, so specialty, country and company stay as checkboxes and selects.
-- **Don't** give a slider a filled track, a round thumb, or a value bubble — the thumb is the same 1px ink hairline the recency tick uses.
+- **Don't** give a slider a filled track, a round thumb, or a value bubble — the thumb is a 1px ink hairline standing on a 1px track.
 - **Don't** rely on colour alone for any state — every state in this system has a second, non-chromatic cue.
+
+## Amendments
+
+This document records what ships. Where a later product decision overrode an
+earlier rule, the rule is marked in place and the reasoning lives here, so a
+reader can tell a deliberate override from drift.
+
+### 2026-09-11 — two-up board, specialty chips, dark mode
+
+**Requested by the user**, after living with the shipped redesign.
+
+1. **Cards on the board.** *The Structural Void Rule* said "no rules, no boxes,
+   no cards." The board now uses all three. The rule is amended rather than
+   deleted: voids still divide the page, and the exemption is scoped to the job
+   list. The user asked for chips-as-cards specifically for readability and
+   supplied the pre-redesign board as the reference.
+
+2. **The recency graticule is gone.** *The One Graticule Rule* is retired. It
+   did not survive the halved column: a 38-character specialty chip, a two-line
+   title and a plotted 7rem track could not share 400px without the card growing
+   tall enough to defeat the point of going two-up. Recency survives as text.
+   The half of the rule worth keeping — no per-record private scale — is
+   restated as *The Per-Record Scale Ban* and is still binding.
+
+3. **Uppercase labels were NOT reinstated.** The reference screenshot rendered
+   its coordinate keys as `TYPE` / `LVL` / `SEEN`. *The Sentence-Case Label Rule*
+   forbids it, that rule predates this change, and it was kept. This is the one
+   place the new work deliberately departs from the reference.
+
+4. **Dark mode.** No rule opposed it; the palette was already fully tokenised,
+   which is why it cost seven variables rather than a sweep. The one structural
+   consequence is *The Two-Setting Rule*: a colour now has to answer in two
+   settings to be admissible at all.
+
+**Verified at the time of the amendment:** 8 routes x 2 settings, 815 text nodes
+measured for contrast, 0 AA failures, no horizontal overflow at 375px.
+
+**A measurement trap worth repeating.** Tailwind v4 serialises computed colours
+as `oklab(...)` and `color-mix(...)`. Regexing the numbers out of those strings
+reads the L/a/b floats as RGB channels and reports confident nonsense — it
+scored near-black for the header and produced 7 fabricated failures. The audit
+paints each colour into a 1x1 canvas and reads the pixel back instead. Any
+future contrast script must do the same.
