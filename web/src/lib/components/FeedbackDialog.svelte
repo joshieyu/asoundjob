@@ -115,43 +115,42 @@
 	bind:this={dialogEl}
 	onclose={requestClose}
 	onclick={onBackdropClick}
-	class="panel m-auto w-[min(92vw,32rem)] border-seam p-0 backdrop:bg-ink/40"
+	class="m-auto w-[min(92vw,32rem)] border-rule p-0 backdrop:bg-ink/40"
 	aria-labelledby="feedback-dialog-title"
 >
 	<div class="p-5 sm:p-6">
 		<div class="flex items-start justify-between gap-3">
 			<div class="min-w-0">
-				<p class="legend !text-xs">{mode === 'job' ? 'REPORT AN ISSUE' : 'SEND FEEDBACK'}</p>
-				<h2 id="feedback-dialog-title" class="mt-1 truncate text-lg font-bold">
+				<h2 id="feedback-dialog-title" class="mt-1 truncate text-title font-bold">
 					{mode === 'job' ? (jobTitle ?? 'This listing') : 'Help us improve ASoundJob'}
 				</h2>
 			</div>
 			<button
 				type="button"
-				class="flex h-7 w-7 shrink-0 items-center justify-center rounded-sm border border-seam bg-panel-raised text-ink-soft hover:text-fader-deep"
+				class="flex h-7 w-7 shrink-0 items-center justify-center border border-rule bg-ground text-muted hover:text-accent"
 				aria-label="Close dialog"
 				onclick={requestClose}
 			>
-				✕
+				<svg width="13" height="13" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"/></svg>
 			</button>
 		</div>
 
 		{#if feedbackState.kind === 'success'}
 			<div class="mt-4" role="status">
-				<p class="flex items-center gap-2 font-mono text-sm font-semibold tracking-wide text-lit">
-					<span class="inline-block h-2.5 w-2.5 rounded-full bg-lit"></span>
-					SIGNAL RECEIVED
+				<p class="flex items-center gap-2 text-meta font-semibold text-ink">
+					<span class="inline-block h-2.5 w-2.5 rounded-full bg-accent"></span>
+					Received
 				</p>
-				<p class="mt-2 text-sm text-ink-soft">{feedbackState.message}</p>
+				<p class="mt-2 text-meta text-muted">{feedbackState.message}</p>
 				<div class="mt-4 flex justify-end">
-					<button type="button" class="btn-primary" onclick={requestClose}>Done</button>
+					<button type="button" class="btn btn-primary" onclick={requestClose}>Done</button>
 				</div>
 			</div>
 		{:else}
 			<form class="mt-4 space-y-4" onsubmit={onSubmit}>
 				{#if feedbackState.kind === 'error'}
 					<p
-						class="rounded border !border-fader-deep bg-panel-recessed p-3 text-sm font-semibold"
+						class="border border-ink bg-ground-tint p-3 text-meta font-semibold"
 						role="alert"
 					>
 						{feedbackState.message}
@@ -161,20 +160,20 @@
 				{#if kinds.length > 1}
 					<fieldset>
 						<legend
-							class="mb-1.5 block font-mono text-[10px] tracking-[0.14em] text-ink-soft uppercase"
+							class="axis-label mb-2 block"
 						>
 							What's going on?
 						</legend>
 						<div class="flex flex-col gap-1.5">
 							{#each kinds as k (k.value)}
-								<label class="flex items-center gap-2 text-sm font-semibold">
+								<label class="flex items-center gap-2 text-meta font-semibold">
 									<input
 										type="radio"
 										name="feedback-kind"
 										value={k.value}
 										checked={selectedKind === k.value}
 										onchange={() => (selectedKind = k.value)}
-										class="h-4 w-4 accent-fader"
+										class="h-4 w-4 accent-accent"
 									/>
 									{k.label}
 								</label>
@@ -186,19 +185,19 @@
 				{#if showCategoryPicker}
 					<fieldset>
 						<legend
-							class="mb-1.5 block font-mono text-[10px] tracking-[0.14em] text-ink-soft uppercase"
+							class="axis-label mb-2 block"
 						>
 							Suggested specialties (optional)
 						</legend>
-						<div class="well grid max-h-40 grid-cols-1 gap-1 overflow-y-auto p-2 sm:grid-cols-2">
+						<div class="grid max-h-40 grid-cols-1 gap-1 overflow-y-auto p-2 sm:grid-cols-2">
 							{#each categories as cat (cat.id)}
-								<label class="flex items-center gap-1.5 text-xs font-semibold">
+								<label class="flex items-center gap-1.5 text-coord font-semibold">
 									<input
 										type="checkbox"
 										checked={selectedCategories.includes(cat.id)}
 										onchange={(e) =>
 											toggleCategory(cat.id, (e.currentTarget as HTMLInputElement).checked)}
-										class="h-3.5 w-3.5 accent-fader"
+										class="h-3.5 w-3.5 accent-accent"
 									/>
 									{cat.name}
 								</label>
@@ -210,7 +209,7 @@
 				{#if mode === 'site' && selectedKind === 'company_suggestion'}
 					<label class="block">
 						<span
-							class="mb-1 block font-mono text-[10px] tracking-[0.14em] text-ink-soft uppercase"
+							class="axis-label mb-2 block"
 						>
 							Company name *
 						</span>
@@ -218,12 +217,12 @@
 							required
 							maxlength="200"
 							bind:value={companyName}
-							class="well h-10 w-full px-3 text-sm"
+							class="field"
 						/>
 					</label>
 					<label class="block">
 						<span
-							class="mb-1 block font-mono text-[10px] tracking-[0.14em] text-ink-soft uppercase"
+							class="axis-label mb-2 block"
 						>
 							Company URL
 						</span>
@@ -232,41 +231,41 @@
 							maxlength="1000"
 							bind:value={companyUrl}
 							placeholder="https://…"
-							class="well h-10 w-full px-3 font-mono text-sm"
+							class="field coord"
 						/>
 					</label>
 				{/if}
 
 				<label class="block">
-					<span class="mb-1 block font-mono text-[10px] tracking-[0.14em] text-ink-soft uppercase">
+					<span class="axis-label mb-2 block">
 						Comment {mode === 'site' && selectedKind === 'general' ? '*' : '(optional)'}
 					</span>
 					<textarea
 						rows="4"
 						maxlength={mode === 'job' ? 2000 : 4000}
 						bind:value={comment}
-						class="well w-full px-3 py-2 text-sm"
+						class="field"
 						placeholder="Tell us more…"
 					></textarea>
 				</label>
 
 				<label class="block">
-					<span class="mb-1 block font-mono text-[10px] tracking-[0.14em] text-ink-soft uppercase">
+					<span class="axis-label mb-2 block">
 						Email (optional)
 					</span>
 					<input
 						type="email"
 						maxlength="320"
 						bind:value={email}
-						class="well h-10 w-full px-3 text-sm"
+						class="field"
 						autocomplete="email"
 						placeholder="If you'd like a reply"
 					/>
 				</label>
 
-				<div class="flex justify-end gap-2 border-t border-seam pt-4">
-					<button type="button" class="btn-latch" onclick={requestClose}>Cancel</button>
-					<button type="submit" disabled={!canSubmit} class="btn-primary disabled:opacity-60">
+				<div class="flex justify-end gap-2 border-t border-rule pt-4">
+					<button type="button" class="btn btn-quiet" onclick={requestClose}>Cancel</button>
+					<button type="submit" disabled={!canSubmit} class="btn btn-primary">
 						{feedbackState.kind === 'submitting' ? 'Sending…' : 'Send'}
 					</button>
 				</div>

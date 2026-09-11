@@ -11,58 +11,59 @@
 	const pagePath = $derived(page.url.pathname);
 </script>
 
-<footer class="mt-auto border-t border-seam bg-panel">
-	<div class="mx-auto grid max-w-6xl gap-8 px-4 py-10 sm:grid-cols-2 sm:px-6 lg:grid-cols-4">
+<footer class="mt-auto border-t border-rule" aria-label="Site footer">
+	<div class="mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:grid-cols-2 sm:px-6 lg:grid-cols-4">
 		<div>
-			<p class="legend">ASoundJob</p>
-			<p class="mt-3 max-w-xs text-sm text-ink-soft">
-				The audio industry job board. Real listings from real audio companies,
-				filtered by the specialties we actually work in.
+			<h2 class="text-meta font-bold">ASoundJob</h2>
+			<p class="mt-3 max-w-xs text-meta text-muted">
+				The audio industry job board. Real listings from real audio companies, filtered by
+				the specialties we actually work in.
 			</p>
 		</div>
-		<div>
-			<p class="legend">Find work</p>
-			<ul class="mt-3 space-y-2 text-sm font-semibold">
-				<li><a class="hover:text-fader-deep hover:underline" href="/jobs">Browse jobs</a></li>
-				<li><a class="hover:text-fader-deep hover:underline" href="/jobs?remote=true">Remote roles</a></li>
-				<li><a class="hover:text-fader-deep hover:underline" href="/jobs?seniority=entry">Entry level</a></li>
-				<li><a class="hover:text-fader-deep hover:underline" href="/jobs/submit">Submit a job</a></li>
+		<nav aria-labelledby="footer-find-work">
+			<h2 id="footer-find-work" class="text-meta font-bold">Find work</h2>
+			<ul class="mt-3 space-y-2 text-meta">
+				<li><a class="text-muted hover:text-accent hover:underline" href="/jobs">Browse jobs</a></li>
+				<li><a class="text-muted hover:text-accent hover:underline" href="/jobs?remote=true">Remote roles</a></li>
+				<li><a class="text-muted hover:text-accent hover:underline" href="/jobs?seniority=entry">Entry level</a></li>
+				<li><a class="text-muted hover:text-accent hover:underline" href="/jobs/submit">Submit a job</a></li>
 			</ul>
-		</div>
-		<div>
-			<p class="legend">Site</p>
-			<ul class="mt-3 space-y-2 text-sm font-semibold">
-				<li><a class="hover:text-fader-deep hover:underline" href="/companies">Company directory</a></li>
-				<li><a class="hover:text-fader-deep hover:underline" href="/resources/interview-prep">Interview prep</a></li>
-				<li><a class="hover:text-fader-deep hover:underline" href="/resources">Career resources</a></li>
-				<li><a class="hover:text-fader-deep hover:underline" href="/about">About</a></li>
+		</nav>
+		<nav aria-labelledby="footer-site">
+			<h2 id="footer-site" class="text-meta font-bold">Site</h2>
+			<ul class="mt-3 space-y-2 text-meta">
+				<li><a class="text-muted hover:text-accent hover:underline" href="/companies">Company directory</a></li>
+				<li><a class="text-muted hover:text-accent hover:underline" href="/resources/interview-prep">Interview prep</a></li>
+				<li><a class="text-muted hover:text-accent hover:underline" href="/resources">Career resources</a></li>
+				<li><a class="text-muted hover:text-accent hover:underline" href="/about">About</a></li>
 			</ul>
-		</div>
+		</nav>
 		<div>
-			<p class="legend">Community</p>
-			<p class="mt-3 text-sm text-ink-soft">
-				Built by <strong class="text-ink">Young Audio Professionals</strong>, a peer community
-				for people working in audio.
+			<h2 class="text-meta font-bold">Community</h2>
+			<p class="mt-3 text-meta text-muted">
+				Built by <strong class="font-semibold text-ink">Young Audio Professionals</strong>, a
+				peer community for people working in audio.
 			</p>
 			{#if discord}
-				<a href={discord} target="_blank" rel="noopener noreferrer" class="btn-latch mt-3 is-on">
-					Join the Discord ↗
+				<a
+					href={discord}
+					target="_blank"
+					rel="noopener noreferrer"
+					class="btn btn-quiet mt-4"
+				>
+					Join the Discord<span class="sr-only"> (opens in a new tab)</span>
 				</a>
 			{/if}
 		</div>
 	</div>
-	<div class="border-t border-seam">
+	<div class="border-t border-rule">
 		<div
-			class="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-3 font-mono text-[11px] tracking-wide text-ink-soft sm:flex-row sm:items-center sm:justify-between sm:px-6"
+			class="coord mx-auto flex max-w-6xl flex-col gap-2 px-4 py-4 text-muted sm:flex-row sm:items-center sm:justify-between sm:px-6"
 		>
 			<span>© {year} ASoundJob · Young Audio Professionals</span>
-			<span class="flex flex-wrap items-center gap-3">
+			<span class="flex flex-wrap items-center gap-4">
 				<span>Listings refresh nightly · Community posts are reviewed before publishing</span>
-				<button
-					type="button"
-					class="btn-latch !py-1 !text-[11px]"
-					onclick={() => (feedbackOpen = true)}
-				>
+				<button type="button" class="text-ink underline hover:text-accent" onclick={() => (feedbackOpen = true)}>
 					Send feedback
 				</button>
 			</span>
@@ -70,4 +71,4 @@
 	</div>
 </footer>
 
-<FeedbackDialog mode="site" kinds={SITE_FEEDBACK_KINDS} pagePath={pagePath} bind:open={feedbackOpen} />
+<FeedbackDialog mode="site" kinds={SITE_FEEDBACK_KINDS} {pagePath} bind:open={feedbackOpen} />

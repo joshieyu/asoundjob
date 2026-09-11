@@ -12,34 +12,36 @@
 
 	let menuOpen = $state(false);
 
-	const active = (href: string) => page.url.pathname === href || page.url.pathname.startsWith(href + '/');
+	const active = (href: string) =>
+		page.url.pathname === href || page.url.pathname.startsWith(href + '/');
+
+	$effect(() => {
+		page.url.pathname;
+		menuOpen = false;
+	});
 </script>
 
 <a
 	href="#main"
-	class="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:bg-panel-raised focus:px-3 focus:py-2"
+	class="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:bg-ground focus:px-3 focus:py-2 focus:outline focus:outline-2 focus:outline-accent"
 >
 	Skip to content
 </a>
 
-<header class="sticky top-0 z-40 border-b border-seam bg-panel/95 backdrop-blur">
-	<div class="mx-auto flex h-14 max-w-6xl items-center gap-4 px-4 sm:px-6">
-		<a href="/" class="flex items-center gap-2.5" aria-label="ASoundJob home">
-			<div class="flex flex-col leading-none">
-				<span class="text-lg font-black tracking-tight">ASoundJob</span>
-				<span class="font-mono text-[10px] tracking-wide text-ink-soft">by Young Audio Professionals</span>
-			</div>
-			<img src="/yap-logo.png" alt="Young Audio Professionals logo" class="h-9 w-9 rounded-sm border border-seam object-cover" />
+<header class="sticky top-0 z-40 border-b border-rule bg-ground/95 backdrop-blur">
+	<div class="mx-auto flex h-16 max-w-6xl items-center gap-4 px-4 sm:px-6">
+		<a href="/" class="flex flex-col leading-none" aria-label="ASoundJob home">
+			<span class="text-title font-bold tracking-tight">ASoundJob</span>
+			<span class="coord mt-0.5 text-muted">by Young Audio Professionals</span>
 		</a>
 
-		<nav aria-label="Primary" class="ml-auto hidden items-center gap-1 md:flex">
+		<nav aria-label="Primary" class="ml-auto hidden items-center gap-5 md:flex">
 			{#each links as link (link.href)}
 				<a
 					href={link.href}
 					aria-current={active(link.href) ? 'page' : undefined}
-					class="btn-latch !shadow-none {active(link.href)
-						? 'is-on'
-						: '!bg-transparent !border-transparent'}"
+					class="text-meta font-semibold transition-colors hover:text-accent {active(link.href) ? 'text-ink underline decoration-2 underline-offset-[6px]'
+						: 'text-muted'}"
 				>
 					{link.label}
 				</a>
@@ -49,17 +51,17 @@
 					href={discord}
 					target="_blank"
 					rel="noopener noreferrer"
-					class="btn-latch !bg-transparent !border-transparent"
+					class="text-meta font-semibold text-muted transition-colors hover:text-accent"
 				>
-					Discord
+					Discord<span class="sr-only"> (opens in a new tab)</span>
 				</a>
 			{/if}
-			<a href="/jobs/submit" class="btn-primary ml-2">Submit a job</a>
+			<a href="/jobs/submit" class="btn btn-primary">Submit a job</a>
 		</nav>
 
 		<button
 			type="button"
-			class="btn-latch ml-auto md:hidden"
+			class="btn btn-quiet ml-auto md:hidden"
 			aria-expanded={menuOpen}
 			aria-controls="mobile-nav"
 			onclick={() => (menuOpen = !menuOpen)}
@@ -68,29 +70,40 @@
 		</button>
 	</div>
 
-	{#if menuOpen}
-		<nav id="mobile-nav" aria-label="Primary" class="border-t border-seam px-4 py-3 md:hidden">
-			<ul class="flex flex-col gap-1">
-				{#each [...links, ...(discord ? [{ href: discord, label: 'Discord ↗' }] : [])] as link (link.href)}
-					<li>
-						<a
-							href={link.href}
-							aria-current={active(link.href) ? 'page' : undefined}
-							class="block rounded px-2 py-2 font-semibold {active(link.href)
-								? 'bg-fader text-white'
-								: ''}"
-							onclick={() => (menuOpen = false)}
-						>
-							{link.label}
-						</a>
-					</li>
-				{/each}
-				<li class="pt-2">
-					<a href="/jobs/submit" class="btn-primary w-full" onclick={() => (menuOpen = false)}>
-						Submit a job
+	<nav
+		id="mobile-nav"
+		aria-label="Primary, mobile"
+		class="border-t border-rule px-4 py-3 md:hidden"
+		hidden={!menuOpen}
+	>
+		<ul class="flex flex-col">
+			{#each links as link (link.href)}
+				<li>
+					<a
+						href={link.href}
+						aria-current={active(link.href) ? 'page' : undefined}
+						class="block py-2.5 font-semibold {active(link.href) ? 'text-ink underline decoration-2 underline-offset-4'
+							: 'text-muted'}"
+					>
+						{link.label}
 					</a>
 				</li>
-			</ul>
-		</nav>
-	{/if}
+			{/each}
+			{#if discord}
+				<li>
+					<a
+						href={discord}
+						target="_blank"
+						rel="noopener noreferrer"
+						class="block py-2.5 font-semibold text-muted"
+					>
+						Discord<span class="sr-only"> (opens in a new tab)</span>
+					</a>
+				</li>
+			{/if}
+			<li class="pt-3">
+				<a href="/jobs/submit" class="btn btn-primary w-full">Submit a job</a>
+			</li>
+		</ul>
+	</nav>
 </header>
