@@ -1,12 +1,17 @@
 import { getBookmarks, toggleBookmark } from '$lib/client';
 
-const ids = $state(new Set<number>());
+// Backed by an array rather than a Set: `$state` only deep-proxies objects whose
+// prototype is Object.prototype or Array.prototype, so a `Set` is handed back
+// unproxied and `.add()` / `.delete()` notify nobody. An array is proxied, which
+// is what makes the bookmark buttons repaint. The list is per-device and short,
+// so the linear `includes` is not worth optimising away.
+let ids = $state<number[]>([]);
 let hydrated = $state(false);
 
 export function hydrateBookmarks() {
 	if (hydrated) return;
-	for (const id of getBookmarks()) ids.add(id);
 	hydrated = true;
+	ids = [...getBookmarks()];
 }
 
 export const bookmarks = {
@@ -17,12 +22,16 @@ export const bookmarks = {
 		return ids;
 	},
 	has(id: number) {
-		return ids.has(id);
+		return ids.includes(id);
 	},
 	toggle(id: number) {
 		const on = toggleBookmark(id);
-		if (on) ids.add(id);
-		else ids.delete(id);
+		if (on) {
+			if (!ids.includes(id)) ids.push(id);
+		} else {
+			const at = ids.indexOf(id);
+			if (at !== -1) ids.splice(at, 1);
+		}
 		return on;
 	}
 };
