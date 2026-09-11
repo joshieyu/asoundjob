@@ -1,7 +1,6 @@
 <script lang="ts">
 	import '../app.css';
-	import '@fontsource-variable/archivo';
-	import '@fontsource-variable/spline-sans-mono';
+	import '@fontsource-variable/recursive/mono.css';
 	import Header from '$lib/components/Header.svelte';
 	import Footer from '$lib/components/Footer.svelte';
 
