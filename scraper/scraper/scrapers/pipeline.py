@@ -220,6 +220,7 @@ class ScrapePipeline:
     async def _scrape_one(self, company: Company) -> ScrapeResult:
 
         stored_ats_failed = False
+        ats_claim_failed = False
         if company.ats_type and company.ats_type in self._ats_map:
             scraper = self._ats_map[company.ats_type]
             result = await self._attempt(
@@ -256,13 +257,30 @@ class ScrapePipeline:
                 if result.success:
                     result.trust_empty = True
                     return result
+                # A dedicated scraper recognised this board and could not read it.
+                # Whatever the generic fallbacks return next is a first page at
+                # best, so it must not be trusted to retire the rest.
+                logger.info(
+                    "%s: %s claimed this board but failed (%s); "
+                    "falling back with deactivation suppressed",
+                    company.name,
+                    ats.name,
+                    result.error,
+                )
+                ats_claim_failed = True
                 break
+
+        # A generic fallback after an ATS scraper claimed the board reads only
+        # what the careers page renders — typically the first page. Marking it
+        # partial keeps reconcile from deactivating everything it did not see.
+        fallback_is_partial = stored_ats_failed or ats_claim_failed
 
         skip_http = company.scrape_method == "playwright"
         if not skip_http:
             result = await self._attempt(self.http, company, self.http_semaphore, "http")
             self._try_discovery(company, result.html, stored_ats_failed)
             if result.success:
+                result.partial = result.partial or fallback_is_partial
                 return result
 
         result = await self._attempt(
@@ -270,6 +288,7 @@ class ScrapePipeline:
         )
         self._try_discovery(company, result.html, stored_ats_failed)
         if result.success:
+            result.partial = result.partial or fallback_is_partial
             return result
 
         result = await self._attempt(
@@ -277,6 +296,7 @@ class ScrapePipeline:
         )
         self._try_discovery(company, result.html, stored_ats_failed)
         if result.success:
+            result.partial = result.partial or fallback_is_partial
             return result
 
         last_error = result.error or "all methods failed"

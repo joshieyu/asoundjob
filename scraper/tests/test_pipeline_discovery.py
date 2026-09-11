@@ -287,3 +287,113 @@ class TestSharedBoardDedupe(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+SUCCESSFACTORS_COMPANY_URL = "https://careers.example.com/search/"
+
+
+def make_sf_company() -> Company:
+    return Company(
+        id=11,
+        name="Hearing Co",
+        slug="hearing-co",
+        category="Hearing & Audiology",
+        careers_url=SUCCESSFACTORS_COMPANY_URL,
+        scrape_method="http",
+    )
+
+
+class StubJob:
+    """Minimal stand-in for a RawJob; reconcile is not exercised here."""
+
+
+class SucceedingScraper(BaseScraper):
+    name = "generic"
+
+    async def fetch_jobs(self, company):
+        self._last_html = "<html><body>one page of jobs</body></html>"
+        return [StubJob()]
+
+
+class FailingAts(BaseScraper):
+    name = "successfactors"
+
+    def can_handle(self, company) -> bool:
+        return True
+
+    async def fetch_jobs(self, company):
+        self._last_html = ""
+        raise ScrapeError("read timed out")
+
+
+class TestFallbackAfterAtsClaimIsPartial(unittest.TestCase):
+    """A dedicated scraper recognising a board and then failing means the
+    generic fallback is seeing, at best, page one. Trusting it to retire
+    everything it did not see cost one real board 261 live jobs."""
+
+    def _run(self, *, ats_fails: bool, stored_ats: bool = False) -> ScrapeResult:
+        async def go():
+            settings = load_settings()
+            pipeline = ScrapePipeline(settings)
+            pipeline._persist_ats_discovery = (  # type: ignore[method-assign]
+                lambda *a, **k: None
+            )
+            pipeline._board_claimed_elsewhere = (  # type: ignore[method-assign]
+                lambda *a, **k: False
+            )
+            generic = SucceedingScraper(settings)
+            pipeline.http = generic  # type: ignore[assignment]
+            pipeline._playwright_scraper = lambda: generic  # type: ignore[method-assign]
+            pipeline._stealth_scraper = lambda: generic  # type: ignore[method-assign]
+
+            company = make_sf_company()
+            if ats_fails:
+                failing = FailingAts(settings)
+                if stored_ats:
+                    company.ats_type = "successfactors"
+                    pipeline._ats_map["successfactors"] = failing  # type: ignore[index]
+                else:
+                    pipeline.successfactors = failing  # type: ignore[assignment]
+            return await pipeline.scrape_company(company)
+
+        return asyncio.run(go())
+
+    def test_fallback_is_partial_when_an_ats_claimed_and_failed(self) -> None:
+        result = self._run(ats_fails=True)
+        self.assertTrue(result.success)
+        self.assertTrue(
+            result.partial,
+            "fallback after a failed ATS claim must suppress deactivation",
+        )
+
+    def test_fallback_is_partial_when_the_stored_ats_failed(self) -> None:
+        result = self._run(ats_fails=True, stored_ats=True)
+        self.assertTrue(result.success)
+        self.assertTrue(result.partial)
+
+    def test_plain_fallback_still_allows_deactivation(self) -> None:
+        """No ATS ever claimed this board, so the generic read is the whole
+        truth and stale jobs should still be retired."""
+
+        async def go():
+            settings = load_settings()
+            pipeline = ScrapePipeline(settings)
+            pipeline._persist_ats_discovery = (  # type: ignore[method-assign]
+                lambda *a, **k: None
+            )
+            pipeline._board_claimed_elsewhere = (  # type: ignore[method-assign]
+                lambda *a, **k: False
+            )
+            generic = SucceedingScraper(settings)
+            pipeline.http = generic  # type: ignore[assignment]
+            pipeline._playwright_scraper = lambda: generic  # type: ignore[method-assign]
+            pipeline._stealth_scraper = lambda: generic  # type: ignore[method-assign]
+            # A plain careers page: no ATS scraper recognises this URL, so the
+            # generic read is authoritative. (The /search/ path used above is
+            # claimed by the real SuccessFactors scraper on URL shape alone.)
+            company = make_company()
+            return await pipeline.scrape_company(company)
+
+        result = asyncio.run(go())
+        self.assertTrue(result.success)
+        self.assertFalse(result.partial)

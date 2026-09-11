@@ -5423,12 +5423,44 @@ drops from 327 to 78 — it was **76% internships**, which made it useless for
 finding a junior permanent job — and 19 internships now record their hours,
 which was previously unrepresentable.
 
+### A truncated fallback could silently retire a whole board
+
+Found by running a fresh scrape on 2026-09-11. The first pass exited 0 and
+deactivated **2,592 jobs**, taking the board from 1,038 audio roles to 946.
+
+The mechanism: `_scrape_one` tries a dedicated ATS scraper, and on failure falls
+through to http -> playwright -> stealth. Those generic scrapers read whatever
+the careers page renders, which for a paginated board is **page one** — about 20
+jobs. That counted as a clean success, so `reconcile` retired everything it had
+not seen. Samsung went 658 -> 20, Demant 271 -> 10, Logitech 199 -> 21.
+
+`ScrapeResult.partial` already existed for exactly this — `main.py` passes
+`allow_deactivation=not result.partial` — but it was only ever set on the
+multi-URL path. It is now also set when a dedicated scraper claimed the board
+and failed, whether that scraper came from `company.ats_type` or from
+`can_handle`. Three tests in `test_pipeline_discovery.py` cover it, including a
+control proving a board no ATS ever claimed still deactivates normally.
+
+**Diagnosis that was wrong, recorded so nobody repeats it:** the obvious reading
+was that `ats_discovery.py` lacks a SuccessFactors pattern (true — it knows 20
+ATS types and `successfactors`, `ultipro` and `sigma` are not among them). That
+is not what broke Demant. `SuccessFactorsScraper.can_handle` matches on URL
+shape (`/search/`, `/go/<board>/<id>`) and needs no `ats_type` at all; run it
+alone and Demant yields 314 jobs in 25s, well inside the 90s budget. It fails
+only under full-run contention. Adding a discovery pattern would have changed
+nothing.
+
+The underlying slowness is still open — a SuccessFactors board that times out
+under load now keeps its jobs instead of losing them, but it still does not get
+refreshed that cycle. Re-running the single company fixes it
+(`--company demant-oticon-bernafon`).
+
+Also unexplained: only 58 of 1,394 companies had a stored `ats_type` before that
+run, though Samsung demonstrably scraped via Workday on 2026-09-04. Something
+cleared them. Discovery re-found 6 during the two passes.
+
 ## Still open
 
-- Two stray 0-byte `asoundjob.db` files sit in `scraper/` and `web/`. The live
-  database is the one at the repo root; `resolve_database_url` sends every
-  relative sqlite path there. The strays are cruft, left alone rather than
-  deleted unasked.
 - Selecting any job type hides the listings with no `job_type` recorded.
   The UI warns in place. The real fix is better extraction at scrape time.
 - Two toggles, no "system" option: once a reader picks light or dark it sticks
