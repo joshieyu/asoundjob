@@ -12,15 +12,20 @@
 > DO-NOT-REPEAT entries, but not a to-do list. "Conventions" and "Key Files to
 > Know" are always current.
 >
-> **The board is current as of 2026-08-31.** Live: the Test, Measurement & QA
-> category, country filtering, and the Workday/`<base href>` link repairs.
-> Board is 470 with 0 known-broken links. Read
-> "Session update (2026-08-29, night)" for the numbers that supersede the
-> metrics table.
+> **START WITH "Session update (2026-09-11) — the Type Specimen redesign"**, the
+> last section in this file. The entire frontend was replaced in that session and
+> every earlier description of the UI is now historical.
 >
-> **The audience is audio engineers.** DSP, audio systems, EE, embedded and
-> acoustics roles are the point; live sound and sound design are not the
-> priority. An earlier version of this document assumed otherwise.
+> **The board is 1,038 active audio-related jobs** (measured against
+> `asoundjob.db` on 2026-09-10). The "470" figure above it is stale. 8,591 rows
+> are active in total; the public board is the audio-related subset.
+>
+> **The audience is anyone working in audio, at any level** — engineering is the
+> largest slice (DSP, audio software, embedded, EE, acoustics, transducers, T&M)
+> but live sound, sound design, game audio, production and commercial roles at
+> audio companies all belong. This supersedes the older "the audience is audio
+> engineers" framing, which is still visible further down this document.
+> `PRODUCT.md` at the repo root is now the authority on product truth.
 
 ASoundJob is an audio industry job board + career resource site. It scrapes
 audio companies' careers pages, aggregates job listings, and presents them with
@@ -5102,3 +5107,170 @@ database through `Normalizer` before and after, and re-run
 `--dry-run`, so the "after" number can be read without writing anything. **Build the
 before/after title list first**, from the 114 rows identified above, so every
 step has a fixed yardstick rather than a fresh opinion.
+
+---
+
+# Session update (2026-09-11) — the Type Specimen redesign
+
+**The entire frontend visual world was replaced.** Every earlier description of
+the UI in this document is historical. Nothing from this session is committed.
+
+Branch: **`redesign-type-specimen`**, cut from `improve-categorization-and-parsing`
+(NOT from `main` — that branch carries ~1,610 lines of frontend work not yet in
+main; branching from main would have stranded it).
+
+## New authority documents at the repo root
+
+| File | Owns |
+|---|---|
+| `PRODUCT.md` | Product truth: users, purpose, positioning, constraints, brand commitments, accessibility. Written from a user interview, not inferred. |
+| `REDESIGN-BRIEF.md` | The shape brief: scope, boundaries, measured data ranges, states, sequencing, anti-goals. |
+| `DESIGN.md` + `.impeccable/design.json` | The visual system, derived from the shipped code. 8 canonical sections, 7 colour tokens, 9 named rules. |
+
+Read `DESIGN.md` before touching UI. `web/src/app.css` is normative; DESIGN.md
+describes it.
+
+## The world: "The Type Specimen"
+
+Chosen by the user from a bolder re-roll of an Impeccable direction round (seed
+`935ce336`). It replaced a mixing-console world ("The Channel Strip") **in full**
+at the user's explicit request: *"I don't really want the physical analogues of
+audio hardware."* The direction contract is an HTML comment at the top of
+`web/src/app.html` — read it before any visual change.
+
+Thesis: filters are axis sliders that continuously remap the board; the board
+reports its own coordinates; hierarchy comes from scale contrast alone.
+
+### Tokens (`web/src/app.css` `@theme`)
+
+| Token | Value | Contrast on ground | Use |
+|---|---|---|---|
+| `--color-ground` | `#F9F9F8` | — | the paper; neutral, NOT cream |
+| `--color-ground-tint` | `#F1F1EF` | — | rare tint only |
+| `--color-ink` | `#0D0D0F` | 18.43:1 | all text and structure |
+| `--color-muted` | `#6B6B70` | 5.03:1 | secondary floor — never lighter |
+| `--color-accent` | `#0033FF` | 6.83:1 | the single accent |
+| `--color-accent-inv` | `#5C7BFF` | 5.30:1 on ink | inverted contexts only |
+| `--color-rule` | `#DEDEDC` | 1.28:1 | DECORATIVE ONLY |
+
+Sizes: `text-specimen`, `text-display`, `text-title`, `text-body`, `text-meta`,
+`text-coord`. **Do not use raw `text-sm` / `text-lg` / `text-xs`** — the scale is
+normative and they were all mapped out once already.
+
+### Classes
+
+`.specimen` (huge display numerals) · `.coord` (live data readout, MONO 1,
+tabular) · `.axis-label` (small label, **not** uppercase) · `.btn` +
+`.btn-primary` / `.btn-quiet` (+ `.is-on` / `aria-pressed`) · `.field` (all
+inputs; has real hover / focus / disabled / `[aria-invalid]` states) · `.link` ·
+`.axis` (the range-slider control).
+
+### Named rules — these are binding, not style notes
+
+- **The Single Ink Rule.** One accent, no second hue. Specialty, seniority and
+  status encode by position and scale, **never colour**. This is the only way 21
+  categories coexist without becoming badge soup.
+- **The Rule Rule.** `--color-rule` measures 1.28:1, so it may never carry
+  meaning. Anything meaning-bearing uses `--color-muted` or `--color-ink`.
+- **Structural voids.** Deep gaps divide. No cards, no panels, no boxes.
+- **One shared graticule.** Every value is measured against the same grid, never
+  its own private scale.
+- Radius is **0** everywhere (`--radius-none`). Only status dots are round.
+- No kickers/eyebrows above headings. No decorative monospace. No glyph
+  characters (`✕ ↗ → ←`) standing in for icons — use drawn SVG.
+
+### Type
+
+ONE family: `@fontsource-variable/recursive`, imported as **`recursive/mono.css`**
+in `web/src/routes/+layout.svelte`.
+
+- `mono.css` = MONO 0–1 + wght 300–1000, **70 KB**. Incumbent was Archivo 36 KB +
+  Spline Sans Mono 36 KB = 72 KB, so this is payload-neutral.
+- **Do not switch to `full.css`** — it is **297 KB** and adds CASL/CRSV/slnt,
+  which nothing uses.
+- `font-mono` must never be used; it no longer maps to the brand font. Monospace
+  is an axis move: `.coord` sets `font-variation-settings: 'MONO' 1`.
+
+## What changed, by file
+
+`app.css` rewritten (240 → ~260 lines). `app.html` (contract + theme-color +
+favicons). `+layout.svelte` (font import). All of `lib/components/` — `JobStrip`
+rebuilt, `LedMeter` **deleted**, `RecencyTick` and `bookmarks.svelte.ts` added.
+All public routes, all six admin routes. **Zero incumbent class or token
+references remain in `web/src`** (verified by grep).
+
+Admin is **deliberately plainer** by explicit user decision: same tokens, none of
+the specimen grammar (no axis sliders, no coordinate readout, no specimen-scale
+type). Do not "fix" this.
+
+## Defects fixed beyond the reskin
+
+- Five hardcoded `http://localhost:5173` canonicals now resolve from `SITE_URL`.
+- `/jobs` had no `<h1>`; added.
+- **Outage no longer renders as "no results."** `/jobs` and `/` previously said
+  "No roles match these filters" when the API was down — the site asserting
+  something false. Both now distinguish outage from empty (`boardUnavailable`
+  flag from the loaders). Verified by killing the API.
+- `job_type ?? '—'` missed empty string on 10,134 rows; now `|| '—'`.
+- `disabled:opacity-60` blended muted text to ~2.6:1 — removed.
+- Duplicate `aria-label="Primary"` landmark, `aria-controls` pointing at a
+  non-existent element, mobile menu not closing on navigation.
+- Bookmarks now read `localStorage` once via a shared store instead of per card.
+- `about` read a hardcoded "1,385" that contradicted the live tile beside it; now
+  reads live (**1,394**).
+- YAP logo removed from header/identity; kept ONLY as the favicon
+  (`web/static/favicon-32.png`, `favicon-180.png`, derived from the 2048px
+  original, which is no longer in the repo).
+
+## DO-NOT-REPEAT — traps that cost real time this session
+
+- **`<fieldset>` has an implicit `min-inline-size: min-content`.** It refuses to
+  shrink below its widest child and will blow out of a grid column. `app.css`
+  now sets `fieldset { min-inline-size: 0 }` in the base layer. Do not remove it.
+- **Testing the MONO axis with the string `iiiimmmm0123` proves nothing** — it
+  measures 288px in BOTH proportional and monospace modes by coincidence, and
+  looks exactly like a broken axis. Test `iiiiiiii` against `mmmmmmmm`
+  separately (112/272 proportional, 192/192 mono).
+- **Tailwind emits `bg-ground/95` as an `oklab()` string.** A naive contrast
+  script that regexes three numbers out of a colour will read `0.98, -0.0003,
+  0.0013` as RGB and report ~12 phantom AA failures. Parse colours by painting
+  them to a 1×1 canvas.
+- **Low-resolution screenshots lie about overlap.** Two "overlapping text" bugs
+  this session were measured as clean 4px gaps. Measure with
+  `getBoundingClientRect()` before believing a screenshot — and measure against
+  the *right* reference (checking against the viewport missed a real 51px
+  fieldset spill that only showed up when checked against the form's own edge).
+- **There is no recency/date filter in the API.** `api/api/routers/jobs.py`
+  accepts page, per_page, category, seniority, job_type, salary_min, salary_max,
+  company_id, location, country, remote, include_unrelated, search, ids, sort —
+  and nothing else. A recency axis slider was specified in the brief and
+  deliberately NOT built, because it would have been a control that filters
+  nothing. Building it requires backend work first.
+
+## Still open
+
+- **Nothing is committed.** Whole branch is uncommitted working tree.
+- Two fixes were spun off as separate tasks and are independent of this branch:
+  **(1)** stored XSS — `JSON.stringify` does not escape `/`, and unsanitized
+  scraped `job.title` / `company.name` go into the JSON-LD `<script>` at
+  `web/src/routes/jobs/[id]/+page.svelte:26`. **(2)** free-text search is
+  broken — frontend sends `q`, `api/api/routers/jobs.py:64` expects `search`, so
+  FastAPI silently drops it while the UI shows a "Search:" chip.
+- Company dropdown still shows 100 of 722 verified companies.
+- Pagination is a ±2 window with no first/last on a 52-page board.
+- The four WIP sections (company directory, company detail, interview prep,
+  career resources) are confirmed as shipping but are NOT built — they still
+  render through `Wip.svelte`. The token layer and page templates are ready for
+  them.
+- Production domain still undecided; `SITE_URL` env var drives canonicals.
+
+## Running the demo
+
+```bash
+cd api && ../venv/bin/uvicorn api.main:app --port 8000     # API
+cd web && npm run dev -- --port 5173                        # frontend
+```
+
+`npm --prefix web run check` → **0 errors** (2 pre-existing
+`state_referenced_locally` warnings in `jobs/+page.svelte`). The Impeccable
+mechanical detector returns `[]`.
