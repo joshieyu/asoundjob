@@ -27,10 +27,24 @@ class TestSeniority(unittest.TestCase):
     def test_entry(self) -> None:
         for title in (
             "Junior DSP Engineer",
-            "Audio Intern - Summer 2026",
             "Entry Level Acoustics Role",
             "Graduate Software Engineer, Audio",
         ):
+            self.assertEqual(detect_seniority(title), "entry", title)
+
+    def test_internship_is_its_own_level_not_entry(self) -> None:
+        for title in (
+            "Audio Intern - Summer 2026",
+            "Summer Internship, Acoustics",
+            "Audio Engineering Co-op",
+            "Hearing Instrument Specialist Trainee",
+            "Sound Design Apprentice",
+        ):
+            self.assertEqual(detect_seniority(title), "internship", title)
+
+    def test_graduate_scheme_is_entry_not_internship(self) -> None:
+        """A UK/EU graduate role is an entry-level permanent job."""
+        for title in ("Graduate Software Engineer, Audio", "Grad Acoustics Engineer"):
             self.assertEqual(detect_seniority(title), "entry", title)
 
     def test_senior(self) -> None:
@@ -53,7 +67,7 @@ class TestSeniority(unittest.TestCase):
         self.assertEqual(detect_seniority("Audio Systems Engineer"), "mid")
         self.assertEqual(detect_seniority("DSP Developer"), "mid")
 
-    def test_non_english_entry(self) -> None:
+    def test_non_english_internships(self) -> None:
         for title in (
             "Werkstudent (m-w-d) Vertrieb Boeblingen",
             "Praktikanten (m/w/d) – Instrumentelle Qualitätsbewertung",
@@ -64,9 +78,9 @@ class TestSeniority(unittest.TestCase):
             "Stage Digital Marketing",
             "Stage Assistant(e) prévision des ventes (H/F)",
         ):
-            self.assertEqual(detect_seniority(title), "entry", title)
+            self.assertEqual(detect_seniority(title), "internship", title)
 
-    def test_stage_as_english_theatre_role_is_not_entry(self) -> None:
+    def test_stage_as_english_theatre_role_is_not_an_internship(self) -> None:
         for title in (
             "Stage Manager",
             "Stage Technician",
@@ -76,6 +90,7 @@ class TestSeniority(unittest.TestCase):
             "Stage Designer",
             "Stage Lighting",
         ):
+            self.assertNotEqual(detect_seniority(title), "internship", title)
             self.assertNotEqual(detect_seniority(title), "entry", title)
 
     def test_sous_chef_is_not_manager(self) -> None:
@@ -494,9 +509,19 @@ class TestJobType(unittest.TestCase):
         self.assertEqual(normalize_job_type("Contract position"), "contract")
         self.assertEqual(normalize_job_type("Contractor"), "contract")
         self.assertEqual(normalize_job_type("Freelance"), "contract")
-        self.assertEqual(normalize_job_type("Internship"), "internship")
         self.assertIsNone(normalize_job_type("Mystery"))
         self.assertIsNone(normalize_job_type("Internal communication"))
+
+    def test_internship_is_not_a_job_type(self) -> None:
+        """Internship is a seniority. A posting that says only "Internship"
+        tells us nothing about the hours, and guessing one was what stopped a
+        full-time internship from being recorded as full-time."""
+        self.assertIsNone(normalize_job_type("Internship"))
+        self.assertIsNone(normalize_job_type("Summer Intern"))
+
+    def test_an_internship_can_still_state_its_hours(self) -> None:
+        self.assertEqual(normalize_job_type("Full-time Internship"), "full-time")
+        self.assertEqual(normalize_job_type("Part-Time Internship"), "part-time")
 
 
 class TestRemote(unittest.TestCase):

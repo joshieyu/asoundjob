@@ -714,9 +714,16 @@ NON_ENGLISH_INTERN_RE_FRAGMENT = (
 )
 
 SENIORITY_PATTERNS: list[tuple[str, str]] = [
-    (r"\b(intern|internship|co-?op|trainee|apprentice|graduate|grad)\b", "entry"),
+    # An internship is a career stage, not a commitment shape: it can be
+    # full-time or part-time, and saying so in `job_type` meant one fact evicted
+    # the other. It lives here, below entry, and `job_type` is left free to
+    # record the hours.
+    (r"\b(?:intern(?:ship)?s?|co-?ops?|trainees?|apprentices?)\b", "internship"),
+    (NON_ENGLISH_INTERN_RE_FRAGMENT, "internship"),
+    # A graduate scheme is an entry-level permanent job in the UK and EU, not an
+    # internship, so it is deliberately not in the pattern above.
+    (r"\b(graduate|grad)\b", "entry"),
     (r"\b(entry[- ]level|junior|jr\.?)\b", "entry"),
-    (NON_ENGLISH_INTERN_RE_FRAGMENT, "entry"),
     (
         r"\b(manager|director|vp\b|vice president|chief|head of|leiter|leitung|"
         r"geschäftsführer|abteilungsleiter|teamleiter|responsable|directeur|"
@@ -735,10 +742,9 @@ JOB_TYPE_PATTERNS: list[tuple[str, str]] = [
         r"|\bcontractor\b|\bfreelance\b|c2h|corp[- ]to[- ]corp",
         "contract",
     ),
-    (
-        rf"\bintern(ship)?\b|\bco[- ]?op\b|{NON_ENGLISH_INTERN_RE_FRAGMENT}",
-        "internship",
-    ),
+    # "internship" is deliberately absent: it is a seniority, not a job type.
+    # A posting that only says "Internship" leaves job_type unknown, which is
+    # honest — we were previously guessing a commitment we had not been told.
     (r"\btemporary\b|temp[- ]to[- ]perm|seasonal", "temporary"),
     (r"\bvolunteer\b", "volunteer"),
 ]

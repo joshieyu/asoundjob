@@ -125,7 +125,7 @@
 					<span class="axis-label mb-2 block">Type</span>
 					<select bind:value={form.job_type} class="field">
 						<option value="">—</option>
-						{#each ['full-time', 'part-time', 'contract', 'internship', 'temporary'] as t (t)}
+						{#each ['full-time', 'part-time', 'contract', 'temporary'] as t (t)}
 							<option value={t}>{t}</option>
 						{/each}
 					</select>
@@ -134,7 +134,7 @@
 					<span class="axis-label mb-2 block">Level</span>
 					<select bind:value={form.experience_level} class="field">
 						<option value="">—</option>
-						{#each ['entry', 'mid', 'senior', 'lead', 'manager'] as lvl (lvl)}
+						{#each ['internship', 'entry', 'mid', 'senior', 'lead', 'manager'] as lvl (lvl)}
 							<option value={lvl}>{lvl}</option>
 						{/each}
 					</select>

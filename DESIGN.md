@@ -403,9 +403,15 @@ future contrast script must do the same.
    reports its own coordinates.
 
 2. **Job type is a checkbox set** for the same reason. It carries a warning the
-   others do not need: 45% of listings have no `job_type` at all, so any
-   selection hides them. The UI says so in place rather than letting a reader
-   conclude the board is empty.
+   others do not need: a large share of listings have no `job_type` at all, so
+   any selection hides them. The UI says so in place rather than letting a
+   reader conclude the board is empty.
+
+   **Level now opens with `internship`**, which used to be a job type. An
+   internship is a career stage that can be full-time or part-time; holding it
+   in a single-valued `job_type` meant one of those facts evicted the other.
+   The filter vocabularies are therefore Level = internship, entry, mid, senior,
+   lead, manager and Type = full-time, part-time, contract, temporary.
 
 3. **Company is free text, not a select.** The dropdown only ever loaded 100 of
    722 verified companies, so 86% were unreachable. This needed a new `company`

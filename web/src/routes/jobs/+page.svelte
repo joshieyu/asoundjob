@@ -53,9 +53,11 @@
 	let showZeroCategories = $state(false);
 
 	// Ordered low-to-high so the checkbox column still reads as a ladder, even
-	// though it is now a set rather than a position on an axis.
-	const LEVELS = ['entry', 'mid', 'senior', 'lead', 'manager'];
-	const JOB_TYPES = ['full-time', 'part-time', 'contract', 'internship', 'temporary'];
+	// though it is now a set rather than a position on an axis. Internship is a
+	// rung on that ladder, not a job type — it can be full-time or part-time,
+	// and holding it in job_type meant one of those facts evicted the other.
+	const LEVELS = ['internship', 'entry', 'mid', 'senior', 'lead', 'manager'];
+	const JOB_TYPES = ['full-time', 'part-time', 'contract', 'temporary'];
 
 	let selectedLevels = $derived(params.seniority ? params.seniority.split(',') : []);
 	let selectedTypes = $derived(params.job_type ? params.job_type.split(',') : []);

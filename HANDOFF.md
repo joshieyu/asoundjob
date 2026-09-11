@@ -5389,9 +5389,47 @@ same elements measure 18:1 once settled. Always audit after a real page load.
 That is now three tools that have lied this session: the oklab regex, the iframe
 harness, and the runtime theme flip.
 
+### Internship moved from job_type to seniority
+
+`job_type` is single-valued, so a posting reading "Full-time Internship" matched
+the full-time pattern first and recorded `full-time` — the internship was simply
+lost. **11 live rows were in exactly that state.** Meanwhile the same keyword was
+already setting `seniority='entry'`, so the fact was stored twice and neither
+copy was reliable.
+
+- `SENIORITY_PATTERNS`: the intern family now maps to `"internship"`.
+  `graduate|grad` was split out and stays `entry` — a UK/EU graduate scheme is an
+  entry-level permanent job, not an internship.
+- `JOB_TYPE_PATTERNS`: the internship entry is **gone**. A posting that only says
+  "Internship" now leaves `job_type` NULL, which is honest; we were previously
+  inventing a commitment nobody stated.
+- **Plurals never matched.** `\bintern(ship)?\b` missed "Internships",
+  "Trainees", "Apprentices" and "Interns & Graduates", all of which fell through
+  to the mid-level default. Now `\b(?:intern(?:ship)?s?|co-?ops?|trainees?|apprentices?)\b`,
+  which still excludes "Internal" and "International".
+
+`scripts/migrate_internship_to_level.py` brings existing rows in line (dry run by
+default, `--apply` to write). It updated 562 rows. Backup of the pre-migration
+database is at `/tmp/asoundjob.pre-internship-migration.db`.
+
+**The migration trusts the title, not the old tag.** 23 rows carried
+`job_type='internship'` while titled "Global Account Manager", "Sr. CMF
+Engineer" and similar — the tag came from something other than the title and is
+demonstrably wrong. Those rows get the bogus job_type cleared and keep their
+seniority; promoting them would have laundered a bad tag into a bad level.
+
+Result on the live board: `internship` is a level with 313 active roles, `entry`
+drops from 327 to 78 — it was **76% internships**, which made it useless for
+finding a junior permanent job — and 19 internships now record their hours,
+which was previously unrepresentable.
+
 ## Still open
 
-- Selecting any job type hides the 45% of listings with no `job_type` recorded.
+- Two stray 0-byte `asoundjob.db` files sit in `scraper/` and `web/`. The live
+  database is the one at the repo root; `resolve_database_url` sends every
+  relative sqlite path there. The strays are cruft, left alone rather than
+  deleted unasked.
+- Selecting any job type hides the listings with no `job_type` recorded.
   The UI warns in place. The real fix is better extraction at scrape time.
 - Two toggles, no "system" option: once a reader picks light or dark it sticks
   until they pick the other. Following the OS again means clearing

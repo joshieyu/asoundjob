@@ -158,13 +158,13 @@ class TestEmploymentWordNotMangled(unittest.TestCase):
         self.assertEqual(title, "Sound Design Intern")
         self.assertEqual(job_type, "Intern")
 
-    def test_internship_titles_remain_detectable_as_entry_seniority(self) -> None:
+    def test_internship_titles_remain_detectable_as_internship_seniority(self) -> None:
         from scraper.normalizer import detect_seniority
 
         for title in ("Game Audio Internship", "Sound Design Intern"):
             cleaned = clean_job_title(title)
             self.assertEqual(cleaned, title)
-            self.assertEqual(detect_seniority(cleaned), "entry")
+            self.assertEqual(detect_seniority(cleaned), "internship")
 
 
 class TestShoutyCaseNormalization(unittest.TestCase):
