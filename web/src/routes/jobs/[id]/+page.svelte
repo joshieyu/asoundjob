@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { formatDate, formatSalary, timeAgo } from '$lib/format';
+	import { serializeJsonLd } from '$lib/jsonld';
 	import { JOB_FEEDBACK_KINDS } from '$lib/feedback';
 	import FeedbackDialog from '$lib/components/FeedbackDialog.svelte';
 
@@ -23,7 +24,7 @@
 	<title>{data.meta.title}</title>
 	<meta name="description" content={data.meta.description} />
 	<link rel="canonical" href="{data.siteUrl}/jobs/{job.id}" />
-	{@html `<script type="application/ld+json">${JSON.stringify(data.jsonLd)}<\/script>`}
+	{@html `<script type="application/ld+json">${serializeJsonLd(data.jsonLd)}<\/script>`}
 </svelte:head>
 
 <nav aria-label="Breadcrumb" class="mt-6 coord text-muted">
