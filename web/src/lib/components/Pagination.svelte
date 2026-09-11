@@ -22,21 +22,21 @@
 {#if data.pages > 1}
 	<nav aria-label="Pagination" class="mt-6 flex items-center justify-between gap-2">
 		{#if data.page > 1}
-			<a href={makeHref(data.page - 1)} rel="prev" class="btn-latch">← Prev</a>
+			<a href={makeHref(data.page - 1)} rel="prev" class="btn btn-quiet"><svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13 8H3M7 4L3 8l4 4"/></svg>Prev</a>
 		{:else}
 			<span></span>
 		{/if}
 
-		<div class="flex items-center gap-1 font-mono text-sm">
+		<div class="flex items-center gap-1 coord">
 			{#each pages as p (p)}
 				<a
 					href={makeHref(p)}
 					aria-current={p === data.page ? 'page' : undefined}
 					aria-label="Page {p}"
-					class="flex h-8 min-w-8 items-center justify-center rounded border px-2 transition-colors {p ===
+					class="flex h-8 min-w-8 items-center justify-center border px-2 transition-colors {p ===
 					data.page
-						? 'border-fader-deep bg-fader text-white'
-						: 'border-seam bg-panel-raised hover:border-fader'}"
+						? 'border-ink bg-ink text-ground'
+						: 'border-rule bg-ground hover:border-accent'}"
 				>
 					{p}
 				</a>
@@ -44,7 +44,7 @@
 		</div>
 
 		{#if data.page < data.pages}
-			<a href={makeHref(data.page + 1)} rel="next" class="btn-latch">Next →</a>
+			<a href={makeHref(data.page + 1)} rel="next" class="btn btn-quiet">Next<svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a>
 		{:else}
 			<span></span>
 		{/if}
