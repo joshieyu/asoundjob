@@ -449,7 +449,8 @@
 			</ul>
 		{/if}
 
-		<div class="mt-2 divide-y divide-rule">
+		<div class="@container mt-4">
+			<div class="grid items-stretch gap-3 @3xl:grid-cols-2">
 			{#each jobs?.items ?? [] as job, i (job.id)}
 				{#if i === unplacedStartIndex}
 					<div class="col-span-full mt-2 flex items-center gap-3">
@@ -463,7 +464,7 @@
 				<JobStrip {job} {categoryNames} {onReport} />
 			{:else}
 				{#if data.boardUnavailable}
-					<div class="py-20 text-center" role="alert">
+					<div class="col-span-full py-20 text-center" role="alert">
 						<p class="text-title font-semibold">We couldn't read the board just now.</p>
 						<p class="mt-2 text-meta text-muted">
 							This is our end, not your filters — the listings service didn't answer.
@@ -471,7 +472,7 @@
 						</p>
 					</div>
 				{:else}
-					<div class="py-20 text-center">
+					<div class="col-span-full py-20 text-center">
 						<p class="text-title font-semibold">No roles match these filters.</p>
 						<p class="mt-2 text-meta text-muted">
 							Try widening a filter, or clear them and start again.
@@ -480,6 +481,7 @@
 					</div>
 				{/if}
 			{/each}
+			</div>
 		</div>
 
 		{#if jobs}

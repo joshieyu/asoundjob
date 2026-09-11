@@ -104,16 +104,18 @@
 		</a>
 	</div>
 
-	<div class="mt-2 divide-y divide-rule">
+	<div class="@container mt-4">
+		<div class="grid items-stretch gap-3 @3xl:grid-cols-2">
 		{#each featured as job (job.id)}
 			<JobStrip {job} {categoryNames} {onReport} />
 		{:else}
-			<p class="py-10 text-meta text-muted" role={data.boardUnavailable ? 'alert' : undefined}>
+			<p class="col-span-full py-10 text-meta text-muted" role={data.boardUnavailable ? 'alert' : undefined}>
 				{data.boardUnavailable
 					? "We couldn't read the board just now — the listings service didn't answer. Refresh in a moment."
 					: 'No listings to show yet.'}
 			</p>
 		{/each}
+		</div>
 	</div>
 </section>
 
