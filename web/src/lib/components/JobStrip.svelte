@@ -29,7 +29,7 @@
 	class="group flex flex-col border border-rule bg-ground p-4 transition-colors hover:border-muted sm:p-5"
 >
 	<div class="flex items-start gap-2">
-		<h3 class="min-w-0 flex-1 text-title font-semibold leading-tight text-balance">
+		<h3 class="min-w-0 flex-1 text-title font-semibold leading-tight text-balance wrap-anywhere">
 			<a href="/jobs/{job.id}" class="line-clamp-3 hover:text-accent hover:underline">
 				{job.title}
 			</a>

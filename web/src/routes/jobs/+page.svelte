@@ -601,7 +601,7 @@
 					</p>
 					<ul class="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
 						{#each openApplications.companies as company (company.id)}
-							<li class="flex items-center justify-between gap-3 p-3">
+							<li class="flex min-w-0 items-center justify-between gap-3 p-3">
 								<span class="min-w-0">
 									<span class="block truncate text-meta font-semibold">{company.name}</span>
 									<span class="coord block truncate text-muted">
@@ -659,7 +659,7 @@
 					</div>
 					<ul class="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
 						{#each blocked.companies as company (company.id)}
-							<li class="flex items-center justify-between gap-3 p-3">
+							<li class="flex min-w-0 items-center justify-between gap-3 p-3">
 								<span class="min-w-0">
 									<span class="block truncate text-meta font-semibold">{company.name}</span>
 									<span class="coord block truncate text-muted">

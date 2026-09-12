@@ -33,7 +33,7 @@
 <header class="sticky top-0 z-40 border-b border-rule bg-ground/95 backdrop-blur">
 	<div class="mx-auto flex h-16 max-w-6xl items-center gap-4 px-4 sm:px-6">
 		<a href="/" class="flex items-center gap-2.5 sm:gap-3" aria-label="ASoundJob home">
-			<Logo class="h-8 w-auto shrink-0" />
+			<Logo class="h-7 w-auto shrink-0 sm:h-8" />
 			<span class="flex flex-col leading-none">
 				<span class="text-title font-bold tracking-tight">ASoundJob</span>
 				<span class="coord mt-0.5 hidden text-muted sm:block">by Young Audio Professionals</span>
