@@ -7,6 +7,10 @@ interface CompanySlug {
 	created_at: string;
 }
 
+const PER_PAGE = 100;
+const MAX_JOB_PAGES = 60;
+const MAX_COMPANY_PAGES = 30;
+
 export const GET: RequestHandler = async () => {
 	const staticRoutes = [
 		'',
@@ -20,10 +24,9 @@ export const GET: RequestHandler = async () => {
 
 	const jobEntries: string[] = [];
 	try {
-		const perPage = 200;
-		for (let page = 1; page <= 15; page++) {
+		for (let page = 1; page <= MAX_JOB_PAGES; page++) {
 			const result = await api<Paginated<Job>>(
-				`/api/jobs?per_page=${perPage}&page=${page}&sort=newest`
+				`/api/jobs?per_page=${PER_PAGE}&page=${page}&sort=newest`
 			);
 			for (const job of result.items) {
 				const lastmod = (job.posted_date ?? job.scraped_at ?? '').slice(0, 10);
@@ -33,15 +36,15 @@ export const GET: RequestHandler = async () => {
 			}
 			if (page >= result.pages) break;
 		}
-	} catch {
-		/* backend down: emit static routes only */
+	} catch (err) {
+		console.warn('sitemap: job URLs omitted —', err);
 	}
 
 	const companyEntries: string[] = [];
 	try {
-		for (let page = 1; page <= 14; page++) {
+		for (let page = 1; page <= MAX_COMPANY_PAGES; page++) {
 			const result = await api<Paginated<CompanySlug>>(
-				`/api/companies?per_page=100&page=${page}`
+				`/api/companies?per_page=${PER_PAGE}&page=${page}`
 			);
 			for (const company of result.items) {
 				companyEntries.push(
@@ -50,8 +53,8 @@ export const GET: RequestHandler = async () => {
 			}
 			if (page >= result.pages) break;
 		}
-	} catch {
-		/* backend down: skip */
+	} catch (err) {
+		console.warn('sitemap: company URLs omitted —', err);
 	}
 
 	const urls = [
