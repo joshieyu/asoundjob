@@ -32,6 +32,21 @@
 		reject_reason: string | null;
 	}
 
+	interface CompanySuggestionItem {
+		id: number;
+		company_id: number;
+		company_name: string | null;
+		company_slug: string | null;
+		description: string | null;
+		links: { label: string; url: string }[] | null;
+		headquarters: string | null;
+		founded: number | null;
+		comment: string | null;
+		submitter_email: string | null;
+		status: string;
+		submitted_at: string;
+	}
+
 	const JOB_KIND_LABELS: Record<string, string> = {
 		wrong_category: 'Wrong category',
 		not_audio: 'Not an audio job',
@@ -54,6 +69,11 @@
 	let siteLoading = $state(true);
 	let siteMessage = $state('');
 	let siteBusyId = $state<number | null>(null);
+
+	let companySuggestions = $state<CompanySuggestionItem[]>([]);
+	let companyLoading = $state(true);
+	let companyMessage = $state('');
+	let companyBusyId = $state<number | null>(null);
 
 	async function loadJobFeedback() {
 		jobLoading = true;
@@ -83,10 +103,48 @@
 		}
 	}
 
+	async function loadCompanySuggestions() {
+		companyLoading = true;
+		try {
+			const result = await clientApi<{ items: CompanySuggestionItem[] }>(
+				'/api/admin/company-suggestions?status=pending&per_page=50'
+			);
+			companySuggestions = result.items;
+		} catch (err) {
+			companyMessage = err instanceof Error ? err.message : 'Failed to load queue';
+		} finally {
+			companyLoading = false;
+		}
+	}
+
 	$effect(() => {
 		loadJobFeedback();
 		loadSiteFeedback();
+		loadCompanySuggestions();
 	});
+
+	async function actCompany(id: number, action: 'approve' | 'reject') {
+		companyBusyId = id;
+		companyMessage = '';
+		try {
+			const result = await clientApi<{ status: string; applied?: string }>(
+				`/api/admin/company-suggestions/${id}/${action}`,
+				{
+					method: 'POST',
+					body: action === 'reject' ? { reason: 'Rejected from admin console' } : {}
+				}
+			);
+			await loadCompanySuggestions();
+			companyMessage =
+				action === 'approve'
+					? `Suggestion #${id} approved${result.applied ? ` — ${result.applied}` : ''}.`
+					: `Suggestion #${id} rejected.`;
+		} catch (err) {
+			companyMessage = err instanceof Error ? err.message : 'Action failed';
+		} finally {
+			companyBusyId = null;
+		}
+	}
 
 	async function actJob(id: number, action: 'approve' | 'reject') {
 		jobBusyId = id;
@@ -258,6 +316,92 @@
 							class="btn btn-quiet"
 							disabled={siteBusyId === f.id}
 							onclick={() => actSite(f.id, 'reject')}
+						>
+							Reject
+						</button>
+					</div>
+				</article>
+			{/each}
+		</div>
+	{/if}
+</section>
+
+<section class="mt-16">
+	<h2 class="text-title font-semibold">Company info suggestions</h2>
+
+	{#if companyMessage}
+		<p class="mt-4 text-meta font-semibold" role="status">{companyMessage}</p>
+	{/if}
+
+	{#if companyLoading}
+		<p class="mt-6 text-meta text-muted">Loading queue…</p>
+	{:else if companySuggestions.length === 0}
+		<p class="mt-6 text-meta text-muted">Queue empty — nothing pending review.</p>
+	{:else}
+		<div class="mt-8 space-y-8">
+			{#each companySuggestions as s (s.id)}
+				<article class="border-t border-rule pt-8 first:border-0 first:pt-0">
+					<div class="flex flex-wrap items-start justify-between gap-3">
+						<div class="min-w-0">
+							<h3 class="font-semibold">{s.company_name ?? `Company #${s.company_id}`}</h3>
+							<p class="mt-1 text-meta text-muted">
+								submitted {new Date(s.submitted_at).toLocaleDateString()}
+							</p>
+						</div>
+						{#if s.company_slug}
+							<a
+								href="/companies/{s.company_slug}"
+								target="_blank"
+								rel="noopener noreferrer"
+								class="btn btn-quiet"
+							>
+								Open profile<svg width="11" height="11" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h7v7M13 3L6.5 9.5M11 11v2H3V5h2"/></svg>
+							</a>
+						{/if}
+					</div>
+					{#if s.description}
+						<p class="mt-3 max-w-3xl text-meta leading-relaxed text-muted">{s.description}</p>
+					{/if}
+					{#if s.links && s.links.length > 0}
+						<ul class="mt-3 space-y-1">
+							{#each s.links as link (link.url)}
+								<li class="flex min-w-0 items-baseline gap-2 text-meta">
+									<span class="shrink-0 font-semibold">{link.label}</span>
+									<span class="coord min-w-0 truncate text-muted">{link.url}</span>
+								</li>
+							{/each}
+						</ul>
+					{/if}
+					{#if s.headquarters || s.founded}
+						<p class="mt-3 text-meta text-muted">
+							{#if s.headquarters}<span class="axis-label">HQ</span> {s.headquarters}{/if}
+							{#if s.headquarters && s.founded} · {/if}
+							{#if s.founded}<span class="axis-label">Founded</span> {s.founded}{/if}
+						</p>
+					{/if}
+					{#if s.comment}
+						<p class="mt-3 max-w-3xl text-meta leading-relaxed text-muted">{s.comment}</p>
+					{/if}
+					{#if s.submitter_email}
+						<p class="mt-2 text-meta text-muted">
+							<span class="axis-label">From</span>
+							{s.submitter_email}
+						</p>
+					{/if}
+					<div class="mt-5 flex flex-wrap gap-3">
+						<button
+							type="button"
+							class="btn btn-primary"
+							disabled={companyBusyId === s.id}
+							onclick={() => actCompany(s.id, 'approve')}
+						>
+							Approve and apply
+						</button>
+						<button
+							type="button"
+							class="btn btn-quiet"
+							disabled={companyBusyId === s.id}
+							onclick={() => actCompany(s.id, 'reject')}
 						>
 							Reject
 						</button>

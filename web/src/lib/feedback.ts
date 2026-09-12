@@ -70,6 +70,31 @@ export async function submitJobFeedback(
 	}
 }
 
+export interface CompanySuggestionRequest {
+	description?: string | null;
+	links?: { label: string; url: string }[] | null;
+	headquarters?: string | null;
+	founded?: number | null;
+	comment?: string | null;
+	submitter_email?: string | null;
+}
+
+export async function submitCompanySuggestion(
+	slug: string,
+	body: CompanySuggestionRequest
+): Promise<FeedbackState> {
+	try {
+		const result = await clientApi<FeedbackResponse>(
+			`/api/companies/${encodeURIComponent(slug)}/suggestion`,
+			{ method: 'POST', body }
+		);
+		return { kind: 'success', message: result.message };
+	} catch (err) {
+		if (err instanceof Error) return { kind: 'error', message: err.message };
+		return { kind: 'error', message: `Could not reach the API at ${PUBLIC_API_URL}` };
+	}
+}
+
 export async function submitSiteFeedback(body: SiteFeedbackRequest): Promise<FeedbackState> {
 	try {
 		const result = await clientApi<FeedbackResponse>('/api/feedback', {

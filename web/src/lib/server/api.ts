@@ -5,6 +5,8 @@ import type {
 	Job,
 	Paginated,
 	CompanyRecord,
+	CompanyCategoriesResponse,
+	CompanyDetail,
 	OpenApplicationsResponse,
 	BlockedCompaniesResponse
 } from '$lib/types';
@@ -53,6 +55,14 @@ export function getCompanies(
 	return api<Paginated<CompanyRecord>>(
 		`/api/companies?${new URLSearchParams(query).toString()}`
 	);
+}
+
+export function getCompany(slug: string): Promise<CompanyDetail> {
+	return api<CompanyDetail>(`/api/companies/${encodeURIComponent(slug)}`);
+}
+
+export function getCompanyCategories(): Promise<CompanyCategoriesResponse> {
+	return api<CompanyCategoriesResponse>(`/api/companies/categories`);
 }
 
 export function getCategories(): Promise<{ categories: CategoryInfo[] }> {

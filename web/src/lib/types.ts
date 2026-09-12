@@ -95,7 +95,29 @@ export interface CompanyRecord {
 	verified: boolean;
 	source: string;
 	created_at: string;
+	community_links: CompanyLink[] | null;
 	active_jobs_count: number;
+	board_jobs_count: number;
+}
+
+export interface CompanyLink {
+	label: string;
+	url: string;
+}
+
+export interface CompanyDetail extends CompanyRecord {
+	jobs: Job[];
+}
+
+export interface CompanyCategoryInfo {
+	name: string;
+	company_count: number;
+	board_jobs_count: number;
+}
+
+export interface CompanyCategoriesResponse {
+	categories: CompanyCategoryInfo[];
+	total: number;
 }
 
 export type JobQuery = {
