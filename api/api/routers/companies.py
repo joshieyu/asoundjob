@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import logging
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy import case, func, select
 from sqlalchemy.orm import Session, selectinload
 
@@ -12,19 +13,28 @@ from api.query import (
     page_envelope,
     paginate_params,
 )
+from api.rate_limit import SubmissionRateLimiter
 from api.schemas import (
     BlockedCompaniesResponse,
     BlockedCompany,
+    CompanyCategoriesResponse,
+    CompanyCategoryInfo,
     CompanyDetail,
     CompanyResponse,
+    CompanySuggestionRequest,
+    FeedbackCreateResponse,
     JobSummary,
     OpenApplicationCompany,
     OpenApplicationsResponse,
     PaginatedCompanies,
 )
-from scraper.models import Company, Job
+from scraper.models import Company, CompanySuggestion, Job
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/companies", tags=["companies"])
+
+suggestion_rate_limiter = SubmissionRateLimiter(max_per_day=20)
 
 
 @router.get("", response_model=PaginatedCompanies)
@@ -34,6 +44,9 @@ def list_companies(
     category: Optional[str] = None,
     search: Optional[str] = None,
     verified_only: bool = False,
+    hiring_only: bool = False,
+    sort: str = Query("board", pattern="^(name|jobs|board|verified)$"),
+    direction: str = Query("desc", pattern="^(asc|desc)$"),
     db: Session = Depends(get_db),
 ):
     safe_page, safe_per = paginate_params(page, per_page)
@@ -42,13 +55,61 @@ def list_companies(
         stmt = stmt.where(Company.category == category)
     if verified_only:
         stmt = stmt.where(Company.verified.is_(True))
+    if hiring_only:
+        stmt = stmt.where(_board_jobs_exist())
     if search:
         pattern = f"%{search}%"
         stmt = stmt.where(
             Company.name.ilike(pattern) | Company.description.ilike(pattern)
         )
-    items, total = companies_with_counts(db, stmt, safe_page, safe_per)
+    items, total = companies_with_counts(
+        db, stmt, safe_page, safe_per, sort=sort, direction=direction
+    )
     return page_envelope(items, total, safe_page, safe_per)
+
+
+def _board_jobs_exist():
+    return (
+        select(Job.id)
+        .where(
+            Job.company_id == Company.id,
+            Job.is_active.is_(True),
+            Job.is_audio_related.is_(True),
+        )
+        .exists()
+    )
+
+
+@router.get("/categories", response_model=CompanyCategoriesResponse)
+def list_company_categories(db: Session = Depends(get_db)):
+    board_jobs = func.sum(
+        case(
+            (
+                Job.is_active.is_(True) & Job.is_audio_related.is_(True),
+                1,
+            ),
+            else_=0,
+        )
+    )
+    rows = db.execute(
+        select(
+            Company.category,
+            func.count(func.distinct(Company.id)),
+            func.coalesce(board_jobs, 0),
+        )
+        .outerjoin(Job, Job.company_id == Company.id)
+        .group_by(Company.category)
+        .order_by(Company.category.asc())
+    ).all()
+    categories = [
+        CompanyCategoryInfo(
+            name=name, company_count=int(companies), board_jobs_count=int(jobs)
+        )
+        for name, companies, jobs in rows
+    ]
+    return CompanyCategoriesResponse(
+        categories=categories, total=sum(c.company_count for c in categories)
+    )
 
 
 @router.get("/open-applications", response_model=OpenApplicationsResponse)
@@ -145,5 +206,49 @@ def get_company(slug: str, db: Session = Depends(get_db)):
             ).scalar_one()
         )
     data["active_jobs_count"] = active_count
+    data["board_jobs_count"] = active_count
     data["jobs"] = [JobSummary.model_validate(job) for job in jobs]
     return CompanyDetail(**data)
+
+
+@router.post(
+    "/{slug}/suggestion", response_model=FeedbackCreateResponse, status_code=201
+)
+def submit_company_suggestion(
+    slug: str,
+    payload: CompanySuggestionRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    client = request.client.host if request.client else "unknown"
+    allowed, retry_after = suggestion_rate_limiter.check(client)
+    if not allowed:
+        raise HTTPException(
+            status_code=429,
+            detail=f"Too many submissions. Try again later ({retry_after}).",
+        )
+
+    company = db.execute(
+        select(Company).where(Company.slug == slug)
+    ).scalar_one_or_none()
+    if company is None:
+        raise HTTPException(status_code=404, detail="Company not found")
+
+    suggestion = CompanySuggestion(
+        company_id=company.id,
+        description=(payload.description or "").strip() or None,
+        links=[link.model_dump() for link in payload.links] if payload.links else None,
+        headquarters=(payload.headquarters or "").strip() or None,
+        founded=payload.founded,
+        comment=(payload.comment or "").strip() or None,
+        submitter_email=(payload.submitter_email or "").strip() or None,
+        status="pending",
+    )
+    db.add(suggestion)
+    db.flush()
+    logger.info("company suggestion %s submitted for %s", suggestion.id, slug)
+    return FeedbackCreateResponse(
+        id=suggestion.id,
+        status="pending",
+        message="Thanks — a moderator will review this before it appears.",
+    )

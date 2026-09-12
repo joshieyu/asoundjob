@@ -21,6 +21,7 @@ from scraper.countries import country_name as lookup_country_name
 
 JobCategories = JSON().with_variant(ARRAY(Text), "postgresql")
 StringList = JSON().with_variant(ARRAY(Text), "postgresql")
+LinkList = JSON()
 
 
 class Base(DeclarativeBase):
@@ -45,6 +46,7 @@ class Company(Base):
     logo_url: Mapped[Optional[str]] = mapped_column(Text)
     description: Mapped[Optional[str]] = mapped_column(Text)
     headquarters: Mapped[Optional[str]] = mapped_column(Text)
+    community_links: Mapped[Optional[list[dict]]] = mapped_column(LinkList)
     founded: Mapped[Optional[int]] = mapped_column(Integer)
     audio_scope: Mapped[str] = mapped_column(Text, default="native")
     ats_type: Mapped[Optional[str]] = mapped_column(Text)
@@ -106,6 +108,32 @@ class Job(Base):
 
     def identity_key(self) -> tuple:
         return (self.company_id, self.external_id)
+
+
+class CompanySuggestion(Base):
+    __tablename__ = "company_suggestions"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    company_id: Mapped[int] = mapped_column(ForeignKey("companies.id"), index=True)
+    description: Mapped[Optional[str]] = mapped_column(Text)
+    links: Mapped[Optional[list[dict]]] = mapped_column(LinkList)
+    headquarters: Mapped[Optional[str]] = mapped_column(Text)
+    founded: Mapped[Optional[int]] = mapped_column(Integer)
+    comment: Mapped[Optional[str]] = mapped_column(Text)
+    submitter_email: Mapped[Optional[str]] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(Text, default="pending", index=True)
+    submitted_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    reviewed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    reviewed_by: Mapped[Optional[str]] = mapped_column(Text)
+    reject_reason: Mapped[Optional[str]] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
 
 
 class JobSubmission(Base):

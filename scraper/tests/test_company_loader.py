@@ -26,6 +26,45 @@ def entry(name: str, verified: bool) -> dict:
     }
 
 
+class TestCommunityFieldsSurviveReload(unittest.TestCase):
+    def setUp(self) -> None:
+        self.session = make_session()
+
+    def tearDown(self) -> None:
+        self.session.rollback()
+        self.session.close()
+
+    def test_a_seed_reload_leaves_community_contributions_alone(self) -> None:
+        load_companies(self.session, [entry("Acme", verified=True)])
+        company = self.session.execute(select(Company)).scalar_one()
+        company.description = "Builds loudspeaker DSP."
+        company.community_links = [{"label": "Wikipedia", "url": "https://example.org"}]
+        company.headquarters = "Copenhagen, Denmark"
+        company.founded = 1977
+        self.session.flush()
+
+        load_companies(self.session, [entry("Acme", verified=True)])
+        self.session.refresh(company)
+        self.assertEqual(company.description, "Builds loudspeaker DSP.")
+        self.assertEqual(
+            company.community_links,
+            [{"label": "Wikipedia", "url": "https://example.org"}],
+        )
+        self.assertEqual(company.headquarters, "Copenhagen, Denmark")
+        self.assertEqual(company.founded, 1977)
+
+    def test_they_survive_a_reload_that_does_change_seed_fields(self) -> None:
+        load_companies(self.session, [entry("Acme", verified=True)])
+        company = self.session.execute(select(Company)).scalar_one()
+        company.description = "Builds loudspeaker DSP."
+        self.session.flush()
+
+        load_companies(self.session, [entry("Acme", verified=False)])
+        self.session.refresh(company)
+        self.assertFalse(company.verified)
+        self.assertEqual(company.description, "Builds loudspeaker DSP.")
+
+
 class TestUnverifiedDeactivation(unittest.TestCase):
     def setUp(self) -> None:
         self.session = make_session()

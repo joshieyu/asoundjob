@@ -87,6 +87,18 @@ class BlockedCompaniesResponse(BaseModel):
     total: int
 
 
+class CompanyLink(BaseModel):
+    label: str = Field(min_length=1, max_length=80)
+    url: str = Field(min_length=8, max_length=1000)
+
+    @field_validator("url")
+    @classmethod
+    def link_must_be_http(cls, value: str) -> str:
+        if not re.match(r"^https?://", value.strip()):
+            raise ValueError("link url must start with http:// or https://")
+        return value.strip()
+
+
 class CompanyResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -103,8 +115,66 @@ class CompanyResponse(BaseModel):
     verified: bool
     source: str
     created_at: datetime
+    community_links: Optional[list[CompanyLink]] = None
     active_jobs_count: int = 0
     board_jobs_count: int = 0
+
+
+class CompanyCategoryInfo(BaseModel):
+    name: str
+    company_count: int
+    board_jobs_count: int
+
+
+class CompanyCategoriesResponse(BaseModel):
+    categories: list[CompanyCategoryInfo]
+    total: int
+
+
+class CompanySuggestionRequest(BaseModel):
+    description: Optional[str] = Field(default=None, max_length=2000)
+    links: Optional[list[CompanyLink]] = Field(default=None, max_length=10)
+    headquarters: Optional[str] = Field(default=None, max_length=200)
+    founded: Optional[int] = Field(default=None, ge=1800, le=2100)
+    comment: Optional[str] = Field(default=None, max_length=2000)
+    submitter_email: Optional[str] = Field(default=None, max_length=320)
+
+    @field_validator("submitter_email")
+    @classmethod
+    def email_must_be_valid(cls, value: Optional[str]) -> Optional[str]:
+        if value is not None and not EMAIL_RE.match(value):
+            raise ValueError("invalid email address")
+        return value
+
+    @model_validator(mode="after")
+    def must_suggest_something(self) -> CompanySuggestionRequest:
+        has_description = bool(self.description and self.description.strip())
+        has_links = bool(self.links)
+        if not (has_description or has_links or self.headquarters or self.founded):
+            raise ValueError(
+                "a suggestion needs a description, a link, a headquarters or a founded year"
+            )
+        return self
+
+
+class AdminCompanySuggestion(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    company_id: int
+    company_name: Optional[str] = None
+    company_slug: Optional[str] = None
+    description: Optional[str] = None
+    links: Optional[list[CompanyLink]] = None
+    headquarters: Optional[str] = None
+    founded: Optional[int] = None
+    comment: Optional[str] = None
+    submitter_email: Optional[str] = None
+    status: str
+    submitted_at: datetime
+    reviewed_at: Optional[datetime] = None
+    reviewed_by: Optional[str] = None
+    reject_reason: Optional[str] = None
 
 
 class PaginatedCompanies(BaseModel):

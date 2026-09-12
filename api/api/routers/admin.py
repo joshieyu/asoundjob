@@ -18,6 +18,7 @@ from api.database import get_db
 from api.query import page_envelope, paginate_params
 from api.schemas import (
     AdminCompanyCreate,
+    AdminCompanySuggestion,
     AdminCompanyUpdate,
     AdminJobFeedback,
     AdminSiteFeedback,
@@ -32,7 +33,15 @@ from api.schemas import (
 )
 from scraper.company_loader import parse_extra_careers_urls
 from scraper.config import load_settings
-from scraper.models import Company, Job, JobFeedback, JobSubmission, ScrapeLog, SiteFeedback
+from scraper.models import (
+    Company,
+    CompanySuggestion,
+    Job,
+    JobFeedback,
+    JobSubmission,
+    ScrapeLog,
+    SiteFeedback,
+)
 from scraper.normalizer import Normalizer
 from scraper.overrides import effective_categories, effective_is_audio
 from scraper.scrapers.base import RawJob
@@ -508,6 +517,111 @@ def reject_submission(
     submission.reject_reason = payload.reason or None
     db.flush()
     logger.info("admin=%s rejected submission %s", admin, submission_id)
+    return {"status": "rejected"}
+
+
+@router.get("/company-suggestions")
+def admin_list_company_suggestions(
+    status: str = Query("pending", pattern="^(pending|approved|rejected|all)$"),
+    page: int = Query(1, ge=1),
+    per_page: int = Query(25, ge=1, le=100),
+    db: Session = Depends(get_db),
+    _: str = Depends(require_admin),
+):
+    safe_page, safe_per = paginate_params(page, per_page)
+    stmt = (
+        select(CompanySuggestion, Company.name, Company.slug)
+        .join(Company, CompanySuggestion.company_id == Company.id)
+        .order_by(CompanySuggestion.submitted_at.desc())
+    )
+    if status != "all":
+        stmt = stmt.where(CompanySuggestion.status == status)
+    total = db.execute(select(func.count()).select_from(stmt.subquery())).scalar_one()
+    rows = db.execute(stmt.offset((safe_page - 1) * safe_per).limit(safe_per)).all()
+    items = []
+    for suggestion, company_name, company_slug in rows:
+        data = {
+            column.name: getattr(suggestion, column.name)
+            for column in CompanySuggestion.__table__.columns
+        }
+        data["company_name"] = company_name
+        data["company_slug"] = company_slug
+        items.append(AdminCompanySuggestion.model_validate(data))
+    return page_envelope(items, int(total), safe_page, safe_per)
+
+
+@router.post(
+    "/company-suggestions/{suggestion_id}/approve",
+    response_model=FeedbackApproveResponse,
+)
+def approve_company_suggestion(
+    suggestion_id: int,
+    db: Session = Depends(get_db),
+    admin: str = Depends(require_admin),
+):
+    suggestion = db.get(CompanySuggestion, suggestion_id)
+    if suggestion is None:
+        raise HTTPException(status_code=404, detail="Suggestion not found")
+    if suggestion.status != "pending":
+        raise HTTPException(
+            status_code=409, detail=f"Suggestion already {suggestion.status}"
+        )
+
+    company = db.get(Company, suggestion.company_id)
+    applied: list[str] = []
+    if company is not None:
+        if suggestion.description:
+            company.description = suggestion.description
+            applied.append("description")
+        if suggestion.links:
+            existing = list(company.community_links or [])
+            known = {link.get("url") for link in existing}
+            added = [link for link in suggestion.links if link.get("url") not in known]
+            if added:
+                company.community_links = existing + added
+                applied.append(f"{len(added)} link(s)")
+        if suggestion.headquarters:
+            company.headquarters = suggestion.headquarters
+            applied.append("headquarters")
+        if suggestion.founded:
+            company.founded = suggestion.founded
+            applied.append("founded")
+        if company.source != "manual":
+            company.source = "manual"
+
+    now = datetime.now(timezone.utc)
+    suggestion.status = "approved"
+    suggestion.reviewed_at = now
+    suggestion.reviewed_by = admin
+    db.flush()
+    summary = ", ".join(applied) if applied else "no changes"
+    logger.info(
+        "admin=%s approved company suggestion %s: %s", admin, suggestion_id, summary
+    )
+    return FeedbackApproveResponse(status="approved", applied=summary)
+
+
+@router.post("/company-suggestions/{suggestion_id}/reject")
+def reject_company_suggestion(
+    suggestion_id: int,
+    payload: RejectRequest,
+    db: Session = Depends(get_db),
+    admin: str = Depends(require_admin),
+):
+    suggestion = db.get(CompanySuggestion, suggestion_id)
+    if suggestion is None:
+        raise HTTPException(status_code=404, detail="Suggestion not found")
+    if suggestion.status != "pending":
+        raise HTTPException(
+            status_code=409, detail=f"Suggestion already {suggestion.status}"
+        )
+    now = datetime.now(timezone.utc)
+    suggestion.status = "rejected"
+    suggestion.reviewed_at = now
+    suggestion.reviewed_by = admin
+    suggestion.reject_reason = payload.reason or None
+    db.flush()
+    logger.info("admin=%s rejected company suggestion %s", admin, suggestion_id)
     return {"status": "rejected"}
 
 
