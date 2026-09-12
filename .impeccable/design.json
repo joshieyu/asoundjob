@@ -319,7 +319,7 @@
       "kind": "custom",
       "refersTo": "specimen",
       "description": "The one oversized figure on a page, with its Display line naming it beneath.",
-      "html": "<div class=\"ds-specimen-block\">\n  <p class=\"ds-specimen\">1,038</p>\n  <p class=\"ds-specimen-sub\">open audio roles, re&#8288;-read every night.</p>\n  <p class=\"ds-coord\">21 specialties \u00b7 verified companies only</p>\n</div>",
+      "html": "<div class=\"ds-specimen-block\">\n  <p class=\"ds-specimen\">1,038</p>\n  <p class=\"ds-specimen-sub\">open audio roles, updated every night.</p>\n  <p class=\"ds-coord\">21 specialties \u00b7 verified companies only</p>\n</div>",
       "css": ".ds-specimen-block { color: var(--color-ink, #0d0d0f); } .ds-specimen { font-family: var(--font-sans, 'Recursive Variable', ui-sans-serif, system-ui, sans-serif); font-size: clamp(3rem, 9vw, 6rem); font-variation-settings: 'MONO' 0; font-weight: 300; letter-spacing: -0.03em; line-height: 0.86; font-variant-numeric: tabular-nums; margin: 0; } .ds-specimen-sub { font-family: var(--font-sans, 'Recursive Variable', ui-sans-serif, system-ui, sans-serif); font-size: clamp(1.75rem, 4.5vw, 2.75rem); font-weight: 300; line-height: 1.25; margin: 0.75rem 0 0; } .ds-specimen-block .ds-coord { display: block; margin-top: 1rem; font-family: var(--font-sans, 'Recursive Variable', ui-sans-serif, system-ui, sans-serif); font-variation-settings: 'MONO' 1; font-size: 0.75rem; font-weight: 500; font-variant-numeric: tabular-nums; color: var(--color-muted, #6b6b70); }"
     },
     {

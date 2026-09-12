@@ -50,7 +50,7 @@
 
 	<p class="specimen">{total.toLocaleString('en-US')}</p>
 	<p class="mt-3 text-display leading-tight font-light text-balance">
-		open audio roles, re&#8288;-read every night.
+		open audio roles, updated every night.
 	</p>
 	<p class="coord mt-4 text-muted">
 		{categoryMeta.length} specialties · verified companies only
