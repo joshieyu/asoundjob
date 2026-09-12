@@ -26,7 +26,8 @@
 	);
 
 	const reportKinds = JOB_FEEDBACK_KINDS.filter(
-		(k) => k.value === 'wrong_category' || k.value === 'not_audio'
+		(k) =>
+			k.value === 'wrong_category' || k.value === 'not_audio' || k.value === 'no_longer_available'
 	);
 
 	let reportJob = $state<Job | null>(null);
@@ -248,9 +249,16 @@
 	>
 		<h2 class="text-title font-semibold">Filters</h2>
 
-		{#if params.q}
-			<input type="hidden" name="q" value={params.q} />
-		{/if}
+		<label class="mt-4 block">
+			<span class="axis-label mb-2 block">Search</span>
+			<input
+				name="q"
+				type="search"
+				value={params.q ?? ''}
+				placeholder="Title, skill, company…"
+				class="field"
+			/>
+		</label>
 
 		<!-- The rail is ~1130px of controls. Sticky alone pinned it and left the
 		     bottom third — Apply and Reset included — permanently below the fold,
