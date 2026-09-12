@@ -5573,17 +5573,166 @@ is not better at favicon size.
 - **Stroke weight undecided**: 10 vs 12. The heavier matches the marker sketch;
   the lighter keeps the sinc's feet distinct.
 - Blue is settled: `#0033ff`, the light-mode accent.
-- The favicon (`assets/logo/favicon-sinc.svg`, the A alone at 1.5 lobes) is not
-  installed. Wiring it means replacing both PNGs in `web/static/` and adding a
-  `rel="icon" type="image/svg+xml"` line to `app.html`.
+- SUPERSEDED 2026-09-12: the favicon is installed, but rebuilt from
+  `asj-edited.svg` rather than from `favicon-sinc.svg`. See the 2026-09-12
+  session update.
 - The owner is iterating on the mark further.
+
+## Session update (2026-09-12) — the company directory, and four defects
+
+Fourteen commits, `3be0ff9`..`fe2585d`. Gates at the end: **971 scraper tests,
+168 API tests, `npm run check` 0 errors / 0 warnings**, ruff and mypy clean.
+
+### The logo shipped
+
+`Logo.svelte` inlines the wordmark and themes itself off the existing tokens —
+the tile is `var(--color-accent)`, the strokes `var(--color-ground)` — so the
+light/dark swap in `app.css` carries it for free. No second asset, and it cannot
+drift from the palette. It sits in the header with the existing two-line title
+text moved to its right; the tagline hides below `sm` and the mark steps to
+`h-7` below `sm`, both because the row overflowed a 320px phone otherwise.
+
+The favicon is the **A alone** — the full ASJ is unreadable at 32px. It is
+rebuilt from `asj-edited.svg` (the owner's Figma edit), NOT from `kernels.py`,
+which no longer matches the shipped wordmark: the A is 107 units wide now, not
+150. **Regenerating from `kernels.py` would silently revert the owner's
+proportions.** `asj-edited.svg` is the source of truth for the mark.
+
+`assets/logo/favicon_from_logo.py` regenerates the favicons. Note the deliberate
+departure: the favicon stroke is ~15% of glyph height where the wordmark's is
+8.2%. Scaling the stroke geometrically renders ~1px at 32px and turns to mush.
+It is optically matched, not geometrically matched.
+
+`web/static/favicon.svg` carries its own `prefers-color-scheme` block, so the
+tab icon inverts independently of the site theme — correct, because the favicon
+sits in browser chrome, which follows the OS, not the page.
+
+### Four horizontal-overflow bugs, one mechanism
+
+An implicit `auto` grid column takes its floor from the widest item's
+**min-content**, so one unshrinkable item widens the track past its own
+container and the whole page scrolls sideways. `min-w-0` on ancestors does not
+help: min-content sizing uses the natural minimum, not the forced one.
+
+1. **Job cards.** One title — "Audiologist/Registered Hearing Instrument
+   Practitioner" — measured 252px because Chrome will not break after a slash.
+   Fixed with `wrap-anywhere` on the `h3` (`overflow-wrap: anywhere` lowers the
+   intrinsic minimum; `break-word` would NOT — it does not affect min-content).
+2. **Open-applications and blocked lists.** `truncate` sets
+   `white-space: nowrap`, which keeps each company name at full width *for
+   measurement* even though it ellipsizes when drawn. The layout was sized by
+   text never shown. Fixed with `min-w-0` on the `<li>`.
+3. **The header**, after the logo landed. Fixed by stepping the mark down.
+
+Sweep after: 0 overflow across six routes at 320/360/375/414/768/1024/1280 with
+every `<details>` forced open. **Re-run that sweep after any grid change** —
+this class of bug is invisible above 375px.
+
+### A search field on the board
+
+`/jobs` had `q` wired end to end already — allowed param, active-filter chip,
+sort carry-over — but carried it as a *hidden* input to preserve a search made
+on the home page. Only the visible control was missing. It sits above the rail's
+scroll area so it stays put while filters scroll.
+
+### "No longer available" — why it needed an override
+
+Readers can now report a listing as gone. Approving it takes the job off the
+board, and that could not be a plain `is_active = False`: the reconciler
+reactivates any job it still finds on the careers page, which is exactly the
+reported case — a closed posting still listed. The flag would revert on the next
+scrape.
+
+So `Job.is_active_override` joins `categories_override` and
+`is_audio_related_override`, read through `effective_is_active` in
+`scraper/overrides.py`. The reconciler honours it in both directions and only
+counts a deactivation it actually made. Migration `a41c6b0e7d92`.
+
+### The company directory
+
+Most of the API already existed. `GET /api/companies` returned
+**`board_jobs_count`** (active AND audio-related) beside the scraped total all
+along — the distinction is large: Amazon is 56 on the board against 415 scraped.
+**Never show `active_jobs_count` on a public page.**
+
+Added: `GET /api/companies/categories` (28 categories with company and board
+counts), `hiring_only` + `sort`/`direction` on the list endpoint,
+`POST /api/companies/{slug}/suggestion`, and admin approve/reject.
+
+`/categories` is registered **above `/{slug}`** or it would be shadowed, same
+trap as `/blocked` and `/open-applications`. A test asserts the route order.
+
+Default sort is board-count descending because **only 105 of 1,394 companies
+have a board job** — alphabetical opens on a screen of zeroes. All 1,394 stay
+browsable; `hiring_only` is off by default.
+
+**Community contributions.** No accounts, so suggestions land pending in
+`company_suggestions` and a moderator approves them in a third queue on
+`/admin/feedback`. Approval writes `description`, `community_links`,
+`headquarters` and `founded` onto the company and flips `source` to `manual`.
+Links append and de-duplicate by URL; description overwrites.
+
+**The drift risk is closed and tested.** `company_loader` has never written
+those four fields, so a seed reload cannot wipe a contribution — but that was
+true by accident. Two tests in `test_company_loader.py` now hold it, including
+one where the reload *does* change seed-managed fields. Migration `c73f2a5d81e0`.
+
+Nothing community-supplied is ever rendered with `{@html}`. Link URLs are
+validated `^https?://` at the API boundary.
+
+### The sitemap had no job pages at all
+
+`/sitemap.xml` asked for `per_page=200`; the API caps it at 100, so every
+request 422'd and a bare `catch {}` swallowed it. The sitemap had been shipping
+static routes and company URLs only. **1,401 → 2,475 URLs**, 1,074 job pages
+recovered. The catch now logs. Page caps are named constants with headroom —
+companies was 14 pages of 100 against 1,394 companies and would have begun
+truncating at 1,401.
+
+### .gitignore
+
+`*.db` caught `asoundjob.db` but not `-wal`, `-shm`, `-journal`. A WAL holds
+rows not yet checkpointed, and `job_feedback`, `site_feedback` and
+`company_suggestions` all carry `submitter_email`. The remote is **public**, so
+a commit made mid-write would have leaked real addresses. Also closed: root
+`.env.*` (only `.env` was covered), `.claude/settings.local.json`,
+`.claude/worktrees/`, logs, pytest/coverage artifacts. Nothing already tracked
+was affected.
+
+### Branch state
+
+`redesign-type-specimen` now has an upstream and is pushed —
+`git push -u origin redesign-type-specimen` ran at `fcc2f4f`, 268 commits. It
+had been local-only. The remote `joshieyu/asoundjob` is **public**: pushing
+publishes.
+
+### Still open from this session
+
+- **Stroke weight** on the wordmark is still undecided, 10 vs 12
+  (`asj-sw12.svg`, `asj-editable-sw12.svg` are the alternates).
+- **`kernels.py` is out of sync with `asj-edited.svg`** — see above. Either
+  reconcile the params to the Figma edit or treat the SVG as canonical and
+  retire the generator for the wordmark.
+- **`Wip.svelte` is still in use** by `/resources` and
+  `/resources/interview-prep`; the owner asked to keep it for future WIP pages.
+- **Cards for the 1,289 companies with nothing open** show a "Careers site"
+  link rather than a dead "View roles". Kept, easy to strip.
+- **Company `lastmod`** is absent from the sitemap; only jobs have it.
+- **Next request on the table:** integrating
+  [JobSpy](https://github.com/speedyapply/JobSpy) for general job-board search,
+  and how that fits the company-directory paradigm. Not started.
 
 ## Running the demo
 
 ```bash
-cd api && ../venv/bin/uvicorn api.main:app --port 8000     # API
-cd web && npm run dev -- --port 5173                        # frontend
+cd api && ../venv/bin/uvicorn api.main:app --port 8000 --reload   # API
+cd web && npm run dev -- --port 5173                              # frontend
 ```
+
+`--reload` is not optional in practice. Without it the API silently serves
+stale Python through a whole session — a schema change looks like a 422 from a
+feature you just wrote. The web dev server hot-reloads, so the two drift apart
+and the mismatch reads as a bug in the new code.
 
 `npm --prefix web run check` → **0 errors** (2 pre-existing
 `state_referenced_locally` warnings in `jobs/+page.svelte`). The Impeccable
