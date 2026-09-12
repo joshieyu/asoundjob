@@ -277,9 +277,9 @@
 									<button type="button" class="btn btn-quiet px-2 py-1" onclick={cancelEdit}>Cancel</button>
 								</span>
 							{:else}
-								<span class="flex items-center gap-1.5">
-									{row.name}
-									<button type="button" class="btn btn-quiet px-2 py-1" onclick={() => startEditName(row)}>Edit</button>
+								<span class="flex items-center gap-3">
+									<span class="min-w-0">{row.name}</span>
+									<button type="button" class="btn btn-quiet ml-auto shrink-0 px-2 py-1" onclick={() => startEditName(row)}>Edit</button>
 								</span>
 							{/if}
 						</th>
@@ -309,7 +309,7 @@
 								</span>
 							{:else if row.careers_url}
 								<span class="flex flex-col gap-0.5">
-									<span class="flex items-center gap-1.5">
+									<span class="flex items-center gap-3">
 										<a
 											href={row.careers_url}
 											target="_blank"
@@ -318,12 +318,14 @@
 										>
 											{row.careers_url}
 										</a>
-										{#if row.extra_careers_urls?.length}
-											<span class="coord text-muted" title="{row.extra_careers_urls.length} additional careers URL(s)">
-												+{row.extra_careers_urls.length}
-											</span>
-										{/if}
-										<button type="button" class="btn btn-quiet px-2 py-1" onclick={() => startEditUrls(row)}>Edit</button>
+										<span class="ml-auto flex shrink-0 items-center gap-1.5">
+											{#if row.extra_careers_urls?.length}
+												<span class="coord text-muted" title="{row.extra_careers_urls.length} additional careers URL(s)">
+													+{row.extra_careers_urls.length}
+												</span>
+											{/if}
+											<button type="button" class="btn btn-quiet px-2 py-1" onclick={() => startEditUrls(row)}>Edit</button>
+										</span>
 									</span>
 									{#if row.extra_careers_urls?.length}
 										<span class="flex flex-col gap-0.5">
@@ -341,7 +343,9 @@
 									{/if}
 								</span>
 							{:else}
-								<button type="button" class="btn btn-quiet px-2 py-1" onclick={() => startEditUrls(row)}>Add URL</button>
+								<span class="flex">
+									<button type="button" class="btn btn-quiet ml-auto shrink-0 px-2 py-1" onclick={() => startEditUrls(row)}>Add URL</button>
+								</span>
 							{/if}
 						</td>
 						<td class="px-4 py-3">
