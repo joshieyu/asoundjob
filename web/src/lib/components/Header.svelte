@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import discordLink from '$lib/data/discord-link.txt?raw';
+	import Logo from './Logo.svelte';
 	import ThemeToggle from './ThemeToggle.svelte';
 
 	const discord = discordLink.trim();
@@ -31,9 +32,12 @@
 
 <header class="sticky top-0 z-40 border-b border-rule bg-ground/95 backdrop-blur">
 	<div class="mx-auto flex h-16 max-w-6xl items-center gap-4 px-4 sm:px-6">
-		<a href="/" class="flex flex-col leading-none" aria-label="ASoundJob home">
-			<span class="text-title font-bold tracking-tight">ASoundJob</span>
-			<span class="coord mt-0.5 text-muted">by Young Audio Professionals</span>
+		<a href="/" class="flex items-center gap-2.5 sm:gap-3" aria-label="ASoundJob home">
+			<Logo class="h-8 w-auto shrink-0" />
+			<span class="flex flex-col leading-none">
+				<span class="text-title font-bold tracking-tight">ASoundJob</span>
+				<span class="coord mt-0.5 hidden text-muted sm:block">by Young Audio Professionals</span>
+			</span>
 		</a>
 
 		<nav aria-label="Primary" class="ml-auto hidden items-center gap-5 md:flex">
