@@ -5503,6 +5503,81 @@ scraper fail.
   them.
 - Production domain still undecided; `SITE_URL` env var drives canonicals.
 
+## Session update (2026-09-11, later still) — the ASJ logo, built from sinc
+
+**The idea is the owner's, from a hand sketch:** ASJ where each letter is a
+segment of a wave. The first pass used plain sines; the owner then supplied a
+Dirichlet-kernel plot and said the A should be that shape. It is much stronger,
+because a sinc's central peak gives the A a real apex.
+
+Nothing is wired into the site yet. `web/static/favicon-32.png` and
+`favicon-180.png` are still the YAP badge. Assets and the generator live in
+`assets/logo/`.
+
+### The functions, as shipped
+
+```
+A   y = sin(x)/x            x in [-1.5pi, +1.5pi]
+J   y = sin(x)/x            x in [-2.5pi, +0.30pi]   SAME orientation as A
+S   x = amp*sin(t + pi)     t in [-0.45, 2pi + 0.45]  (vertical)
+```
+
+`assets/logo/kernels.py` has `A_sinc`, `S_sym`, `J_sinc` and a `layout()`
+helper. Shipped geometry: peak 100, canvas 420x170, margins 18, gaps 24,
+A width 150, S amplitude 54, J width 78, stroke 10 (a 12 variant is beside it).
+
+### Three findings, all with the same root cause
+
+**The sinc's side lobes dip 21.7% of the peak BELOW the baseline.** Everything
+below follows from that, and it is recorded as `DIP` in `kernels.py`.
+
+1. **The S sat high.** It spanned peak..baseline while the A spanned
+   peak..baseline+21.7%. The S must span the A's *full* extent, not its
+   baseline. Amplitude went 44 -> 54 to hold roundness at the taller height.
+2. **The whole mark rode low.** Centring the baseline instead of the true
+   extent pushed it down ~8px. Content centre and canvas centre are both 85.0
+   now.
+3. **The J would not hook upward.** At `left=1.5` it stops at
+   `sinc(-1.5pi) = -0.212`, essentially the trough of the first negative lobe,
+   so it terminates flat. It must clear the zero crossing at `-2pi`:
+   `left=2.0` returns to baseline, **`left=2.5` gives +0.127 and hooks up.**
+
+### Two things measured rather than guessed
+
+**The J must NOT be rotated.** An early version stood it upright; the owner
+corrected it. Read right-to-left, the A's left half already *is* a J — peak as
+the top of the stem, left lobe as the hook — and it lands on an integral sign,
+which is what the original sketch drew.
+
+**Anchor count.** The dense paths carry 55/65/65 points, which is not
+hand-editable. Cubic Beziers with analytic tangents converge fast on a sinc:
+at 12 segments max deviation is **0.019 units on a 100-tall glyph, 0.02%** —
+invisible. `asj-editable.svg` uses 15/17/17 points, is 2.7KB against 7.7KB, and
+renders identically. Use it for Figma; `asj.svg` is the dense original.
+
+**Hand-edit colour, weight and spacing; regenerate for shape.** The curves are
+exact; a dragged anchor leaves the function and shows as asymmetry against the
+A's mirrored flank.
+
+### Superseded, and why it is recorded
+
+An earlier pass this session built favicon candidates from a Recursive `a`
+glyph pulled out of the bundled variable font with fontTools (real outline, not
+an approximation). It was dropped for the owner's wave idea. One measurement
+from it is still worth keeping if a letterform mark ever returns: **at 16px the
+counter of the `a` fills in at wght 1000 and stays open at wght 800** — heavier
+is not better at favicon size.
+
+### Still open
+
+- **Stroke weight undecided**: 10 vs 12. The heavier matches the marker sketch;
+  the lighter keeps the sinc's feet distinct.
+- Blue is settled: `#0033ff`, the light-mode accent.
+- The favicon (`assets/logo/favicon-sinc.svg`, the A alone at 1.5 lobes) is not
+  installed. Wiring it means replacing both PNGs in `web/static/` and adding a
+  `rel="icon" type="image/svg+xml"` line to `app.html`.
+- The owner is iterating on the mark further.
+
 ## Running the demo
 
 ```bash
