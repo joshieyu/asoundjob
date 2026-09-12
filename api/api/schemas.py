@@ -278,12 +278,20 @@ class AdminSubmission(BaseModel):
     reject_reason: Optional[str] = None
 
 
-JOB_FEEDBACK_KINDS = ("wrong_category", "not_audio", "broken_description", "broken_link")
+JOB_FEEDBACK_KINDS = (
+    "wrong_category",
+    "not_audio",
+    "broken_description",
+    "broken_link",
+    "no_longer_available",
+)
 SITE_FEEDBACK_KINDS = ("company_suggestion", "general")
 
 
 class JobFeedbackRequest(BaseModel):
-    kind: str = Field(pattern="^(wrong_category|not_audio|broken_description|broken_link)$")
+    kind: str = Field(
+        pattern="^(wrong_category|not_audio|broken_description|broken_link|no_longer_available)$"
+    )
     suggested_categories: Optional[list[str]] = None
     comment: Optional[str] = Field(default=None, max_length=2000)
     submitter_email: Optional[str] = Field(default=None, max_length=320)

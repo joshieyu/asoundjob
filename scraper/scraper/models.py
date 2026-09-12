@@ -80,6 +80,7 @@ class Job(Base):
     job_categories: Mapped[list[str]] = mapped_column(JobCategories, default=list)
     categories_override: Mapped[Optional[list[str]]] = mapped_column(JobCategories)
     is_audio_related_override: Mapped[Optional[bool]] = mapped_column(Boolean)
+    is_active_override: Mapped[Optional[bool]] = mapped_column(Boolean)
     posted_date: Mapped[Optional[date]] = mapped_column(Date)
     scraped_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()

@@ -52,6 +52,15 @@ class TestApproveJobFeedback(unittest.TestCase):
         self.session.flush()
         return feedback
 
+    def test_approve_no_longer_available(self) -> None:
+        job = self.make_job()
+        feedback = self.make_feedback(job, "no_longer_available")
+        result = admin_router.approve_job_feedback(feedback.id, self.session, "admin")
+        self.assertEqual(result.status, "approved")
+        self.session.refresh(job)
+        self.assertFalse(job.is_active)
+        self.assertEqual(job.is_active_override, False)
+
     def test_approve_not_audio(self) -> None:
         job = self.make_job()
         feedback = self.make_feedback(job, "not_audio")

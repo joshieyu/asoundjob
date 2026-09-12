@@ -570,6 +570,11 @@ def approve_job_feedback(
             applied = f"categories set to {', '.join(feedback.suggested_categories)}"
         else:
             applied = "no categories suggested"
+    elif feedback.kind == "no_longer_available":
+        if job is not None:
+            job.is_active_override = False
+            job.is_active = False
+        applied = "taken off the board"
     elif feedback.kind in ("broken_description", "broken_link"):
         applied = "marked handled, no job changes"
 

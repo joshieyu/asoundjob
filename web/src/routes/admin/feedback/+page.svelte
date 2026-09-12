@@ -35,6 +35,7 @@
 	const JOB_KIND_LABELS: Record<string, string> = {
 		wrong_category: 'Wrong category',
 		not_audio: 'Not an audio job',
+		no_longer_available: 'No longer available',
 		broken_description: 'Description looks broken',
 		broken_link: 'Application link is broken'
 	};

@@ -119,6 +119,28 @@ class TestReconcile(unittest.TestCase):
         self.assertEqual(stats.reactivated, 1)
         self.assertTrue(self.all_jobs()[0].is_active)
 
+    def test_an_is_active_override_survives_the_next_scrape(self) -> None:
+        reconcile_company_jobs(
+            self.session,
+            self.company,
+            [nj("Job A", "https://example.com/jobs/a", "a")],
+            trust_empty=True,
+        )
+        job = self.all_jobs()[0]
+        job.is_active_override = False
+        job.is_active = False
+        self.session.flush()
+
+        stats = reconcile_company_jobs(
+            self.session,
+            self.company,
+            [nj("Job A", "https://example.com/jobs/a", "a")],
+            trust_empty=True,
+        )
+        self.session.flush()
+        self.assertEqual(stats.reactivated, 0)
+        self.assertFalse(self.all_jobs()[0].is_active)
+
     def test_url_identity_when_no_external_id(self) -> None:
         first = nj("Role", "https://example.com/apply/123")
         stats = reconcile_company_jobs(

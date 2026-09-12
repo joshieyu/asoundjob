@@ -1,6 +1,11 @@
 import { PUBLIC_API_URL, clientApi } from './client';
 
-export type JobFeedbackKind = 'wrong_category' | 'not_audio' | 'broken_description' | 'broken_link';
+export type JobFeedbackKind =
+	| 'wrong_category'
+	| 'not_audio'
+	| 'no_longer_available'
+	| 'broken_description'
+	| 'broken_link';
 export type SiteFeedbackKind = 'company_suggestion' | 'general';
 
 export interface FeedbackKindOption<T extends string = string> {
@@ -11,6 +16,7 @@ export interface FeedbackKindOption<T extends string = string> {
 export const JOB_FEEDBACK_KINDS: FeedbackKindOption<JobFeedbackKind>[] = [
 	{ value: 'wrong_category', label: 'Wrong category' },
 	{ value: 'not_audio', label: 'Not an audio job' },
+	{ value: 'no_longer_available', label: 'No longer available' },
 	{ value: 'broken_description', label: 'Description looks broken' },
 	{ value: 'broken_link', label: 'Application link is broken' }
 ];

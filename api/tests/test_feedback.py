@@ -68,6 +68,18 @@ class TestJobFeedback(unittest.TestCase):
         )
         self.assertEqual(result.status, "pending")
 
+    def test_happy_path_no_longer_available(self) -> None:
+        payload = JobFeedbackRequest(
+            kind="no_longer_available", comment="Posting is closed"
+        )
+        result = feedback_router.submit_job_feedback(
+            self.job.id, payload, FakeRequest(), self.session
+        )
+        self.assertEqual(result.status, "pending")
+        row = self.session.get(JobFeedback, result.id)
+        assert row is not None
+        self.assertEqual(row.kind, "no_longer_available")
+
     def test_happy_path_broken_description(self) -> None:
         payload = JobFeedbackRequest(kind="broken_description")
         result = feedback_router.submit_job_feedback(

@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from scraper.models import Company, Job
 from scraper.normalizer import NormalizedJob
-from scraper.overrides import effective_categories, effective_is_audio
+from scraper.overrides import effective_categories, effective_is_active, effective_is_audio
 from scraper.scrapers.base import RawJob
 
 
@@ -154,7 +154,7 @@ def reconcile_company_jobs(
         row.is_audio_related = effective_is_audio(row, normalized.is_audio_related)
         if normalized.posted_date is not None:
             row.posted_date = normalized.posted_date
-        if not row.is_active:
+        if not row.is_active and effective_is_active(row, True):
             row.is_active = True
             stats.reactivated += 1
         stats.updated += 1
@@ -167,8 +167,10 @@ def reconcile_company_jobs(
         if ident is not None and ident in fetched_identities:
             continue
         if can_deactivate:
-            row.is_active = False
-            stats.deactivated += 1
+            next_active = effective_is_active(row, False)
+            if next_active != row.is_active:
+                row.is_active = next_active
+                stats.deactivated += 1
         else:
             stats.skipped_deactivation = True
 

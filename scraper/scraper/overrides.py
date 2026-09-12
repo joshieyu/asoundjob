@@ -13,3 +13,9 @@ def effective_is_audio(job: Job, computed: bool) -> bool:
     if job.is_audio_related_override is not None:
         return bool(job.is_audio_related_override)
     return computed
+
+
+def effective_is_active(job: Job, computed: bool) -> bool:
+    if job.is_active_override is not None:
+        return bool(job.is_active_override)
+    return computed
