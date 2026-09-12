@@ -17,7 +17,7 @@
 			<h2 class="text-meta font-bold">ASoundJob</h2>
 			<p class="mt-3 max-w-xs text-meta text-muted">
 				The audio industry job board. Real listings from audio companies, filtered by
-				specialties that matter. 
+				specialties that matter.
 			</p>
 		</div>
 		<nav aria-labelledby="footer-find-work">

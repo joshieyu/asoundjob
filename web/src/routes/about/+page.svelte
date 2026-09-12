@@ -41,9 +41,9 @@
 			Because of this, we're building an audio job board ourselves. <strong class="font-semibold"
 				>Young Audio Professionals (YAP)</strong
 			>, a peer community of people working across studios, venues, labs and product
-			teams, maintains {directoryPhrase}, as well as meaningful keyword searches across major job boards. Every night, our scraper scours the company directory, aspiring to capture every audio job on the market. 
+			teams, maintains {directoryPhrase}, as well as meaningful keyword searches across major job boards. Every night, our scraper scours the company directory, aspiring to capture every audio job on the market.
 			We are always looking to expand our coverage, so please utilize our feedback page and Discord
-			to suggest more companies and roles. 
+			to suggest more companies and roles.
 			Community-submitted roles are reviewed by human moderators before they go live.
 		</p>
 	</div>
@@ -71,8 +71,8 @@
 		<h2 class="text-title font-medium tracking-tight">Join Young Audio Professionals</h2>
 		{#if discord}
 			<p class="mt-3 max-w-[68ch] text-body leading-relaxed text-muted">
-				The Discord is where the community lives. We invite you to join the discussion on job leads, portfolio feedback, technical expertise
-				interview stories, and more. 
+				The Discord is where the community lives. We invite you to join the discussion on job leads, portfolio feedback, technical expertise,
+				interview stories, and more.
 			</p>
 			<a href={discord} target="_blank" rel="noopener noreferrer" class="btn btn-primary mt-6">
 				Join the Discord<svg width="11" height="11" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h7v7M13 3L6.5 9.5M11 11v2H3V5h2"/></svg>
