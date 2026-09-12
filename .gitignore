@@ -1,20 +1,44 @@
+# Python
 venv/
 __pycache__/
 *.pyc
-.env
 *.egg-info/
-dist/
-build/
-node_modules/
-.svelte-kit/
-.opencode/
-.claude/skills/
 .mypy_cache/
 .ruff_cache/
-.DS_Store
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Node / SvelteKit
+node_modules/
+.svelte-kit/
+dist/
+build/
+
+# Secrets and local config
+.env
+.env.*
+!.env.example
+
+# Databases. The sidecars matter as much as the file: a WAL can hold rows
+# not yet checkpointed, and this repo's tables carry submitter emails.
 *.db
+*.db-journal
+*.db-shm
+*.db-wal
 *.sqlite
 *.sqlite3
 
-# Impeccable decision-page daemon state (session-local)
+# Logs
+*.log
+
+# Tooling state (session-local)
+.opencode/
+.claude/skills/
+.claude/worktrees/
+.claude/settings.local.json
 .impeccable/questions/
+
+# OS
+.DS_Store
+Thumbs.db
