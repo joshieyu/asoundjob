@@ -27,28 +27,24 @@
 
 <div class="mx-auto mt-16 mb-32 max-w-3xl sm:mt-24">
 	<h1 class="text-display font-light tracking-tight text-balance">
-		Built by the community that works in audio.
+		Built by a community that works in audio.
 	</h1>
 
 	<div class="mt-12 max-w-[68ch] space-y-6 text-body leading-relaxed">
 		<p>
-			ASoundJob exists because audio careers are invisible on generic job boards. A
-			DSP role, a FOH gig and a transducer engineering job all get lumped into the
-			same keyword soup — and great companies stay hidden because nobody indexes
+			ASoundJob exists because audio careers are impossible to find on regular job boards.
+			DSP roles, live sound gigs and transducer engineering jobs all get lumped into the
+			same "audio engineering" category and awesome companies stay hidden because nobody indexes
 			their careers page.
 		</p>
 		<p>
-			So we're building the board ourselves. <strong class="font-semibold"
+			Because of this, we're building an audio job board ourselves. <strong class="font-semibold"
 				>Young Audio Professionals (YAP)</strong
 			>, a peer community of people working across studios, venues, labs and product
-			teams, maintains {directoryPhrase}. Every night, our scraper re-reads each
-			verified company's careers page so listings here reflect what's actually open —
-			and when a job disappears from the source, it disappears here too.
+			teams, maintains {directoryPhrase}, as well as meaningful keyword searches across major job boards. Every night, our scraper scours the company directory, aspiring to capture every audio job on the market. 
+			We are always looking to expand our coverage, so please utilize our feedback page and Discord
+			to suggest more companies and roles. 
 			Community-submitted roles are reviewed by human moderators before they go live.
-		</p>
-		<p>
-			No pay-to-post ranking, no recruiter gatekeeping, no cut of anything. Just the
-			signal.
 		</p>
 	</div>
 
@@ -75,8 +71,8 @@
 		<h2 class="text-title font-medium tracking-tight">Join Young Audio Professionals</h2>
 		{#if discord}
 			<p class="mt-3 max-w-[68ch] text-body leading-relaxed text-muted">
-				The Discord is where this gets built: job leads, portfolio feedback,
-				interview war stories and the occasional synth patch.
+				The Discord is where the community lives. We invite you to join the discussion on job leads, portfolio feedback, technical expertise
+				interview stories, and more. 
 			</p>
 			<a href={discord} target="_blank" rel="noopener noreferrer" class="btn btn-primary mt-6">
 				Join the Discord<svg width="11" height="11" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h7v7M13 3L6.5 9.5M11 11v2H3V5h2"/></svg>

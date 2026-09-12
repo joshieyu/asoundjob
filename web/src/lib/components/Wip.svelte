@@ -8,8 +8,8 @@
 	<h1 class="text-display font-light tracking-tight text-balance">{title}</h1>
 
 	<p class="mt-8 max-w-[68ch] text-title leading-snug font-light">
-		This section of ASoundJob is under construction. We're building it in the open
-		with the Young Audio Professionals community — it ships soon.
+		This section of ASoundJob is under construction. We're building it
+		with feedback from the Young Audio Professionals community.
 	</p>
 
 	{#if children}
