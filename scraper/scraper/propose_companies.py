@@ -19,7 +19,7 @@ from scraper.database import get_session_factory
 from scraper.models import Company
 from scraper.normalizer import score_relevance
 
-SHORT_NAME_MAX_LEN = 4
+SHORT_NAME_MAX_LEN = 3
 FUZZY_MATCH_THRESHOLD = 0.92
 MAX_SAMPLE_TITLES = 5
 MAX_SAMPLE_LOCATIONS = 3

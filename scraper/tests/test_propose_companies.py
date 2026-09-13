@@ -66,6 +66,22 @@ class TestMatchKnownCompany(unittest.TestCase):
                 match_known_company(normalize_company_name(name), self.known_index), name
             )
 
+    def test_four_letter_brands_match_on_first_token(self) -> None:
+        index = build_known_index(
+            [{"name": "Sony"}, {"name": "Bose"}, {"name": "Korg"}, {"name": "AKG"}]
+        )
+        for incoming, expected in (
+            ("Sony Interactive Entertainment", "Sony"),
+            ("Bose Corporation", "Bose"),
+            ("Korg USA", "Korg"),
+        ):
+            self.assertEqual(
+                match_known_company(normalize_company_name(incoming), index), expected
+            )
+        self.assertIsNone(
+            match_known_company(normalize_company_name("AKG Unrelated Holdings"), index)
+        )
+
     def test_sennheiser_subsidiary_spelling_matches(self) -> None:
         result = match_known_company(
             normalize_company_name("Sennheiser Electronic GmbH & Co. KG"), self.known_index
