@@ -63,6 +63,7 @@ LOADER_MANAGED_FIELDS = frozenset(
         "careers_url",
         "extra_careers_urls",
         "open_application",
+        "scrape_blocked",
         "verified",
         "scrape_method",
     }

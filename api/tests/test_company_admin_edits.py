@@ -289,5 +289,22 @@ class TestUnverifyRevertBugIsDead(unittest.TestCase):
         self.assertFalse(company.verified)
 
 
+class TestLoaderManagedFieldsCoverage(unittest.TestCase):
+    def test_covers_every_field_the_loader_actually_overwrites(self) -> None:
+        fields_the_loader_overwrites = {
+            "name",
+            "category",
+            "careers_url",
+            "extra_careers_urls",
+            "open_application",
+            "scrape_blocked",
+            "verified",
+            "scrape_method",
+        }
+        self.assertEqual(
+            admin_router.LOADER_MANAGED_FIELDS, fields_the_loader_overwrites
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

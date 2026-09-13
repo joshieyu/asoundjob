@@ -26,10 +26,15 @@ def _db_row(
     careers_url: str = "https://example.com/careers",
     extra_careers_urls=None,
     open_application: bool = False,
+    scrape_blocked: bool = False,
     verified: bool = True,
     source: str = "manual",
     scrape_method: str = "http",
     company_id: int = 1,
+    description=None,
+    headquarters=None,
+    founded=None,
+    community_links=None,
 ) -> DbRow:
     return DbRow(
         id=company_id,
@@ -39,9 +44,14 @@ def _db_row(
         careers_url=careers_url,
         extra_careers_urls=extra_careers_urls,
         open_application=open_application,
+        scrape_blocked=scrape_blocked,
         verified=verified,
         source=source,
         scrape_method=scrape_method,
+        description=description,
+        headquarters=headquarters,
+        founded=founded,
+        community_links=community_links,
     )
 
 
@@ -51,9 +61,14 @@ def _seed_entry(
     careers_url: str = "https://example.com/careers",
     extra_careers_urls=None,
     open_application=None,
+    scrape_blocked=None,
     verified: bool = True,
     source: str = "manual",
     scrape_method: str = "http",
+    description=None,
+    headquarters=None,
+    founded=None,
+    community_links=None,
 ) -> dict:
     entry = {
         "name": name,
@@ -67,6 +82,16 @@ def _seed_entry(
         entry["extra_careers_urls"] = extra_careers_urls
     if open_application:
         entry["open_application"] = open_application
+    if scrape_blocked:
+        entry["scrape_blocked"] = scrape_blocked
+    if description:
+        entry["description"] = description
+    if headquarters:
+        entry["headquarters"] = headquarters
+    if founded:
+        entry["founded"] = founded
+    if community_links:
+        entry["community_links"] = community_links
     return entry
 
 
@@ -209,6 +234,79 @@ class TestOpenApplication(unittest.TestCase):
         result = build_export(seed, db)
         self.assertEqual(len(result.changed), 1)
         self.assertTrue(result.output_seed[0]["open_application"])
+
+
+class TestScrapeBlockedExport(unittest.TestCase):
+    def test_scrape_blocked_false_is_omitted(self) -> None:
+        seed = [_seed_entry("Acme")]
+        db = [_db_row("Acme", "acme", scrape_blocked=False)]
+        result = build_export(seed, db)
+        self.assertNotIn("scrape_blocked", result.output_seed[0])
+
+    def test_scrape_blocked_true_is_included(self) -> None:
+        seed = [_seed_entry("Acme", scrape_blocked=None)]
+        db = [_db_row("Acme", "acme", scrape_blocked=True)]
+        result = build_export(seed, db)
+        self.assertEqual(len(result.changed), 1)
+        self.assertTrue(result.output_seed[0]["scrape_blocked"])
+
+
+class TestCommunityInfoExport(unittest.TestCase):
+    def test_fields_emitted_only_when_non_empty(self) -> None:
+        seed = [_seed_entry("Acme")]
+        db = [
+            _db_row(
+                "Acme",
+                "acme",
+                description="Builds loudspeaker DSP.",
+                headquarters="Copenhagen, Denmark",
+                founded=1977,
+                community_links=[{"label": "Wikipedia", "url": "https://example.org"}],
+            )
+        ]
+        result = build_export(seed, db)
+        self.assertEqual(len(result.changed), 1)
+        entry = result.output_seed[0]
+        self.assertEqual(entry["description"], "Builds loudspeaker DSP.")
+        self.assertEqual(entry["headquarters"], "Copenhagen, Denmark")
+        self.assertEqual(entry["founded"], 1977)
+        self.assertEqual(
+            entry["community_links"],
+            [{"label": "Wikipedia", "url": "https://example.org"}],
+        )
+
+    def test_company_with_no_community_info_produces_no_such_keys(self) -> None:
+        seed = [_seed_entry("Acme")]
+        db = [_db_row("Acme", "acme")]
+        result = build_export(seed, db)
+        entry = result.output_seed[0]
+        self.assertNotIn("description", entry)
+        self.assertNotIn("headquarters", entry)
+        self.assertNotIn("founded", entry)
+        self.assertNotIn("community_links", entry)
+
+    def test_company_with_no_community_info_is_not_reported_as_changed(self) -> None:
+        seed = [_seed_entry("Acme")]
+        db = [_db_row("Acme", "acme")]
+        result = build_export(seed, db)
+        self.assertEqual(result.changed, [])
+
+    def test_community_links_round_trip_intact(self) -> None:
+        links = [
+            {"label": "Wikipedia", "url": "https://example.org"},
+            {"label": "Forum", "url": "https://forum.example.org"},
+        ]
+        seed = [_seed_entry("Acme", community_links=links)]
+        db = [_db_row("Acme", "acme", community_links=links)]
+        result = build_export(seed, db)
+        self.assertEqual(result.changed, [])
+        self.assertEqual(result.output_seed[0]["community_links"], links)
+
+    def test_matching_description_across_seed_and_db_is_not_drifted(self) -> None:
+        seed = [_seed_entry("Acme", description="Builds loudspeaker DSP.")]
+        db = [_db_row("Acme", "acme", description="Builds loudspeaker DSP.")]
+        result = build_export(seed, db)
+        self.assertEqual(result.changed, [])
 
 
 class TestEmittedKeyOrder(unittest.TestCase):

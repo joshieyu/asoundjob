@@ -18,8 +18,13 @@ COMPARED_FIELDS = (
     "careers_url",
     "extra_careers_urls",
     "open_application",
+    "scrape_blocked",
     "verified",
     "scrape_method",
+    "description",
+    "headquarters",
+    "founded",
+    "community_links",
 )
 
 MAX_URL_LEN = 90
@@ -34,9 +39,14 @@ class DbRow:
     careers_url: Optional[str]
     extra_careers_urls: Optional[list]
     open_application: bool
+    scrape_blocked: bool
     verified: bool
     source: str
     scrape_method: str
+    description: Optional[str]
+    headquarters: Optional[str]
+    founded: Optional[int]
+    community_links: Optional[list]
 
 
 @dataclass
@@ -91,17 +101,17 @@ def _normalize_list(value: Any) -> Optional[list]:
 
 
 def _seed_field(entry: dict, key: str) -> Any:
-    if key == "extra_careers_urls":
-        return _normalize_list(entry.get("extra_careers_urls"))
-    if key in ("open_application", "verified"):
+    if key in ("extra_careers_urls", "community_links"):
+        return _normalize_list(entry.get(key))
+    if key in ("open_application", "verified", "scrape_blocked"):
         return bool(entry.get(key, False))
     return entry.get(key)
 
 
 def _db_field(row: Any, key: str) -> Any:
-    if key == "extra_careers_urls":
-        return _normalize_list(_get(row, "extra_careers_urls"))
-    if key in ("open_application", "verified"):
+    if key in ("extra_careers_urls", "community_links"):
+        return _normalize_list(_get(row, key))
+    if key in ("open_application", "verified", "scrape_blocked"):
         return bool(_get(row, key))
     return _get(row, key)
 
@@ -126,6 +136,20 @@ def _entry_from_row(name: str, source: str, row: Any) -> dict:
     entry["verified"] = bool(_get(row, "verified"))
     if bool(_get(row, "open_application")):
         entry["open_application"] = True
+    if bool(_get(row, "scrape_blocked")):
+        entry["scrape_blocked"] = True
+    description = _get(row, "description")
+    if description:
+        entry["description"] = description
+    headquarters = _get(row, "headquarters")
+    if headquarters:
+        entry["headquarters"] = headquarters
+    founded = _get(row, "founded")
+    if founded:
+        entry["founded"] = founded
+    community_links = _normalize_list(_get(row, "community_links"))
+    if community_links:
+        entry["community_links"] = community_links
     entry["source"] = source
     entry["scrape_method"] = _get(row, "scrape_method")
     return entry
@@ -296,9 +320,14 @@ def read_db_rows() -> list:
                 Company.careers_url,
                 Company.extra_careers_urls,
                 Company.open_application,
+                Company.scrape_blocked,
                 Company.verified,
                 Company.source,
                 Company.scrape_method,
+                Company.description,
+                Company.headquarters,
+                Company.founded,
+                Company.community_links,
             )
         ).all()
     return [
@@ -310,9 +339,14 @@ def read_db_rows() -> list:
             careers_url=row.careers_url,
             extra_careers_urls=row.extra_careers_urls,
             open_application=bool(row.open_application),
+            scrape_blocked=bool(row.scrape_blocked),
             verified=bool(row.verified),
             source=row.source,
             scrape_method=row.scrape_method,
+            description=row.description,
+            headquarters=row.headquarters,
+            founded=row.founded,
+            community_links=row.community_links,
         )
         for row in rows
     ]
