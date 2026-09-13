@@ -1,11 +1,16 @@
 from __future__ import annotations
 
 import unittest
+from datetime import date, timedelta
 
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
 
-from scraper.company_loader import load_companies
+from scraper.company_loader import (
+    deactivate_expired_jobs,
+    load_companies,
+    parse_community_links,
+)
 from scraper.models import Base, Company, Job
 
 
@@ -200,6 +205,223 @@ class TestRenameMatchedBySlug(unittest.TestCase):
         self.assertEqual(len(companies), 2)
         self.assertEqual(stats.matched_by_slug, 0)
         self.assertEqual(stats.inserted, 1)
+
+
+class TestDeactivateExpiredJobs(unittest.TestCase):
+    def setUp(self) -> None:
+        self.session = make_session()
+
+    def tearDown(self) -> None:
+        self.session.rollback()
+        self.session.close()
+
+    def make_company(self) -> Company:
+        company = Company(
+            name="Acme",
+            slug="acme",
+            category="Audio Software",
+            careers_url="https://example.com/careers",
+            verified=True,
+        )
+        self.session.add(company)
+        self.session.flush()
+        return company
+
+    def make_job(
+        self,
+        company: Company,
+        expires_date,
+        is_active: bool = True,
+        is_active_override=None,
+    ) -> Job:
+        job = Job(
+            company_id=company.id,
+            title="Community Job",
+            url=f"https://example.com/jobs/{company.id}-{id(object())}",
+            source="community",
+            expires_date=expires_date,
+            is_active=is_active,
+            is_active_override=is_active_override,
+        )
+        self.session.add(job)
+        self.session.flush()
+        return job
+
+    def reload_is_active(self, job_id: int) -> bool:
+        self.session.expire_all()
+        return bool(
+            self.session.execute(
+                select(Job.is_active).where(Job.id == job_id)
+            ).scalar_one()
+        )
+
+    def test_expired_job_is_deactivated(self) -> None:
+        company = self.make_company()
+        job = self.make_job(company, date(2020, 1, 1))
+        count = deactivate_expired_jobs(self.session, today=date(2020, 1, 2))
+        self.session.flush()
+        self.assertEqual(count, 1)
+        self.assertFalse(self.reload_is_active(job.id))
+
+    def test_job_expiring_today_is_not_deactivated(self) -> None:
+        company = self.make_company()
+        job = self.make_job(company, date(2020, 1, 1))
+        count = deactivate_expired_jobs(self.session, today=date(2020, 1, 1))
+        self.session.flush()
+        self.assertEqual(count, 0)
+        self.assertTrue(self.reload_is_active(job.id))
+
+    def test_job_without_expiry_is_untouched(self) -> None:
+        company = self.make_company()
+        job = self.make_job(company, None)
+        count = deactivate_expired_jobs(self.session, today=date(2020, 1, 2))
+        self.session.flush()
+        self.assertEqual(count, 0)
+        self.assertTrue(self.reload_is_active(job.id))
+
+    def test_override_keeps_expired_job_active(self) -> None:
+        company = self.make_company()
+        job = self.make_job(company, date(2020, 1, 1), is_active_override=True)
+        count = deactivate_expired_jobs(self.session, today=date(2020, 1, 2))
+        self.session.flush()
+        self.assertEqual(count, 0)
+        self.assertTrue(self.reload_is_active(job.id))
+
+    def test_already_inactive_expired_job_is_not_recounted(self) -> None:
+        company = self.make_company()
+        job = self.make_job(company, date(2020, 1, 1), is_active=False)
+        count = deactivate_expired_jobs(self.session, today=date(2020, 1, 2))
+        self.session.flush()
+        self.assertEqual(count, 0)
+        self.assertFalse(self.reload_is_active(job.id))
+
+    def test_returned_count_matches_rows_actually_changed(self) -> None:
+        company = self.make_company()
+        self.make_job(company, date(2020, 1, 1))
+        self.make_job(company, date(2020, 1, 1))
+        self.make_job(company, date(2020, 1, 5))
+        count = deactivate_expired_jobs(self.session, today=date(2020, 1, 2))
+        self.assertEqual(count, 2)
+
+    def test_today_defaults_to_the_real_today(self) -> None:
+        company = self.make_company()
+        job = self.make_job(company, date.today() - timedelta(days=1))
+        count = deactivate_expired_jobs(self.session)
+        self.session.flush()
+        self.assertEqual(count, 1)
+        self.assertFalse(self.reload_is_active(job.id))
+
+
+class TestParseCommunityLinks(unittest.TestCase):
+    def test_malformed_entries_are_dropped(self) -> None:
+        value = [
+            {"label": "Wikipedia", "url": "https://example.org"},
+            {"label": "", "url": "https://example.org/empty-label"},
+            {"label": "No URL"},
+            "not-a-dict",
+            {"label": "Bad Scheme", "url": "ftp://example.org"},
+        ]
+        result = parse_community_links(value)
+        self.assertEqual(result, [{"label": "Wikipedia", "url": "https://example.org"}])
+
+    def test_non_http_url_is_rejected(self) -> None:
+        result = parse_community_links([{"label": "X", "url": "javascript:alert(1)"}])
+        self.assertIsNone(result)
+
+    def test_list_is_capped_at_ten(self) -> None:
+        value = [
+            {"label": f"Link {i}", "url": f"https://example.org/{i}"} for i in range(15)
+        ]
+        result = parse_community_links(value)
+        self.assertEqual(len(result), 10)
+
+    def test_non_list_input_returns_none(self) -> None:
+        self.assertIsNone(parse_community_links("not-a-list"))
+        self.assertIsNone(parse_community_links(None))
+
+
+class TestCommunityFieldsFromSeed(unittest.TestCase):
+    def setUp(self) -> None:
+        self.session = make_session()
+
+    def tearDown(self) -> None:
+        self.session.rollback()
+        self.session.close()
+
+    def test_seed_entry_with_community_fields_loads_onto_new_company(self) -> None:
+        seed = entry("Acme", verified=True)
+        seed["description"] = "Builds loudspeaker DSP."
+        seed["headquarters"] = "Copenhagen, Denmark"
+        seed["founded"] = 1977
+        seed["community_links"] = [{"label": "Wikipedia", "url": "https://example.org"}]
+
+        load_companies(self.session, [seed])
+
+        company = self.session.execute(select(Company)).scalar_one()
+        self.assertEqual(company.description, "Builds loudspeaker DSP.")
+        self.assertEqual(company.headquarters, "Copenhagen, Denmark")
+        self.assertEqual(company.founded, 1977)
+        self.assertEqual(
+            company.community_links,
+            [{"label": "Wikipedia", "url": "https://example.org"}],
+        )
+
+    def test_omitting_keys_on_update_leaves_existing_values_untouched(self) -> None:
+        load_companies(self.session, [entry("Acme", verified=True)])
+        company = self.session.execute(select(Company)).scalar_one()
+        company.description = "Builds loudspeaker DSP."
+        company.headquarters = "Copenhagen, Denmark"
+        company.founded = 1977
+        company.community_links = [{"label": "Wikipedia", "url": "https://example.org"}]
+        self.session.flush()
+
+        stats = load_companies(self.session, [entry("Acme", verified=False)])
+
+        self.session.refresh(company)
+        self.assertEqual(stats.updated, 1)
+        self.assertEqual(company.description, "Builds loudspeaker DSP.")
+        self.assertEqual(company.headquarters, "Copenhagen, Denmark")
+        self.assertEqual(company.founded, 1977)
+        self.assertEqual(
+            company.community_links,
+            [{"label": "Wikipedia", "url": "https://example.org"}],
+        )
+
+    def test_explicit_null_clears_the_field(self) -> None:
+        load_companies(self.session, [entry("Acme", verified=True)])
+        company = self.session.execute(select(Company)).scalar_one()
+        company.description = "Builds loudspeaker DSP."
+        self.session.flush()
+
+        seed = entry("Acme", verified=False)
+        seed["description"] = None
+        stats = load_companies(self.session, [seed])
+
+        self.session.refresh(company)
+        self.assertEqual(stats.updated, 1)
+        self.assertIsNone(company.description)
+
+    def test_reload_omitting_community_keys_with_no_other_changes_is_unchanged(self) -> None:
+        seed = entry("Acme", verified=True)
+        seed["description"] = "Builds loudspeaker DSP."
+        load_companies(self.session, [seed])
+
+        stats = load_companies(self.session, [entry("Acme", verified=True)])
+        self.assertEqual(stats.unchanged, 1)
+        self.assertEqual(stats.updated, 0)
+
+    def test_malformed_community_links_in_seed_are_dropped_on_load(self) -> None:
+        seed = entry("Acme", verified=True)
+        seed["community_links"] = [
+            {"label": "Wikipedia", "url": "https://example.org"},
+            {"label": "Bad", "url": "not-a-url"},
+        ]
+        load_companies(self.session, [seed])
+        company = self.session.execute(select(Company)).scalar_one()
+        self.assertEqual(
+            company.community_links,
+            [{"label": "Wikipedia", "url": "https://example.org"}],
+        )
 
 
 if __name__ == "__main__":

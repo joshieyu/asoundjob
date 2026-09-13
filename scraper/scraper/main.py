@@ -11,7 +11,7 @@ from typing import Optional
 
 from sqlalchemy import select
 
-from scraper.company_loader import careers_urls_for
+from scraper.company_loader import careers_urls_for, deactivate_expired_jobs
 from scraper.config import Settings, load_settings
 from scraper.database import dispose_engine, init_db, session_scope
 from scraper.deduplicator import ReconcileStats, reconcile_company_jobs
@@ -37,6 +37,7 @@ class CycleStats:
     reactivated: int = 0
     deactivated: int = 0
     deactivations_skipped: int = 0
+    expired: int = 0
     method_counts: dict = field(default_factory=dict)
 
     def summary(self) -> str:
@@ -48,7 +49,7 @@ class CycleStats:
             f"failed={self.failed} jobs_found={self.jobs_found} | "
             f"db: inserted={self.inserted} updated={self.updated} "
             f"reactivated={self.reactivated} deactivated={self.deactivated} "
-            f"deactivation_skips={self.deactivations_skipped}"
+            f"deactivation_skips={self.deactivations_skipped} expired={self.expired}"
             + (f" | via {methods}" if methods else "")
         )
 
@@ -168,6 +169,10 @@ async def run_cycle(
         )
 
     cycle = CycleStats(companies_attempted=len(scrape_list))
+    with session_scope() as session:
+        cycle.expired = deactivate_expired_jobs(session)
+    if cycle.expired:
+        logger.info("expiry: deactivated %d expired community job(s)", cycle.expired)
     if not scrape_list:
         return cycle
 

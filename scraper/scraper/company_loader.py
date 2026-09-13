@@ -4,6 +4,7 @@ import argparse
 import json
 import re
 from dataclasses import dataclass
+from datetime import date
 from pathlib import Path
 from typing import Any, Optional
 
@@ -14,6 +15,7 @@ from scraper.config import load_settings
 from scraper.database import get_session_factory, session_scope
 from scraper.models import Company, Job
 from scraper.normalizer import category_to_scope
+from scraper.overrides import effective_is_active
 
 
 @dataclass
@@ -34,6 +36,10 @@ class LoadStats:
             f"deactivated_unverified={self.deactivated_unverified} "
             f"matched_by_slug={self.matched_by_slug}"
         )
+
+
+MAX_COMMUNITY_LINKS = 10
+COMMUNITY_LINK_URL_RE = re.compile(r"^https?://.{1,2048}$")
 
 
 def slugify(name: str) -> str:
@@ -61,6 +67,28 @@ def parse_extra_careers_urls(
         seen.add(key)
         urls.append(url)
     return urls or None
+
+
+def parse_community_links(value: Any) -> Optional[list[dict[str, str]]]:
+    if not isinstance(value, list):
+        return None
+    links: list[dict[str, str]] = []
+    for item in value:
+        if not isinstance(item, dict):
+            continue
+        label = item.get("label")
+        url = item.get("url")
+        if not isinstance(label, str) or not label.strip():
+            continue
+        if not isinstance(url, str) or not url.strip():
+            continue
+        url = url.strip()
+        if not COMMUNITY_LINK_URL_RE.match(url):
+            continue
+        links.append({"label": label.strip(), "url": url})
+        if len(links) >= MAX_COMMUNITY_LINKS:
+            break
+    return links or None
 
 
 MAX_CAREERS_URLS = 6
@@ -125,22 +153,42 @@ def load_companies(session: Session, companies: list[dict[str, Any]]) -> LoadSta
         open_application = bool(entry.get("open_application", False))
         scrape_blocked = bool(entry.get("scrape_blocked", False))
 
+        has_description = "description" in entry
+        description = entry.get("description") if has_description else None
+        has_headquarters = "headquarters" in entry
+        headquarters = entry.get("headquarters") if has_headquarters else None
+        has_founded = "founded" in entry
+        founded = entry.get("founded") if has_founded else None
+        has_community_links = "community_links" in entry
+        community_links = (
+            parse_community_links(entry.get("community_links"))
+            if has_community_links
+            else None
+        )
+
         if existing is None:
-            session.add(
-                Company(
-                    name=name,
-                    slug=slug,
-                    category=category,
-                    careers_url=careers_url,
-                    extra_careers_urls=extra_careers_urls,
-                    open_application=open_application,
-                    scrape_blocked=scrape_blocked,
-                    verified=verified,
-                    source=source,
-                    scrape_method=scrape_method,
-                    audio_scope=category_to_scope(category),
-                )
+            company = Company(
+                name=name,
+                slug=slug,
+                category=category,
+                careers_url=careers_url,
+                extra_careers_urls=extra_careers_urls,
+                open_application=open_application,
+                scrape_blocked=scrape_blocked,
+                verified=verified,
+                source=source,
+                scrape_method=scrape_method,
+                audio_scope=category_to_scope(category),
             )
+            if has_description:
+                company.description = description
+            if has_headquarters:
+                company.headquarters = headquarters
+            if has_founded:
+                company.founded = founded
+            if has_community_links:
+                company.community_links = community_links
+            session.add(company)
             stats.inserted += 1
         elif existing.source == "manual" and source != "manual":
             stats.skipped_manual += 1
@@ -155,6 +203,10 @@ def load_companies(session: Session, companies: list[dict[str, Any]]) -> LoadSta
                 or existing.verified != verified
                 or existing.source != source
                 or existing.scrape_method != scrape_method
+                or (has_description and existing.description != description)
+                or (has_headquarters and existing.headquarters != headquarters)
+                or (has_founded and existing.founded != founded)
+                or (has_community_links and existing.community_links != community_links)
             )
             if changed:
                 category_changed = existing.category != category
@@ -167,6 +219,14 @@ def load_companies(session: Session, companies: list[dict[str, Any]]) -> LoadSta
                 existing.verified = verified
                 existing.source = source
                 existing.scrape_method = scrape_method
+                if has_description:
+                    existing.description = description
+                if has_headquarters:
+                    existing.headquarters = headquarters
+                if has_founded:
+                    existing.founded = founded
+                if has_community_links:
+                    existing.community_links = community_links
                 if category_changed:
                     existing.audio_scope = category_to_scope(category)
                 stats.updated += 1
@@ -189,6 +249,24 @@ def _deactivate_unverified_jobs(session: Session) -> int:
             .where(Job.company_id.in_(unverified), Job.is_active.is_(True))
             .values(is_active=False)
         )
+    return count
+
+
+def deactivate_expired_jobs(session: Session, today: Optional[date] = None) -> int:
+    cutoff = today or date.today()
+    candidates = session.execute(
+        select(Job).where(
+            Job.expires_date.is_not(None),
+            Job.expires_date < cutoff,
+            Job.is_active.is_(True),
+        )
+    ).scalars().all()
+    count = 0
+    for job in candidates:
+        next_active = effective_is_active(job, False)
+        if next_active != job.is_active:
+            job.is_active = next_active
+            count += 1
     return count
 
 
