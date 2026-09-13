@@ -1,11 +1,12 @@
 import argparse
 import json
 import math
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from jobspy import scrape_jobs
+from jobspy import Country, scrape_jobs
 
 DEFAULT_TERMS_FILE = Path(__file__).resolve().parent / "terms.txt"
 
@@ -20,6 +21,22 @@ OUTPUT_FIELDS = (
     "search_term",
     "description",
 )
+
+
+def valid_country_names() -> list[str]:
+    names: list[str] = []
+    for country in Country:
+        names.extend(alias.strip() for alias in country.value[0].split(","))
+    return sorted(set(names))
+
+
+def validate_country(country: str) -> str:
+    try:
+        Country.from_string(country)
+    except ValueError:
+        valid = ", ".join(valid_country_names())
+        sys.exit(f"invalid --country '{country}'. valid values: {valid}")
+    return country
 
 
 def read_terms(path: Path) -> list[str]:
@@ -50,10 +67,11 @@ def json_safe(value: Any) -> Any:
     return value
 
 
-def flatten_job(row: dict[str, Any], search_term: str) -> dict[str, Any]:
+def flatten_job(row: dict[str, Any], search_term: str, country: str) -> dict[str, Any]:
     job: dict[str, Any] = {field: json_safe(row.get(field)) for field in OUTPUT_FIELDS}
     job["company_name"] = json_safe(row.get("company") or row.get("company_name"))
     job["search_term"] = search_term
+    job["country"] = country
     for key, value in row.items():
         if key not in job:
             job[key] = json_safe(value)
@@ -66,6 +84,7 @@ def fetch_term(
     results_wanted: int,
     hours_old: int,
     location: str,
+    country: str,
 ) -> list[dict[str, Any]]:
     df = scrape_jobs(
         site_name=sites,
@@ -73,11 +92,12 @@ def fetch_term(
         location=location or None,
         results_wanted=results_wanted,
         hours_old=hours_old,
+        country_indeed=country,
     )
     if df is None or df.empty:
         return []
     records = df.to_dict(orient="records")
-    return [flatten_job(record, term) for record in records]
+    return [flatten_job(record, term, country) for record in records]
 
 
 def run(
@@ -86,16 +106,18 @@ def run(
     results_wanted: int,
     hours_old: int,
     location: str,
+    country: str,
     output: Path,
 ) -> None:
     terms = read_terms(terms_file)
     jobs: list[dict[str, Any]] = []
     for term in terms:
-        jobs.extend(fetch_term(term, sites, results_wanted, hours_old, location))
+        jobs.extend(fetch_term(term, sites, results_wanted, hours_old, location, country))
 
     payload = {
         "fetched_at": datetime.now(timezone.utc).isoformat(),
         "terms": terms,
+        "country": country,
         "jobs": jobs,
     }
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -114,9 +136,11 @@ def main() -> None:
     parser.add_argument("--results-wanted", type=int, default=50)
     parser.add_argument("--hours-old", type=int, default=720)
     parser.add_argument("--location", type=str, default="")
+    parser.add_argument("--country", type=str, default="usa")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
 
+    country = validate_country(args.country)
     sites = [s.strip() for s in args.sites.split(",") if s.strip()]
     run(
         args.terms_file,
@@ -124,6 +148,7 @@ def main() -> None:
         args.results_wanted,
         args.hours_old,
         args.location,
+        country,
         args.output,
     )
 

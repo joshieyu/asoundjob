@@ -176,6 +176,7 @@ class TestBuildProposals(unittest.TestCase):
                 "site": "indeed",
                 "location": "Austin, TX",
                 "company_url": "https://totallynewaudio.example.com",
+                "country": "usa",
             },
             {
                 "title": "Senior Audio DSP Engineer",
@@ -188,6 +189,7 @@ class TestBuildProposals(unittest.TestCase):
                 "site": "linkedin",
                 "location": "Remote",
                 "company_url": "",
+                "country": "germany",
             },
         ]
         run = build_proposals(jobs, SEED_COMPANIES, min_hits=1, limit=None)
@@ -200,6 +202,26 @@ class TestBuildProposals(unittest.TestCase):
         self.assertIn("indeed", candidate.sites)
         self.assertIn("linkedin", candidate.sites)
         self.assertEqual(candidate.company_url, "https://totallynewaudio.example.com")
+        self.assertEqual(candidate.countries, ["germany", "usa"])
+
+    def test_missing_country_field_is_tolerated(self) -> None:
+        jobs = [
+            {
+                "title": "Audio DSP Engineer",
+                "description": (
+                    "Design real-time audio DSP algorithms for our loudspeaker "
+                    "products. You'll work on audio signal processing and "
+                    "acoustic tuning."
+                ),
+                "company_name": "Totally New Audio Co",
+                "search_term": "audio dsp engineer",
+                "site": "indeed",
+                "location": "Austin, TX",
+            }
+        ]
+        run = build_proposals(jobs, SEED_COMPANIES, min_hits=1, limit=None)
+        self.assertEqual(len(run.candidates), 1)
+        self.assertEqual(run.candidates[0].countries, [])
 
     def test_known_company_is_matched_and_dropped(self) -> None:
         jobs = [

@@ -192,6 +192,7 @@ class CandidateCompany:
     hit_count: int
     search_terms: list[str]
     sites: list[str]
+    countries: list[str]
     sample_titles: list[str]
     sample_locations: list[str]
     company_url: Optional[str]
@@ -203,6 +204,7 @@ class CandidateCompany:
             "hit_count": self.hit_count,
             "search_terms": self.search_terms,
             "sites": self.sites,
+            "countries": self.countries,
             "sample_titles": self.sample_titles,
             "sample_locations": self.sample_locations,
             "company_url": self.company_url,
@@ -244,6 +246,9 @@ def aggregate_candidates(jobs: list[dict[str, Any]]) -> list[CandidateCompany]:
             {str(job.get("search_term") or "") for job in group_jobs if job.get("search_term")}
         )
         sites = sorted({str(job.get("site") or "") for job in group_jobs if job.get("site")})
+        countries = sorted(
+            {str(job.get("country") or "") for job in group_jobs if job.get("country")}
+        )
         sample_titles = _first_n_unique(
             [str(job.get("title") or "") for job in group_jobs], MAX_SAMPLE_TITLES
         )
@@ -265,6 +270,7 @@ def aggregate_candidates(jobs: list[dict[str, Any]]) -> list[CandidateCompany]:
                 hit_count=len(group_jobs),
                 search_terms=search_terms,
                 sites=sites,
+                countries=countries,
                 sample_titles=sample_titles,
                 sample_locations=sample_locations,
                 company_url=company_url,
@@ -351,6 +357,7 @@ def render_review_markdown(
         lines.append(f"- hits: {candidate.hit_count}")
         lines.append(f"- search terms: {', '.join(candidate.search_terms) or '(none)'}")
         lines.append(f"- sites: {', '.join(candidate.sites) or '(none)'}")
+        lines.append(f"- countries: {', '.join(candidate.countries) or '(none)'}")
         if candidate.company_url:
             lines.append(f"- company url: {candidate.company_url}")
         if candidate.sample_locations:
