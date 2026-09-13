@@ -6,7 +6,14 @@ from sqlalchemy import String, case, func, or_, select
 from sqlalchemy.orm import Session, selectinload
 
 from api.config import MAX_PER_PAGE
-from scraper.models import Company, Job
+from scraper.company_health import (
+    GRADE_ORDER,
+    grade_company,
+    grade_rank,
+    is_described,
+    shape_shares,
+)
+from scraper.models import Company, Job, ScrapeLog
 
 
 def paginate_params(page: int, per_page: int) -> tuple[int, int]:
@@ -203,3 +210,144 @@ def companies_with_counts(
         data["board_jobs_count"] = int(row[-1])
         items.append(data)
     return items, int(total)
+
+
+COMPANY_HEALTH_SORTS = ("grade", "board", "active", "name")
+
+
+def _scrape_log_summary(session: Session) -> dict:
+    rows = session.execute(
+        select(ScrapeLog.company_id, ScrapeLog.status, ScrapeLog.started_at, ScrapeLog.jobs_found)
+        .where(ScrapeLog.company_id.is_not(None))
+        .order_by(ScrapeLog.company_id, ScrapeLog.started_at.desc(), ScrapeLog.id.desc())
+    ).all()
+    summary: dict = {}
+    still_counting: dict = {}
+    for company_id, status, started_at, jobs_found in rows:
+        entry = summary.get(company_id)
+        if entry is None:
+            entry = {
+                "last_scrape_status": status,
+                "last_scrape_at": started_at,
+                "last_jobs_found": int(jobs_found or 0),
+                "consecutive_failures": 0,
+            }
+            summary[company_id] = entry
+            still_counting[company_id] = True
+        if still_counting.get(company_id):
+            if status == "failed":
+                entry["consecutive_failures"] += 1
+            else:
+                still_counting[company_id] = False
+    return summary
+
+
+def _job_health_summary(session: Session) -> dict:
+    rows = session.execute(
+        select(Job.company_id, Job.title, Job.description, Job.is_audio_related).where(
+            Job.is_active.is_(True)
+        )
+    ).all()
+    summary: dict = {}
+    for company_id, title, description, is_audio_related in rows:
+        if company_id is None:
+            continue
+        entry = summary.setdefault(
+            company_id,
+            {"titles": [], "described_flags": [], "board_count": 0},
+        )
+        entry["titles"].append(title)
+        entry["described_flags"].append(is_described(description))
+        if is_audio_related:
+            entry["board_count"] += 1
+    return summary
+
+
+def company_health_rows(session: Session, q: Optional[str] = None) -> list:
+    stmt = select(
+        Company.id,
+        Company.name,
+        Company.slug,
+        Company.category,
+        Company.verified,
+        Company.careers_url,
+    )
+    if q and q.strip():
+        stmt = stmt.where(Company.name.ilike(f"%{q.strip()}%"))
+    companies = session.execute(stmt.order_by(Company.name)).all()
+
+    scrape_summary = _scrape_log_summary(session)
+    job_summary = _job_health_summary(session)
+    empty_jobs = {"titles": [], "described_flags": [], "board_count": 0}
+
+    rows = []
+    for company_id, name, slug, category, verified, careers_url in companies:
+        scrape = scrape_summary.get(company_id)
+        jobs = job_summary.get(company_id, empty_jobs)
+        titles = jobs["titles"]
+        active_rows = len(titles)
+        described_share, role_share = shape_shares(titles, jobs["described_flags"])
+        board_count = jobs["board_count"]
+        last_scrape_status = scrape["last_scrape_status"] if scrape else None
+        grade = grade_company(
+            active_rows, described_share, role_share, board_count, last_scrape_status
+        )
+        rows.append(
+            {
+                "company_id": company_id,
+                "name": name,
+                "slug": slug,
+                "category": category,
+                "verified": bool(verified),
+                "careers_url": careers_url,
+                "last_scrape_status": last_scrape_status,
+                "last_scrape_at": scrape["last_scrape_at"] if scrape else None,
+                "last_jobs_found": scrape["last_jobs_found"] if scrape else None,
+                "consecutive_failures": scrape["consecutive_failures"] if scrape else 0,
+                "active_rows": active_rows,
+                "described_share": described_share,
+                "role_share": role_share,
+                "board_count": board_count,
+                "grade": grade,
+            }
+        )
+    return rows
+
+
+def company_health_page(
+    session: Session,
+    grade: Optional[str] = None,
+    q: Optional[str] = None,
+    page: int = 1,
+    per_page: int = 50,
+    sort: str = "grade",
+    direction: str = "desc",
+):
+    rows = company_health_rows(session, q=q)
+    filtered = [r for r in rows if r["grade"] == grade] if grade in GRADE_ORDER else rows
+
+    summary = {g: 0 for g in GRADE_ORDER}
+    for row in filtered:
+        summary[row["grade"]] += 1
+
+    if sort not in COMPANY_HEALTH_SORTS:
+        sort = "grade"
+    if direction not in SORT_DIRECTIONS:
+        direction = "desc"
+    descending = direction == "desc"
+
+    rows_sorted = sorted(filtered, key=lambda r: r["name"])
+    if sort == "board":
+        rows_sorted.sort(key=lambda r: r["board_count"], reverse=descending)
+    elif sort == "active":
+        rows_sorted.sort(key=lambda r: r["active_rows"], reverse=descending)
+    elif sort == "name":
+        rows_sorted.sort(key=lambda r: r["name"], reverse=descending)
+    else:
+        rows_sorted.sort(key=lambda r: grade_rank(r["grade"]), reverse=not descending)
+
+    total = len(rows_sorted)
+    safe_page = max(1, page)
+    start = (safe_page - 1) * per_page
+    page_rows = rows_sorted[start : start + per_page]
+    return page_rows, total, summary

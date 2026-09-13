@@ -491,3 +491,38 @@ class StatsResponse(BaseModel):
 
 
 ScrapeStatus.model_rebuild()
+
+
+class CompanyHealthRow(BaseModel):
+    company_id: int
+    name: str
+    slug: str
+    category: str
+    verified: bool
+    careers_url: Optional[str] = None
+    last_scrape_status: Optional[str] = None
+    last_scrape_at: Optional[datetime] = None
+    last_jobs_found: Optional[int] = None
+    consecutive_failures: int
+    active_rows: int
+    described_share: float
+    role_share: float
+    board_count: int
+    grade: str
+
+
+class CompanyHealthSummary(BaseModel):
+    failing: int
+    furniture: int
+    thin: int
+    idle: int
+    healthy: int
+
+
+class CompanyHealthResponse(BaseModel):
+    items: list[CompanyHealthRow]
+    total: int
+    page: int
+    per_page: int
+    pages: int
+    summary: CompanyHealthSummary

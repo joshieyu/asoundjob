@@ -40,7 +40,8 @@
 		['/admin/submissions', 'Submissions'],
 		['/admin/feedback', 'Feedback'],
 		['/admin/scraper', 'Scraper'],
-		['/admin/companies', 'Companies']
+		['/admin/companies', 'Companies'],
+		['/admin/health', 'Company health']
 	] as const;
 </script>
 

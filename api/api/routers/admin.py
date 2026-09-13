@@ -25,6 +25,9 @@ from api.schemas import (
     AdminSubmission,
     ApproveRequest,
     ApproveResponse,
+    CompanyHealthResponse,
+    CompanyHealthRow,
+    CompanyHealthSummary,
     FeedbackApproveResponse,
     RejectRequest,
     ScrapeLogEntry,
@@ -159,6 +162,36 @@ def admin_list_companies(
         db, stmt, safe_page, safe_per, sort=sort, direction=direction
     )
     return page_envelope(items, total, safe_page, safe_per)
+
+
+@router.get("/companies/health", response_model=CompanyHealthResponse)
+def admin_company_health(
+    grade: Optional[str] = Query(None, pattern="^(failing|furniture|thin|idle|healthy)$"),
+    q: Optional[str] = None,
+    page: int = Query(1, ge=1),
+    per_page: int = Query(50, ge=1, le=200),
+    sort: str = Query("grade", pattern="^(grade|board|active|name)$"),
+    direction: str = Query("desc", pattern="^(asc|desc)$"),
+    db: Session = Depends(get_db),
+    _: str = Depends(require_admin),
+):
+    from api.query import company_health_page
+
+    safe_page = max(1, page)
+    safe_per = min(max(1, per_page), 200)
+    items, total, summary = company_health_page(
+        db,
+        grade=grade,
+        q=q,
+        page=safe_page,
+        per_page=safe_per,
+        sort=sort,
+        direction=direction,
+    )
+    envelope = page_envelope(
+        [CompanyHealthRow(**item) for item in items], total, safe_page, safe_per
+    )
+    return CompanyHealthResponse(**envelope, summary=CompanyHealthSummary(**summary))
 
 
 def _slugify(name: str) -> str:
