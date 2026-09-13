@@ -43,6 +43,79 @@ The output JSON feeds into `scraper/scraper/propose_companies.py`, which runs
 in the scraper's own Python 3.9 environment and never imports anything from
 this directory.
 
+## LinkedIn
+
+LinkedIn is queried through JobSpy's public guest search endpoint. No
+LinkedIn account or login is involved anywhere in this path, so nothing
+about a credential is at risk here — the only thing exposed is the IP
+address making the requests. LinkedIn rate-limits that endpoint
+aggressively, and past roughly page 10 it starts returning HTTP 429. JobSpy
+does not raise on a 429: it logs the error and returns whatever jobs it had
+already collected, so an unprotected run can look like it succeeded while
+quietly returning partial data. `fetch.py` watches for that signature (and
+for JobSpy's "Bad proxy" message) and aborts the whole run the moment either
+appears, rather than continuing to hammer an endpoint that is already
+refusing the request.
+
+**LinkedIn's terms of service prohibit automated scraping. Routing requests
+through a proxy changes the IP making them, not that fact.** This tool does
+not decide whether to run against LinkedIn — the owner does, term by term
+and run by run.
+
+### Supplying proxies
+
+Proxy URLs contain credentials and must never land in shell history or in
+this repo. There is deliberately no inline `--proxies` flag. Use one of:
+
+- `--proxies-file PATH` — one proxy per line, blank lines and `#` comments
+  ignored. See `proxies.txt.example` for the accepted formats
+  (`user:pass@host:port`, or prefixed with `http://`, `https://`, or
+  `socks5://`).
+- the `JOBSPY_PROXIES` environment variable — comma-separated proxies.
+  `--proxies-file` wins if both are set.
+
+The kind of proxy that actually works against LinkedIn's guest endpoint is
+a residential or rotating proxy; a cheap datacenter proxy tends to be
+blocklisted already. This tool does not recommend or link a vendor — that
+choice, and the credentials, are the owner's to supply.
+
+Every log line, error message, and preflight report shows proxies masked to
+`host:port` only (scheme, username and password stripped). The output JSON
+records `proxy_count`, never the proxies themselves.
+
+If `linkedin` is in `--sites` and no proxies resolved, `fetch.py` exits
+before making any network call. `--i-understand-linkedin-without-proxy` is
+an explicit, deliberately verbose escape hatch for when you want to accept
+that risk anyway.
+
+### Preflight
+
+Before any search runs, when proxies are configured, `fetch.py` fetches the
+direct (no-proxy) egress IP from a neutral IP-echo endpoint, then requests
+the same endpoint through each configured proxy. A proxy only passes if it
+responds and reports an IP different from the direct one — the same IP
+means traffic isn't actually being proxied. Any failing proxy aborts the
+run unless `--allow-partial-proxies` is passed, in which case the run
+continues with only the passing proxies (a failing proxy is dropped, never
+left in rotation). `--skip-preflight` skips this check for offline testing
+and prints a warning when used.
+
+### Defaults and flags specific to LinkedIn
+
+- `--results-wanted` defaults to 25 (one page) instead of 50 when
+  `linkedin` is in `--sites` and you don't pass `--results-wanted`
+  explicitly. LinkedIn rate-limits aggressively past roughly page 10.
+- `--linkedin-fetch-description` (default off) fetches the full job
+  description for every LinkedIn result, passed through to JobSpy as
+  `linkedin_fetch_description`. This is O(n) extra requests — one per job —
+  so it multiplies block risk. Without it, LinkedIn rows arrive with no
+  description at all, which matters because
+  `scraper/scraper/propose_companies.py` scores candidates on title and
+  description together.
+- `--delay-between-terms` (seconds, default 0) sleeps between search terms,
+  on top of JobSpy's own per-page pacing, so a multi-term sweep can be
+  spread out further.
+
 ## Countries
 
 `scrape_jobs()` takes a `country_indeed` argument that controls which

@@ -46,3 +46,5 @@ Thumbs.db
 # jobspy_fetch (quarantined tool, own venv)
 tools/jobspy_fetch/.venv/
 tools/jobspy_fetch/out/
+tools/jobspy_fetch/proxies.txt
+tools/jobspy_fetch/*.proxies
