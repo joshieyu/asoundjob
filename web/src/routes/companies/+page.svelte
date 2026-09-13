@@ -188,16 +188,11 @@
 			<div class="grid items-stretch gap-3 @3xl:grid-cols-2 @6xl:grid-cols-3">
 				{#each companies?.items ?? [] as company (company.id)}
 					<article class="flex min-w-0 flex-col border border-rule bg-ground p-4 transition-colors hover:border-muted sm:p-5">
-						<div class="flex items-start gap-2">
-							<h3 class="min-w-0 flex-1 text-title font-semibold leading-tight text-balance wrap-anywhere">
-								<a href="/companies/{company.slug}" class="line-clamp-2 hover:text-accent hover:underline">
-									{company.name}
-								</a>
-							</h3>
-							{#if company.verified}
-								<span class="coord shrink-0 font-bold text-muted">verified</span>
-							{/if}
-						</div>
+						<h3 class="text-title font-semibold leading-tight text-balance wrap-anywhere">
+							<a href="/companies/{company.slug}" class="line-clamp-2 hover:text-accent hover:underline">
+								{company.name}
+							</a>
+						</h3>
 
 						<p class="mt-1 truncate text-meta text-muted">
 							{company.category}{company.headquarters ? ` · ${company.headquarters}` : ''}
