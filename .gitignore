@@ -42,3 +42,7 @@ build/
 # OS
 .DS_Store
 Thumbs.db
+
+# jobspy_fetch (quarantined tool, own venv)
+tools/jobspy_fetch/.venv/
+tools/jobspy_fetch/out/
