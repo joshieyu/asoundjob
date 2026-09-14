@@ -2810,7 +2810,7 @@
   {
     "name": "Delart",
     "careers_url": "https://job-boards.greenhouse.io/delartech",
-    "category": "Acoustic Consulting & Engineering",
+    "category": "Staffing & Recruiting Agencies",
     "verified": true,
     "source": "manual",
     "scrape_method": "http"
@@ -7273,6 +7273,14 @@
     "scrape_method": "http"
   },
   {
+    "name": "Paradigm Nat'l",
+    "careers_url": "https://paradigmnat.com/careers",
+    "category": "Staffing & Recruiting Agencies",
+    "verified": true,
+    "source": "auto",
+    "scrape_method": "playwright"
+  },
+  {
     "name": "Paradox Interactive",
     "careers_url": "https://www.paradoxinteractive.com/career",
     "category": "Gaming, VR & Immersive Audio",
@@ -8738,7 +8746,7 @@
   {
     "name": "Sigma Connectivity",
     "careers_url": "https://integration.sigma.se/esb/vacancy/portal/positions?company_startswith=Sigma+Connectivity",
-    "category": "Acoustic Consulting & Engineering",
+    "category": "Staffing & Recruiting Agencies",
     "verified": true,
     "source": "manual",
     "scrape_method": "http"

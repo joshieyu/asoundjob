@@ -12,7 +12,7 @@ from scraper.scrapers.base import RawJob
 
 JOB_HINT = re.compile(
     r"(job|jobs|career|careers|position|opening|vacanc|opportunit|hiring|"
-    r"apply/|/apply|employment|roles)",
+    r"apply/|/apply|employment|roles|/jd-)",
     re.IGNORECASE,
 )
 

@@ -880,6 +880,8 @@ PARTIAL_SCOPE_CATEGORIES = {
     "Music Education Technology",
 }
 
+AGENCY_SCOPE_CATEGORIES = frozenset({"Staffing & Recruiting Agencies"})
+
 SCOPE_THRESHOLDS = {"native": 45, "partial": 50, "all": 55}
 
 
@@ -931,6 +933,8 @@ TRAILING_BOILERPLATE_MARKERS: tuple[str, ...] = (
 
 
 def category_to_scope(category: str) -> str:
+    if category in AGENCY_SCOPE_CATEGORIES:
+        return "all"
     return "partial" if category in PARTIAL_SCOPE_CATEGORIES else "native"
 
 

@@ -26,6 +26,28 @@ class TestCategoryScope(unittest.TestCase):
             self.assertEqual(category_to_scope(cat), "native", cat)
 
 
+class TestAgencyScope(unittest.TestCase):
+    def test_staffing_agencies_get_the_strictest_scope(self) -> None:
+        self.assertEqual(category_to_scope("Staffing & Recruiting Agencies"), "all")
+
+    def test_agency_does_not_vouch_for_a_neutral_title(self) -> None:
+        description = (
+            "You will work on our audio subsystem, tuning DSP pipelines and "
+            "acoustic performance. Requirements: audio codecs, microphone "
+            "arrays and loudspeaker characterisation."
+        )
+        _, native = score_relevance("Software Engineer", description, ["dsp"], "native")
+        _, agency = score_relevance("Software Engineer", description, ["dsp"], "all")
+        self.assertTrue(native)
+        self.assertFalse(agency)
+
+    def test_agency_still_surfaces_an_explicitly_audio_title(self) -> None:
+        _, related = score_relevance(
+            "Electrical Audio Engineer", None, ["audio_systems"], "all"
+        )
+        self.assertTrue(related)
+
+
 class TestScoreRelevance(unittest.TestCase):
     def test_audio_role_at_conglomerate_passes(self) -> None:
         score, related = score_relevance(
