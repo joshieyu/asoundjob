@@ -48,6 +48,14 @@
     "scrape_method": "playwright"
   },
   {
+    "name": "Absurd Ventures",
+    "careers_url": "https://job-boards.greenhouse.io/absurdventures",
+    "category": "Gaming, VR & Immersive Audio",
+    "verified": true,
+    "source": "auto",
+    "scrape_method": "http"
+  },
+  {
     "name": "Abyss Headphones",
     "careers_url": "https://www.abyssheadphones.com/pages/careers",
     "category": "Headphones & Personal Audio",
@@ -1710,6 +1718,14 @@
     "verified": true,
     "source": "auto",
     "scrape_method": "playwright"
+  },
+  {
+    "name": "Bose Professional",
+    "careers_url": "https://boseprofessional.applytojob.com/apply",
+    "category": "Professional Audio & Live Sound",
+    "verified": true,
+    "source": "auto",
+    "scrape_method": "http"
   },
   {
     "name": "Boss Corporation",
@@ -4645,6 +4661,14 @@
     "careers_url": "https://www.horentek.com/en/careers",
     "category": "Hearing Aid & Hearing Tech",
     "verified": false,
+    "source": "auto",
+    "scrape_method": "http"
+  },
+  {
+    "name": "HoYoverse",
+    "careers_url": "https://jobs.ashbyhq.com/hoyoverse",
+    "category": "Gaming, VR & Immersive Audio",
+    "verified": true,
     "source": "auto",
     "scrape_method": "http"
   },
@@ -8858,7 +8882,7 @@
   },
   {
     "name": "Skywalker Sound",
-    "careers_url": "https://www.disneycareers.com/en",
+    "careers_url": "https://www.disneycareers.com/en/search-jobs/skywalker",
     "category": "Recording Studios & Post Houses",
     "verified": true,
     "source": "auto",
@@ -9055,6 +9079,14 @@
     "careers_url": "https://www.sony.com/en_us/SCA/careers.html",
     "category": "Consumer Electronics & Tech",
     "verified": false,
+    "source": "auto",
+    "scrape_method": "http"
+  },
+  {
+    "name": "Sony Interactive Entertainment",
+    "careers_url": "https://job-boards.greenhouse.io/sonyinteractiveentertainmentglobal",
+    "category": "Gaming, VR & Immersive Audio",
+    "verified": true,
     "source": "auto",
     "scrape_method": "http"
   },
@@ -11271,6 +11303,14 @@
     "careers_url": "https://www.zynaptiq.com/careers/",
     "category": "Professional Audio & Live Sound",
     "verified": false,
+    "source": "auto",
+    "scrape_method": "http"
+  },
+  {
+    "name": "Zyphra",
+    "careers_url": "https://jobs.ashbyhq.com/zyphra",
+    "category": "AI/ML Audio",
+    "verified": true,
     "source": "auto",
     "scrape_method": "http"
   },
