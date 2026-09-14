@@ -8,6 +8,14 @@
     "scrape_method": "playwright"
   },
   {
+    "name": "1X",
+    "careers_url": "https://jobs.ashbyhq.com/1x",
+    "category": "Consumer Electronics & Tech",
+    "verified": true,
+    "source": "auto",
+    "scrape_method": "http"
+  },
+  {
     "name": "64 Audio",
     "careers_url": "https://www.64audio.com/pages/careers",
     "category": "Headphones & Personal Audio",
@@ -397,6 +405,14 @@
     "careers_url": "https://www.alpine.com/en/careers",
     "category": "Car Audio",
     "verified": false,
+    "source": "auto",
+    "scrape_method": "http"
+  },
+  {
+    "name": "ALSO",
+    "careers_url": "https://jobs.ashbyhq.com/Ridealso",
+    "category": "Automotive OEMs",
+    "verified": true,
     "source": "auto",
     "scrape_method": "http"
   },
@@ -6939,6 +6955,20 @@
     "scrape_method": "http"
   },
   {
+    "name": "Northrop Grumman",
+    "careers_url": "https://ngc.eightfold.ai/careers?query=acoustic",
+    "category": "Acoustic Consulting & Engineering",
+    "verified": true,
+    "source": "auto",
+    "scrape_method": "http",
+    "extra_careers_urls": [
+      "https://ngc.eightfold.ai/careers?query=noise",
+      "https://ngc.eightfold.ai/careers?query=vibration",
+      "https://ngc.eightfold.ai/careers?query=audio",
+      "https://ngc.eightfold.ai/careers?query=sonar"
+    ]
+  },
+  {
     "name": "Nothing",
     "careers_url": "https://careers.nothing.tech/",
     "category": "Consumer Electronics & Tech",
@@ -10867,6 +10897,20 @@
     "verified": false,
     "source": "auto",
     "scrape_method": "http"
+  },
+  {
+    "name": "Waymo",
+    "careers_url": "https://careers.withwaymo.com/jobs/search?page=1&query=noise",
+    "category": "Automotive OEMs",
+    "verified": true,
+    "source": "auto",
+    "scrape_method": "playwright",
+    "extra_careers_urls": [
+      "https://careers.withwaymo.com/jobs/search?page=1&query=acoustic",
+      "https://careers.withwaymo.com/jobs/search?page=1&query=audio",
+      "https://careers.withwaymo.com/jobs/search?page=1&query=vibration",
+      "https://careers.withwaymo.com/jobs/search?page=1&query=sound"
+    ]
   },
   {
     "name": "Weiss Engineering",
