@@ -5722,6 +5722,201 @@ publishes.
   [JobSpy](https://github.com/speedyapply/JobSpy) for general job-board search,
   and how that fits the company-directory paradigm. Not started.
 
+## Session update (2026-09-14) — JobSpy discovery, listing health, and three silent failures
+
+Ten commits, `5435953`..`f7d2153`. Gates at the end: **1,056 scraper tests, 178
+API tests, `npm run check` 342 files / 0 errors / 0 warnings**, ruff and mypy
+clean.
+
+### JobSpy became a company-discovery tool, not a job source
+
+The request was "general job board search". It should not be one, and the
+reasons are structural rather than aesthetic:
+
+- `reconcile_company_jobs` scopes to `Job.source == "scraper"`
+  ([deduplicator.py:90](scraper/scraper/deduplicator.py)). A foreign row can
+  **never be deactivated** — it would sit on the board forever.
+- The unique constraint is `(company_id, external_id)`. With `company_id` NULL,
+  SQL treats every NULL as distinct and the constraint stops firing entirely.
+- `source` is never referenced in `api/api/routers/jobs.py`, so a LinkedIn row
+  would render identically to one we scraped ourselves.
+
+The measurement that settled it: re-scoring all 15,260 scraped jobs with company
+trust removed keeps only **54.1%** of the board, and **36% of what is lost is
+EE/embedded** — `Embedded Firmware Engineer III`, `Senior PCB Layout Designer`,
+`Ingénieur Electronique R&D`. Those are unrecoverable from text, because
+"Embedded Firmware Engineer" at Sennheiser and at John Deere are the same
+string. **The seed list is not an optimisation on top of the classifier; for
+those roles it IS the classifier.**
+
+So `tools/jobspy_fetch/` (quarantined, own venv — `python-jobspy` needs 3.10+
+and pins `numpy==1.26.3`) fetches and dumps JSON, and
+`scraper/scraper/propose_companies.py` reads it, keeps only companies we have
+never heard of, and emits a review. Nothing enters `jobs`.
+
+Candidates are scored with `audio_scope="all"` deliberately — for an unknown
+company the title is the only evidence, and that path effectively requires an
+audio word in it.
+
+### The matcher bug that would have defeated the whole tool
+
+The first implementation passed its own unit tests while being useless. Seed
+entry `Audio Ltd` normalises to the single token `audio`, and a token-subset
+rule made it swallow every incoming name containing "audio" — **523 single-token
+names** did this. `Some Brand New Audio Startup` was reported as KNOWN. A
+discovery silently filed as known never reaches the review at all.
+
+Rules now: subset only when **both** sides have ≥2 tokens; a single-token known
+name matches only the incoming name's **first** token (so `Focusrite Audio
+Engineering` → Focusrite, `Boston Audio Labs` → candidate); best match, not
+first. `SHORT_NAME_MAX_LEN` is **3**, not 4 — the 3-char bucket is all acronyms
+(`AKG JBL KEF QSC RME dCS 8x8`) where fuzzy matching is meaningless, but the
+4-char bucket is 45 real brands (`Bose Korg Elac MOTU Lawo EPOS Audi Meta`) that
+were all being excluded. A live run reported Sony as new; the seed has held it
+all along.
+
+**Deliberate trade, do not "fix" it back:** this makes some known companies
+appear as candidates. A false candidate costs the reviewer five seconds; a false
+"known" makes a real discovery invisible forever.
+
+### Listing health, and the grading bias that nearly demoted real companies
+
+`Company.verified` means only "a human confirmed the careers URL". It is also
+the **publish gate** — `_deactivate_unverified_jobs` deactivates every job of an
+unverified company on every load. So defining verified as "has produced board
+jobs" is **circular**: demote → jobs deactivate → no board jobs → demotion
+confirmed, with no path back. It stays a gate; the public badge is gone.
+
+A scrape that "succeeds" can still be furniture. Verified companies holding, as
+active jobs: Sennheiser's nav categories (`Corporate Functions`, `Sales &
+Service`), Rockstar Games' fifteen studio locations, Fraunhofer IDMT's blog
+posts, AMX's `View Jobs` ×12, Berklee Online's outbound links to **other job
+boards**, Synopsys' `342 open roles`, DPA's product pages.
+
+`company_health.py` holds the only copy of the ladder — `failing` → `furniture`
+→ `thin` → `idle` → `healthy`, first match wins. `GET /api/admin/companies/health`
+and `/admin/health` read it; `propose_demotions.py` proposes from it and writes
+nothing.
+
+**The trap worth remembering:** `classify_title`'s `ROLE_NOUNS` is English-only,
+so Focal, Devialet, HEAD acoustics, Riedel and Elektron — real listings, real
+jobs — graded `furniture` and were proposed for demotion. The fix needed BOTH an
+international role vocabulary AND the threshold tightened to 25%; neither works
+alone (the threshold alone still condemns Focal, the vocabulary alone still
+passes Synopsys). Right on all 14 hand-checked companies, rescues 13, newly
+flags 0. Those five now grade `thin`, which is accurate: 43 live listings
+between them and **not one description extracted**.
+
+### Three silent failures in the admin/seed round-trip
+
+The loop itself is sound and was at rest when audited — 1,394 seed = 1,394 DB,
+23 manual rows, `export_seed_edits` reporting 0/0/0/0.
+
+1. **`expires_date` was decorative.** Set on community jobs, shown to visitors,
+   emitted to Google as `validThrough`, and enforced **nowhere** — all four
+   writers of `is_active` ignore it. Now a pass in the cycle, going through
+   `effective_is_active` so an admin's pin outranks expiry, and strictly past so
+   a job expiring today is still live today.
+2. **Community info had no path back to the seed.** `description`,
+   `headquarters`, `founded`, `community_links` lived only in the DB. The loader
+   now reads them by **key PRESENCE**: absent key leaves the DB value alone,
+   present key wins, explicit `null` clears. **Never switch these to
+   `entry.get(...)` truthiness — that wipes every approved suggestion on the
+   next cycle.** `TestCommunityFieldsSurviveReload` still passes unmodified.
+3. **`scrape_blocked`** was loader-managed but missing from
+   `LOADER_MANAGED_FIELDS` and `COMPARED_FIELDS`. Latent, not live — but a test
+   now asserts the set covers every column the loader overwrites.
+
+### The Indeed sweep, and what it says about ranking
+
+15 country pairings, Indeed only, ~90s, no throttling: 1,192 jobs → 326
+audio-relevant → 67 known → **38 candidates**.
+
+```
+473 usa  299 uk  191 france  113 spain  63 italy  38 germany
+  7 netherlands  5 switzerland  2 sweden  0 austria/belgium/denmark/norway/finland
+```
+
+Two findings. **Indeed has thin coverage in the Nordics and Germany** — the
+German terms demonstrably work, the postings are not there; those markets use
+Finn.no, Jobindex, Platsbanken and StepStone. And **ranking by hit count
+surfaces the wrong companies**: NHS, Specsavers, Kaiser Permanente and
+hearing-aid retail chains top the list, while Coda Octopus (`FPGA & DSP Design
+Engineer`), Skyworks, Lightspeed Aviation and VOCAL Technologies sit at the
+bottom with 2 hits each. Only ~8 of 38 are the DSP/acoustics companies the
+audience wants. `audiologist` is the single noisiest term.
+
+### LinkedIn is guarded, not enabled
+
+No account is at risk — the scraper hits `/jobs-guest/...` with no login. The IP
+is the exposure, and three things fail silently: an empty/unparseable proxy list
+makes `proxy_cycle` None and every request goes out **directly**; a configured
+but bypassed proxy reports your own IP; and a 429 is logged and swallowed into
+partial results, so blocked looks exactly like "LinkedIn had nothing". Hence:
+LinkedIn refuses to run without proxies (escape hatch is
+`--i-understand-linkedin-without-proxy`), preflight requires each proxy's egress
+IP to **differ** from direct, and a 429 aborts the whole run. Credentials never
+touch shell history, the repo, or the output.
+
+**Not yet run** — no proxy credentials exist. Residential/rotating is the type
+that works.
+
+### Companies added
+
+1X and ALSO were Ashby slugs and needed nothing. The other two both reported
+`ok=1` while being wrong:
+
+- **Northrop Grumman** discovers as eightfold, but the API wants
+  `domain=ngc.com`, not the registrable domain of the careers host. The ATS call
+  failed and it **silently fell back to playwright**, scraping three unrelated
+  network-support roles. Pointed at `ngc.eightfold.ai` with `ats_slug=ngc.com`:
+  132 described postings, 13 on the board.
+- **Waymo** paginates and page one is alphabetical, so the first scrape
+  collected sixty 2027 interns and never reached the L's. Its search parameter
+  is **`query`, not `q`** — the reason an obvious probe looked like the search
+  was broken.
+
+Both now use `extra_careers_urls` for several narrow queries instead of one
+broad listing. Waymo still lands descriptions-free and grades `thin`; its
+listing pages carry no body text.
+
+### Staffing agencies get the strictest scope
+
+New category **"Staffing & Recruiting Agencies"** → `audio_scope="all"`, a tier
+that existed in `SCOPE_THRESHOLDS` from the beginning and had never been
+assigned. An agency's roster is mostly not audio, so its presence vouches for
+nothing — the opposite of every other category.
+
+It matters exactly where company trust would do the work: a neutral title with
+an audio-heavy description scores **80 and reaches the board under `native`**,
+and **60 against a threshold of 70 under agency scope**. Delart went from 8
+board jobs to 4, and the four that remain are all explicitly audio; the PCB,
+SI/PI, cellular and WiFi roles are gone. Sigma Connectivity moved too; Amplify
+Labs did not, because it designs products itself rather than placing people.
+`COMPANY_CATEGORY_FALLBACK` deliberately has no entry for the new category.
+
+Paradigm Nat'l needed `/jd-` added to `JOB_HINT` in `link_extraction.py` — its
+postings live at `/jd-<slug>` and all three scrapers loaded the page and found
+nothing. **That is a shared module touching all 1,399 companies.**
+
+### Still open from this session
+
+- **Ranking in `propose_companies.py` is by hit count**, which measures employer
+  size. Best relevance score among a candidate's titles would put Coda Octopus
+  on top instead of the NHS. Untouched — it is a taste call about scope.
+- **`audiologist`** pulls the entire clinical/retail hearing sector into every
+  English sweep. Worth its own terms file.
+- **`ats_slug` is the remaining DB-only field** with no path back to the seed.
+  Northrop's `ngc.com` correction lives only in `asoundjob.db`; a rebuild loses
+  it and Northrop silently reverts to three network-support roles.
+- **`scraper/demotion_proposals.json`/`.md`** are untracked and in the wrong
+  directory — the sibling proposal outputs are tracked at repo root.
+- **LinkedIn is built but never run.** Needs residential proxies.
+- **Nordic/German coverage** needs a source other than Indeed.
+- **A partial full-cycle scrape ran by accident** (`--limit 0` means *no* limit,
+  not zero). Killed after ~5 minutes; per-company reconciliation is independent
+  so nothing is corrupted, but some companies got an unscheduled rescrape.
+
 ## Running the demo
 
 ```bash
