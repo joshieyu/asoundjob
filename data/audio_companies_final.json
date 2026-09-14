@@ -3000,12 +3000,16 @@
     "scrape_method": "http"
   },
   {
-    "name": "Disney Post Production",
-    "careers_url": "https://www.disneycareers.com/en",
+    "name": "Disney",
+    "careers_url": "https://www.disneycareers.com/en/search-jobs/audio/",
     "category": "Recording Studios & Post Houses",
     "verified": true,
     "source": "auto",
-    "scrape_method": "playwright"
+    "scrape_method": "http",
+    "extra_careers_urls": [
+      "https://www.disneycareers.com/en/search-jobs/sound/",
+      "https://www.disneycareers.com/en/search-jobs/music/"
+    ]
   },
   {
     "name": "DistroKid",
@@ -4703,14 +4707,6 @@
     "verified": true,
     "source": "auto",
     "scrape_method": "http"
-  },
-  {
-    "name": "Hulu Post",
-    "careers_url": "https://jobs.disneycareers.com/",
-    "category": "Recording Studios & Post Houses",
-    "verified": false,
-    "source": "auto",
-    "scrape_method": "playwright"
   },
   {
     "name": "Hungama",
@@ -7498,14 +7494,6 @@
     "scrape_method": "http"
   },
   {
-    "name": "PlayStation Studios",
-    "careers_url": "https://www.sony.com/en_us/SCA/careers.html",
-    "category": "Gaming, VR & Immersive Audio",
-    "verified": false,
-    "source": "auto",
-    "scrape_method": "http"
-  },
-  {
     "name": "Plinius Audio",
     "careers_url": "https://www.pliniusaudio.com/careers",
     "category": "Hi-Fi & Consumer Speakers",
@@ -9076,11 +9064,14 @@
   },
   {
     "name": "Sony",
-    "careers_url": "https://www.sony.com/en_us/SCA/careers.html",
+    "careers_url": "https://sonyglobal.wd1.myworkdayjobs.com/en-US/SonyGlobalCareers",
     "category": "Consumer Electronics & Tech",
-    "verified": false,
+    "verified": true,
     "source": "auto",
-    "scrape_method": "http"
+    "scrape_method": "http",
+    "extra_careers_urls": [
+      "https://sonyglobal.wd1.myworkdayjobs.com/en-US/SonyJapanCareers"
+    ]
   },
   {
     "name": "Sony Interactive Entertainment",
