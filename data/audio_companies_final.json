@@ -1264,7 +1264,9 @@
     "category": "DAW & Music Production Software",
     "verified": true,
     "source": "auto",
-    "scrape_method": "playwright"
+    "scrape_method": "playwright",
+    "ats_type": "pinpoint",
+    "ats_slug": "bandlab"
   },
   {
     "name": "Bandsintown",
@@ -1362,7 +1364,9 @@
     "category": "Streaming & Music Services",
     "verified": true,
     "source": "auto",
-    "scrape_method": "playwright"
+    "scrape_method": "playwright",
+    "ats_type": "bamboohr",
+    "ats_slug": "beatport"
   },
   {
     "name": "Beats by Dre",
@@ -1717,7 +1721,9 @@
     "category": "Headphones & Personal Audio",
     "verified": true,
     "source": "auto",
-    "scrape_method": "playwright"
+    "scrape_method": "playwright",
+    "ats_type": "workday",
+    "ats_slug": "boseallaboutme.wd503/Bose_Careers"
   },
   {
     "name": "Bose Professional",
@@ -1822,7 +1828,9 @@
     "category": "Audio Testing & Measurement",
     "verified": true,
     "source": "auto",
-    "scrape_method": "playwright"
+    "scrape_method": "playwright",
+    "ats_type": "workday",
+    "ats_slug": "spectris.wd3/HBK_Careers"
   },
   {
     "name": "BSS Audio",
@@ -2578,7 +2586,9 @@
     "category": "Gaming, VR & Immersive Audio",
     "verified": true,
     "source": "auto",
-    "scrape_method": "playwright"
+    "scrape_method": "playwright",
+    "ats_type": "greenhouse",
+    "ats_slug": "crystaldynamics"
   },
   {
     "name": "Crystal Instruments",
@@ -2902,7 +2912,9 @@
     "category": "Voice & Speech Technology",
     "verified": true,
     "source": "auto",
-    "scrape_method": "playwright"
+    "scrape_method": "playwright",
+    "ats_type": "greenhouse",
+    "ats_slug": "descript"
   },
   {
     "name": "Devialet",
@@ -3090,7 +3102,9 @@
     "category": "Consumer Electronics & Tech",
     "verified": true,
     "source": "manual",
-    "scrape_method": "http"
+    "scrape_method": "http",
+    "ats_type": "eightfold",
+    "ats_slug": "dolby.com"
   },
   {
     "name": "Dongfeng Motor",
@@ -4303,7 +4317,9 @@
     "category": "Voice & Speech Technology",
     "verified": true,
     "source": "auto",
-    "scrape_method": "playwright"
+    "scrape_method": "playwright",
+    "ats_type": "workday",
+    "ats_slug": "goto.wd5/gotocareers"
   },
   {
     "name": "Grado Labs",
@@ -4502,7 +4518,9 @@
     "category": "Hearing Aid & Hearing Tech",
     "verified": true,
     "source": "auto",
-    "scrape_method": "playwright"
+    "scrape_method": "playwright",
+    "ats_type": "greenhouse",
+    "ats_slug": "hearcom"
   },
   {
     "name": "Hearing Health Foundation",
@@ -4647,7 +4665,9 @@
     "category": "Consumer Electronics & Tech",
     "verified": true,
     "source": "auto",
-    "scrape_method": "playwright"
+    "scrape_method": "playwright",
+    "ats_type": "bamboohr",
+    "ats_slug": "hisenseusacorporation"
   },
   {
     "name": "Hit'n'Mix",
@@ -4907,7 +4927,9 @@
     "category": "Professional Audio & Live Sound",
     "verified": true,
     "source": "auto",
-    "scrape_method": "playwright"
+    "scrape_method": "playwright",
+    "ats_type": "icims",
+    "ats_slug": "careers-imaginecommunications"
   },
   {
     "name": "IMAX Audio",
@@ -4959,7 +4981,9 @@
     "category": "Consumer Electronics & Tech",
     "verified": true,
     "source": "auto",
-    "scrape_method": "playwright"
+    "scrape_method": "playwright",
+    "ats_type": "eightfold",
+    "ats_slug": "infineon.com"
   },
   {
     "name": "inMusic Brands",
@@ -6402,7 +6426,9 @@
     "category": "Electronic Musical Instruments",
     "verified": false,
     "source": "auto",
-    "scrape_method": "playwright"
+    "scrape_method": "playwright",
+    "ats_type": "ashby",
+    "ats_slug": "modal"
   },
   {
     "name": "Modartt (Pianoteq)",
@@ -6682,7 +6708,9 @@
     "category": "Streaming & Music Services",
     "verified": true,
     "source": "auto",
-    "scrape_method": "http"
+    "scrape_method": "http",
+    "ats_type": "lever",
+    "ats_slug": "musixmatch"
   },
   {
     "name": "Musopia",
@@ -6754,7 +6782,9 @@
     "category": "Hi-Fi & Consumer Speakers",
     "verified": true,
     "source": "auto",
-    "scrape_method": "http"
+    "scrape_method": "http",
+    "ats_type": "pinpoint",
+    "ats_slug": "naimaudio"
   },
   {
     "name": "Nakamichi",
@@ -6956,7 +6986,9 @@
     "category": "Gaming, VR & Immersive Audio",
     "verified": true,
     "source": "auto",
-    "scrape_method": "playwright"
+    "scrape_method": "playwright",
+    "ats_type": "greenhouse",
+    "ats_slug": "scopely"
   },
   {
     "name": "Niche Audio",
@@ -7004,7 +7036,9 @@
     "category": "Automotive OEMs",
     "verified": true,
     "source": "auto",
-    "scrape_method": "playwright"
+    "scrape_method": "playwright",
+    "ats_type": "workday",
+    "ats_slug": "alliance.wd3/nissanjobs"
   },
   {
     "name": "Noble Audio",
@@ -7066,7 +7100,9 @@
       "https://ngc.eightfold.ai/careers?query=vibration",
       "https://ngc.eightfold.ai/careers?query=audio",
       "https://ngc.eightfold.ai/careers?query=sonar"
-    ]
+    ],
+    "ats_type": "eightfold",
+    "ats_slug": "ngc.com"
   },
   {
     "name": "Nothing",
@@ -7074,7 +7110,9 @@
     "category": "Consumer Electronics & Tech",
     "verified": true,
     "source": "auto",
-    "scrape_method": "playwright"
+    "scrape_method": "playwright",
+    "ats_type": "greenhouse",
+    "ats_slug": "nothing"
   },
   {
     "name": "Novation DJ",
@@ -7282,7 +7320,9 @@
     "category": "Audio Accessories & Cables",
     "verified": true,
     "source": "auto",
-    "scrape_method": "playwright"
+    "scrape_method": "playwright",
+    "ats_type": "icims",
+    "ats_slug": "careers-otterproducts"
   },
   {
     "name": "Outline",
@@ -7643,7 +7683,9 @@
     "category": "Voice & Speech Technology",
     "verified": true,
     "source": "auto",
-    "scrape_method": "playwright"
+    "scrape_method": "playwright",
+    "ats_type": "greenhouse",
+    "ats_slug": "polyai"
   },
   {
     "name": "Polytec",
@@ -7708,7 +7750,9 @@
     "category": "Recording Studios & Post Houses",
     "verified": true,
     "source": "auto",
-    "scrape_method": "playwright"
+    "scrape_method": "playwright",
+    "ats_type": "workday",
+    "ats_slug": "shutterstock.wd1/ShutterstockCareers"
   },
   {
     "name": "Preply Music",
@@ -7780,7 +7824,9 @@
     "category": "Audio Accessories & Cables",
     "verified": true,
     "source": "auto",
-    "scrape_method": "playwright"
+    "scrape_method": "playwright",
+    "ats_type": "adp",
+    "ats_slug": "6c3a5eca-5931-4085-be60-867206ed21c5"
   },
   {
     "name": "Producer Loops",
@@ -7959,7 +8005,9 @@
     "category": "Consumer Electronics & Tech",
     "verified": true,
     "source": "auto",
-    "scrape_method": "playwright"
+    "scrape_method": "playwright",
+    "ats_type": "eightfold",
+    "ats_slug": "qualcomm.com"
   },
   {
     "name": "Questyle",
@@ -8047,7 +8095,9 @@
     "category": "Voice & Speech Technology",
     "verified": true,
     "source": "auto",
-    "scrape_method": "playwright"
+    "scrape_method": "playwright",
+    "ats_type": "ashby",
+    "ats_slug": "Rasa"
   },
   {
     "name": "Rauland Borg",
@@ -9256,7 +9306,9 @@
     "category": "Streaming & Music Services",
     "verified": true,
     "source": "auto",
-    "scrape_method": "playwright"
+    "scrape_method": "playwright",
+    "ats_type": "greenhouse",
+    "ats_slug": "soundcloud71"
   },
   {
     "name": "Soundcraft",
@@ -9512,7 +9564,9 @@
     "category": "AI/ML Audio",
     "verified": true,
     "source": "auto",
-    "scrape_method": "playwright"
+    "scrape_method": "playwright",
+    "ats_type": "greenhouse",
+    "ats_slug": "stabilityai"
   },
   {
     "name": "Stage Stands",
@@ -9848,7 +9902,9 @@
     "category": "Gaming, VR & Immersive Audio",
     "verified": true,
     "source": "auto",
-    "scrape_method": "playwright"
+    "scrape_method": "playwright",
+    "ats_type": "greenhouse",
+    "ats_slug": "taketwo"
   },
   {
     "name": "Takealot Audio",
@@ -10244,7 +10300,9 @@
     "verified": true,
     "open_application": true,
     "source": "auto",
-    "scrape_method": "http"
+    "scrape_method": "http",
+    "ats_type": "workday",
+    "ats_slug": "toyota.wd503/TMNA"
   },
   {
     "name": "TP-Link",
@@ -10388,7 +10446,9 @@
     "category": "Voice & Speech Technology",
     "verified": true,
     "source": "auto",
-    "scrape_method": "playwright"
+    "scrape_method": "playwright",
+    "ats_type": "eightfold",
+    "ats_slug": "twilio.com"
   },
   {
     "name": "Twitch Audio",
@@ -10525,7 +10585,9 @@
     "category": "Audio Interfaces & Converters",
     "verified": true,
     "source": "auto",
-    "scrape_method": "playwright"
+    "scrape_method": "playwright",
+    "ats_type": "greenhouse",
+    "ats_slug": "universalaudio"
   },
   {
     "name": "Universal Post Production",
@@ -10995,7 +11057,9 @@
     "category": "Recording Studios & Post Houses",
     "verified": true,
     "source": "auto",
-    "scrape_method": "playwright"
+    "scrape_method": "playwright",
+    "ats_type": "lever",
+    "ats_slug": "wmg"
   },
   {
     "name": "Warwick Acoustics",
@@ -11339,7 +11403,9 @@
     "category": "Music Education Technology",
     "verified": true,
     "source": "auto",
-    "scrape_method": "playwright"
+    "scrape_method": "playwright",
+    "ats_type": "greenhouse",
+    "ats_slug": "yousician"
   },
   {
     "name": "Z-Vex Effects",
