@@ -3891,6 +3891,14 @@
     "scrape_method": "http"
   },
   {
+    "name": "Fortell",
+    "careers_url": "https://jobs.ashbyhq.com/fortell",
+    "category": "Hearing Aid & Hearing Tech",
+    "verified": true,
+    "source": "auto",
+    "scrape_method": "http"
+  },
+  {
     "name": "Fosi Audio",
     "careers_url": "https://www.fosiaudio.com/en/careers",
     "category": "Hi-Fi & Consumer Speakers",
@@ -3932,11 +3940,11 @@
   },
   {
     "name": "Fraunhofer IIS",
-    "careers_url": "https://www.iis.fraunhofer.de/de/jobs.html",
+    "careers_url": "https://iisfraunhofer.softgarden.io/en/vacancies",
     "category": "Consumer Electronics & Tech",
     "verified": true,
     "source": "auto",
-    "scrape_method": "playwright"
+    "scrape_method": "http"
   },
   {
     "name": "Free Field Technologies",
@@ -4776,6 +4784,17 @@
     "verified": true,
     "source": "auto",
     "scrape_method": "http"
+  },
+  {
+    "name": "Hyundai America Technical Center",
+    "careers_url": "https://careers-americas.hyundai.com/hatci/search/?q=sound",
+    "category": "Automotive OEMs",
+    "verified": true,
+    "source": "auto",
+    "scrape_method": "http",
+    "extra_careers_urls": [
+      "https://careers-americas.hyundai.com/hatci/search/?q=audio"
+    ]
   },
   {
     "name": "Hyundai Motor",
@@ -7331,11 +7350,12 @@
   },
   {
     "name": "Paradigm",
-    "careers_url": "https://www.paradigm.com/en/careers",
+    "careers_url": "https://pmlsound.betterteam.com",
     "category": "Hi-Fi & Consumer Speakers",
-    "verified": false,
+    "verified": true,
     "source": "auto",
-    "scrape_method": "http"
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "Paradigm Nat'l",
@@ -10522,6 +10542,18 @@
     "verified": true,
     "source": "auto",
     "scrape_method": "http"
+  },
+  {
+    "name": "University of Texas at Austin",
+    "careers_url": "https://utaustin.wd1.myworkdayjobs.com/UTstaff?q=acoustics",
+    "category": "Acoustic Consulting & Engineering",
+    "verified": true,
+    "source": "auto",
+    "scrape_method": "http",
+    "extra_careers_urls": [
+      "https://utaustin.wd1.myworkdayjobs.com/UTstaff?q=sonar",
+      "https://utaustin.wd1.myworkdayjobs.com/UTstaff?q=audio"
+    ]
   },
   {
     "name": "University of York Audio Lab",
