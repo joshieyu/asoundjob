@@ -35,6 +35,8 @@ def _db_row(
     headquarters=None,
     founded=None,
     community_links=None,
+    ats_type=None,
+    ats_slug=None,
 ) -> DbRow:
     return DbRow(
         id=company_id,
@@ -52,6 +54,8 @@ def _db_row(
         headquarters=headquarters,
         founded=founded,
         community_links=community_links,
+        ats_type=ats_type,
+        ats_slug=ats_slug,
     )
 
 
@@ -69,6 +73,8 @@ def _seed_entry(
     headquarters=None,
     founded=None,
     community_links=None,
+    ats_type=None,
+    ats_slug=None,
 ) -> dict:
     entry = {
         "name": name,
@@ -92,6 +98,10 @@ def _seed_entry(
         entry["founded"] = founded
     if community_links:
         entry["community_links"] = community_links
+    if ats_type:
+        entry["ats_type"] = ats_type
+    if ats_slug:
+        entry["ats_slug"] = ats_slug
     return entry
 
 
@@ -306,6 +316,34 @@ class TestCommunityInfoExport(unittest.TestCase):
         seed = [_seed_entry("Acme", description="Builds loudspeaker DSP.")]
         db = [_db_row("Acme", "acme", description="Builds loudspeaker DSP.")]
         result = build_export(seed, db)
+        self.assertEqual(result.changed, [])
+
+
+class TestAtsBindingExport(unittest.TestCase):
+    def test_db_binding_absent_from_seed_is_proposed_as_a_change(self) -> None:
+        seed = [_seed_entry("Acme")]
+        db = [_db_row("Acme", "acme", ats_type="eightfold", ats_slug="ngc.com")]
+        result = build_export(seed, db)
+        self.assertEqual(len(result.changed), 1)
+        fields = {c.field: (c.old, c.new) for c in result.changed[0].changes}
+        self.assertEqual(fields["ats_type"], (None, "eightfold"))
+        self.assertEqual(fields["ats_slug"], (None, "ngc.com"))
+        self.assertEqual(result.output_seed[0]["ats_type"], "eightfold")
+        self.assertEqual(result.output_seed[0]["ats_slug"], "ngc.com")
+
+    def test_matching_binding_across_seed_and_db_is_not_drifted(self) -> None:
+        seed = [_seed_entry("Acme", ats_type="eightfold", ats_slug="ngc.com")]
+        db = [_db_row("Acme", "acme", ats_type="eightfold", ats_slug="ngc.com")]
+        result = build_export(seed, db)
+        self.assertEqual(result.changed, [])
+
+    def test_company_with_no_binding_gains_no_keys(self) -> None:
+        seed = [_seed_entry("Acme")]
+        db = [_db_row("Acme", "acme")]
+        result = build_export(seed, db)
+        entry = result.output_seed[0]
+        self.assertNotIn("ats_type", entry)
+        self.assertNotIn("ats_slug", entry)
         self.assertEqual(result.changed, [])
 
 

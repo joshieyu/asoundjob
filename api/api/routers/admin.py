@@ -66,6 +66,8 @@ LOADER_MANAGED_FIELDS = frozenset(
         "scrape_blocked",
         "verified",
         "scrape_method",
+        "ats_type",
+        "ats_slug",
     }
 )
 

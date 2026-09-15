@@ -289,6 +289,41 @@ class TestUnverifyRevertBugIsDead(unittest.TestCase):
         self.assertFalse(company.verified)
 
 
+class _AtsFieldUpdate:
+    def __init__(self, **fields) -> None:
+        self._fields = fields
+
+    def model_dump(self, exclude_unset: bool = True, exclude_none: bool = True) -> dict:
+        return dict(self._fields)
+
+
+class TestAtsFieldsManaged(unittest.TestCase):
+    def setUp(self) -> None:
+        self.session = make_session()
+        self.company = Company(
+            name="Acme Audio",
+            slug="acme-audio",
+            category="Audio Software",
+            careers_url="https://example.com/careers",
+            source="auto",
+        )
+        self.session.add(self.company)
+        self.session.commit()
+
+    def tearDown(self) -> None:
+        self.session.close()
+
+    def test_editing_ats_type_flips_source_to_manual(self) -> None:
+        admin_router.admin_update_company(
+            self.company.id,
+            _AtsFieldUpdate(ats_type="greenhouse"),
+            self.session,
+            "tester",
+        )
+        self.assertEqual(self.company.source, "manual")
+        self.assertEqual(self.company.ats_type, "greenhouse")
+
+
 class TestLoaderManagedFieldsCoverage(unittest.TestCase):
     def test_covers_every_field_the_loader_actually_overwrites(self) -> None:
         fields_the_loader_overwrites = {
@@ -300,6 +335,8 @@ class TestLoaderManagedFieldsCoverage(unittest.TestCase):
             "scrape_blocked",
             "verified",
             "scrape_method",
+            "ats_type",
+            "ats_slug",
         }
         self.assertEqual(
             admin_router.LOADER_MANAGED_FIELDS, fields_the_loader_overwrites

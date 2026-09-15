@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 import re
 from dataclasses import dataclass
 from datetime import date
@@ -16,6 +17,8 @@ from scraper.database import get_session_factory, session_scope
 from scraper.models import Company, Job
 from scraper.normalizer import category_to_scope
 from scraper.overrides import effective_is_active
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -40,6 +43,13 @@ class LoadStats:
 
 MAX_COMMUNITY_LINKS = 10
 COMMUNITY_LINK_URL_RE = re.compile(r"^https?://.{1,2048}$")
+
+
+def clean_optional_str(value: Any) -> Optional[str]:
+    if value is None:
+        return None
+    text = str(value).strip()
+    return text or None
 
 
 def slugify(name: str) -> str:
@@ -166,6 +176,17 @@ def load_companies(session: Session, companies: list[dict[str, Any]]) -> LoadSta
             else None
         )
 
+        has_ats_type = "ats_type" in entry
+        ats_type = clean_optional_str(entry.get("ats_type")) if has_ats_type else None
+        has_ats_slug = "ats_slug" in entry
+        ats_slug = clean_optional_str(entry.get("ats_slug")) if has_ats_slug else None
+        if has_ats_slug and ats_slug is not None and not ats_type:
+            logger.info(
+                "seed ats_slug for %s ignored because ats_type is not set", name
+            )
+            has_ats_slug = False
+            ats_slug = None
+
         if existing is None:
             company = Company(
                 name=name,
@@ -188,6 +209,10 @@ def load_companies(session: Session, companies: list[dict[str, Any]]) -> LoadSta
                 company.founded = founded
             if has_community_links:
                 company.community_links = community_links
+            if has_ats_type:
+                company.ats_type = ats_type
+            if has_ats_slug:
+                company.ats_slug = ats_slug
             session.add(company)
             stats.inserted += 1
         elif existing.source == "manual" and source != "manual":
@@ -207,6 +232,8 @@ def load_companies(session: Session, companies: list[dict[str, Any]]) -> LoadSta
                 or (has_headquarters and existing.headquarters != headquarters)
                 or (has_founded and existing.founded != founded)
                 or (has_community_links and existing.community_links != community_links)
+                or (has_ats_type and existing.ats_type != ats_type)
+                or (has_ats_slug and existing.ats_slug != ats_slug)
             )
             if changed:
                 category_changed = existing.category != category
@@ -227,6 +254,10 @@ def load_companies(session: Session, companies: list[dict[str, Any]]) -> LoadSta
                     existing.founded = founded
                 if has_community_links:
                     existing.community_links = community_links
+                if has_ats_type:
+                    existing.ats_type = ats_type
+                if has_ats_slug:
+                    existing.ats_slug = ats_slug
                 if category_changed:
                     existing.audio_scope = category_to_scope(category)
                 stats.updated += 1

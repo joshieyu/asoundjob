@@ -424,5 +424,121 @@ class TestCommunityFieldsFromSeed(unittest.TestCase):
         )
 
 
+class TestAtsFieldsFromSeed(unittest.TestCase):
+    def setUp(self) -> None:
+        self.session = make_session()
+
+    def tearDown(self) -> None:
+        self.session.rollback()
+        self.session.close()
+
+    def test_seed_with_no_ats_keys_leaves_a_discovered_binding_untouched(self) -> None:
+        load_companies(self.session, [entry("Acme", verified=True)])
+        company = self.session.execute(select(Company)).scalar_one()
+        company.ats_type = "greenhouse"
+        company.ats_slug = "acme"
+        self.session.flush()
+
+        stats = load_companies(self.session, [entry("Acme", verified=True)])
+
+        self.session.refresh(company)
+        self.assertEqual(company.ats_type, "greenhouse")
+        self.assertEqual(company.ats_slug, "acme")
+        self.assertEqual(stats.unchanged, 1)
+        self.assertEqual(stats.updated, 0)
+
+    def test_seed_entry_with_binding_sets_it_on_insert(self) -> None:
+        seed = entry("Northrop Grumman", verified=True)
+        seed["ats_type"] = "eightfold"
+        seed["ats_slug"] = "ngc.com"
+
+        load_companies(self.session, [seed])
+
+        company = self.session.execute(select(Company)).scalar_one()
+        self.assertEqual(company.ats_type, "eightfold")
+        self.assertEqual(company.ats_slug, "ngc.com")
+
+    def test_seed_entry_with_binding_overwrites_a_different_db_value(self) -> None:
+        load_companies(self.session, [entry("Acme", verified=True)])
+        company = self.session.execute(select(Company)).scalar_one()
+        company.ats_type = "greenhouse"
+        company.ats_slug = "old-slug"
+        self.session.flush()
+
+        seed = entry("Acme", verified=True)
+        seed["ats_type"] = "workday"
+        seed["ats_slug"] = "acme.wd1/External"
+        stats = load_companies(self.session, [seed])
+
+        self.session.refresh(company)
+        self.assertEqual(company.ats_type, "workday")
+        self.assertEqual(company.ats_slug, "acme.wd1/External")
+        self.assertEqual(stats.updated, 1)
+
+    def test_explicit_null_clears_ats_type_and_ats_slug(self) -> None:
+        load_companies(self.session, [entry("Acme", verified=True)])
+        company = self.session.execute(select(Company)).scalar_one()
+        company.ats_type = "greenhouse"
+        company.ats_slug = "acme"
+        self.session.flush()
+
+        seed = entry("Acme", verified=True)
+        seed["ats_type"] = None
+        seed["ats_slug"] = None
+        stats = load_companies(self.session, [seed])
+
+        self.session.refresh(company)
+        self.assertIsNone(company.ats_type)
+        self.assertIsNone(company.ats_slug)
+        self.assertEqual(stats.updated, 1)
+
+    def test_unchanged_ats_binding_does_not_mark_the_row_changed(self) -> None:
+        seed = entry("Acme", verified=True)
+        seed["ats_type"] = "greenhouse"
+        seed["ats_slug"] = "acme"
+        load_companies(self.session, [seed])
+
+        stats = load_companies(self.session, [dict(seed)])
+
+        self.assertEqual(stats.unchanged, 1)
+        self.assertEqual(stats.updated, 0)
+
+    def test_ats_slug_without_ats_type_is_ignored(self) -> None:
+        seed = entry("Acme", verified=True)
+        seed["ats_slug"] = "acme"
+        load_companies(self.session, [seed])
+
+        company = self.session.execute(select(Company)).scalar_one()
+        self.assertIsNone(company.ats_type)
+        self.assertIsNone(company.ats_slug)
+
+    def test_ats_slug_without_ats_type_does_not_clobber_an_existing_slug(self) -> None:
+        load_companies(self.session, [entry("Acme", verified=True)])
+        company = self.session.execute(select(Company)).scalar_one()
+        company.ats_type = "greenhouse"
+        company.ats_slug = "acme"
+        self.session.flush()
+
+        seed = entry("Acme", verified=True)
+        seed["ats_slug"] = "some-other-slug"
+        load_companies(self.session, [seed])
+
+        self.session.refresh(company)
+        self.assertEqual(company.ats_type, "greenhouse")
+        self.assertEqual(company.ats_slug, "acme")
+
+    def test_binding_is_stable_across_a_seed_reload_round_trip(self) -> None:
+        seed = entry("Activision", verified=True)
+        seed["ats_type"] = "workday"
+        seed["ats_slug"] = "xboxgaming.wd1/External"
+
+        load_companies(self.session, [seed])
+        load_companies(self.session, [seed])
+
+        company = self.session.execute(select(Company)).scalar_one()
+        self.assertEqual(company.ats_type, "workday")
+        self.assertEqual(company.ats_slug, "xboxgaming.wd1/External")
+
+
 if __name__ == "__main__":
     unittest.main()

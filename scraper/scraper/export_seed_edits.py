@@ -25,6 +25,8 @@ COMPARED_FIELDS = (
     "headquarters",
     "founded",
     "community_links",
+    "ats_type",
+    "ats_slug",
 )
 
 MAX_URL_LEN = 90
@@ -47,6 +49,8 @@ class DbRow:
     headquarters: Optional[str]
     founded: Optional[int]
     community_links: Optional[list]
+    ats_type: Optional[str]
+    ats_slug: Optional[str]
 
 
 @dataclass
@@ -150,6 +154,12 @@ def _entry_from_row(name: str, source: str, row: Any) -> dict:
     community_links = _normalize_list(_get(row, "community_links"))
     if community_links:
         entry["community_links"] = community_links
+    ats_type = _get(row, "ats_type")
+    if ats_type:
+        entry["ats_type"] = ats_type
+    ats_slug = _get(row, "ats_slug")
+    if ats_slug:
+        entry["ats_slug"] = ats_slug
     entry["source"] = source
     entry["scrape_method"] = _get(row, "scrape_method")
     return entry
@@ -328,6 +338,8 @@ def read_db_rows() -> list:
                 Company.headquarters,
                 Company.founded,
                 Company.community_links,
+                Company.ats_type,
+                Company.ats_slug,
             )
         ).all()
     return [
@@ -347,6 +359,8 @@ def read_db_rows() -> list:
             headquarters=row.headquarters,
             founded=row.founded,
             community_links=row.community_links,
+            ats_type=row.ats_type,
+            ats_slug=row.ats_slug,
         )
         for row in rows
     ]
