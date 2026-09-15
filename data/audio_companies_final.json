@@ -716,7 +716,7 @@
   },
   {
     "name": "Arturia",
-    "careers_url": "https://jobs.arturia.com/join-us",
+    "careers_url": "https://jobs.world.luccasoftware.com/arturia-france",
     "category": "Audio Plugins & Virtual Instruments",
     "verified": true,
     "open_application": true,
@@ -2040,6 +2040,14 @@
     "careers_url": "https://www.capitolstudios.com/careers",
     "category": "Recording Studios & Post Houses",
     "verified": false,
+    "source": "auto",
+    "scrape_method": "http"
+  },
+  {
+    "name": "Cartesia",
+    "careers_url": "https://jobs.ashbyhq.com/cartesia",
+    "category": "Voice & Speech Technology",
+    "verified": true,
     "source": "auto",
     "scrape_method": "http"
   },
@@ -5715,6 +5723,14 @@
     "scrape_method": "http"
   },
   {
+    "name": "Liquid AI",
+    "careers_url": "https://jobs.ashbyhq.com/liquid-ai",
+    "category": "AI/ML Audio",
+    "verified": true,
+    "source": "auto",
+    "scrape_method": "http"
+  },
+  {
     "name": "Listen Inc",
     "careers_url": "https://www.listeninc.com/about-listen/careers/",
     "category": "Audio Testing & Measurement",
@@ -6046,7 +6062,7 @@
   },
   {
     "name": "Marshall Group",
-    "careers_url": "https://marshall.wd103.myworkdayjobs.com/Marshall_Group",
+    "careers_url": "https://careers.marshall.com/jobs",
     "category": "Consumer Electronics & Tech",
     "verified": true,
     "source": "auto",
