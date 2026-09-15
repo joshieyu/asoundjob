@@ -14,6 +14,7 @@ from scraper.scrapers.link_extraction import (
     extract_jobs,
     extract_jsonld_jobs,
     is_furniture_title,
+    is_slug_board_host,
 )
 
 
@@ -1073,6 +1074,36 @@ class TestListingPointerSkipped(unittest.TestCase):
         """
         jobs = extract_job_links(html, "https://example.com/careers")
         self.assertEqual([j.title for j in jobs], ["Senior Audio DSP Engineer"])
+
+
+class TestSlugBoardHosts(unittest.TestCase):
+    HTML = """
+    <ul>
+      <li>
+        <a href="/arturia-france/dsp-intern-f9ab4bc6-9f12-4da0-aaa4">DSP Intern</a>
+      </li>
+      <li>
+        <a href="/arturia-france/firmware-engineer-03105a8f-4984">Firmware Engineer</a>
+      </li>
+    </ul>
+    """
+
+    def test_bare_slug_links_are_read_on_a_known_board_host(self) -> None:
+        jobs = extract_job_links(
+            self.HTML, "https://jobs.world.luccasoftware.com/arturia-france"
+        )
+        titles = sorted(job.title for job in jobs)
+        self.assertEqual(titles, ["DSP Intern", "Firmware Engineer"])
+
+    def test_the_same_markup_is_ignored_on_an_unknown_host(self) -> None:
+        jobs = extract_job_links(self.HTML, "https://example.com/arturia-france")
+        self.assertEqual(jobs, [])
+
+    def test_host_matching_is_exact_not_a_suffix(self) -> None:
+        self.assertTrue(is_slug_board_host("jobs.world.luccasoftware.com"))
+        self.assertTrue(is_slug_board_host("WWW.Jobs.World.Luccasoftware.com"))
+        self.assertFalse(is_slug_board_host("evil-jobs.world.luccasoftware.com.attacker.net"))
+        self.assertFalse(is_slug_board_host("luccasoftware.com"))
 
 
 if __name__ == "__main__":

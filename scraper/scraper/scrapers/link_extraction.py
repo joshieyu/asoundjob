@@ -16,6 +16,8 @@ JOB_HINT = re.compile(
     re.IGNORECASE,
 )
 
+SLUG_BOARD_HOSTS = frozenset({"jobs.world.luccasoftware.com"})
+
 NON_JOB_URL = re.compile(
     r"(mailto:|tel:|javascript:|^#$|^$)",
     re.IGNORECASE,
@@ -742,6 +744,13 @@ def _looks_like_job_detail_path(path: str, query: str = "") -> bool:
     return bool(re.search(r"\d", last) or "-" in last or len(last) > 12)
 
 
+def is_slug_board_host(netloc: str) -> bool:
+    host = netloc.strip().lower()
+    if host.startswith("www."):
+        host = host[4:]
+    return host in SLUG_BOARD_HOSTS
+
+
 def resolve_document_base(soup: BeautifulSoup, base_url: str) -> str:
     tag = soup.find("base", href=True)
     if tag is None:
@@ -763,6 +772,7 @@ def extract_job_links(html: str, base_url: str) -> list[RawJob]:
     base_path = base_parsed.path.rstrip("/").lower()
     base_netloc = base_parsed.netloc.lower()
     base_has_job_hint = bool(JOB_HINT.search(base_path))
+    slug_board = is_slug_board_host(base_netloc)
     named_anchors = {
         _clean_text(tag.get("name"))
         for tag in soup.find_all("a", attrs={"name": True})
@@ -827,6 +837,11 @@ def extract_job_links(html: str, base_url: str) -> list[RawJob]:
             or (title_attr and JOB_HINT.search(title_attr))
             or structural_job_hint
             or (same_page_anchor and base_has_job_hint)
+            or (
+                slug_board
+                and same_host
+                and _looks_like_job_detail_path(path, parsed.query)
+            )
         )
         if not looks_like_job:
             continue
