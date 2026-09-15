@@ -59,7 +59,10 @@ def run_pipeline(jobs_by_url, extra):
         pipeline.http = scraper  # type: ignore[assignment]
         pipeline._playwright_scraper = lambda: scraper  # type: ignore[method-assign]
         pipeline._stealth_scraper = lambda: scraper  # type: ignore[method-assign]
-        pipeline._try_discovery = lambda *a, **k: None  # type: ignore[method-assign]
+        async def _skip_discovery(*args, **kwargs) -> None:
+            return None
+
+        pipeline._try_discovery = _skip_discovery  # type: ignore[method-assign]
         result = await pipeline.scrape_company(make_company(extra))
         await pipeline.close()
         return result, scraper.seen

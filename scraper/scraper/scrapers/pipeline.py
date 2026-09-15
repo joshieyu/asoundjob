@@ -38,6 +38,7 @@ from scraper.scrapers.playwright_scraper import PlaywrightScraper
 logger = logging.getLogger(__name__)
 
 MULTI_URL_BUDGET_UNITS = 3.0
+DISCOVERY_VERIFY_LABEL = "verify"
 
 
 class ScrapePipeline:
@@ -282,7 +283,7 @@ class ScrapePipeline:
         skip_http = company.scrape_method == "playwright"
         if not skip_http:
             result = await self._attempt(self.http, company, self.http_semaphore, "http")
-            self._try_discovery(company, result.html, stored_ats_failed)
+            await self._try_discovery(company, result.html, stored_ats_failed)
             if result.success:
                 result.partial = result.partial or fallback_is_partial
                 return result
@@ -290,7 +291,7 @@ class ScrapePipeline:
         result = await self._attempt(
             self._playwright_scraper(), company, self.playwright_semaphore, "playwright"
         )
-        self._try_discovery(company, result.html, stored_ats_failed)
+        await self._try_discovery(company, result.html, stored_ats_failed)
         if result.success:
             result.partial = result.partial or fallback_is_partial
             return result
@@ -298,7 +299,7 @@ class ScrapePipeline:
         result = await self._attempt(
             self._stealth_scraper(), company, self.playwright_semaphore, "stealth"
         )
-        self._try_discovery(company, result.html, stored_ats_failed)
+        await self._try_discovery(company, result.html, stored_ats_failed)
         if result.success:
             result.partial = result.partial or fallback_is_partial
             return result
@@ -306,7 +307,7 @@ class ScrapePipeline:
         last_error = result.error or "all methods failed"
         return ScrapeResult(company_id=company.id, method="none", error=last_error)
 
-    def _try_discovery(
+    async def _try_discovery(
         self, company: Company, html: str | None, overwrite: bool = False
     ) -> None:
         if not html:
@@ -323,6 +324,48 @@ class ScrapePipeline:
                 ats_type,
                 ats_slug,
                 company.id,
+            )
+            return
+        if not ats_slug.strip():
+            logger.info(
+                "skipping ATS %s for company_id=%s: discovered slug is empty",
+                ats_type,
+                company.id,
+            )
+            return
+        scraper = self._ats_map.get(ats_type)
+        if scraper is None:
+            logger.info(
+                "skipping ATS %s slug=%s for company_id=%s: no scraper registered",
+                ats_type,
+                ats_slug,
+                company.id,
+            )
+            return
+        probe = Company(
+            id=company.id,
+            name=company.name,
+            slug=company.slug,
+            category=company.category,
+            careers_url=company.careers_url,
+            website_url=company.website_url,
+            verified=company.verified,
+            source=company.source,
+            scrape_method=company.scrape_method,
+            audio_scope=company.audio_scope,
+            ats_type=ats_type,
+            ats_slug=ats_slug,
+        )
+        result = await self._attempt(
+            scraper, probe, self.http_semaphore, f"{DISCOVERY_VERIFY_LABEL}:{ats_type}"
+        )
+        if not result.success or not result.jobs:
+            logger.info(
+                "skipping ATS %s slug=%s for company_id=%s: verification failed (%s)",
+                ats_type,
+                ats_slug,
+                company.id,
+                result.error,
             )
             return
         self._persist_ats_discovery(company.id, ats_type, ats_slug, overwrite)

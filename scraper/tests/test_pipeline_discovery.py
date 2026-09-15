@@ -70,6 +70,7 @@ class TestDiscoveryOnFailure(unittest.TestCase):
             pipeline._board_claimed_elsewhere = (  # type: ignore[method-assign]
                 lambda company_id, ats_type, ats_slug: False
             )
+            pipeline._ats_map["greenhouse"] = SucceedingScraper(settings)  # type: ignore[index]
             failing = RecordingScraper(settings, html, fail=True)
             pipeline.http = failing  # type: ignore[assignment]
             pipeline._playwright_scraper = lambda: failing  # type: ignore[method-assign]
@@ -96,6 +97,19 @@ WORKDAY_PAGE = (
 )
 
 
+class SlugAwareScraper(BaseScraper):
+    name = "slug-aware"
+
+    def __init__(self, settings, valid_slug: str) -> None:
+        super().__init__(settings)
+        self.valid_slug = valid_slug
+
+    async def fetch_jobs(self, company):
+        if company.ats_slug != self.valid_slug:
+            raise ScrapeError("wrong slug")
+        return [object()]
+
+
 class TestStoredAtsSelfHealing(unittest.TestCase):
     def _run(self, html: str, stored_type: str, stored_slug: str) -> list:
         persisted: list = []
@@ -114,6 +128,9 @@ class TestStoredAtsSelfHealing(unittest.TestCase):
             failing = RecordingScraper(settings, html, fail=True)
             for key in list(pipeline._ats_map):
                 pipeline._ats_map[key] = failing
+            pipeline._ats_map["workday"] = SlugAwareScraper(  # type: ignore[index]
+                settings, "boseallaboutme.wd503/Bose_Careers"
+            )
             pipeline.http = failing  # type: ignore[assignment]
             pipeline._playwright_scraper = lambda: failing  # type: ignore[method-assign]
             pipeline._stealth_scraper = lambda: failing  # type: ignore[method-assign]
@@ -163,6 +180,77 @@ class TestBoardOwnership(unittest.TestCase):
             return await pipeline.scrape_company(make_company())
 
         asyncio.run(go())
+        self.assertEqual(persisted, [])
+
+
+class YieldingScraper(BaseScraper):
+    name = "yielding"
+
+    def __init__(self, settings, jobs: list) -> None:
+        super().__init__(settings)
+        self.jobs = jobs
+
+    async def fetch_jobs(self, company):
+        return self.jobs
+
+
+class TestDiscoveryVerification(unittest.TestCase):
+    def _run(self, html: str, ats_type: str, scraper=None) -> list:
+        persisted: list = []
+
+        async def go():
+            settings = load_settings()
+            pipeline = ScrapePipeline(settings)
+            pipeline._persist_ats_discovery = (  # type: ignore[method-assign]
+                lambda company_id, ats_type, ats_slug, overwrite=False: persisted.append(
+                    (ats_type, ats_slug)
+                )
+            )
+            pipeline._board_claimed_elsewhere = (  # type: ignore[method-assign]
+                lambda company_id, ats_type, ats_slug: False
+            )
+            if scraper is None:
+                pipeline._ats_map.pop(ats_type, None)
+            else:
+                pipeline._ats_map[ats_type] = scraper  # type: ignore[index]
+            await pipeline._try_discovery(make_company(), html)
+
+        asyncio.run(go())
+        return persisted
+
+    def test_verified_binding_is_persisted(self) -> None:
+        persisted = self._run(
+            GREENHOUSE_PAGE, "greenhouse", YieldingScraper(load_settings(), [object()])
+        )
+        self.assertEqual(persisted, [("greenhouse", "acmeaudio")])
+
+    def test_failing_scraper_is_not_persisted(self) -> None:
+        persisted = self._run(
+            GREENHOUSE_PAGE,
+            "greenhouse",
+            RecordingScraper(load_settings(), GREENHOUSE_PAGE, fail=True),
+        )
+        self.assertEqual(persisted, [])
+
+    def test_zero_jobs_is_not_persisted(self) -> None:
+        persisted = self._run(
+            GREENHOUSE_PAGE, "greenhouse", YieldingScraper(load_settings(), [])
+        )
+        self.assertEqual(persisted, [])
+
+    def test_empty_slug_is_not_persisted(self) -> None:
+        html = (
+            '<html><body><a href="https://jobs.apple.com/en-us/search">'
+            "Jobs</a></body></html>"
+        )
+        persisted = self._run(
+            html, "apple", YieldingScraper(load_settings(), [object()])
+        )
+        self.assertEqual(persisted, [])
+
+    def test_unregistered_ats_type_is_not_persisted(self) -> None:
+        html = '<html><body><a href="https://acme.breezy.hr/">Jobs</a></body></html>'
+        persisted = self._run(html, "breezy")
         self.assertEqual(persisted, [])
 
 
