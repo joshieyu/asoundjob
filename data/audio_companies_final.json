@@ -201,11 +201,11 @@
   },
   {
     "name": "Activision Blizzard",
-    "careers_url": "https://careers.activisionblizzard.com/",
+    "careers_url": "https://xboxgaming.wd1.myworkdayjobs.com/External",
     "category": "Gaming, VR & Immersive Audio",
     "verified": true,
     "source": "auto",
-    "scrape_method": "playwright"
+    "scrape_method": "http"
   },
   {
     "name": "Actran (MSC Software)",
@@ -10555,6 +10555,14 @@
     "name": "University of Michigan Audio",
     "careers_url": "https://careers.umich.edu/",
     "category": "Music Education Technology",
+    "verified": true,
+    "source": "auto",
+    "scrape_method": "http"
+  },
+  {
+    "name": "University of Mississippi",
+    "careers_url": "https://olemiss.wd12.myworkdayjobs.com/External__Staff",
+    "category": "Acoustic Consulting & Engineering",
     "verified": true,
     "source": "auto",
     "scrape_method": "http"
