@@ -11,9 +11,11 @@ if TYPE_CHECKING:
     from scraper.models import Company
 
 URL_PATTERN = re.compile(
-    r"^https?://careers\.smartrecruiters\.com/(?P<slug>[^/?#]+)",
+    r"^https?://(?:careers|jobs)\.smartrecruiters\.com/(?P<slug>[^/?#]+)",
     re.IGNORECASE,
 )
+
+PUBLIC_URL = "https://jobs.smartrecruiters.com/{slug}/{job_id}"
 
 API_URL = "https://api.smartrecruiters.com/v1/companies/{slug}/postings"
 DETAIL_URL = "https://api.smartrecruiters.com/v1/companies/{slug}/postings/{job_id}"
@@ -59,7 +61,7 @@ class SmartRecruitersScraper(BaseScraper):
             if not content:
                 break
             for item in content:
-                parsed = _parse_list_item(item)
+                parsed = _parse_list_item(item, slug)
                 if parsed is not None:
                     jobs.append(parsed)
             total = data.get("totalFound", 0)
@@ -96,15 +98,27 @@ class SmartRecruitersScraper(BaseScraper):
         await asyncio.gather(*(fetch_one(j) for j in fetch_list))
 
 
-def _parse_list_item(item: dict[str, Any]) -> RawJob | None:
+def _company_identifier(item: dict[str, Any]) -> str | None:
+    company = item.get("company")
+    if not isinstance(company, dict):
+        return None
+    identifier = company.get("identifier")
+    return identifier.strip() if isinstance(identifier, str) and identifier.strip() else None
+
+
+def _parse_list_item(item: dict[str, Any], slug: str | None = None) -> RawJob | None:
     title = (item.get("name") or "").strip()
     if not title:
         return None
     job_id = item.get("id")
     external_id = str(job_id) if job_id is not None else None
-    posting_url = item.get("ref") or ""
+    identifier = _company_identifier(item) or slug
+    if identifier and external_id:
+        posting_url = PUBLIC_URL.format(slug=identifier, job_id=external_id)
+    else:
+        posting_url = str(item.get("ref") or "")
     if not posting_url:
-        posting_url = f"https://careers.smartrecruiters.com/{external_id}"
+        return None
     location_obj = item.get("location") or {}
     location = _format_location(location_obj)
     emp_type = item.get("typeOfEmployment") or {}

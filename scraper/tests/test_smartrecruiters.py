@@ -98,5 +98,33 @@ class TestSmartRecruitersParser(unittest.TestCase):
         self.assertFalse(scraper.can_handle(make_company("")))
 
 
+class TestPublicJobUrl(unittest.TestCase):
+    def test_uses_public_host_not_the_api_self_link(self) -> None:
+        item = dict(LIST_ITEM, company={"identifier": "Ramboll3", "name": "Ramboll"})
+        job = _parse_list_item(item)
+        assert job is not None
+        self.assertEqual(
+            job.url, "https://jobs.smartrecruiters.com/Ramboll3/744000056999494"
+        )
+
+    def test_falls_back_to_the_scraped_slug_when_company_is_missing(self) -> None:
+        job = _parse_list_item(dict(LIST_ITEM), "Acme")
+        assert job is not None
+        self.assertEqual(
+            job.url, "https://jobs.smartrecruiters.com/Acme/744000056999494"
+        )
+
+    def test_jobs_host_is_recognised(self) -> None:
+        scraper = SmartRecruitersScraper.__new__(SmartRecruitersScraper)
+        company = make_company("https://jobs.smartrecruiters.com/Ramboll3")
+        self.assertTrue(SmartRecruitersScraper.can_handle(scraper, company))
+        self.assertEqual(
+            SmartRecruitersScraper.extract_slug(
+                "https://jobs.smartrecruiters.com/Ramboll3/744000149419669-managing"
+            ),
+            "Ramboll3",
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
