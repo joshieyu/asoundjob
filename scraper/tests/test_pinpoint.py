@@ -112,5 +112,27 @@ class TestPinpointParser(unittest.TestCase):
         self.assertFalse(scraper.can_handle(make_company("")))
 
 
+class TestStoredSlugIsHonoured(unittest.TestCase):
+    def test_ats_slug_wins_when_the_careers_url_has_none(self) -> None:
+        from scraper.models import Company
+
+        company = Company(
+            id=1,
+            name="Naim Audio",
+            slug="naim-audio",
+            category="Hi-Fi & Consumer Speakers",
+            careers_url="https://www.naimaudio.com/",
+            ats_type="pinpoint",
+            ats_slug="naimaudio",
+        )
+        self.assertIsNone(
+            PinpointScraper.extract_slug(company.careers_url or "")
+        )
+        resolved = company.ats_slug or PinpointScraper.extract_slug(
+            company.careers_url or ""
+        )
+        self.assertEqual(resolved, "naimaudio")
+
+
 if __name__ == "__main__":
     unittest.main()

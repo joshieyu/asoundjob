@@ -32,7 +32,7 @@ class PinpointScraper(BaseScraper):
         return match.group("slug") if match else None
 
     async def fetch_jobs(self, company: Company) -> list[RawJob]:
-        slug = self.extract_slug(company.careers_url or "")
+        slug = company.ats_slug or self.extract_slug(company.careers_url or "")
         if not slug:
             raise ValueError(f"No pinpoint slug in {company.careers_url}")
         base = f"https://{slug}.pinpointhq.com"
