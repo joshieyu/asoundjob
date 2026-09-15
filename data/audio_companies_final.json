@@ -1898,6 +1898,15 @@
     "scrape_method": "http"
   },
   {
+    "name": "ByteDance",
+    "careers_url": "https://joinbytedance.com/search?keyword=audio",
+    "category": "AI/ML Audio",
+    "verified": true,
+    "source": "auto",
+    "scrape_method": "playwright",
+    "scrape_blocked": true
+  },
+  {
     "name": "Cabasse",
     "careers_url": "https://www.cabasse.com/carriere/",
     "category": "Hi-Fi & Consumer Speakers",
@@ -3952,6 +3961,15 @@
     "verified": false,
     "source": "auto",
     "scrape_method": "http"
+  },
+  {
+    "name": "Frontier Audio",
+    "careers_url": "https://wellfound.com/company/frontier-20",
+    "category": "Voice & Speech Technology",
+    "verified": true,
+    "source": "auto",
+    "scrape_method": "http",
+    "scrape_blocked": true
   },
   {
     "name": "Fujitsu",
