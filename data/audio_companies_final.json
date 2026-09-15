@@ -1369,14 +1369,6 @@
     "ats_slug": "beatport"
   },
   {
-    "name": "Beats by Dre",
-    "careers_url": "https://www.apple.com/careers/",
-    "category": "Headphones & Personal Audio",
-    "verified": true,
-    "source": "auto",
-    "scrape_method": "http"
-  },
-  {
     "name": "BeatStars",
     "careers_url": "https://www.beatstars.com/careers",
     "category": "Streaming & Music Services",

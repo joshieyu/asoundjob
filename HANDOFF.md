@@ -6103,6 +6103,191 @@ API rejects every `website-path` header tried.
   wrong directory.
 - **LinkedIn is built but never run.** Needs residential proxies.
 
+## Session update (2026-09-15, later) — the ATS bindings, and what was hiding in them
+
+Nine commits, `906812e`..`495b071`. Gates at the end: **1,140 scraper tests, 179
+API tests, `npm run check` 342 files / 0 errors / 0 warnings**, ruff and mypy
+clean. Seed is **1,412 entries**, 33 of them now carrying an ATS binding, 13
+blocked. The database holds 1,412 companies, 48 bindings, and the board
+publishes 1,234 rows.
+
+### ats_type / ats_slug: the flagged issue, and why the obvious fix was backwards
+
+The entry in the previous "Still open" list read as a durability problem: these
+two columns are written only by discovery during a scrape, so a rebuilt database
+loses them. Measuring it first changed the plan. **52 of the 65 bindings could
+not be re-derived from the company's careers URL** — and several were also
+*wrong*, and permanent, because `_scrape_one` tries a stored `ats_type` before
+anything else and `_persist_ats_discovery` only writes when `ats_type` is NULL:
+
+- **TrueFire**, a guitar-lesson company, held `workday`/`toyota.wd503/TMNA` and
+  **157 Toyota jobs**.
+- **Arturia** held `recruitee`/`tagging-server`, a tracking-script hostname
+  answering HTTP 400 on every cycle.
+- **Dalet** and **Flowkey** both held `breezy`/`assets-cdn`, a CDN.
+- **Beats by Dre** held `apple` with an empty slug and 245 Apple rows.
+
+So promoting them into the seed as-is would have made the bugs hand-reviewed
+truth. The order had to be: stop writing junk, clean what exists, then make the
+survivors durable.
+
+**Step 1 — `_try_discovery` is now async and verifies before it persists.** It
+runs the discovered scraper once through `_attempt`, inheriting the per-company
+timeout, and writes only on success with at least one job. Discovery fires only
+after a fallback scrape already produced a real careers page, so requiring a job
+is a fair bar. Empty slugs are refused outright — that is what `discover()`
+returns for slugless platforms like `apple`.
+
+The cost of a bad binding was not just a wasted request: a failed stored ATS
+sets `stored_ats_failed`, which becomes `fallback_is_partial`, which **suppresses
+deactivation for that company indefinitely**. Arturia's scrape went from
+`deactivation_skips=1` to `0` once its binding was gone.
+
+**Step 2 — `scraper/scraper/propose_ats_bindings.py`**, read-only, reports empty
+slugs, an `ats_type` with no registered scraper, a binding another company also
+holds, a slug unrelated to the company, and under `--verify` a binding that does
+not work.
+
+Its affinity check flagged **27 of 65 on the first run**, which was far more than
+the measurement predicted, so it got checked rather than believed. It compared
+token sets **exactly**, and a slug that concatenates the company name shares no
+token with it: `universalaudio`, `soundcloud71`, `taketwo`, `nissanjobs`,
+`analogdevices` were all false positives. It now matches by containment and
+common prefix, reads **every label** of the careers host rather than the
+registrable one alone — so Northrop's `ngc.eightfold.ai` vouches for its
+`ngc.com` slug — and skips the opaque UUIDs ADP hands out. That took it to 11, of
+which 9 were real. Regression tests cover all seven concatenation cases.
+
+**This is the third time a subagent's own tests passed while its logic was
+wrong** (see the matcher swallow bug and the furniture language bias). The
+pattern is always the same: hand-picked fixtures that happen to have the shape
+the code assumes. Probe real data.
+
+**Step 3 — the seed can own both columns**, read by **key presence**, the same
+rule as `description`/`headquarters`/`founded`/`community_links`: absent leaves
+the column alone so discovery still works for the 1,379 companies without a
+binding, present wins, explicit `null` clears. A slug without a type is ignored
+and logged. Both joined `LOADER_MANAGED_FIELDS` and `COMPARED_FIELDS`.
+
+Verified, not asserted: a from-scratch rebuild of all 1,412 companies now
+produces **all 33 bindings including Northrop's `eightfold`/`ngc.com`**, and the
+seed still round-trips byte-identical.
+
+### What --verify found, and what was done about it
+
+Eighteen stored bindings could not succeed, each confirmed across two separate
+runs so no transient was acted on (Analog Devices failed once and recovered —
+excluded on exactly that basis). **Sixteen were cleared** from the database:
+Arturia, TrueFire, Dalet, Flowkey, Varjo (its slug was the single letter `j`);
+Astro Gaming, Clarion, John Deere, Ortofon on eightfold 404/403; DSP Concepts and
+Magic Leap on greenhouse boards that no longer exist; Switchcraft and Knowles on
+adp 404; Fisker on workday 422; SiriusXM whose iCIMS board says it has migrated
+off-platform; Keysight returning no listing.
+
+**Two of the eighteen were not bad bindings at all.** `PinpointScraper.fetch_jobs`
+read the slug from `careers_url` alone and ignored `company.ats_slug`, where every
+sibling scraper does `company.ats_slug or self.extract_slug(...)`. BandLab and
+Naim Audio therefore failed with "No pinpoint slug in *their own careers page*"
+on every cycle while their boards were live. Naim Audio now publishes **Software
+Engineer (DSP)** and **Senior Electronics Design Engineer**.
+
+Clearing a binding does not retire the rows it produced — a failed scrape
+deactivates nothing — so TrueFire's 101 Toyota rows were retired explicitly. That
+was **not** generalised: for an ATS-scraped company the job URLs legitimately
+live on the ATS domain, so a "foreign host" rule would have wrongly condemned
+Magic Leap's greenhouse rows.
+
+Beats by Dre was a seed problem wearing a binding problem's clothes: its
+`careers_url` was `https://www.apple.com/careers/`, so `can_handle` matched Apple
+regardless of the binding. Deleted by hand.
+
+### Companies added and repointed
+
+| Company | Board | ATS |
+| --- | --- | --- |
+| Decagon, Cartesia, Liquid AI, David AI, Fortell | 14, 7, 4, 5, 9 | ashby |
+| Ramboll Group | 25 / 1241 | smartrecruiters |
+| Disney | 14 / 76 | http (Radancy) |
+| Penn State, UT Austin, Ole Miss, Philips, Activision, Sony | 14, 8, 1, 3, 4, 4 | workday |
+| Garmin | 5 / 16 | jibe |
+| Arturia | 5 / 19 | http (Lucca) |
+| Hyundai America Technical Center | 4 / 18 | http (SuccessFactors HTML) |
+| Absurd Ventures, SIE, HoYoverse, Zyphra | 4, 8, 1, 2 | greenhouse / ashby |
+| Bose Professional | 7 / 14 | http (JazzHR) |
+| Ford | 1 / 23 | http (Radancy) |
+| Fraunhofer IIS | 1 / 49 | http (softgarden) |
+
+Three needed code, and each hid a general lesson:
+
+**A slug-shaped job URL defeats link extraction.** Arturia's Lucca board links to
+`/arturia-france/dsp-intern-<uuid>`: no hint word in the path, the anchor text is
+the job title rather than a hint, and the board root has no hint in its own path,
+so all three routes through `looks_like_job` miss it. The structural fallback
+cannot help either — it engages only when the flat anchor text is *unusable*, and
+here it is perfectly good. `SLUG_BOARD_HOSTS` in `link_extraction.py` now names
+hosts where a same-host link whose last segment looks like a job detail counts.
+**The allowlist is the whole safety argument**: accepting bare slugs on any host
+would read every nav link on 1,412 companies as a job, so it holds only hosts
+verified end to end. `jobs.gohire-partner.com` was tried and reverted — it does
+pull the jobs out, but every anchor arrives as `Sound Designer Columbus, United
+States Posted 8 September, 2026`, which neither `clean_job_title` nor
+`_strip_city_state` unpicks. Betterteam was tried and left out too: headless
+playwright never clears its Cloudflare challenge, so nothing downstream would run.
+
+**An http scrape that succeeds stops the pipeline reaching playwright.** Garmin
+returned nine rows — Legal Notices, Early Careers, Diversity and Inclusion — and
+reported `ok`. Falling back would not have helped: Garmin and ByteDance both fire
+a request that errors, `networkidle` never arrives, `goto` falls back to
+`domcontentloaded`, and the shared `wait_for_timeout(500)` is far too short for
+the SPA to hydrate. `scrapers/ats/jibe.py` reads Garmin's JSON API instead; its
+`JIBE_HOSTS` allowlist exists for the same reason as `SLUG_BOARD_HOSTS`.
+
+**SmartRecruiters rows all linked to raw JSON.** `_parse_list_item` used the
+payload's `ref`, which is the API's link to *itself* — 1,187 active rows once
+Ramboll arrived. There is no public URL in the listing response, so it is built
+from the `company.identifier` the payload does carry. The scraper also only knew
+the `careers.` host; SmartRecruiters serves on `jobs.` too.
+
+Two traps worth keeping: **Radancy searches rank the whole corpus** rather than
+filtering, so page two of Disney's "audio" is already costume interns — one page
+per term, more terms rather than more pages, and no exclusion syntax exists
+(`-skywalker` and `NOT skywalker` both *raised* Skywalker's ranking). And
+**Activision looked like it needed a Phenom scraper and did not**: every job the
+Phenom widget returns carries an `applyUrl` pointing at
+`xboxgaming.wd1.myworkdayjobs.com`, so the Workday scraper reads it. Check the
+apply URL before writing a scraper for a proprietary careers front end.
+
+### Still open from this session
+
+- **`SuccessFactors` claims any host with a `/search` path.** Its `URL_PATTERN`
+  host group matches anything, and because a successful ATS sets
+  `trust_empty = True`, a false claim returning zero jobs would retire that
+  company's whole board. Harmless today — four of the five seed URLs it matches
+  really are SuccessFactors — but it is a live trap. Tightening it needs a host
+  allowlist validated against real customers.
+- **Seven bindings remain flagged and were left alone**: Apple (slugless ATS by
+  design), Serato (`breezy`, no scraper registered, so inert), Samsung (times out
+  on a large board — wants `?q=` narrowing), ASUS and Voicemod (empty boards that
+  may simply be empty), NPR (`nationalpublicradioinc` is the name expanded).
+- **ByteDance needs a longer playwright wait**, which would slow every playwright
+  company. Deliberate change, not a side effect.
+- **Makeshift Software** is unadded pending a title-cleaning rule for the
+  `<Title> <City>, <Country> Posted <date>` shape GoHire emits.
+- **Ramboll publishes 13 rows of "Ramboll is growing its … team!"** — scoring
+  exactly 45, the native threshold, because "Power Supply" trips `audio_ee`.
+  **Decagon publishes 11 sales roles out of 14.** Both are relevance-tuning calls.
+- **`amplifier`/`amplification` are absent from the title vocabulary**, so
+  Marshall's Jr Product Manager Amplification scores zero. Measured rather than
+  assumed: adding them admits six false positives (RF/microwave MMIC design, a
+  startup incubator called LaunchBox Amplifier, a `#Amplify_` hashtag) against
+  one true one. Left alone deliberately.
+- **`TikTok Audio (ByteDance)` and `Resso (ByteDance)`** are dead entries beside
+  the new `ByteDance`; **`Fusion Marine Audio`** points at generic
+  `garmin.com/en-US/careers/` beside the new `Garmin`.
+- **`scraper/demotion_proposals.json`/`.md`** are still untracked and in the
+  wrong directory.
+- **LinkedIn is built but never run.** Needs residential proxies.
+
 ## Running the demo
 
 ```bash
