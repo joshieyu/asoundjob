@@ -8869,14 +8869,6 @@
     "scrape_method": "http"
   },
   {
-    "name": "Skywalker Sound",
-    "careers_url": "https://www.disneycareers.com/en/search-jobs/skywalker",
-    "category": "Recording Studios & Post Houses",
-    "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
-  },
-  {
     "name": "Slack Voice (Salesforce)",
     "careers_url": "https://www.salesforce.com/company/careers/",
     "category": "Voice & Speech Technology",
