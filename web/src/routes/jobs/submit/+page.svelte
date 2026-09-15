@@ -51,12 +51,11 @@
 	<header class="p-5 sm:p-6">
 		<h1 class="text-title font-semibold">Submit a job</h1>
 		<p class="mt-3 text-title font-bold tracking-tight">
-			Put an audio role in front of the people who speak this language.
+			Put an audio role in front of passionate audio engineers.
 		</p>
 		<p class="mt-1 text-meta text-muted">
-			Free for everyone — recruiters, founders, bandmates. Every submission is
-			reviewed by a Young Audio Professionals moderator before it goes live, and
-			listings expire after 30 days.
+			Free for everyone. Every submission is
+			reviewed by a Young Audio Professionals moderator before it goes live.
 		</p>
 	</header>
 

@@ -131,8 +131,8 @@
 	<div>
 		<h3 class="text-title font-semibold">{categoryMeta.length} audio specialties</h3>
 		<p class="mt-2 text-meta text-muted">
-			DSP, live sound, acoustics, transducers, game audio — filter by the work you
-			actually do, not keyword soup.
+			We've got DSP, live sound, acoustics, transducers, game audio, and more. Filter by the work you
+			actually do. 
 		</p>
 	</div>
 	<div>

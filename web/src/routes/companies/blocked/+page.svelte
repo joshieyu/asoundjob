@@ -24,20 +24,18 @@
 	<div class="mt-12 max-w-[68ch] space-y-6 text-body leading-relaxed">
 		<p>
 			These are companies we've checked by hand and can't read. Some refuse automated readers
-			outright — a bot block, a captcha, a flat 403. Some draw their whole job board with
+			outright. Some draw their whole job board with
 			JavaScript, or bury it in an embedded portal we can't follow. Either way our scraper comes
-			back with nothing, so roles at these companies never reach this board.
+			back with nothing, so roles at these companies never reach the board.
 		</p>
 		<p>
-			We're not saying any of them are hiring right now — we can't tell either way, and that's
-			the point. These are real audio companies worth watching, and their careers pages open
-			perfectly well in a normal browser. If one of them is a fit, go look for yourself.
+			We're not saying any of them are hiring right now, we just can't tell. These are real audio companies worth checking yourself.
 		</p>
 	</div>
 
 	<div class="mt-16 max-w-[68ch]">
 		<p class="text-body leading-relaxed">
-			Searching <strong class="font-semibold">"acoustic engineer"</strong> on LinkedIn surfaces a
+			Pro Tip: Searching <strong class="font-semibold">"acoustic engineer"</strong> on LinkedIn surfaces a
 			lot of roles that never make it onto a company's own careers page, blocked or not.
 		</p>
 		<a

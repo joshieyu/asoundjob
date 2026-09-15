@@ -233,7 +233,7 @@
 	<title>Audio industry jobs | ASoundJob</title>
 	<meta
 		name="description"
-		content="Browse audio industry jobs — DSP, live sound, acoustics, game audio and more. Filter by specialty, level, salary and remote."
+		content="Browse audio industry jobs: DSP, live sound, acoustics, game audio and more. Filter by specialty, level, salary and remote."
 	/>
 	<link rel="canonical" href="{data.siteUrl}/jobs" />
 </svelte:head>
