@@ -5917,6 +5917,192 @@ nothing. **That is a shared module touching all 1,399 companies.**
   not zero). Killed after ~5 minutes; per-company reconciliation is independent
   so nothing is corrupted, but some companies got an unscheduled rescrape.
 
+## Session update (2026-09-15) — sixteen companies, a Jibe scraper, and the seed deletion gap
+
+Seven commits, `f0eaa46`..`f1765b4`. Gates at the end: **1,090 scraper tests,
+178 API tests, `npm run check` 342 files / 0 errors / 0 warnings**, ruff and
+mypy clean. Seed is **1,407 entries**, the database holds exactly 1,407
+companies, and the board publishes 1,189 rows.
+
+### What landed on the board
+
+| Company | Board | ATS | Note |
+| --- | --- | --- | --- |
+| Ramboll Group | 25 / 1241 | smartrecruiters | was `ramboll.com/careers`, 0 published |
+| Decagon | 14 / 141 | ashby | |
+| Disney | 14 / 76 | http (Radancy) | replaces Disney Post Production |
+| Penn State University | 14 / 61 | workday | ARL signal processing |
+| Sony Interactive Entertainment | 8 / 196 | greenhouse | |
+| Bose Professional | 7 / 14 | http (JazzHR) | **not** Bose — sold to Transom 2022 |
+| Garmin | 5 / 16 | **jibe** | new scraper |
+| David AI | 5 / 13 | ashby | no audio role on the board today |
+| Absurd Ventures | 4 / 17 | greenhouse | |
+| Sony | 4 / 126 | workday | was a dead `sony.com` URL, `verified: false` |
+| Philips | 3 / 25 | workday | was `careers.philips.com`, `verified: false` |
+| Zyphra | 2 / 14 | ashby | |
+| HoYoverse | 1 / 11 | ashby | |
+| Ford | 1 / 23 | http (Radancy) | renamed from Ford Pro |
+| ByteDance | — | blocked | |
+| Frontier Audio | — | blocked | |
+
+### Deleting a company from the seed removes nothing from the site
+
+This is the process finding of the session and it had been true forever.
+`load_companies` inserts and updates; it has **no orphan handling**. A company
+deleted from the seed keeps its row, its jobs and its scrape logs, and stays
+listed on `/companies` — `companies_with_counts` is handed a bare
+`select(Company)` with no seed-membership filter. Four such companies were live
+and browsable before this session.
+
+The inverse is the older trap already in this file: deleting only from the
+database is undone by the loader on the next cycle. **Both halves are required,
+seed first.**
+
+`scraper/scraper/prune_orphans.py` closes the discovery half. It reports every
+database company whose **name** — the loader's own matching key, not the slug —
+is absent from the seed, and deletes only with `--apply`. Two rules keep it
+safe:
+
+- `source == "manual"` is **never** an orphan. Those are admin-created and
+  legitimately absent from the seed; anything that deleted everything not in the
+  seed would destroy them. This is why it cannot be folded into the loader.
+- Rows carrying human work — a non-scraper job, an admin override, job feedback,
+  a submission, a suggestion — are reported as **blocked** and skipped.
+
+The admin companies page already had a delete button
+(`DELETE /api/admin/companies/{id}`); what was missing was knowing *which*
+companies had gone orphan. A rename is a delete plus an insert as far as the
+loader is concerned, so renaming Ford Pro to Ford created one orphan on purpose,
+swept by the same run.
+
+### Three ATS defects, each found by looking at output rather than status
+
+**SmartRecruiters rows all linked to raw JSON.** `_parse_list_item` used the
+payload's `ref` field as the job URL. `ref` is the API's link to *itself* —
+`https://api.smartrecruiters.com/v1/companies/{slug}/postings/{id}`. **1,187
+active rows** pointed at JSON once Ramboll arrived. There is no public URL
+anywhere in the listing response, so it is now built from the `company.identifier`
+the payload does carry: `https://jobs.smartrecruiters.com/{slug}/{id}` redirects
+to the slugged posting. The pattern also only recognised `careers.` — SmartRecruiters
+serves boards on `jobs.` too, and a pasted `jobs.` URL fell through to the generic
+scrapers and reported "page loaded but no job links found".
+
+**An http scrape that succeeds stops the pipeline reaching playwright.**
+`_scrape_one` returns on the first success, so a careers page whose nav chrome
+matches `JOB_HINT` is indistinguishable from a working board. Garmin returned
+nine rows — Legal Notices, Early Careers, Diversity and Inclusion — and reported
+`ok`. Falling back to playwright would not have helped either: Garmin and
+ByteDance both fire a request that errors, `networkidle` never arrives, `goto`
+falls back to `domcontentloaded`, and the shared `wait_for_timeout(500)` is far
+too short for the SPA to hydrate, so playwright reads the same chrome.
+
+`scraper/scraper/scrapers/ats/jibe.py` solves Garmin by reading its JSON API
+instead. Jibe sites live on arbitrary custom domains with **no distinguishing
+URL**, so `can_handle` uses an explicit `JIBE_HOSTS` allowlist (currently just
+`careers.garmin.com`) rather than claiming every `/jobs` path in the seed. It
+sits last in the `ats_scrapers` tuple. Descriptions come inline, so there is no
+detail-fetch pass.
+
+**Large Workday boards silently fall back.** `per_company_timeout` is 90s and
+`MAX_PAGES * PAGE_SIZE` is 50 × 20 = **1,000 rows**. Philips has 822 openings
+and timed out mid-paging, then fell through to playwright, which returned 19
+junk rows and reported success. Penn State has 1,457 against the 1,000 cap.
+`extract_query` reads `?q=` from the careers URL, so both now carry narrowed
+URLs plus extras, each term kept only because it returned something the others
+did not — `ultrasound`, `sonar` and `mixer` were tested and dropped.
+
+### The SuccessFactors pattern claims any host with a /search path
+
+Worth knowing before it costs someone a board. `URL_PATTERN` in
+`scrapers/ats/successfactors.py` is
+
+```
+^https?://(?P<host>[^/]{1,253})/(?:search/?(?:\?[^\s]{0,2000})?|go/<board>/<id>/?)$
+```
+
+— the host group matches **anything**. Any careers URL whose path is `/search`
+with an optional query is claimed by SuccessFactors regardless of domain, which
+is how `joinbytedance.com/search?keyword=audio` came back `ok=1 via
+successfactors`. The failure mode is not cosmetic: `_scrape_one` sets
+`result.trust_empty = True` on the first ATS that succeeds, so a false claim
+returning zero jobs would **retire that company's entire board**.
+
+It is currently harmless — of the five seed URLs it matches, four (Acer, Belden,
+Demant, Ferrari) genuinely are SuccessFactors sites and the fifth is ByteDance,
+which has no jobs. Left alone deliberately: tightening it needs a host allowlist
+that would have to be validated against real SuccessFactors customers, and that
+is a decision to make deliberately rather than in passing.
+
+### Radancy searches rank the whole corpus; only page one is a filter
+
+Disney and Ford both run Radancy. `search-jobs/<term>` is **relevance-ranked
+over every opening**, not a filter — page two of Disney's "audio" is already
+Costume Production Intern and Hazardous Waste Technician, eighty pages deep.
+So one page per term, and more terms rather than more pages. Disney carries
+`audio` plus `sound` and `music`; `acoustics`, `broadcast` and `mixer` were
+tested and added nothing.
+
+Skywalker Sound was briefly repointed at `search-jobs/skywalker` — the single
+word returns exactly its three openings, where `skywalker sound` also drags in a
+Disneyland sound mechanic — then removed entirely, because all three rank inside
+Disney's `audio` page one and were double-posting. Radancy has no exclusion
+syntax: `-skywalker` and `NOT skywalker` are both read as extra keywords and
+actually *raised* Skywalker's ranking.
+
+### Sony's ja-JP URL is SPA chrome, not a language setting
+
+The locale segment in `sonyglobal.wd1.myworkdayjobs.com/ja-JP/SonyJapanCareers`
+switches the front end's buttons and labels. The scraper never loads that page —
+it posts to the CXS endpoint, which sits *below* the locale segment, returns
+English titles for `SonyJapanCareers`, and keeps returning English under
+`Accept-Language: ja-JP`. Those twelve postings are authored in English on
+Sony's Workday back end. Both sites are recorded as `en-US` so the seed URL
+shows a human what the scraper reads.
+
+Only two sites exist on the `sonyglobal` tenant — `SonyEuropeCareers`,
+`SonyUSCareers`, `SonyChinaCareers` and five more all 404 — and
+`SonyGlobalCareers` is already multi-country. It contributes **zero** board
+rows and that is correct, not broken: all 114 of its titles were read and its
+engineering is graphics, vision, wireless, robotics and autonomous driving. All
+four published Sony rows come from Japan.
+
+### Blocked is the honest answer when a board cannot be read
+
+`scrape_blocked: true` puts a company on `/companies/blocked` and in the section
+on the jobs page. `/api/companies/blocked` drops any company that has active
+audio jobs, so an entry leaves the list by itself if its board ever becomes
+readable. The flag is **display-only** — nothing in the pipeline consults it, so
+the scraper still attempts these companies every cycle.
+
+Frontier Audio has no automated path at all: `frontieraudio.com/careers` 404s,
+the site links only to Wellfound, and Wellfound answers with a Cloudflare
+interactive challenge that stops a real browser, not just curl. ByteDance streams
+its job list from a server component — a browser gets it, curl does not — and its
+API rejects every `website-path` header tried.
+
+### Still open from this session
+
+- **Ramboll publishes 13 rows of "Ramboll is growing its … team!"** — a
+  talent-pool posting duplicated across locations, 13 of its 25 board rows. It
+  scores exactly **45**, the native threshold, because "Power Supply" trips
+  `audio_ee`. The other 12 are the real thing. A relevance-tuning call, not
+  touched.
+- **Decagon publishes 11 sales roles out of 14** — Director of Sales, Enterprise
+  Account Executive — because native scope lets the company vouch for them. Same
+  class of decision.
+- **ByteDance needs a longer playwright wait**, which would slow every playwright
+  company. Worth doing deliberately, not as a side effect.
+- **`TikTok Audio (ByteDance)` and `Resso (ByteDance)`** are both dead entries
+  (0 rows) now sitting beside the new `ByteDance`. **`Fusion Marine Audio`**
+  points at generic `garmin.com/en-US/careers/` beside the new `Garmin`. All
+  three are the user's call.
+- **David AI's linked YC role** (Applied Audio ML Engineer) is not on its Ashby
+  board; its five published rows are generic engineering at native scope.
+- **`ats_slug` is still the only DB-only field** with no path back to the seed.
+- **`scraper/demotion_proposals.json`/`.md`** are still untracked and in the
+  wrong directory.
+- **LinkedIn is built but never run.** Needs residential proxies.
+
 ## Running the demo
 
 ```bash
