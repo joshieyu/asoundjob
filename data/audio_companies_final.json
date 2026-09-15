@@ -2695,6 +2695,14 @@
     "scrape_method": "playwright"
   },
   {
+    "name": "David AI",
+    "careers_url": "https://jobs.ashbyhq.com/david-ai",
+    "category": "AI/ML Audio",
+    "verified": true,
+    "source": "auto",
+    "scrape_method": "http"
+  },
+  {
     "name": "DaVinci Resolve Audio (Blackmagic)",
     "careers_url": "https://www.blackmagicdesign.com/careers",
     "category": "DAW & Music Production Software",
@@ -2763,6 +2771,14 @@
     "name": "Dear Reality",
     "careers_url": "https://www.sennheiser.com/en-us/immersive/dear-reality",
     "category": "Gaming, VR & Immersive Audio",
+    "verified": true,
+    "source": "auto",
+    "scrape_method": "http"
+  },
+  {
+    "name": "Decagon",
+    "careers_url": "https://jobs.ashbyhq.com/decagon",
+    "category": "Voice & Speech Technology",
     "verified": true,
     "source": "auto",
     "scrape_method": "http"
@@ -3858,12 +3874,12 @@
     "scrape_method": "http"
   },
   {
-    "name": "Ford Pro",
-    "careers_url": "https://www.careers.ford.com/",
+    "name": "Ford",
+    "careers_url": "https://www.careers.ford.com/en/search-jobs/audio/",
     "category": "Automotive OEMs",
     "verified": true,
     "source": "auto",
-    "scrape_method": "playwright"
+    "scrape_method": "http"
   },
   {
     "name": "Fosi Audio",
@@ -4032,6 +4048,17 @@
     "verified": false,
     "source": "auto",
     "scrape_method": "http"
+  },
+  {
+    "name": "Garmin",
+    "careers_url": "https://careers.garmin.com/jobs?keywords=audio",
+    "category": "Consumer Electronics & Tech",
+    "verified": true,
+    "source": "auto",
+    "scrape_method": "http",
+    "extra_careers_urls": [
+      "https://careers.garmin.com/jobs?keywords=acoustic"
+    ]
   },
   {
     "name": "Gator Cases",
@@ -7382,6 +7409,18 @@
     "scrape_method": "http"
   },
   {
+    "name": "Penn State University",
+    "careers_url": "https://psu.wd1.myworkdayjobs.com/PSU_Staff?q=signal+processing",
+    "category": "Acoustic Consulting & Engineering",
+    "verified": true,
+    "source": "auto",
+    "scrape_method": "http",
+    "extra_careers_urls": [
+      "https://psu.wd1.myworkdayjobs.com/PSU_Staff?q=audio",
+      "https://psu.wd1.myworkdayjobs.com/PSU_Staff?q=acoustics"
+    ]
+  },
+  {
     "name": "Perkins&Will",
     "careers_url": "https://perkinswill.com/careers/",
     "category": "Acoustic Consulting & Engineering",
@@ -7399,11 +7438,14 @@
   },
   {
     "name": "Philips",
-    "careers_url": "https://careers.philips.com",
+    "careers_url": "https://philips.wd3.myworkdayjobs.com/jobs-and-careers?q=acoustic",
     "category": "Consumer Electronics & Tech",
-    "verified": false,
+    "verified": true,
     "source": "auto",
-    "scrape_method": "http"
+    "scrape_method": "http",
+    "extra_careers_urls": [
+      "https://philips.wd3.myworkdayjobs.com/jobs-and-careers?q=signal+processing"
+    ]
   },
   {
     "name": "Phonic",
@@ -7931,11 +7973,11 @@
   },
   {
     "name": "Ramboll Group",
-    "careers_url": "https://www.ramboll.com/careers",
+    "careers_url": "https://careers.smartrecruiters.com/Ramboll3",
     "category": "Acoustic Consulting & Engineering",
     "verified": true,
     "source": "auto",
-    "scrape_method": "playwright"
+    "scrape_method": "http"
   },
   {
     "name": "Rane",
