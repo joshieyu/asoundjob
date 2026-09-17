@@ -70,6 +70,10 @@ def entry_from_company(company: Company) -> dict[str, Any]:
     extra = list(company.extra_careers_urls or [])
     if extra:
         entry["extra_careers_urls"] = extra
+    if company.website_url:
+        entry["website_url"] = company.website_url
+    if company.logo_url:
+        entry["logo_url"] = company.logo_url
     if bool(company.scrape_blocked):
         entry["scrape_blocked"] = True
     if company.ats_type:

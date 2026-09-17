@@ -542,3 +542,69 @@ class TestAtsFieldsFromSeed(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestSiteUrlsFollowKeyPresence(unittest.TestCase):
+    def setUp(self) -> None:
+        self.session = make_session()
+
+    def tearDown(self) -> None:
+        self.session.rollback()
+        self.session.close()
+
+    def test_a_seed_entry_carrying_them_loads_them(self) -> None:
+        seed = entry("Acme", verified=True)
+        seed["website_url"] = "https://acme.example.com"
+        seed["logo_url"] = "https://cdn.example.com/acme.svg"
+
+        load_companies(self.session, [seed])
+
+        company = self.session.execute(select(Company)).scalar_one()
+        self.assertEqual(company.website_url, "https://acme.example.com")
+        self.assertEqual(company.logo_url, "https://cdn.example.com/acme.svg")
+
+    def test_omitting_them_never_wipes_what_is_stored(self) -> None:
+        load_companies(self.session, [entry("Acme", verified=True)])
+        company = self.session.execute(select(Company)).scalar_one()
+        company.website_url = "https://acme.example.com"
+        company.logo_url = "https://cdn.example.com/acme.svg"
+        self.session.flush()
+
+        stats = load_companies(self.session, [entry("Acme", verified=False)])
+
+        self.session.refresh(company)
+        self.assertEqual(stats.updated, 1)
+        self.assertEqual(company.website_url, "https://acme.example.com")
+        self.assertEqual(company.logo_url, "https://cdn.example.com/acme.svg")
+
+    def test_an_explicit_null_clears_them(self) -> None:
+        load_companies(self.session, [entry("Acme", verified=True)])
+        company = self.session.execute(select(Company)).scalar_one()
+        company.website_url = "https://acme.example.com"
+        company.logo_url = "https://cdn.example.com/acme.svg"
+        self.session.flush()
+
+        seed = entry("Acme", verified=True)
+        seed["website_url"] = None
+        seed["logo_url"] = None
+        load_companies(self.session, [seed])
+
+        self.session.refresh(company)
+        self.assertIsNone(company.website_url)
+        self.assertIsNone(company.logo_url)
+
+    def test_a_blank_string_is_treated_as_cleared_not_stored(self) -> None:
+        seed = entry("Acme", verified=True)
+        seed["website_url"] = "   "
+        load_companies(self.session, [seed])
+
+        company = self.session.execute(select(Company)).scalar_one()
+        self.assertIsNone(company.website_url)
+
+    def test_a_reload_with_the_same_values_is_unchanged(self) -> None:
+        seed = entry("Acme", verified=True)
+        seed["website_url"] = "https://acme.example.com"
+        load_companies(self.session, [seed])
+
+        stats = load_companies(self.session, [dict(seed)])
+        self.assertEqual(stats.unchanged, 1)

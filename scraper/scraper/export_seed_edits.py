@@ -21,6 +21,8 @@ COMPARED_FIELDS = (
     "scrape_blocked",
     "verified",
     "scrape_method",
+    "website_url",
+    "logo_url",
     "description",
     "headquarters",
     "founded",
@@ -45,6 +47,8 @@ class DbRow:
     verified: bool
     source: str
     scrape_method: str
+    website_url: Optional[str]
+    logo_url: Optional[str]
     description: Optional[str]
     headquarters: Optional[str]
     founded: Optional[int]
@@ -142,6 +146,12 @@ def _entry_from_row(name: str, source: str, row: Any) -> dict:
         entry["open_application"] = True
     if bool(_get(row, "scrape_blocked")):
         entry["scrape_blocked"] = True
+    website_url = _get(row, "website_url")
+    if website_url:
+        entry["website_url"] = website_url
+    logo_url = _get(row, "logo_url")
+    if logo_url:
+        entry["logo_url"] = logo_url
     description = _get(row, "description")
     if description:
         entry["description"] = description
@@ -334,6 +344,8 @@ def read_db_rows() -> list:
                 Company.verified,
                 Company.source,
                 Company.scrape_method,
+                Company.website_url,
+                Company.logo_url,
                 Company.description,
                 Company.headquarters,
                 Company.founded,
@@ -355,6 +367,8 @@ def read_db_rows() -> list:
             verified=bool(row.verified),
             source=row.source,
             scrape_method=row.scrape_method,
+            website_url=row.website_url,
+            logo_url=row.logo_url,
             description=row.description,
             headquarters=row.headquarters,
             founded=row.founded,

@@ -245,7 +245,13 @@ class TestEntryShape(unittest.TestCase):
 
     def test_falsy_optionals_are_omitted_entirely(self) -> None:
         entry = self.build()
-        for key in ("open_application", "scrape_blocked", "extra_careers_urls"):
+        for key in (
+            "open_application",
+            "scrape_blocked",
+            "extra_careers_urls",
+            "website_url",
+            "logo_url",
+        ):
             self.assertNotIn(key, entry)
 
     def test_a_slug_is_never_written_without_its_type(self) -> None:
@@ -262,3 +268,39 @@ class TestEntryShape(unittest.TestCase):
         entry = self.build(scrape_blocked=True, open_application=True)
         self.assertIs(entry["scrape_blocked"], True)
         self.assertIs(entry["open_application"], True)
+
+
+class TestSiteUrlsReachTheSeed(SeedSyncCase):
+    def test_setting_them_writes_them(self) -> None:
+        self.update(
+            website_url="https://acme.example.com",
+            logo_url="https://cdn.example.com/acme.svg",
+        )
+        entry = self.entry("Acme Audio")
+        self.assertEqual(entry["website_url"], "https://acme.example.com")
+        self.assertEqual(entry["logo_url"], "https://cdn.example.com/acme.svg")
+
+    def test_they_survive_a_rebuild_from_the_seed(self) -> None:
+        self.update(website_url="https://acme.example.com")
+        fresh = make_session()
+        try:
+            load_companies(fresh, self.entries())
+            rebuilt = fresh.query(Company).filter_by(name="Acme Audio").one()
+            self.assertEqual(rebuilt.website_url, "https://acme.example.com")
+        finally:
+            fresh.close()
+
+    def test_they_sit_after_the_required_keys(self) -> None:
+        self.update(website_url="https://acme.example.com")
+        self.assertEqual(
+            list(self.entry("Acme Audio").keys()),
+            [
+                "name",
+                "careers_url",
+                "category",
+                "verified",
+                "source",
+                "scrape_method",
+                "website_url",
+            ],
+        )

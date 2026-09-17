@@ -50,6 +50,8 @@ SEED_KEY_ORDER = (
     "source",
     "scrape_method",
     "extra_careers_urls",
+    "website_url",
+    "logo_url",
     "scrape_blocked",
     "ats_type",
     "ats_slug",
@@ -186,6 +188,10 @@ def load_companies(session: Session, companies: list[dict[str, Any]]) -> LoadSta
         open_application = bool(entry.get("open_application", False))
         scrape_blocked = bool(entry.get("scrape_blocked", False))
 
+        has_website_url = "website_url" in entry
+        website_url = clean_optional_str(entry.get("website_url")) if has_website_url else None
+        has_logo_url = "logo_url" in entry
+        logo_url = clean_optional_str(entry.get("logo_url")) if has_logo_url else None
         has_description = "description" in entry
         description = entry.get("description") if has_description else None
         has_headquarters = "headquarters" in entry
@@ -224,6 +230,10 @@ def load_companies(session: Session, companies: list[dict[str, Any]]) -> LoadSta
                 scrape_method=scrape_method,
                 audio_scope=category_to_scope(category),
             )
+            if has_website_url:
+                company.website_url = website_url
+            if has_logo_url:
+                company.logo_url = logo_url
             if has_description:
                 company.description = description
             if has_headquarters:
@@ -251,6 +261,8 @@ def load_companies(session: Session, companies: list[dict[str, Any]]) -> LoadSta
                 or existing.verified != verified
                 or existing.source != source
                 or existing.scrape_method != scrape_method
+                or (has_website_url and existing.website_url != website_url)
+                or (has_logo_url and existing.logo_url != logo_url)
                 or (has_description and existing.description != description)
                 or (has_headquarters and existing.headquarters != headquarters)
                 or (has_founded and existing.founded != founded)
@@ -269,6 +281,10 @@ def load_companies(session: Session, companies: list[dict[str, Any]]) -> LoadSta
                 existing.verified = verified
                 existing.source = source
                 existing.scrape_method = scrape_method
+                if has_website_url:
+                    existing.website_url = website_url
+                if has_logo_url:
+                    existing.logo_url = logo_url
                 if has_description:
                     existing.description = description
                 if has_headquarters:

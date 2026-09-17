@@ -31,6 +31,8 @@ def _db_row(
     source: str = "manual",
     scrape_method: str = "http",
     company_id: int = 1,
+    website_url=None,
+    logo_url=None,
     description=None,
     headquarters=None,
     founded=None,
@@ -50,6 +52,8 @@ def _db_row(
         verified=verified,
         source=source,
         scrape_method=scrape_method,
+        website_url=website_url,
+        logo_url=logo_url,
         description=description,
         headquarters=headquarters,
         founded=founded,
@@ -69,6 +73,8 @@ def _seed_entry(
     verified: bool = True,
     source: str = "manual",
     scrape_method: str = "http",
+    website_url=None,
+    logo_url=None,
     description=None,
     headquarters=None,
     founded=None,
@@ -90,6 +96,10 @@ def _seed_entry(
         entry["open_application"] = open_application
     if scrape_blocked:
         entry["scrape_blocked"] = scrape_blocked
+    if website_url:
+        entry["website_url"] = website_url
+    if logo_url:
+        entry["logo_url"] = logo_url
     if description:
         entry["description"] = description
     if headquarters:
@@ -317,6 +327,41 @@ class TestCommunityInfoExport(unittest.TestCase):
         db = [_db_row("Acme", "acme", description="Builds loudspeaker DSP.")]
         result = build_export(seed, db)
         self.assertEqual(result.changed, [])
+
+
+class TestSiteUrlExport(unittest.TestCase):
+    def test_db_site_urls_absent_from_seed_are_proposed_as_a_change(self) -> None:
+        seed = [_seed_entry("Acme")]
+        db = [
+            _db_row(
+                "Acme",
+                "acme",
+                website_url="https://acme.example.com",
+                logo_url="https://cdn.example.com/acme.svg",
+            )
+        ]
+        result = build_export(seed, db)
+        self.assertEqual(len(result.changed), 1)
+        fields = {c.field: (c.old, c.new) for c in result.changed[0].changes}
+        self.assertEqual(fields["website_url"], (None, "https://acme.example.com"))
+        self.assertEqual(
+            fields["logo_url"], (None, "https://cdn.example.com/acme.svg")
+        )
+        entry = result.output_seed[0]
+        self.assertEqual(entry["website_url"], "https://acme.example.com")
+        self.assertEqual(entry["logo_url"], "https://cdn.example.com/acme.svg")
+
+    def test_matching_site_urls_are_not_drifted(self) -> None:
+        seed = [_seed_entry("Acme", website_url="https://acme.example.com")]
+        db = [_db_row("Acme", "acme", website_url="https://acme.example.com")]
+        result = build_export(seed, db)
+        self.assertEqual(result.changed, [])
+
+    def test_a_company_without_them_gains_no_keys(self) -> None:
+        result = build_export([_seed_entry("Acme")], [_db_row("Acme", "acme")])
+        entry = result.output_seed[0]
+        self.assertNotIn("website_url", entry)
+        self.assertNotIn("logo_url", entry)
 
 
 class TestAtsBindingExport(unittest.TestCase):
