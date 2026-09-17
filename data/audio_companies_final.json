@@ -17,7 +17,7 @@
   },
   {
     "name": "64 Audio",
-    "careers_url": "https://www.64audio.com/pages/careers",
+    "careers_url": "https://recruiting.paylocity.com/recruiting/jobs/All/adf346f4-cc11-4b73-9fff-4856b2f9ebdc/64-Audio",
     "category": "Headphones & Personal Audio",
     "verified": true,
     "source": "auto",
@@ -259,16 +259,16 @@
     "name": "AEQ",
     "careers_url": "https://aeq.es/es/productos/talent",
     "category": "Professional Audio & Live Sound",
-    "verified": true,
-    "source": "auto",
+    "verified": false,
+    "source": "manual",
     "scrape_method": "playwright"
   },
   {
     "name": "AES (Audio Engineering Society)",
     "careers_url": "https://aes.careerwebsite.com/home/index.cfm/",
     "category": "Audio IP & Licensing",
-    "verified": true,
-    "source": "auto",
+    "verified": false,
+    "source": "manual",
     "scrape_method": "playwright"
   },
   {
