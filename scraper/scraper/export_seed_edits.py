@@ -14,6 +14,7 @@ from scraper.database import get_session_factory
 from scraper.models import Company
 
 COMPARED_FIELDS = (
+    "source",
     "category",
     "careers_url",
     "extra_careers_urls",
@@ -113,6 +114,8 @@ def _seed_field(entry: dict, key: str) -> Any:
         return _normalize_list(entry.get(key))
     if key in ("open_application", "verified", "scrape_blocked"):
         return bool(entry.get(key, False))
+    if key == "source":
+        return str(entry.get(key, "auto"))
     return entry.get(key)
 
 
@@ -134,7 +137,7 @@ def _field_diffs(entry: dict, row: Any) -> list:
     return diffs
 
 
-def _entry_from_row(name: str, source: str, row: Any) -> dict:
+def _entry_from_row(name: str, row: Any) -> dict:
     entry: dict = {"name": name}
     entry["careers_url"] = _get(row, "careers_url")
     extra = _normalize_list(_get(row, "extra_careers_urls"))
@@ -170,7 +173,7 @@ def _entry_from_row(name: str, source: str, row: Any) -> dict:
     ats_slug = _get(row, "ats_slug")
     if ats_slug:
         entry["ats_slug"] = ats_slug
-    entry["source"] = source
+    entry["source"] = _get(row, "source")
     entry["scrape_method"] = _get(row, "scrape_method")
     return order_seed_entry(entry)
 
@@ -215,9 +218,7 @@ def build_export(seed_rows: list, db_rows: list) -> ExportResult:
                     changes=_field_diffs(entry, row),
                 )
             )
-            result.output_seed.append(
-                _entry_from_row(db_name, str(entry.get("source", "auto")), row)
-            )
+            result.output_seed.append(_entry_from_row(db_name, row))
             continue
 
         if source != "manual":
@@ -229,9 +230,7 @@ def build_export(seed_rows: list, db_rows: list) -> ExportResult:
         diffs = _field_diffs(entry, row)
         if diffs:
             result.changed.append(Changed(name=seed_name, changes=diffs))
-            result.output_seed.append(
-                _entry_from_row(seed_name, str(entry.get("source", "auto")), row)
-            )
+            result.output_seed.append(_entry_from_row(seed_name, row))
         else:
             result.output_seed.append(entry)
 
@@ -242,7 +241,7 @@ def build_export(seed_rows: list, db_rows: list) -> ExportResult:
         if source == "manual":
             name = str(_get(row, "name") or "")
             result.added.append(Added(name=name))
-            result.output_seed.append(_entry_from_row(name, source, row))
+            result.output_seed.append(_entry_from_row(name, row))
         else:
             result.ignored_auto_added += 1
 

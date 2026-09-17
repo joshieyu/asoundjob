@@ -166,6 +166,67 @@ class TestChanged(unittest.TestCase):
         )
 
 
+class TestSourceField(unittest.TestCase):
+    def test_manual_db_row_with_auto_seed_source_is_reported_as_changed(self) -> None:
+        """Abbey Road Studios and Analog Devices are manual in the database
+        but auto in the seed. company_loader skips a manual row whenever the
+        seed's source isn't also manual, so this drift strands the row
+        forever unless the exporter surfaces it."""
+        seed = [_seed_entry("Abbey Road Studios", source="auto")]
+        db = [_db_row("Abbey Road Studios", "abbey-road-studios", source="manual")]
+        result = build_export(seed, db)
+        self.assertEqual(len(result.changed), 1)
+        fields = {c.field: (c.old, c.new) for c in result.changed[0].changes}
+        self.assertEqual(fields["source"], ("auto", "manual"))
+
+    def test_manual_db_row_proposed_entry_carries_db_source(self) -> None:
+        """The exporter's job is reconciling database into seed, so the
+        proposed entry for Analog Devices must carry the database's own
+        "manual" source, not echo the seed's stale "auto"."""
+        seed = [_seed_entry("Analog Devices", source="auto")]
+        db = [_db_row("Analog Devices", "analog-devices", source="manual")]
+        result = build_export(seed, db)
+        self.assertEqual(result.output_seed[0]["source"], "manual")
+
+    def test_seed_entry_missing_source_key_against_auto_db_row_is_not_drifted(
+        self,
+    ) -> None:
+        """company_loader normalises a missing seed source with
+        str(entry.get("source", "auto")); the exporter must match that or
+        every seed entry with no source key reports a phantom change
+        against an auto database row."""
+        entry = _seed_entry("Acme")
+        del entry["source"]
+        seed = [entry]
+        db = [_db_row("Acme", "acme", source="auto")]
+        result = build_export(seed, db)
+        self.assertEqual(result.changed, [])
+        self.assertEqual(result.ignored_auto_changed, 0)
+        self.assertEqual(result.output_seed, seed)
+
+    def test_renamed_row_proposed_entry_carries_db_source(self) -> None:
+        """Rename detection matches through by_slug_manual, which only
+        contains manual rows, so the proposed entry must carry that
+        "manual" source rather than whatever the seed's stale entry
+        claims."""
+        seed = [_seed_entry("Acme Studios", source="auto")]
+        db = [_db_row("Acme Studios Inc", "acme-studios", source="manual")]
+        result = build_export(seed, db)
+        self.assertEqual(len(result.renamed), 1)
+        self.assertEqual(result.output_seed[0]["source"], "manual")
+
+    def test_matching_auto_source_across_seed_and_db_produces_no_diff(self) -> None:
+        """Confirms the new source comparison does not regress the ordinary
+        case: an auto row whose seed entry already says "auto" still passes
+        straight through with no reported change."""
+        seed = [_seed_entry("Acme", source="auto")]
+        db = [_db_row("Acme", "acme", source="auto")]
+        result = build_export(seed, db)
+        self.assertEqual(result.changed, [])
+        self.assertEqual(result.ignored_auto_changed, 0)
+        self.assertEqual(result.output_seed, seed)
+
+
 class TestRenamed(unittest.TestCase):
     def test_rename_detected_via_slug_fallback(self) -> None:
         seed = [_seed_entry("Acme Studios")]
