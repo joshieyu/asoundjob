@@ -6098,7 +6098,7 @@ API rejects every `website-path` header tried.
   three are the user's call.
 - **David AI's linked YC role** (Applied Audio ML Engineer) is not on its Ashby
   board; its five published rows are generic engineering at native scope.
-- **`ats_slug` is still the only DB-only field** with no path back to the seed.
+- **[CLOSED 2026-09-17, see the last session update.]** **`ats_slug` is still the only DB-only field** with no path back to the seed.
 - **`scraper/demotion_proposals.json`/`.md`** are still untracked and in the
   wrong directory.
 - **LinkedIn is built but never run.** Needs residential proxies.
@@ -6259,7 +6259,7 @@ apply URL before writing a scraper for a proprietary careers front end.
 
 ### Still open from this session
 
-- **`SuccessFactors` claims any host with a `/search` path.** Its `URL_PATTERN`
+- **[CLOSED 2026-09-17, see the last session update.]** **`SuccessFactors` claims any host with a `/search` path.** Its `URL_PATTERN`
   host group matches anything, and because a successful ATS sets
   `trust_empty = True`, a false claim returning zero jobs would retire that
   company's whole board. Harmless today — four of the five seed URLs it matches
@@ -6489,6 +6489,9 @@ every *later* seed edit to 1MORE would silently do nothing. The one field that
 decides whether the loader ever looks at a row again is the one field the
 exporter cannot carry across.
 
+**[CLOSED 2026-09-17, see the last session update.]** `source` is now in
+`COMPARED_FIELDS` and `_entry_from_row` reads it off the database row.
+
 1MORE was written with **`"source": "manual"` alongside `"verified": false`** —
 the convention Bang & Olufsen, Beyerdynamic and Sound Devices already use.
 `skipped_manual` went 3 to 2 and the export stopped proposing it.
@@ -6571,12 +6574,12 @@ urls read back.
 
 ### Still open from this session
 
-- **The panel still cannot set `scrape_blocked` or `open_application`.** Both
+- **[CLOSED 2026-09-17, see the last session update.]** **The panel still cannot set `scrape_blocked` or `open_application`.** Both
   round-trip correctly and both are in `LOADER_MANAGED_FIELDS`, but
   `AdminCompanyUpdate` does not expose them, which is why Synaptics and Cinder
   had to go through the seed by hand. Adding them is now a schema line plus a UI
   control — the plumbing is done.
-- **`description`, `headquarters`, `founded` and `community_links` are half
+- **[CLOSED 2026-09-17, see the last session update.]** **`description`, `headquarters`, `founded` and `community_links` are half
   wired.** Unlike `website_url`, the loader has always read them on key presence
   and they are in `COMPARED_FIELDS`, so `export_seed_edits` would propose them —
   but no seed entry carries them and `seed_file.entry_from_company` does not
@@ -6749,7 +6752,7 @@ None of the 68 are on the public board.
 
 ### Still open from this session
 
-- **Eleven chrome rows survive a successful scrape**, in three distinct shapes
+- **[CLOSED 2026-09-17, see the last session update.]** **Eleven chrome rows survive a successful scrape**, in three distinct shapes
   that each need measuring rather than guessing:
   - **same-page `#anchor` links to sections** — MED-EL emits three "Find out
     more" rows pointing at `#APPRE`, `#INTER`, `#MANUF` on one page;
@@ -6760,19 +6763,202 @@ None of the 68 are on the public board.
     heading rather than a job title.
   Extend the vocabulary the way the English family was extended — against the
   corpus, checking what the structural fallback substitutes — not on instinct.
-- **Sivantos reports 243 jobs behind a `/jobs/show_more?page=2` pager.**
+- **[CLOSED 2026-09-17, see the last session update.]** **Sivantos reports 243 jobs behind a `/jobs/show_more?page=2` pager.**
   `find_next_page` looks for `rel=next`, an aria-label, the text "next", or a
   `pagination-next` class; a "show more" link matches none of them, so 20 is page
   one only. A show-more pattern in `pagination.py` deserves its own measured pass.
 - **Description fetching for playwright is still unbuilt**, and on the 8 per cent
   measurement it should stay low priority — it is worth roughly 28 borderline
   rows and would not have found any of what this session actually fixed.
-- **More landing-page seed URLs almost certainly exist.** Three were found by
+- **[CLOSED 2026-09-17, see the last session update.]** **More landing-page seed URLs almost certainly exist.** Three were found by
   following two board rows; nobody has swept for the pattern. A read-only tool
   that flags companies whose rows are mostly department or region names would
   find them.
 - **Everything in the three earlier 2026-09-17 and 2026-09-15 lists stands**,
   including the SuccessFactors `/search` host-wildcard trap.
+
+## Session update (2026-09-17, last) — five open items, and the two counts that were wrong
+
+Five entries from the still-open lists, done as a group. Two of them turned out
+to be mismeasured in the direction that matters: the harmless-for-now trap had
+already fired, and the eleven-row filter gap was a hundred and seventy-nine.
+
+### The SuccessFactors trap was not hypothetical
+
+The previous entry called it "harmless today — four of the five seed URLs it
+matches really are SuccessFactors — but it is a live trap." The fifth is
+`joinbytedance.com/search?keyword=audio`, and `scrape_log` has it scraped by
+`successfactors` on 2026-09-15 and again on 2026-09-17, both `status=success`,
+both `jobs_found=0`. A successful ATS sets `trust_empty`, and a trusted empty
+result deactivates every row the company has. ByteDance publishes nothing
+because of this.
+
+Which also retires the older note that **ByteDance needs a longer playwright
+wait**. Playwright never ran. SuccessFactors claimed the board first and
+answered for it.
+
+The fix is a page marker rather than the host allowlist the entry proposed. I
+fetched all five `/search/?q=&startrow=0` pages: the four real boards each carry
+the literal string `successfactors` in their markup, and joinbytedance.com
+carries none of `successfactors`, `jobTitle-link`, `searchResultsShell` or
+`careersite`. So when the first page yields no jobs, `fetch_jobs` now checks for
+a marker, and raises `ScrapeError` when there is none. Raising is the point:
+`pipeline._scrape_one` logs "claimed this board but failed", sets
+`ats_claim_failed`, and falls through to the generic scrapers with deactivation
+suppressed. Returning `[]` is what wipes a board.
+
+A real SuccessFactors board that is genuinely empty still carries the marker,
+still returns an empty list, and is still trusted — the case a host allowlist
+would have got wrong in the other direction.
+
+Live after the change: ByteDance raises and falls through to http, which finds
+four rows, all of them navigation. Ferrari still returns 11 jobs.
+
+### Eleven chrome rows were a hundred and seventy-nine
+
+The count was wrong, and the reason is worth keeping. I had measured "rows
+refreshed by the last cycle" using `updated_at`. SQLAlchemy emits no UPDATE when
+a re-found row's values are unchanged, so `onupdate` never fires, and furniture
+that is refound identically every single cycle looks like a stale row nobody has
+touched since August. ON Semiconductor's `Engineering Jobs` row is dated
+2026-08-26 and is refound every time.
+
+Re-running the extractor against `onsemi.com/careers` returned 30 rows and zero
+jobs: `Engineering Jobs`, `Manufacturing Jobs`, `Germany Careers`,
+`Asia Pacific Benefits`, `Material Composition (RoHS)`. Corpus-wide there were
+179 live navigation rows across 125 companies whose last scrape succeeded.
+
+Three title rules, each gated on the title carrying no role noun, each a drop
+with no structural rescue, because the established rule is that a link whose own
+text names a list is a section header:
+
+- a **listing suffix** of at most five words — `Engineering Jobs`,
+  `Germany Careers`, `Best Buy Canada Jobs`, `Arup Careers`
+- a **call-to-action lead-in** of at most six — `Explore all jobs`,
+  `Browse Careers`, `Discover more`
+- **saved or alerts** — `Saved jobs`, `Show all favorites`, `0 Saved Jobs`
+
+Plus the non-English listing labels the previous entry asked for, which matter
+more than their count because the board is heavily European, and the section
+names a careers page uses for its own anchors.
+
+Priced against all 18,689 rows before any of it was written: **529 dropped, 2 of
+the 1,299 board rows**. Both are titled `Careers` — the stale HGC Engineering
+and Sivantos Group rows that last session's landing-page work was meant to
+retire. The three regexes on their own drop 431 and touch no board row at all.
+
+The structural rescue needed the same checks applied **after** it runs, not only
+before. This is the part the first pass got wrong. MED-EL's section anchors sit
+on `/en/career-opportunities#APPRENTICESHIP` while the seed URL is
+`jobs.medel.com/`, so a same-page-anchor guard never saw them: the link text was
+`Find out more`, the rescue substituted `Apprenticeships`, and the row was named
+after a page section. Now a rescued title that lands on a listing label is
+dropped, and any rescued fragment anchor has to carry a role noun. All 21
+fragment-anchor rows on the board today carry one, so it costs nothing.
+
+Live: ON Semiconductor 30 rows to 12, MED-EL 14 to 9.
+
+### Sivantos: twenty rows to a hundred and seventy-nine
+
+`Show 20 more` pointing at `/jobs/show_more?page=2`. `find_next_page` matched
+`rel=next`, an aria-label, the text "next" and a `pagination-next` class, and a
+show-more link is none of those.
+
+Everything downstream already worked once the link is seen. The show_more path
+is a descendant of `/jobs` and carries a query, so the existing host, path and
+query guards pass. The site appends parameters cumulatively — `?page=2&page=3` —
+and the server reads the last one, which pages 2 and 3 confirm by returning 21
+jobs each that page 1 did not.
+
+The verb or the count is required, so `Show more`, `Load more jobs` and
+`20 more` match while a bare `More` nav item does not, and `Read more` and
+`Learn more` stay what they are: links into a job rather than past it. The first
+implementation had the verb optional; a bare `More` would have matched, and
+`find_next_page` returns the first candidate it finds.
+
+Live: `collect_paginated` now returns **179 jobs against 20**. `MAX_PAGES = 10`
+caps it there against a reported 243.
+
+### The exporter copied source from the seed it was correcting
+
+`_entry_from_row` took `source` as a parameter and both callers passed the
+seed's value, so a row that is `manual` in the database was proposed back to the
+seed as `auto`. `source` was also missing from `COMPARED_FIELDS`, so the drift
+never appeared in the report either.
+
+That combination strands a row. `company_loader` protects hand edits with
+`existing.source == "manual" and source != "manual"`, which holds only while the
+**seed** claims manual; a manual row the seed calls auto is skipped by the
+loader forever, and the one tool whose job is to reconcile the two wrote the
+wrong value straight back without mentioning it.
+
+Two rows are in that state. Against the live database the report now reads
+**Abbey Road Studios** `source: 'auto' -> 'manual'` and **Analog Devices** the
+same, alongside the `ats_type` drift it was already finding.
+
+`_entry_from_row` is only ever reached for rows that are manual in the database
+— the renamed branch matches through `by_slug_manual`, the changed branch is
+guarded, and the added branch already passed the row's own source — so reading
+`source` off the row is right at all three callers.
+
+### scraper/scraper/detect_landing_pages.py
+
+Read-only. Flags a company whose stored rows are mostly taxonomy rather than job
+titles and almost none of which reach the board: at least 50 per cent taxonomy,
+at most 20 per cent board. **44 companies out of roughly 1,400**, 24 of them
+native scope — reviewable in a sitting.
+
+Off-host row URLs are deliberately **not** part of the flagging test, only of
+the report. Plenty of companies legitimately host their board on an ATS domain,
+and the HGC Engineering shape is a single row on the company's own host, so
+requiring off-host would both admit the innocent and miss the guilty.
+
+`rows_lead_to` says where a company's rows point and nothing more. It was called
+`suggested_careers_url` until I ran the top two native suggestions through
+`check_url`: Audionova's returned HTTP 404 and zero jobs from every method, and
+AMX (Snap One)'s was an Oracle talent-community signup page with no job links,
+because the row behind it was a talent-pool link. For a single-row company the
+value is just that one row's URL. The report header now says so, names both
+failures, and tells the reader to open it rather than paste it.
+
+### Still open from this session
+
+- **MED-EL publishes nine rows and every one of them is a requisition code** —
+  `IT_12503`, `QA_12511`, `RDSP_12608`, `RDEFA_12606`. No words, so nothing
+  scores, so a native-scope hearing-implant company contributes nothing to the
+  board. `RDSP` is plausibly R&D signal processing, which is exactly this
+  board's audience. It is the only company in the corpus with this shape: a
+  regex for `^[A-Z]{1,8}[_-]?\d{3,10}$` over all active rows returns 9 hits and
+  they are all MED-EL. So it wants a per-company title rescue from the detail
+  page, not a general rule.
+- **ON Semiconductor's remaining 12 rows are a benefits and policy family** —
+  `Asia Pacific Benefits`, `Material Composition (RoHS)`, `Compensation &
+  Benefits`, `Internship FAQ`. A different shape from anything fixed here, and
+  not measured. `Technician Jobs` also survives, deliberately: `technician` is a
+  role noun and recall beats precision.
+- **The 44 companies `detect_landing_pages` flagged have not been reviewed.**
+  The tool exists; nobody has walked its output. Both spot checks I ran were
+  dead ends, so expect a low hit rate per entry and read `rows_lead_to` as a
+  lead rather than an answer.
+- **`detect_landing_pages` writes its report into `scraper/` by default**, the
+  same wart as `scraper/demotion_proposals.*`, which are still untracked and
+  still in the wrong directory.
+- **Sivantos yields about 200 of its 243** at `MAX_PAGES = 10`. Raising the cap
+  costs every paginated company, so it wants measuring rather than nudging.
+- **Three bullets in the earlier lists were stale and are now retired.** The
+  panel does set `scrape_blocked` and `open_application`; `description`,
+  `headquarters`, `founded` and `community_links` do reach the seed; and
+  `ats_slug` has a path back to the seed through both `seed_file` and
+  `COMPARED_FIELDS`. All three shipped on 2026-09-17 after the lists that
+  mention them were written.
+- **Everything else in the earlier lists stands**, minus the SuccessFactors
+  `/search` trap, the ByteDance playwright wait and the landing-page sweep,
+  which are closed above: ByteDance still needs a working careers URL, the
+  Ramboll and Decagon relevance calls, the measured-and-left `amplif*` gap,
+  Makeshift Software's GoHire title shape, the dead `TikTok Audio (ByteDance)` /
+  `Resso (ByteDance)` / `Fusion Marine Audio` entries, playwright description
+  fetching at its 8 per cent price, `check_url --json` samples not being
+  board-prioritised, and LinkedIn built but never run.
 
 ## Running the demo
 
