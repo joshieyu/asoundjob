@@ -6448,6 +6448,149 @@ SmartRecruiters tenant `Bosch Group` now reads.
   entries, `scraper/demotion_proposals.*` still untracked, and LinkedIn built but
   never run.
 
+## Session update (2026-09-17, later) — the admin panel becomes the authority
+
+Five commits, `8f4b536`..`3ae03e8`. Gates at the end: **1,155 scraper tests, 199
+API tests, `npm run check` 342 files / 0 errors / 0 warnings**, ruff and mypy
+clean. Seed is **1,416 entries**, 15 blocked. The database holds 1,416
+companies, 17,736 jobs, and the board publishes 1,256 rows.
+
+The seed stopped being one-way this session. Editing a company in the admin
+panel now rewrites `data/audio_companies_final.json` directly — no
+`export_seed_edits` run, no hand-merge. **This reverses the standing rule that
+the seed is only ever edited by hand**, at the owner's explicit request, and it
+applies to the API only: the scraper still never writes the seed.
+
+### The audit that started it, and the trap inside the exporter
+
+1MORE was set unverified in the panel; the change held in the UI and the seed
+still said `"verified": true`. Nothing was broken. The panel edits five fields
+(**name, category, careers_url, extra_careers_urls, verified**), all of them in
+`LOADER_MANAGED_FIELDS`, so each one flips the row to `source = "manual"` — which
+is exactly what stops the next loader run reverting it. The seed simply never
+heard about it, by design.
+
+Two worries checked rather than assumed, both fine:
+
+- **An admin rename does not create a duplicate.** The seed still holds the old
+  name, but the loader falls back to matching by slug when the name misses, and
+  only for `source == "manual"` rows. A panel rename leaves the slug alone, so
+  the row is found. (Renaming in the *seed* is the dangerous one — that is what
+  left an `Adobe Audition` orphan earlier the same day.)
+- **`audio_scope` edits survive.** The scope sync in `backfill_relevance` skips
+  manual rows.
+
+The real defect was in the bridge. **`export_seed_edits` copies `source` from the
+seed, not from the database**, because `source` is not in `COMPARED_FIELDS`. Its
+proposal for 1MORE was `"verified": false, "source": "auto"` — and applying that
+verbatim leaves the row stranded: the loader's guard is `existing.source ==
+"manual" and source != "manual"`, so it would keep skipping the row forever and
+every *later* seed edit to 1MORE would silently do nothing. The one field that
+decides whether the loader ever looks at a row again is the one field the
+exporter cannot carry across.
+
+1MORE was written with **`"source": "manual"` alongside `"verified": false`** —
+the convention Bang & Olufsen, Beyerdynamic and Sound Devices already use.
+`skipped_manual` went 3 to 2 and the export stopped proposing it.
+
+### api/api/seed_file.py — and why the sync is off by default
+
+Create, edit, rename and delete all reach the seed. Verified end to end over
+HTTP against a throwaway copy: unverify wrote `verified` and `source` together, a
+rename moved the entry and left no duplicate, a delete removed it and the next
+load did not resurrect it.
+
+**The sync is off until the running app turns it on.** `enable()` lives in
+`main.py`'s lifespan, where only a served app reaches it. That is not caution for
+its own sake — the first attempt keyed it to `DATA_DIR` set from
+`api/tests/__init__.py`, and **`python -m unittest discover -s tests` never
+imports that file**. With `-s tests` and no `-t`, unittest puts `tests/` itself
+on `sys.path` and loads the modules top-level as `test_x`, not `tests.test_x`.
+Measured, not reasoned about: a print in `tests/__init__.py` fires 0 times under
+`discover -s tests` and once under `python -m unittest tests.test_seed_sync`.
+Three fixture companies — *Acme Audio*, *Beta Sound*, *Other Audio Co* — went
+into the real seed before that showed up. Off-by-default means a test that
+forgets cannot reach the file at all, whatever the invocation style.
+
+The rest of the contract, each with a test:
+
+- **Atomic** — temp file then `os.replace`, serialised by a module lock.
+- **Never invents a seed.** A missing file raises `SeedWriteError`; it does not
+  create one.
+- **A failed write raises and `get_db` rolls the transaction back**, so the
+  database is never left ahead of the seed.
+- **Untouched entries keep their exact key order**, so one edit is a one-entry
+  diff and stays reviewable.
+- **`source` is written alongside the edited field** — the fix above, now
+  structural rather than remembered.
+
+### One canonical key order, shared
+
+The exporter emitted `extra_careers_urls` straight after `careers_url`, and a
+test called that "the seed file shape". It was not: **10 entries put it after
+`scrape_method` and 7 put it before**, so the file held both and the exporter
+rewrote whichever entry it touched. `order_seed_entry` now lives in
+`company_loader.py`, which already owns seed semantics, and both writers import
+it. The rule is **required keys first, then optional ones**, matching how
+`scrape_blocked`, `ats_type` and `ats_slug` already sit, and leaving the
+1,314-entry base shape a stable prefix of every entry.
+
+Eight entries were normalised (Apple, Amazon, Google, Qualcomm, Harman, Arup,
+Infineon, Listen Inc). Key order only — every key and value was compared against
+HEAD to prove nothing moved. Without it the first admin edit to Apple would
+reshuffle its keys and read as a change nobody made.
+
+### website_url and logo_url
+
+Editable through the API, written nowhere the loader read, so a database rebuilt
+from the seed lost them silently. Both are now in the loader and both seed
+writers, on **key presence** like `description` and `headquarters`: absent leaves
+the column alone, present wins, explicit `null` clears, a blank string counts as
+cleared. Unconditional writes would have set every column to NULL on the first
+load, since no entry carries these keys yet.
+
+They stay **out of `LOADER_MANAGED_FIELDS`** on purpose: that set drives the
+`source` flip and its coverage test means the fields the loader overwrites
+*unconditionally*. Editing only `website_url` still reaches the seed, because the
+sync runs on every admin write regardless of the flip.
+
+Proved rather than asserted: a company created through the admin HTTP API with
+both urls, then the resulting seed loaded into a fresh in-memory database and the
+urls read back.
+
+### Two ways I broke the running environment — do not repeat
+
+- **`pkill -f "uvicorn api.main:app"` killed the owner's API**, not mine. My own
+  uvicorn had failed to bind (`[Errno 48] address already in use` — the owner's
+  server was already on 8000) and exited, so the pattern matched only theirs. The
+  demo showed 0 open roles and nothing was wrong with the code. **Read the log
+  before killing by pattern, and kill by PID from `lsof -t` instead.** The later
+  throwaway servers on 8011 and 8012 were stopped that way.
+- **Test fixtures reached the real seed**, as above. Anything that writes the
+  seed must be inert unless a served app switched it on.
+
+### Still open from this session
+
+- **The panel still cannot set `scrape_blocked` or `open_application`.** Both
+  round-trip correctly and both are in `LOADER_MANAGED_FIELDS`, but
+  `AdminCompanyUpdate` does not expose them, which is why Synaptics and Cinder
+  had to go through the seed by hand. Adding them is now a schema line plus a UI
+  control — the plumbing is done.
+- **`description`, `headquarters`, `founded` and `community_links` are half
+  wired.** Unlike `website_url`, the loader has always read them on key presence
+  and they are in `COMPARED_FIELDS`, so `export_seed_edits` would propose them —
+  but no seed entry carries them and `seed_file.entry_from_company` does not
+  write them, so an admin edit to a description never reaches the seed. One line
+  each in the writer closes it, if the seed should own them.
+- **The API process needs write access to `data/` in production.** A failed write
+  returns 500 naming the path rather than diverging silently, which is the right
+  failure, but it is a deployment requirement that did not exist before.
+- **A successful seed write followed by a failed database commit leaves the seed
+  one edit ahead.** The window is tiny and the next loader run reconciles, since
+  the seed is truth. Recorded rather than fixed.
+- **Everything in the two earlier 2026-09-17 and 2026-09-15 lists stands**,
+  including the SuccessFactors `/search` host-wildcard trap.
+
 ## Running the demo
 
 ```bash
