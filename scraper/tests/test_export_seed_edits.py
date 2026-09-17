@@ -348,7 +348,7 @@ class TestAtsBindingExport(unittest.TestCase):
 
 
 class TestEmittedKeyOrder(unittest.TestCase):
-    def test_key_order_matches_the_seed_file_shape(self) -> None:
+    def test_required_keys_come_first_then_the_optional_ones(self) -> None:
         seed = [_seed_entry("Acme", careers_url="https://old.example.com/careers")]
         db = [
             _db_row(
@@ -365,12 +365,12 @@ class TestEmittedKeyOrder(unittest.TestCase):
             [
                 "name",
                 "careers_url",
-                "extra_careers_urls",
                 "category",
                 "verified",
                 "open_application",
                 "source",
                 "scrape_method",
+                "extra_careers_urls",
             ],
         )
 

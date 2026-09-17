@@ -8,7 +8,7 @@ from typing import Any, Optional
 
 from sqlalchemy import select
 
-from scraper.company_loader import slugify
+from scraper.company_loader import order_seed_entry, slugify
 from scraper.config import load_settings
 from scraper.database import get_session_factory
 from scraper.models import Company
@@ -162,7 +162,7 @@ def _entry_from_row(name: str, source: str, row: Any) -> dict:
         entry["ats_slug"] = ats_slug
     entry["source"] = source
     entry["scrape_method"] = _get(row, "scrape_method")
-    return entry
+    return order_seed_entry(entry)
 
 
 def build_export(seed_rows: list, db_rows: list) -> ExportResult:

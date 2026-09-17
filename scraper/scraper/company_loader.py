@@ -41,6 +41,29 @@ class LoadStats:
         )
 
 
+SEED_KEY_ORDER = (
+    "name",
+    "careers_url",
+    "category",
+    "verified",
+    "open_application",
+    "source",
+    "scrape_method",
+    "extra_careers_urls",
+    "scrape_blocked",
+    "ats_type",
+    "ats_slug",
+)
+
+
+def order_seed_entry(entry: dict[str, Any]) -> dict[str, Any]:
+    out = {key: entry[key] for key in SEED_KEY_ORDER if key in entry}
+    for key, value in entry.items():
+        if key not in out:
+            out[key] = value
+    return out
+
+
 MAX_COMMUNITY_LINKS = 10
 COMMUNITY_LINK_URL_RE = re.compile(r"^https?://.{1,2048}$")
 
