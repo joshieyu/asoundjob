@@ -435,14 +435,14 @@
   {
     "name": "Amazon",
     "careers_url": "https://www.amazon.jobs/en/search?base_query=audio",
-    "extra_careers_urls": [
-      "https://www.amazon.jobs/en/search?base_query=speech",
-      "https://www.amazon.jobs/en/search?base_query=signal+processing"
-    ],
     "category": "Consumer Electronics & Tech",
     "verified": true,
     "source": "auto",
-    "scrape_method": "http"
+    "scrape_method": "http",
+    "extra_careers_urls": [
+      "https://www.amazon.jobs/en/search?base_query=speech",
+      "https://www.amazon.jobs/en/search?base_query=signal+processing"
+    ]
   },
   {
     "name": "AMD",
@@ -656,14 +656,14 @@
   {
     "name": "Apple",
     "careers_url": "https://jobs.apple.com/en-us/search",
-    "extra_careers_urls": [
-      "https://jobs.apple.com/en-us/search?search=speech",
-      "https://jobs.apple.com/en-us/search?search=acoustic"
-    ],
     "category": "Consumer Electronics & Tech",
     "verified": true,
     "source": "manual",
-    "scrape_method": "http"
+    "scrape_method": "http",
+    "extra_careers_urls": [
+      "https://jobs.apple.com/en-us/search?search=speech",
+      "https://jobs.apple.com/en-us/search?search=acoustic"
+    ]
   },
   {
     "name": "Applied Acoustics Systems (AAS)",
@@ -726,13 +726,13 @@
   {
     "name": "Arup",
     "careers_url": "https://jobs.arup.com/jobs/search/20982857",
-    "extra_careers_urls": [
-      "https://jobs.arup.com/jobs/search/20982861"
-    ],
     "category": "Acoustic Consulting & Engineering",
     "verified": true,
     "source": "auto",
-    "scrape_method": "playwright"
+    "scrape_method": "playwright",
+    "extra_careers_urls": [
+      "https://jobs.arup.com/jobs/search/20982861"
+    ]
   },
   {
     "name": "Ashly Audio",
@@ -4303,13 +4303,13 @@
   {
     "name": "Google",
     "careers_url": "https://www.google.com/about/careers/applications/jobs/results/?q=audio",
-    "extra_careers_urls": [
-      "https://www.google.com/about/careers/applications/jobs/results/?q=dsp"
-    ],
     "category": "Consumer Electronics & Tech",
     "verified": true,
     "source": "auto",
-    "scrape_method": "http"
+    "scrape_method": "http",
+    "extra_careers_urls": [
+      "https://www.google.com/about/careers/applications/jobs/results/?q=dsp"
+    ]
   },
   {
     "name": "Gotham Audio",
@@ -4468,16 +4468,16 @@
   {
     "name": "Harman",
     "careers_url": "https://jobsearch.harman.com/en_US/careers/SearchJobs/?search=audio",
+    "category": "Professional Audio & Live Sound",
+    "verified": true,
+    "source": "manual",
+    "scrape_method": "http",
     "extra_careers_urls": [
       "https://jobsearch.harman.com/en_US/careers/SearchJobs/?search=acoustic",
       "https://jobsearch.harman.com/en_US/careers/SearchJobs/?search=dsp",
       "https://jobsearch.harman.com/en_US/careers/SearchJobs/?search=transducer",
       "https://jobsearch.harman.com/en_US/careers/SearchJobs/?search=sound"
-    ],
-    "category": "Professional Audio & Live Sound",
-    "verified": true,
-    "source": "manual",
-    "scrape_method": "http"
+    ]
   },
   {
     "name": "Harmonai",
@@ -4982,14 +4982,14 @@
   {
     "name": "Infineon Technologies",
     "careers_url": "https://jobs.infineon.com/careers?query=audio",
-    "extra_careers_urls": [
-      "https://jobs.infineon.com/careers?query=dsp",
-      "https://jobs.infineon.com/careers?query=acoustic"
-    ],
     "category": "Consumer Electronics & Tech",
     "verified": true,
     "source": "auto",
     "scrape_method": "playwright",
+    "extra_careers_urls": [
+      "https://jobs.infineon.com/careers?query=dsp",
+      "https://jobs.infineon.com/careers?query=acoustic"
+    ],
     "ats_type": "eightfold",
     "ats_slug": "infineon.com"
   },
@@ -5767,9 +5767,9 @@
     "careers_url": "https://www.listeninc.com/about-listen/careers/",
     "category": "Audio Testing & Measurement",
     "verified": true,
+    "open_application": true,
     "source": "auto",
-    "scrape_method": "http",
-    "open_application": true
+    "scrape_method": "http"
   },
   {
     "name": "LiveOne",
@@ -8015,13 +8015,13 @@
   {
     "name": "Qualcomm",
     "careers_url": "https://careers.qualcomm.com/careers?query=audio",
-    "extra_careers_urls": [
-      "https://careers.qualcomm.com/careers?query=dsp"
-    ],
     "category": "Consumer Electronics & Tech",
     "verified": true,
     "source": "auto",
     "scrape_method": "playwright",
+    "extra_careers_urls": [
+      "https://careers.qualcomm.com/careers?query=dsp"
+    ],
     "ats_type": "eightfold",
     "ats_slug": "qualcomm.com"
   },
