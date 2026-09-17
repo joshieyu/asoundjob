@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import asyncio
+import inspect
 import unittest
+from unittest import mock
 
 from scraper.check_url import (
     DEFAULT_AUDIO_SCOPE,
@@ -8,6 +11,7 @@ from scraper.check_url import (
     Report,
     ResolvedContext,
     build_company,
+    check_url,
     format_report,
     parse_args,
     report_to_dict,
@@ -15,6 +19,8 @@ from scraper.check_url import (
 )
 from scraper.models import Company
 from scraper.normalizer import NormalizedJob
+from scraper.scrapers.base import ScrapeResult
+from scraper.scrapers.pipeline import ScrapePipeline
 
 
 def make_lookup(company: Company | None):
@@ -88,14 +94,24 @@ class TestResolveContext(unittest.TestCase):
         context = resolve_context("acme audio", "Consumer Electronics & Tech", make_lookup(found))
         self.assertEqual(context.matched_company, "Acme Audio")
         self.assertEqual(context.category, "Consumer Electronics & Tech")
-        self.assertEqual(context.audio_scope, "crossover")
+        self.assertEqual(context.audio_scope, "partial")
         self.assertFalse(context.used_default)
+
+    def test_explicit_category_drags_audio_scope_with_it(self) -> None:
+        native = resolve_context(None, "Audio Semiconductors", make_lookup(None))
+        self.assertEqual(native.audio_scope, "native")
+        partial = resolve_context(None, "Automotive OEMs", make_lookup(None))
+        self.assertEqual(partial.audio_scope, "partial")
+        agency = resolve_context(
+            None, "Staffing & Recruiting Agencies", make_lookup(None)
+        )
+        self.assertEqual(agency.audio_scope, "all")
 
     def test_explicit_category_without_db_match(self) -> None:
         context = resolve_context(None, "Consumer Electronics & Tech", make_lookup(None))
         self.assertIsNone(context.matched_company)
         self.assertEqual(context.category, "Consumer Electronics & Tech")
-        self.assertEqual(context.audio_scope, DEFAULT_AUDIO_SCOPE)
+        self.assertEqual(context.audio_scope, "partial")
         self.assertFalse(context.used_default)
 
 
@@ -213,3 +229,39 @@ class TestReportSummary(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestDiscoveryStubMatchesPipeline(unittest.TestCase):
+    def test_stub_is_awaitable_like_the_method_it_replaces(self) -> None:
+        self.assertTrue(
+            inspect.iscoroutinefunction(ScrapePipeline._try_discovery),
+            "pipeline discovery hook is no longer async",
+        )
+
+        captured: list[object] = []
+
+        async def fake_scrape_company(
+            self: ScrapePipeline, company: Company
+        ) -> ScrapeResult:
+            captured.append(self._try_discovery)
+            await self._try_discovery(company, "<html></html>")
+            return ScrapeResult(
+                company_id=company.id or 0,
+                success=False,
+                method="http",
+                error="HTTP 403",
+            )
+
+        async def fake_close(self: ScrapePipeline) -> None:
+            return None
+
+        with mock.patch.object(
+            ScrapePipeline, "scrape_company", fake_scrape_company
+        ), mock.patch.object(ScrapePipeline, "close", fake_close):
+            report = asyncio.run(
+                check_url("https://example.com/careers", None, None)
+            )
+
+        self.assertFalse(report.success)
+        self.assertEqual(report.error, "HTTP 403")
+        self.assertTrue(inspect.iscoroutinefunction(captured[0]))

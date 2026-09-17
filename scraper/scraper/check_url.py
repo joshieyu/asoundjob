@@ -13,7 +13,7 @@ from scraper.company_loader import slugify
 from scraper.config import load_settings
 from scraper.database import dispose_engine, session_scope
 from scraper.models import Company
-from scraper.normalizer import NormalizedJob, Normalizer
+from scraper.normalizer import NormalizedJob, Normalizer, category_to_scope
 from scraper.scrapers.ats_discovery import discover
 from scraper.scrapers.pipeline import ScrapePipeline
 
@@ -89,6 +89,7 @@ def resolve_context(
     audio_scope = matched.audio_scope if matched is not None else DEFAULT_AUDIO_SCOPE
     if category_override is not None:
         category = category_override
+        audio_scope = category_to_scope(category_override)
     elif matched is not None:
         category = matched.category
     else:
@@ -126,7 +127,7 @@ async def check_url(url: str, name: Optional[str], category_override: Optional[s
     pipeline = ScrapePipeline(settings)
     discovered: list[DiscoveredAts] = []
 
-    def _record_discovery(
+    async def _record_discovery(
         target: Company, html: Optional[str], overwrite: bool = False
     ) -> None:
         if not html:
