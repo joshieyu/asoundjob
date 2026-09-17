@@ -6288,6 +6288,166 @@ apply URL before writing a scraper for a proprietary careers front end.
   wrong directory.
 - **LinkedIn is built but never run.** Needs residential proxies.
 
+## Session update (2026-09-17) — eight links, and two tools that were lying
+
+Five commits, `a6399f3`..`6410af5`. Gates at the end: **1,147 scraper tests, 179
+API tests, `npm run check` 342 files / 0 errors / 0 warnings**, ruff and mypy
+clean. Seed is **1,416 entries**, 33 carrying an ATS binding, 15 blocked. The
+database holds 1,416 companies, **17,736 jobs** (down from 22,586), and the board
+publishes 1,257 rows.
+
+Eight links arrived. Two of them broke tooling before they added anything.
+
+### check_url died on exactly the pages it exists to diagnose
+
+`_try_discovery` became a coroutine when the discovery gate landed last session.
+`check_url` still replaced it with a plain function — and **that stub is only
+reached after a scrape attempt fails**, so every successful check hid the bug and
+every failing one died with `object NoneType can't be used in 'await'
+expression` instead of reporting why the page failed. Synaptics, Tensor and
+Cinder all hit it in the same minute.
+
+This is the **second copy** of that stub (`test_multi_url_scrape.py` was the
+first, fixed last session — `test_pipeline_discovery.py` awaits the real
+method and was fine). The new test drives `check_url` with
+`scrape_company` patched to a failure, captures the hook the pipeline actually
+receives, and asserts both it and `ScrapePipeline._try_discovery` are coroutine
+functions — so a third copy cannot drift alone.
+
+**`--category` was also quietly lying.** It set the category used for scoring
+but left `audio_scope` at `native`, and scope is a pure function of category
+everywhere else in the codebase. Any partial-scope company read roughly double
+its real board count: Tensor under `Automotive OEMs` reported 4 / 100 and is
+2 / 100. Two existing tests asserted the old behaviour and were changed — they
+encoded the bug, not a decision.
+
+### "Details" is furniture
+
+Tensor's board gives all 100 jobs the same anchor text, so every row arrived
+titled `Details` and nothing scored. `NON_JOB_TEXT` already held `see details`
+and `view job`; it was missing the plainer spellings, so `flat_unusable` never
+fired and `_structural_title` never ran. Added `details`, `view details`,
+`more details`, `job details` and the card headings come back — *Software
+Engineer: Audio Detection*, *Senior Staff DSP Engineer, LiDAR*.
+
+### The SmartRecruiters query, and how Bosch went from a fifth of the database to 107 rows
+
+Bosch Group scraped **4,836 rows for 18 board rows** — a fifth of every job in
+the database for one company, 29s a cycle. Narrowing it needed a scraper fix
+first: the SmartRecruiters slug regex stops at the first `?`, so a query on a
+careers URL was **silently dropped** and every company was scraped whole. Workday
+has honoured `?q=` for a long time, so `extract_query` moved to `fetch.py` and
+both now import one copy.
+
+Two behaviours of the SmartRecruiters search had to be measured, not assumed:
+
+- **It ORs exactly two terms and ANDs three or more.** `audio sound` returns 40
+  where the terms return 24 and 17 separately; `acoustic dsp nvh` returns 6 where
+  they return 11, 6 and 26. So a URL carries **at most two words**, and that is
+  what makes `MAX_CAREERS_URLS = 6` enough for twelve terms.
+- **A quoted phrase stays a phrase.** `signal processing` unquoted returns
+  **1,693** Bosch postings; `"signal processing"` returns 13, and covers three
+  board rows nothing else reached. It is stored URL-encoded
+  (`?q=%22signal+processing%22`) so the seed holds no raw spaces.
+
+The six searches were chosen by checking each against the 18 board rows the full
+scrape had **already produced**, not by guessing vocabulary:
+
+| search | rows | new board rows |
+|---|---:|---:|
+| `audio sound` | 40 | 8 |
+| `acoustic akustik` | 14 | 4 |
+| `"signal processing"` | 13 | 3 |
+| `nvh vibration` | 36 | 1 |
+| `dsp noise` | 21 | 1 |
+| `akustisch speech` | 5 | 1 |
+
+**107 rows, 18 of 18 board rows, 9s.** Two German forms earn separate slots
+because there is no stemming: `acoustic` misses *Akustische Charakterisierung von
+MEMS* and `akustisch` misses *Dynamik und Akustik in Hydrostaten*. Drop either
+and it is 17 of 18. An earlier set that spent slots on `mems`, `vibration`,
+`noise` and `lautsprecher` cost 57 extra rows for **zero** board rows — the
+marginal column is the only thing worth reading in that table.
+
+The two false positives survive the narrowing and always will: *Turret
+Driver/Dock Operator - DSP* (Delivery Service Partner) and *Especialista en
+Comunicación Visual … Audiovisual*. They match on real words.
+
+**Nothing in the pipeline ever deletes a job row.** A row not seen in a cycle is
+deactivated, and `deactivate_expired_jobs` only flips `is_active` on rows that
+carry an `expires_date` — which scraped rows do not. So re-scraping Bosch with
+the narrow searches would have left 4,836 rows in the database forever, inactive
+and invisible but still counted. The rebuild used a **scratch copy of the seed
+minus Bosch Group** in the scratchpad, `prune_orphans --file <scratch>` dry run
+first to confirm it found exactly Bosch Group and Bosch Security and nothing
+else, then `--apply`, then a normal loader run to re-insert. `--file` makes
+prune_orphans a general "delete these companies" tool without touching the real
+seed twice.
+
+### Companies added and reworked
+
+| company | board / scraped | via | note |
+|---|---:|---|---|
+| Bosch Group | 18 / 107 | smartrecruiters | six searches, above |
+| Tensor | 2 / 100 | http | robotaxi; readable only after the `Details` fix |
+| Nudge | 2 / 25 | ashby | ultrasound neuromodulation |
+| Adobe | 2 / 57 | workday | renamed from *Adobe Audition* |
+| Treble Technologies | 1 / 3 | bamboohr | acoustic simulation |
+
+**Adobe was one product's name on a company-wide Workday board.** Renamed. The
+`?q=audio` filter stays: unfiltered returns all 715 Adobe roles in 36s — under
+the 1,000-row cap, so it is possible — and surfaces **exactly the same two board
+rows**, so the extra 658 buy nothing. The linked *Research Scientist II* is
+inside the 57 that match `?q=audio` and still scores 0, because **Workday's list
+payload carries no description** (4 of 715 had one) and we score its title alone.
+That gap is not Adobe-specific: a query-filtered Workday URL is better signal
+than our scorer uses, since the ATS searched the whole ad and we then discard
+most of what it found on title alone.
+
+**`Treble Technologies` is deliberately not `Treble`.** The existing `Treble` is
+treblehealth.com, hearing care. Different companies, same word.
+
+**Two new blocked entries.** Synaptics serves headless Chromium a Cloudflare
+interstitial that never clears — on `/search/jobs` as much as on the root, so the
+block is at the edge, not the URL; its `careers_url` now points at the real
+board for the human clicking through. Cinder draws its board in a **cross-origin
+Compas iframe** (`hire.mycompas.com`) that renders only inside the Wix parent and
+emits no anchors at all — loaded top-level it returns an empty body.
+
+**`Bosch Security` deleted**: 0 jobs, and its real postings live in the
+SmartRecruiters tenant `Bosch Group` now reads.
+
+**`Zyphra` needed nothing** — already in the seed from 2026-09-15.
+
+### Still open from this session
+
+- **Every `applyUrl`-shaped escape hatch is worth checking before writing a
+  scraper**, and equally: **an ATS front end can be unreachable while its data is
+  not**. Cinder's Compas iframe was found in one `document.querySelectorAll`
+  call; the equivalent check on Synaptics found Talemetry serving the whole board
+  server-rendered at `/search/jobs`, reachable by a real browser and nothing
+  else. Neither finding was visible from the seed URL.
+- **`check_url --json` samples are not board-prioritised.** `SAMPLE_LIMIT = 10`
+  takes the first ten rows in scrape order, so a company whose only audio roles
+  sit at position 60 shows ten `[skip]` lines and a board count with nothing
+  behind it. Every board-row listing in this session went through
+  `check_url()` in a script instead.
+- **Samsung now has a worked method, not just a diagnosis.** The previous list
+  noted it times out on a large Workday board and "wants `?q=` narrowing";
+  Workday already honoured `?q=`, so what was missing was a way to pick terms.
+  Bosch is that method: scrape once unfiltered, record which rows reach the
+  board, then choose searches by what each one recovers. Workday's search is a
+  plain substring over the ad, so the two-term OR / quoted-phrase rules above are
+  SmartRecruiters-specific and do not transfer.
+- **Everything else in the 2026-09-15 "Still open" list stands unchanged**:
+  the SuccessFactors `/search` host-wildcard trap (still the one that could
+  silently retire a whole board), the six other deliberately-flagged bindings,
+  ByteDance's playwright wait, Makeshift Software's GoHire title shape, the
+  Ramboll and Decagon relevance calls, the measured-and-left `amplif*` gap, the
+  dead `TikTok Audio (ByteDance)` / `Resso (ByteDance)` / `Fusion Marine Audio`
+  entries, `scraper/demotion_proposals.*` still untracked, and LinkedIn built but
+  never run.
+
 ## Running the demo
 
 ```bash
