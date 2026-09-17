@@ -503,6 +503,60 @@ class TestStructuralTitleFallback(unittest.TestCase):
             ],
         )
 
+    def test_navigation_links_are_not_jobs(self) -> None:
+        html = """
+        <html><body>
+        <ul>
+          <li><a href="/careers/">Careers</a></li>
+          <li><a href="/jobs">Jobs</a></li>
+          <li><a href="/jobs/all">View Jobs</a></li>
+          <li><a href="/jobs/browse">Browse Jobs</a></li>
+          <li><a href="/jobs/open">Open Positions</a></li>
+          <li><a href="/careers/early">Early Careers</a></li>
+          <li><a href="/jobs/search">Job Search</a></li>
+          <li><a href="/careers/more">Find out more</a></li>
+        </ul>
+        </body></html>
+        """
+        self.assertEqual(extract_job_links(html, "https://example.com/careers"), [])
+
+    def test_a_real_posting_beside_the_navigation_still_survives(self) -> None:
+        html = """
+        <html><body>
+        <a href="/careers/">Careers</a>
+        <a href="/jobs">Jobs</a>
+        <a href="/jobs/1842">Senior Acoustic Engineer</a>
+        </body></html>
+        """
+        jobs = extract_job_links(html, "https://example.com/careers")
+        self.assertEqual([job.title for job in jobs], ["Senior Acoustic Engineer"])
+
+    def test_a_listing_label_is_dropped_rather_than_given_a_heading(self) -> None:
+        """A link labelled "View Jobs" points at a list, so the heading beside
+        it is a section header, not a job. ADI Global's careers page turns six
+        of these into department names and five into country names."""
+        html = """
+        <html><body>
+        <div class="card"><h3>Engineering &amp; Product</h3>
+          <a href="/jobs/eng">View Jobs</a></div>
+        <div class="card"><h3>Canada</h3>
+          <a href="/jobs/ca">Browse Jobs</a></div>
+        </body></html>
+        """
+        self.assertEqual(extract_job_links(html, "https://example.com/careers"), [])
+
+    def test_a_generic_label_still_yields_to_its_card_heading(self) -> None:
+        html = """
+        <html><body>
+        <div class="card">
+          <h3>Noise and Vibration Technologist</h3>
+          <a href="/jobs/2001">Find out more</a>
+        </div>
+        </body></html>
+        """
+        jobs = extract_job_links(html, "https://example.com/careers")
+        self.assertEqual([job.title for job in jobs], ["Noise and Vibration Technologist"])
+
     def test_structural_title_still_rejected_when_furniture(self) -> None:
         html = """
         <html><body>

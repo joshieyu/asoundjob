@@ -67,6 +67,33 @@ NON_JOB_TEXT = {
     "see all jobs",
     "all jobs",
     "view all openings",
+    "careers",
+    "career",
+    "career opportunities",
+    "job opportunities",
+    "jobs",
+    "view jobs",
+    "view open jobs",
+    "browse jobs",
+    "explore jobs",
+    "our jobs",
+    "job listings",
+    "job search",
+    "search for jobs",
+    "open positions",
+    "open roles",
+    "openings",
+    "all openings",
+    "current openings",
+    "current vacancies",
+    "vacancies",
+    "explore careers",
+    "early careers",
+    "top job searches",
+    "find out more",
+    "view more",
+    "view opportunities",
+    "opens in a new tab.",
     "join us",
     "join our team",
     "benefits",
@@ -194,6 +221,40 @@ FURNITURE_PHRASES = (
     "view open roles",
     "cookie settings",
 )
+
+LISTING_LABELS = frozenset({
+    "careers",
+    "career",
+    "career opportunities",
+    "job opportunities",
+    "jobs",
+    "view jobs",
+    "view job",
+    "view open jobs",
+    "view all jobs",
+    "see all jobs",
+    "all jobs",
+    "browse jobs",
+    "explore jobs",
+    "our jobs",
+    "job listings",
+    "job search",
+    "search jobs",
+    "search for jobs",
+    "open positions",
+    "open roles",
+    "openings",
+    "all openings",
+    "current openings",
+    "current vacancies",
+    "vacancies",
+    "view all openings",
+    "explore careers",
+    "early careers",
+    "top job searches",
+    "view opportunities",
+})
+
 
 LISTING_POINTER_PHRASES = (
     "view all job",
@@ -804,6 +865,8 @@ def extract_job_links(html: str, base_url: str) -> list[RawJob]:
             candidate_title, job_type = "", None
 
         if raw_candidate and is_listing_pointer(raw_candidate):
+            continue
+        if candidate_title.lower() in LISTING_LABELS:
             continue
 
         came_from_structure = False
