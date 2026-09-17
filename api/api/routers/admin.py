@@ -34,6 +34,7 @@ from api.schemas import (
     ScrapeStatus,
     StatsResponse,
 )
+from api.seed_file import SeedWriteError, forget_company, sync_company
 from scraper.company_loader import parse_extra_careers_urls
 from scraper.config import load_settings
 from scraper.models import (
@@ -70,6 +71,17 @@ LOADER_MANAGED_FIELDS = frozenset(
         "ats_slug",
     }
 )
+
+
+def _sync_seed(action, *args) -> None:
+    try:
+        action(*args)
+    except SeedWriteError as exc:
+        logger.error("seed sync failed, rolling back: %s", exc)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Company saved nowhere: the seed file could not be written ({exc})",
+        ) from exc
 
 
 @router.post("/login", response_model=TokenResponse)
@@ -240,6 +252,7 @@ def admin_create_company(
     )
     db.add(company)
     db.flush()
+    _sync_seed(sync_company, company)
     logger.info("admin=%s created company %s", admin, company.slug)
     return {"id": company.id, "slug": company.slug}
 
@@ -256,6 +269,7 @@ def admin_update_company(
         raise HTTPException(status_code=404, detail="Company not found")
 
     updates = payload.model_dump(exclude_unset=True, exclude_none=True)
+    previous_name = company.name
 
     if "name" in updates:
         new_name = updates["name"].strip()
@@ -287,6 +301,7 @@ def admin_update_company(
     if scope_changed:
         rescore_company_jobs(db, company)
     db.flush()
+    _sync_seed(sync_company, company, previous_name)
     logger.info("admin=%s updated company %s: %s", admin, company.slug, list(updates.keys()))
     return {"id": company.id, "updated_fields": sorted(updates.keys())}
 
@@ -324,6 +339,7 @@ def admin_delete_company(
     slug = company.slug
     db.delete(company)
     db.flush()
+    _sync_seed(forget_company, name)
     logger.info("admin=%s deleted company %s", admin, slug)
     return {
         "deleted": {

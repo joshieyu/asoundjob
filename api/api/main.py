@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from api import seed_file
 from api.config import CORS_ORIGINS
 from api.database import init_db
 from api.routers import (
@@ -25,6 +26,7 @@ logging.basicConfig(level=logging.INFO)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
+    seed_file.enable()
     yield
 
 
