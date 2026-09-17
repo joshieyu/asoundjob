@@ -33,6 +33,12 @@ CLASS_NEXT_RE = re.compile(
     re.IGNORECASE,
 )
 
+SHOW_MORE_RE = re.compile(
+    r"^(?:(?:show|load|see|view)\s{1,3}(?:\d{1,4}\s{1,3})?|\d{1,4}\s{1,3})more"
+    r"(?:\s{1,3}(?:jobs|results|positions|vacancies|openings|roles))?$",
+    re.IGNORECASE,
+)
+
 
 def _rel_has_next(anchor: Tag) -> bool:
     rel = anchor.get("rel")
@@ -60,6 +66,14 @@ def _text_matches(anchor: Tag) -> bool:
     return bool(TEXT_NEXT_RE.match(text))
 
 
+def _show_more_matches(anchor: Tag) -> bool:
+    text = anchor.get_text(" ", strip=True)
+    text = re.sub(r"\s+", " ", text).strip()
+    if not text:
+        return False
+    return bool(SHOW_MORE_RE.match(text))
+
+
 def _class_matches(anchor: Tag) -> bool:
     classes = anchor.get("class")
     if not classes:
@@ -77,6 +91,7 @@ def _is_candidate(anchor: Tag) -> bool:
         or _aria_label_matches(anchor)
         or _text_matches(anchor)
         or _class_matches(anchor)
+        or _show_more_matches(anchor)
     )
 
 

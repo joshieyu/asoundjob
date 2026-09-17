@@ -144,6 +144,58 @@ class TestFindNextPage(unittest.TestCase):
         self.assertIsNone(find_next_page(html, START_URL))
 
 
+class TestShowMorePagination(unittest.TestCase):
+    def test_sivantos_group_show_20_more_is_followed(self) -> None:
+        html = """
+        <a class="careersite-button min-w-[13.75rem] group"
+           href="/jobs/show_more?page=2">Show 20 more</a>
+        """
+        self.assertEqual(
+            find_next_page(html, "https://careers.wsa.com/jobs"),
+            "https://careers.wsa.com/jobs/show_more?page=2",
+        )
+
+    def test_bare_show_more_is_followed(self) -> None:
+        html = """
+        <a href="/careers?page=2">Show more</a>
+        """
+        self.assertEqual(
+            find_next_page(html, START_URL), "https://example.com/careers?page=2"
+        )
+
+    def test_load_more_jobs_is_followed(self) -> None:
+        html = """
+        <a href="/careers?page=2">Load more jobs</a>
+        """
+        self.assertEqual(
+            find_next_page(html, START_URL), "https://example.com/careers?page=2"
+        )
+
+    def test_read_more_is_rejected(self) -> None:
+        html = """
+        <a href="/careers?page=2">Read more</a>
+        """
+        self.assertIsNone(find_next_page(html, START_URL))
+
+    def test_learn_more_is_rejected(self) -> None:
+        html = """
+        <a href="/careers?page=2">Learn more</a>
+        """
+        self.assertIsNone(find_next_page(html, START_URL))
+
+    def test_show_more_on_a_different_host_is_rejected(self) -> None:
+        html = """
+        <a href="https://other.example.com/careers?page=2">Show more</a>
+        """
+        self.assertIsNone(find_next_page(html, START_URL))
+
+    def test_show_more_with_no_query_string_is_rejected(self) -> None:
+        html = """
+        <a href="/careers">Show more</a>
+        """
+        self.assertIsNone(find_next_page(html, START_URL))
+
+
 def job_anchor(job_id: int) -> str:
     return (
         f'<a href="https://example.com/careers/jobs/{job_id}">'
