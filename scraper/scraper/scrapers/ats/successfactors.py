@@ -41,6 +41,10 @@ ENRICHMENT_BUDGET_FRACTION = 0.85
 
 EXTERNAL_ID_RE = re.compile(r"/(?P<id>\d{1,20})/?$")
 
+SUCCESSFACTORS_PAGE_MARKERS = frozenset(
+    {"successfactors", "searchresultsshell", "sap.com/careers"}
+)
+
 
 class SuccessFactorsScraper(BaseScraper):
     name = "successfactors"
@@ -71,6 +75,10 @@ class SuccessFactorsScraper(BaseScraper):
             html_text = await asyncio.to_thread(fetch_html, url, self.settings)
             page_jobs = parse_listing_page(html_text, origin)
             if not page_jobs:
+                if page_index == 0 and not _has_successfactors_marker(html_text):
+                    raise ScrapeError(
+                        f"{origin} does not look like a SuccessFactors career site"
+                    )
                 break
             for job in page_jobs:
                 key = job.external_id or job.url
@@ -120,6 +128,11 @@ class SuccessFactorsScraper(BaseScraper):
                 return
         apply_detail(job, detail)
         counts["enriched"] += 1
+
+
+def _has_successfactors_marker(html_text: str) -> bool:
+    lowered = html_text.lower()
+    return any(marker in lowered for marker in SUCCESSFACTORS_PAGE_MARKERS)
 
 
 def parse_listing_page(html_text: str, origin: str) -> list[RawJob]:

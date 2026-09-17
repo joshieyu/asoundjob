@@ -15,6 +15,7 @@ from scraper.scrapers.ats.successfactors import (
     extract_external_id,
     parse_listing_page,
 )
+from scraper.scrapers.base import ScrapeError
 
 CAREERS_URL = "https://careers.demant.com/search/"
 ORIGIN = "https://careers.demant.com"
@@ -93,6 +94,20 @@ REAL_DETAIL_HTML = """
 DETAIL_HTML_NO_JOBDESCRIPTION_WRAPPER = """
 <html><body>
 <span itemprop="description">Plain description text.</span>
+</body></html>
+"""
+
+EMPTY_PAGE_NO_MARKER = "<html><body></body></html>"
+
+EMPTY_PAGE_WITH_MARKER = (
+    '<html><body><script src="/assets/successfactors/bundle.js"></script>'
+    "</body></html>"
+)
+
+JOINBYTEDANCE_SEARCH_HTML = """
+<html><body>
+<div id="app"></div>
+<script src="/static/js/main.bundle.js"></script>
 </body></html>
 """
 
@@ -281,7 +296,7 @@ class TestFetchJobsPagination(unittest.TestCase):
 
         def fake_fetch_html(url: str, settings: object) -> str:
             captured.append(url)
-            return make_listing_html(0)
+            return EMPTY_PAGE_WITH_MARKER
 
         with patch(
             "scraper.scrapers.ats.successfactors.fetch_html", side_effect=fake_fetch_html
@@ -289,6 +304,76 @@ class TestFetchJobsPagination(unittest.TestCase):
             asyncio.run(self.scraper.fetch_jobs(company))
 
         self.assertIn("q=audio", captured[0])
+
+
+class TestFetchJobsHostWildcardTrap(unittest.TestCase):
+    """joinbytedance.com matches URL_PATTERN's /search/ path but is not a
+    SuccessFactors site. It was scraped on 2026-09-15 and 2026-09-17 with
+    status=success and jobs_found=0, which a trusting pipeline turned into
+    a deactivation of every real job on the board. Returning an empty list
+    here for a non-SuccessFactors page silently retires the whole company;
+    raising ScrapeError instead lets the pipeline fall back safely."""
+
+    def setUp(self) -> None:
+        from scraper.config import load_settings
+
+        self.scraper = SuccessFactorsScraper(load_settings())
+        self.company = make_company("https://joinbytedance.com/search?keyword=audio")
+
+    def test_first_page_no_jobs_no_marker_raises(self) -> None:
+        def fake_fetch_html(url: str, settings: object) -> str:
+            return JOINBYTEDANCE_SEARCH_HTML
+
+        with patch(
+            "scraper.scrapers.ats.successfactors.fetch_html", side_effect=fake_fetch_html
+        ):
+            with self.assertRaises(ScrapeError):
+                asyncio.run(self.scraper.fetch_jobs(self.company))
+
+    def test_first_page_no_jobs_with_marker_returns_empty_list(self) -> None:
+        def fake_fetch_html(url: str, settings: object) -> str:
+            return EMPTY_PAGE_WITH_MARKER
+
+        with patch(
+            "scraper.scrapers.ats.successfactors.fetch_html", side_effect=fake_fetch_html
+        ):
+            jobs = asyncio.run(self.scraper.fetch_jobs(self.company))
+
+        self.assertEqual(jobs, [])
+
+    def test_first_page_with_jobs_and_no_marker_is_unaffected(self) -> None:
+        listing_html = make_listing_html(1, offset=0)
+
+        def fake_fetch_html(url: str, settings: object) -> str:
+            if "startrow=0" in url:
+                return listing_html
+            if "startrow=" in url:
+                return EMPTY_PAGE_NO_MARKER
+            return DETAIL_HTML
+
+        with patch(
+            "scraper.scrapers.ats.successfactors.fetch_html", side_effect=fake_fetch_html
+        ):
+            jobs = asyncio.run(self.scraper.fetch_jobs(self.company))
+
+        self.assertEqual(len(jobs), 1)
+
+    def test_first_page_with_jobs_and_marker_is_unaffected(self) -> None:
+        listing_html = make_listing_html(1, offset=0)
+
+        def fake_fetch_html(url: str, settings: object) -> str:
+            if "startrow=0" in url:
+                return listing_html
+            if "startrow=" in url:
+                return EMPTY_PAGE_WITH_MARKER
+            return DETAIL_HTML
+
+        with patch(
+            "scraper.scrapers.ats.successfactors.fetch_html", side_effect=fake_fetch_html
+        ):
+            jobs = asyncio.run(self.scraper.fetch_jobs(self.company))
+
+        self.assertEqual(len(jobs), 1)
 
 
 class TestFetchJobsEnrichment(unittest.TestCase):
