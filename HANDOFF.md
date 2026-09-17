@@ -6591,6 +6591,150 @@ urls read back.
 - **Everything in the two earlier 2026-09-17 and 2026-09-15 lists stands**,
   including the SuccessFactors `/search` host-wildcard trap.
 
+## Session update (2026-09-17, later still) — chrome that looked like jobs
+
+Six commits, `dc2d578`..`978129e`. Gates: **1,159 scraper tests, 207 API tests,
+`npm run check` 342 files / 0 errors / 0 warnings**, ruff and mypy clean. Seed
+is 1,416 entries.
+
+Two admin-panel gaps closed, then a question about missing descriptions turned
+into the discovery that a few hundred board rows were never jobs at all.
+
+### Finishing the admin panel
+
+**`scrape_blocked` and `open_application` are togglable.** Both were already in
+`LOADER_MANAGED_FIELDS` and `COMPARED_FIELDS` and both round-tripped;
+`AdminCompanyUpdate` simply never accepted them, which is why Synaptics and
+Cinder had to be blocked by editing the seed by hand. The list endpoint already
+returned every `Company` column, so only the schema and the table changed. One
+**Flags** column rather than two, and **clearing a flag drops the key instead of
+writing `false`** — 15 seed entries carry `scrape_blocked`, not 1,416.
+
+**`description`, `headquarters`, `founded` and `community_links` now reach the
+seed.** The loader had always read them on key presence and `COMPARED_FIELDS`
+covered them; only `entry_from_company` was missing. They sit at the **end** of
+the key order, after `ats_slug`, because prose ahead of the operational keys
+buries `scrape_blocked` and the ATS binding, which are what anyone scans an
+entry for.
+
+**Company names in the admin table link to their public pages**, in a new tab so
+a cleanup pass keeps its search, sort and page position. The hover title carries
+the board count, so the click is often unnecessary.
+
+### 64 Audio, and the shape it revealed
+
+`64audio.com/pages/careers` is a landing page whose only content is a link to
+Paylocity — and the scraper had been storing that link as a job titled **"Click
+here to see career opportunities"**, live on an active company for as long as the
+entry existed. Repointed to the Paylocity board, which reports "1 of 1 Job
+Opportunity" and yields exactly that one.
+
+Still 0 on the board, checked both ways rather than assumed: the posting is *Lab
+Technician 1*, entry-level IEM assembly, and it scores `(0, False)` with its full
+description as well as without it.
+
+That check surfaced the next thing: **`playwright_scraper.py` has no
+detail-fetching code at all.** It extracts links from the list page and stops.
+
+### What the description gap actually costs: 8 per cent
+
+| method | companies | jobs | with description |
+|---|---:|---:|---:|
+| **playwright** | **237** | **2,422** | **1.2%** |
+| greenhouse | 35 | 1,335 | 91.4% |
+| ashby | 17 | 642 | 99.4% |
+| http | 75 | 1,683 | 34.8% |
+
+215 companies hold description-less active rows. To price it, 24 real-looking
+off-board titles (one per company, from a pool of 346) had their descriptions
+fetched with playwright and were re-scored: **2 of 24 crossed**, both landing on
+exactly 45, the native threshold. That extrapolates to roughly 28 rows — real,
+small, and **not** why those companies are quiet.
+
+### The real finding: 199 rows that were never jobs
+
+**185 of 223 playwright companies published nothing at all, 115 of them
+native-scope pure-audio firms.** MED-EL held 17 rows and published 0. Looking at
+the rows explains it:
+
+```
+ANSYS (Acoustics)   Culture and Values
+AMX (Snap One)      View Jobs      (x6)
+AMX (Snap One)      Browse Jobs    (x5)
+Fraunhofer IDMT     #nachgefragt bei Daniel Beer
+```
+
+199 active rows across the database were navigation furniture — "Careers" 29
+times, "Find out more" 26, "Jobs" 15, "View jobs" 10 — and **two were live on the
+public board**.
+
+**Adding the family to `NON_JOB_TEXT` alone made it worse**, which the corpus
+caught and a test written an hour earlier had asserted was fine. Marking a label
+unusable hands the anchor to `_structural_title`, and on ADI Global's page that
+substitutes the nearest heading:
+
+```
+flat='Browse Jobs'  structural='Canada'
+flat='View Jobs'    structural='Marketing & Digital'
+```
+
+Six department names and five country names, wearing better titles than the junk
+they replaced — and worse for anyone auditing the database, because "Design &
+Engineering" reads like it could be a job while "View Jobs" obviously cannot.
+
+**`LISTING_LABELS` drops those outright.** The rule: a link whose own text points
+at a list is a section header, not a job, so it gets no structural rescue. The
+generic labels stay in `NON_JOB_TEXT` and keep the rescue, because that is the
+Tensor case — a card whose only link says "Find out more" really does carry its
+title in the heading. `test_a_navigation_label_still_yields_to_its_card_heading`
+was replaced by `test_a_listing_label_is_dropped_rather_than_given_a_heading`,
+with ADI Global named in the docstring so nobody restores the old assumption.
+
+Measured on the corpus: AMX 12 active rows to 1, Honda 12 to 2, Astro Gaming 7
+to 3, **and no company lost a board row**.
+
+### Three seed URLs pointed at landing pages
+
+HGC Engineering and Sivantos Group both had the **site root** as `careers_url`,
+so the scraper read the homepage, filed its "Careers" nav link as a job, then
+fetched the careers page as that job's description — 18,517 characters of
+acoustics prose for HGC, enough to score 45 and publish. Both were live board
+rows pointing at a careers index.
+
+Dialpad surfaced only *because* of the fix: its eight "jobs" were office filters
+(Bengaluru, Sydney, WFH), and once those stopped counting `/careers/` yielded
+nothing and the scrape failed visibly. Failure suppression did its job in
+between — the stale rows survived rather than silently deactivating.
+
+| company | active rows | on board |
+|---|---|---|
+| Dialpad | 10 -> 76 | 0 -> **24** |
+| Sivantos Group | 1 -> 20 | 1 -> **6** |
+| HGC Engineering | 1 -> 7 | 1 -> **6** |
+
+**The general rule this session earned**: when a company holds a handful of rows
+and publishes none, read the row titles before touching the scorer. A careers URL
+that points at a landing page, a category index or a site root produces rows that
+look like a relevance problem and are not.
+
+### Still open from this session
+
+- **Roughly 165 chrome rows remain** until each company's next scrape cycle
+  reaches them. Nothing to do; they clear themselves.
+- **Sivantos reports 243 jobs behind a `/jobs/show_more?page=2` pager.**
+  `find_next_page` looks for `rel=next`, an aria-label, the text "next", or a
+  `pagination-next` class; a "show more" link matches none of them, so 20 is page
+  one only. A show-more pattern in `pagination.py` deserves its own measured pass.
+- **Description fetching for playwright is still unbuilt**, and on the 8 per cent
+  measurement it should stay low priority — it is worth roughly 28 borderline
+  rows and would not have found any of what this session actually fixed.
+- **More landing-page seed URLs almost certainly exist.** Three were found by
+  following two board rows; nobody has swept for the pattern. A read-only tool
+  that flags companies whose rows are mostly department or region names would
+  find them.
+- **Everything in the three earlier 2026-09-17 and 2026-09-15 lists stands**,
+  including the SuccessFactors `/search` host-wildcard trap.
+
 ## Running the demo
 
 ```bash
