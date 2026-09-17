@@ -9,6 +9,7 @@
 		careers_url: string | null;
 		extra_careers_urls: string[] | null;
 		open_application: boolean;
+		scrape_blocked: boolean;
 		verified: boolean;
 		source: string;
 		active_jobs_count: number;
@@ -113,6 +114,27 @@
 			row.verified = !row.verified;
 			row.source = row.verified ? 'manual' : row.source;
 			message = `${row.name} marked ${row.verified ? 'verified' : 'unverified'}.`;
+		} catch (err) {
+			message = err instanceof Error ? err.message : 'Update failed';
+		}
+	}
+
+	const FLAG_LABELS = {
+		scrape_blocked: 'blocked from scraping',
+		open_application: 'open to speculative applications'
+	} as const;
+
+	async function toggleFlag(row: CompanyRow, flag: keyof typeof FLAG_LABELS) {
+		message = '';
+		const next = !row[flag];
+		try {
+			await clientApi(`/api/admin/companies/${row.id}`, {
+				method: 'PUT',
+				body: { [flag]: next }
+			});
+			row[flag] = next;
+			row.source = 'manual';
+			message = `${row.name} ${next ? 'marked' : 'no longer marked'} ${FLAG_LABELS[flag]}.`;
 		} catch (err) {
 			message = err instanceof Error ? err.message : 'Update failed';
 		}
@@ -237,7 +259,7 @@
 	>
 		<table class="w-full min-w-[72rem] text-left text-meta">
 			<caption class="sr-only">
-				Companies with their category, scraped job count, count on the public board, careers URLs, verified state and row actions
+				Companies with their category, scraped job count, count on the public board, careers URLs, verified state, scrape and open-application flags, and row actions
 			</caption>
 			<thead>
 				<tr class="axis-label border-b border-muted">
@@ -263,6 +285,7 @@
 							Verified{sortMark('verified')}
 						</button>
 					</th>
+					<th scope="col" class="px-4 py-2.5 font-medium">Flags</th>
 					<th scope="col" class="px-4 py-2.5 font-medium">Actions</th>
 				</tr>
 			</thead>
@@ -360,6 +383,26 @@
 								{#if row.source === 'manual'}
 									<span class="coord text-ink" title="Manually verified">M<span class="sr-only"> — manually verified</span></span>
 								{/if}
+							</span>
+						</td>
+						<td class="px-4 py-3">
+							<span class="flex flex-col items-start gap-1">
+								<button
+									type="button"
+									class="btn btn-quiet px-2 py-1 {row.scrape_blocked ? 'is-on' : ''}"
+									title="Listed on the public can't-scrape page instead of being scraped"
+									onclick={() => toggleFlag(row, 'scrape_blocked')}
+								>
+									Blocked<span class="sr-only">: {row.scrape_blocked ? 'yes' : 'no'}</span>
+								</button>
+								<button
+									type="button"
+									class="btn btn-quiet px-2 py-1 {row.open_application ? 'is-on' : ''}"
+									title="Accepts speculative applications with no posted role"
+									onclick={() => toggleFlag(row, 'open_application')}
+								>
+									Open app<span class="sr-only">: {row.open_application ? 'yes' : 'no'}</span>
+								</button>
 							</span>
 						</td>
 						<td class="px-4 py-3">
