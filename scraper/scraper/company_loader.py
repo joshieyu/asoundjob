@@ -55,6 +55,10 @@ SEED_KEY_ORDER = (
     "scrape_blocked",
     "ats_type",
     "ats_slug",
+    "description",
+    "headquarters",
+    "founded",
+    "community_links",
 )
 
 

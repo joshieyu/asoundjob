@@ -304,3 +304,90 @@ class TestSiteUrlsReachTheSeed(SeedSyncCase):
                 "website_url",
             ],
         )
+
+
+class TestFlagsReachTheSeed(SeedSyncCase):
+    def test_blocking_writes_the_flag_and_flips_source(self) -> None:
+        self.update(scrape_blocked=True)
+        entry = self.entry("Acme Audio")
+        self.assertIs(entry["scrape_blocked"], True)
+        self.assertEqual(entry["source"], "manual")
+        self.assertIs(self.company.scrape_blocked, True)
+
+    def test_unblocking_removes_the_key_rather_than_writing_false(self) -> None:
+        self.update(scrape_blocked=True)
+        self.update(scrape_blocked=False)
+        self.assertNotIn("scrape_blocked", self.entry("Acme Audio"))
+
+    def test_open_application_round_trips(self) -> None:
+        self.update(open_application=True)
+        self.assertIs(self.entry("Acme Audio")["open_application"], True)
+        fresh = make_session()
+        try:
+            load_companies(fresh, self.entries())
+            rebuilt = fresh.query(Company).filter_by(name="Acme Audio").one()
+            self.assertIs(rebuilt.open_application, True)
+            self.assertIs(rebuilt.scrape_blocked, False)
+        finally:
+            fresh.close()
+
+    def test_both_flags_survive_a_rebuild(self) -> None:
+        self.update(scrape_blocked=True, open_application=True)
+        fresh = make_session()
+        try:
+            load_companies(fresh, self.entries())
+            rebuilt = fresh.query(Company).filter_by(name="Acme Audio").one()
+            self.assertIs(rebuilt.scrape_blocked, True)
+            self.assertIs(rebuilt.open_application, True)
+        finally:
+            fresh.close()
+
+
+class TestEnrichmentReachesTheSeed(SeedSyncCase):
+    def test_description_headquarters_and_founded_are_written(self) -> None:
+        self.update(
+            description="Builds loudspeaker DSP.",
+            headquarters="Copenhagen, Denmark",
+            founded=1977,
+        )
+        entry = self.entry("Acme Audio")
+        self.assertEqual(entry["description"], "Builds loudspeaker DSP.")
+        self.assertEqual(entry["headquarters"], "Copenhagen, Denmark")
+        self.assertEqual(entry["founded"], 1977)
+
+    def test_they_survive_a_rebuild_from_the_seed(self) -> None:
+        self.update(description="Builds loudspeaker DSP.", founded=1977)
+        fresh = make_session()
+        try:
+            load_companies(fresh, self.entries())
+            rebuilt = fresh.query(Company).filter_by(name="Acme Audio").one()
+            self.assertEqual(rebuilt.description, "Builds loudspeaker DSP.")
+            self.assertEqual(rebuilt.founded, 1977)
+        finally:
+            fresh.close()
+
+    def test_community_links_survive_a_rebuild(self) -> None:
+        self.company.community_links = [
+            {"label": "Wikipedia", "url": "https://example.org"}
+        ]
+        self.session.flush()
+        self.update(description="Builds loudspeaker DSP.")
+        self.assertEqual(
+            self.entry("Acme Audio")["community_links"],
+            [{"label": "Wikipedia", "url": "https://example.org"}],
+        )
+        fresh = make_session()
+        try:
+            load_companies(fresh, self.entries())
+            rebuilt = fresh.query(Company).filter_by(name="Acme Audio").one()
+            self.assertEqual(
+                rebuilt.community_links,
+                [{"label": "Wikipedia", "url": "https://example.org"}],
+            )
+        finally:
+            fresh.close()
+
+    def test_prose_sits_after_the_operational_keys(self) -> None:
+        self.update(scrape_blocked=True, description="Builds loudspeaker DSP.")
+        keys = list(self.entry("Acme Audio").keys())
+        self.assertLess(keys.index("scrape_blocked"), keys.index("description"))

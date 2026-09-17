@@ -80,6 +80,15 @@ def entry_from_company(company: Company) -> dict[str, Any]:
         entry["ats_type"] = company.ats_type
         if company.ats_slug:
             entry["ats_slug"] = company.ats_slug
+    if company.description:
+        entry["description"] = company.description
+    if company.headquarters:
+        entry["headquarters"] = company.headquarters
+    if company.founded:
+        entry["founded"] = company.founded
+    community_links = list(company.community_links or [])
+    if community_links:
+        entry["community_links"] = community_links
     return order_seed_entry(entry)
 
 
