@@ -1153,6 +1153,118 @@ class TestListingPointerSkipped(unittest.TestCase):
         self.assertEqual([j.title for j in jobs], ["Senior Audio DSP Engineer"])
 
 
+class TestGenericListingTitleDropped(unittest.TestCase):
+    def test_department_suffix_link_is_dropped(self) -> None:
+        """ON Semiconductor's careers page links a department card straight
+        to "Engineering Jobs", a section header rather than a role."""
+        html = """
+        <html><body>
+        <a href="/careers/engineering">Engineering Jobs</a>
+        </body></html>
+        """
+        self.assertEqual(extract_job_links(html, "https://example.com/careers"), [])
+
+    def test_region_suffix_link_is_dropped(self) -> None:
+        """ON Semiconductor also links a country card to "Germany Careers"."""
+        html = """
+        <html><body>
+        <a href="/careers/germany">Germany Careers</a>
+        </body></html>
+        """
+        self.assertEqual(extract_job_links(html, "https://example.com/careers"), [])
+
+    def test_role_noun_with_listing_suffix_is_kept(self) -> None:
+        html = """
+        <html><body>
+        <a href="/careers/audio-engineer-4471">Audio Engineer Jobs</a>
+        </body></html>
+        """
+        jobs = extract_job_links(html, "https://example.com/careers")
+        self.assertEqual([job.title for job in jobs], ["Audio Engineer Jobs"])
+
+    def test_cta_lead_in_link_is_dropped(self) -> None:
+        html = """
+        <html><body>
+        <a href="/careers/all">Explore all jobs</a>
+        </body></html>
+        """
+        self.assertEqual(extract_job_links(html, "https://example.com/careers"), [])
+
+    def test_saved_jobs_link_is_dropped(self) -> None:
+        html = """
+        <html><body>
+        <a href="/careers/saved">Saved Jobs</a>
+        </body></html>
+        """
+        self.assertEqual(extract_job_links(html, "https://example.com/careers"), [])
+
+    def test_german_listing_label_is_dropped(self) -> None:
+        """Thomann's careers page links its full board with "Alle Jobs"."""
+        html = """
+        <html><body>
+        <a href="/karriere/alle-jobs">Alle Jobs</a>
+        </body></html>
+        """
+        self.assertEqual(extract_job_links(html, "https://example.com/karriere"), [])
+
+    def test_french_spontaneous_application_link_is_dropped(self) -> None:
+        """Dontnod's careers page has a standalone "Candidature spontanée"
+        link; it must not be rescued into a job named after its section
+        heading."""
+        html = """
+        <html><body>
+        <div class="card"><h3>Rejoignez-nous</h3>
+          <a href="/careers/spontanee">Candidature spontanée</a></div>
+        </body></html>
+        """
+        self.assertEqual(extract_job_links(html, "https://example.com/careers"), [])
+
+
+MED_EL_SAME_PAGE_ANCHOR_HTML = """
+<html><body>
+<a href="#MANUFACTURING">
+  <h4>Manufacturing</h4>
+  <p>Join our manufacturing team and help us build life-changing hearing
+  implants used by patients around the world every single day of the
+  year.</p>
+</a>
+<a name="MANUFACTURING"></a>
+</body></html>
+"""
+
+ACCORDION_SAME_PAGE_ANCHOR_HTML = """
+<html><body>
+<a href="#dsp-engineer">
+  <h4>DSP Engineer</h4>
+  <p>We are looking for a DSP Engineer to join our audio team and help
+  design real-time signal processing systems for next generation hearing
+  and communication products used by people everywhere.</p>
+</a>
+<a name="dsp-engineer"></a>
+</body></html>
+"""
+
+
+class TestSamePageAnchorStructuralGuard(unittest.TestCase):
+    def test_med_el_section_name_same_page_anchor_is_dropped(self) -> None:
+        """MED-EL's accordion wraps a #MANUFACTURING fragment link around a
+        section heading and long CTA prose; the structural title pulled in
+        is the page section name, not a job, so it must not become a row."""
+        jobs = extract_job_links(
+            MED_EL_SAME_PAGE_ANCHOR_HTML, "https://example.com/careers"
+        )
+        self.assertEqual(jobs, [])
+
+    def test_listen_inc_real_job_same_page_anchor_is_kept(self) -> None:
+        """An accordion board such as Listen Inc's wraps a fragment link
+        around a real role heading, so the structural title survives because
+        it carries a role noun."""
+        jobs = extract_job_links(
+            ACCORDION_SAME_PAGE_ANCHOR_HTML, "https://listeninc.com/careers/"
+        )
+        self.assertEqual([job.title for job in jobs], ["DSP Engineer"])
+
+
 class TestSlugBoardHosts(unittest.TestCase):
     HTML = """
     <ul>

@@ -253,7 +253,107 @@ LISTING_LABELS = frozenset({
     "early careers",
     "top job searches",
     "view opportunities",
+    "alle jobs",
+    "alle stellen",
+    "alle stellenangebote",
+    "stellenangebote",
+    "stellenanzeigen",
+    "offene stellen",
+    "jobs ansehen",
+    "zu den stellenangeboten",
+    "traumjob finden",
+    "karriere",
+    "initiativbewerbung",
+    "jetzt bewerben",
+    "candidature spontanée",
+    "candidature spontanee",
+    "toutes les offres",
+    "voir toutes les offres",
+    "nos offres",
+    "offres d'emploi",
+    "emplois",
+    "carrières",
+    "carrieres",
+    "postuler",
+    "ver todas las ofertas",
+    "ofertas de empleo",
+    "todas las vacantes",
+    "empleo",
+    "tutte le offerte",
+    "candidatura spontanea",
+    "alle vacatures",
+    "vacatures",
+    "lediga jobb",
+    "alla lediga jobb",
+    "ledige stillinger",
+    "avoimet työpaikat",
+    "professionals",
+    "apprenticeships",
+    "internships",
+    "students",
+    "graduates",
+    "students & graduates",
+    "career areas",
+    "job categories",
 })
+
+
+ROLE_NOUNS = frozenset(
+    {
+        "engineer", "developer", "manager", "director", "designer", "scientist",
+        "analyst", "specialist", "technician", "coordinator", "intern", "architect",
+        "lead", "consultant", "producer", "editor", "accountant", "planner",
+        "executive", "associate", "assistant", "supervisor", "operator",
+        "administrator", "representative", "buyer", "recruiter", "controller",
+        "machinist", "welder", "fitter", "audiologist", "luthier", "apprentice",
+        "president", "officer", "head", "chief", "strategist", "marketer",
+        "writer", "researcher",
+    }
+)
+
+ROLE_NOUN_PATTERN = re.compile(
+    r"\b(?:" + "|".join(sorted(ROLE_NOUNS, key=len, reverse=True)) + r")\b",
+    re.IGNORECASE,
+)
+
+
+def has_role_noun(text: str) -> bool:
+    return bool(ROLE_NOUN_PATTERN.search(text))
+
+
+LISTING_SUFFIX_RE = re.compile(
+    r"^[\w&.,'’\- ]{1,40} (?:jobs|careers|career|vacancies|openings|opportunities|"
+    r"positions)$",
+    re.IGNORECASE,
+)
+
+CTA_LEAD_IN_RE = re.compile(
+    r"^(?:explore|browse|see|view|show|find|discover|search|start)\b",
+    re.IGNORECASE,
+)
+
+SAVED_ALERTS_RE = re.compile(
+    r"\b(?:saved|favourites|favorites|favourite|favorite|recommended|"
+    r"recently viewed|job alert|job alerts)\b",
+    re.IGNORECASE,
+)
+
+MAX_LISTING_SUFFIX_WORDS = 5
+MAX_CTA_LEAD_IN_WORDS = 6
+MAX_SAVED_ALERTS_WORDS = 6
+
+
+def is_generic_listing_title(title: str) -> bool:
+    if has_role_noun(title):
+        return False
+    words = title.split()
+    if len(words) <= MAX_LISTING_SUFFIX_WORDS and LISTING_SUFFIX_RE.match(title):
+        return True
+    if len(words) <= MAX_CTA_LEAD_IN_WORDS and CTA_LEAD_IN_RE.match(title):
+        return True
+    if len(words) <= MAX_SAVED_ALERTS_WORDS and SAVED_ALERTS_RE.search(title):
+        return True
+    return False
 
 
 LISTING_POINTER_PHRASES = (
@@ -868,6 +968,12 @@ def extract_job_links(html: str, base_url: str) -> list[RawJob]:
             continue
         if candidate_title.lower() in LISTING_LABELS:
             continue
+        if (
+            candidate_title
+            and candidate_title.lower() not in NON_JOB_TEXT
+            and is_generic_listing_title(candidate_title)
+        ):
+            continue
 
         came_from_structure = False
         flat_unusable = (
@@ -886,6 +992,10 @@ def extract_job_links(html: str, base_url: str) -> list[RawJob]:
             continue
         if candidate_title.lower() in NON_JOB_TEXT:
             continue
+        if candidate_title.lower() in LISTING_LABELS:
+            continue
+        if came_from_structure and is_generic_listing_title(candidate_title):
+            continue
         if is_furniture_title(candidate_title):
             continue
 
@@ -897,6 +1007,8 @@ def extract_job_links(html: str, base_url: str) -> list[RawJob]:
             and path == base_path
             and parsed.fragment in named_anchors
         )
+        if parsed.fragment and came_from_structure and not has_role_noun(candidate_title):
+            continue
 
         looks_like_job = bool(
             (JOB_HINT.search(path) and _looks_like_job_detail_path(path, parsed.query))

@@ -11,19 +11,7 @@ from sqlalchemy.orm import Session
 
 from scraper.database import dispose_engine, init_db, session_scope
 from scraper.models import Company, Job, ScrapeLog
-
-ROLE_NOUNS = frozenset(
-    {
-        "engineer", "developer", "manager", "director", "designer", "scientist",
-        "analyst", "specialist", "technician", "coordinator", "intern", "architect",
-        "lead", "consultant", "producer", "editor", "accountant", "planner",
-        "executive", "associate", "assistant", "supervisor", "operator",
-        "administrator", "representative", "buyer", "recruiter", "controller",
-        "machinist", "welder", "fitter", "audiologist", "luthier", "apprentice",
-        "president", "officer", "head", "chief", "strategist", "marketer",
-        "writer", "researcher",
-    }
-)
+from scraper.scrapers.link_extraction import has_role_noun
 
 NAVIGATION_PHRASES = frozenset(
     {
@@ -54,10 +42,6 @@ _POLICY_WORD = re.compile(r"\bpolic(?:y|ies)\b", re.IGNORECASE)
 _NAV_CTA_LEAD_IN = re.compile(r"^(?:click here|find out|wanna|browse|explore|see|view|show)\b")
 _NAV_WORKING_AT = re.compile(r"^working at [a-z0-9&.,' -]{1,40}$")
 _NAV_JOB_SUFFIX = re.compile(r"^[a-z0-9&.,' -]{1,30} (?:jobs|careers|career)$")
-_ROLE_NOUN_PATTERN = re.compile(
-    r"\b(?:" + "|".join(sorted(ROLE_NOUNS, key=len, reverse=True)) + r")\b",
-    re.IGNORECASE,
-)
 
 CLASSIFICATIONS = ("navigation", "boilerplate", "unreviewable", "job_shaped", "unclear")
 
@@ -92,10 +76,6 @@ def normalize_title(raw: str) -> str:
     text = _TRAILING_PUNCT.sub("", text)
     text = _WHITESPACE_RUN.sub(" ", text).strip()
     return text.lower()
-
-
-def has_role_noun(normalized: str) -> bool:
-    return bool(_ROLE_NOUN_PATTERN.search(normalized))
 
 
 def is_navigation_chrome(normalized: str) -> bool:
