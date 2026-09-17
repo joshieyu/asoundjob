@@ -480,6 +480,29 @@ class TestStructuralTitleFallback(unittest.TestCase):
         jobs = extract_job_links(html, "https://example.com/careers")
         self.assertEqual(len(jobs), 0)
 
+    def test_details_anchor_text_falls_back_to_the_card_heading(self) -> None:
+        html = """
+        <html><body>
+        <div class="job-card">
+          <h3>Software Engineer: Audio Detection</h3>
+          <a href="/careers/jd80">Details</a>
+        </div>
+        <div class="job-card">
+          <h3>Senior Staff DSP Engineer, LiDAR</h3>
+          <a href="/careers/jd61">View Details</a>
+        </div>
+        </body></html>
+        """
+        jobs = extract_job_links(html, "https://example.com/careers")
+        titles = sorted(job.title for job in jobs)
+        self.assertEqual(
+            titles,
+            [
+                "Senior Staff DSP Engineer, LiDAR",
+                "Software Engineer: Audio Detection",
+            ],
+        )
+
     def test_structural_title_still_rejected_when_furniture(self) -> None:
         html = """
         <html><body>
