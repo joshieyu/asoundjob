@@ -6717,10 +6717,49 @@ and publishes none, read the row titles before touching the scorer. A careers UR
 that points at a landing page, a category index or a site root produces rows that
 look like a relevance problem and are not.
 
+### The full cycle that closed the session
+
+`python -m scraper.main --once`, **1,612s**, and it settled the open estimates:
+
+```
+companies=726 ok=387 failed=339 jobs_found=10858
+db: inserted=845 updated=10013 reactivated=108 deactivated=952 deactivation_skips=5
+via playwright=198 greenhouse=34 workday=32 ashby=16 http=49 ...
+```
+
+**Board 1,255 -> 1,299.** Database at 1,416 companies and 18,689 jobs.
+
+**726, not 1,416**: `run_cycle` only scrapes `verified=True` rows that have a
+careers URL — 748 of them, less the blocked and the URL-duplicates. The other
+668 seed entries have never been scraped. Normal selection, not a truncated run.
+
+**339 failures (45.3%) is the usual rate, not damage.** The last comparable full
+cycle, 2026-09-11, failed 42.2%. The few points on top are the landing-page
+companies now failing honestly instead of manufacturing chrome rows.
+
+**Chrome rows 199 -> 68**, and every survivor was accounted for rather than
+assumed away:
+
+- **57 belong to companies that failed this cycle**, so deactivation suppression
+  preserved their rows deliberately. They clear whenever those companies next
+  succeed.
+- **11 came back from a successful scrape**, so the filter genuinely misses them.
+
+None of the 68 are on the public board.
+
 ### Still open from this session
 
-- **Roughly 165 chrome rows remain** until each company's next scrape cycle
-  reaches them. Nothing to do; they clear themselves.
+- **Eleven chrome rows survive a successful scrape**, in three distinct shapes
+  that each need measuring rather than guessing:
+  - **same-page `#anchor` links to sections** — MED-EL emits three "Find out
+    more" rows pointing at `#APPRE`, `#INTER`, `#MANUF` on one page;
+  - **non-English navigation labels** — Thomann's `Alle Jobs`, Dontnod's
+    `Candidature spontanée`, and this board is heavily European, so the
+    vocabulary matters more than the count of eleven suggests;
+  - **`find out more` keeping its structural rescue** and landing on a section
+    heading rather than a job title.
+  Extend the vocabulary the way the English family was extended — against the
+  corpus, checking what the structural fallback substitutes — not on instinct.
 - **Sivantos reports 243 jobs behind a `/jobs/show_more?page=2` pager.**
   `find_next_page` looks for `rel=next`, an aria-label, the text "next", or a
   `pagination-next` class; a "show more" link matches none of them, so 20 is page
