@@ -3,9 +3,10 @@ from __future__ import annotations
 import asyncio
 import re
 from typing import TYPE_CHECKING, Any
+from urllib.parse import quote
 
 from scraper.scrapers.base import BaseScraper, RawJob
-from scraper.scrapers.fetch import fetch_json, parse_date
+from scraper.scrapers.fetch import extract_query, fetch_json, parse_date
 
 if TYPE_CHECKING:
     from scraper.models import Company
@@ -47,15 +48,20 @@ class SmartRecruitersScraper(BaseScraper):
         slug = company.ats_slug or self.extract_slug(company.careers_url or "")
         if not slug:
             raise ValueError(f"No smartrecruiters slug in {company.careers_url}")
-        jobs = await self._fetch_all(slug)
+        query = extract_query(company.careers_url or "")
+        jobs = await self._fetch_all(slug, query)
         await self._fetch_descriptions(jobs, slug)
         return jobs
 
-    async def _fetch_all(self, slug: str) -> list[RawJob]:
+    async def _fetch_all(self, slug: str, query: str = "") -> list[RawJob]:
         jobs: list[RawJob] = []
         offset = 0
+        search = f"&q={quote(query)}" if query else ""
         while True:
-            url = f"{API_URL.format(slug=slug)}?limit={PAGE_SIZE}&offset={offset}"
+            url = (
+                f"{API_URL.format(slug=slug)}"
+                f"?limit={PAGE_SIZE}&offset={offset}{search}"
+            )
             data = await asyncio.to_thread(fetch_json, url, self.settings)
             content = data.get("content", [])
             if not content:

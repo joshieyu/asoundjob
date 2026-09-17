@@ -4,6 +4,7 @@ import json
 import threading
 from datetime import date, datetime, timezone
 from typing import Any
+from urllib.parse import parse_qs, urlsplit
 
 import requests  # type: ignore[import-untyped]
 
@@ -77,3 +78,9 @@ def parse_date(value: Any) -> date | None:
         return datetime.fromisoformat(text.replace("Z", "+00:00")).date()
     except ValueError:
         return None
+
+
+def extract_query(url: str) -> str:
+    parsed = urlsplit((url or "").strip())
+    values = parse_qs(parsed.query).get("q")
+    return values[0] if values else ""

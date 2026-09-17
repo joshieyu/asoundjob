@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import asyncio
 import unittest
 from datetime import date
+from unittest import mock
 
 from scraper.scrapers.ats.smartrecruiters import (
     SmartRecruitersScraper,
@@ -128,3 +130,45 @@ class TestPublicJobUrl(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestSearchQuery(unittest.TestCase):
+    def _fetch_with(self, url: str) -> list[str]:
+        from scraper.config import load_settings
+
+        scraper = SmartRecruitersScraper(load_settings())
+        requested: list[str] = []
+
+        def fake_fetch_json(target: str, settings, timeout=None):
+            requested.append(target)
+            return {"content": [], "totalFound": 0}
+
+        with mock.patch(
+            "scraper.scrapers.ats.smartrecruiters.fetch_json", fake_fetch_json
+        ):
+            asyncio.run(scraper.fetch_jobs(make_company(url)))
+        return requested
+
+    def test_a_query_string_reaches_the_postings_api(self) -> None:
+        requested = self._fetch_with(
+            "https://jobs.smartrecruiters.com/BoschGroup?q=audio+sound"
+        )
+        self.assertEqual(len(requested), 1)
+        self.assertIn("q=audio%20sound", requested[0])
+        self.assertIn("/companies/BoschGroup/postings", requested[0])
+
+    def test_a_quoted_phrase_survives_url_encoding(self) -> None:
+        requested = self._fetch_with(
+            'https://jobs.smartrecruiters.com/BoschGroup?q="signal processing"'
+        )
+        self.assertIn("q=%22signal%20processing%22", requested[0])
+
+    def test_no_query_means_no_q_parameter(self) -> None:
+        requested = self._fetch_with("https://jobs.smartrecruiters.com/BoschGroup")
+        self.assertNotIn("q=", requested[0])
+
+    def test_an_unrelated_parameter_is_not_treated_as_a_search(self) -> None:
+        requested = self._fetch_with(
+            "https://jobs.smartrecruiters.com/Ramboll3?trid=2d92f286"
+        )
+        self.assertNotIn("q=", requested[0])

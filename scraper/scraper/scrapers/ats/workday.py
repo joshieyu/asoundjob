@@ -5,10 +5,9 @@ import logging
 import re
 from datetime import date, timedelta
 from typing import TYPE_CHECKING, Any
-from urllib.parse import parse_qs, urlsplit
 
 from scraper.scrapers.base import BaseScraper, RawJob
-from scraper.scrapers.fetch import FetchError
+from scraper.scrapers.fetch import FetchError, extract_query
 
 if TYPE_CHECKING:
     from scraper.models import Company
@@ -137,12 +136,6 @@ class WorkdayScraper(BaseScraper):
                     pass
 
         await asyncio.gather(*(fetch_one(j) for j in fetch_list))
-
-
-def extract_query(url: str) -> str:
-    parsed = urlsplit((url or "").strip())
-    values = parse_qs(parsed.query).get("q")
-    return values[0] if values else ""
 
 
 def _build_base(url: str, host: str) -> str:
