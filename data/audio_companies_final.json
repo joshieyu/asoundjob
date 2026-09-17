@@ -3,8 +3,8 @@
     "name": "1MORE",
     "careers_url": "https://www.1more.com/job/index.html",
     "category": "Headphones & Personal Audio",
-    "verified": true,
-    "source": "auto",
+    "verified": false,
+    "source": "manual",
     "scrape_method": "playwright"
   },
   {
