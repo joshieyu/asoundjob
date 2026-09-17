@@ -259,7 +259,7 @@
 	>
 		<table class="w-full min-w-[72rem] text-left text-meta">
 			<caption class="sr-only">
-				Companies with their category, scraped job count, count on the public board, careers URLs, verified state, scrape and open-application flags, and row actions
+				Companies linked to their public pages, with their category, scraped job count, count on the public board, careers URLs, verified state, scrape and open-application flags, and row actions
 			</caption>
 			<thead>
 				<tr class="axis-label border-b border-muted">
@@ -301,7 +301,15 @@
 								</span>
 							{:else}
 								<span class="flex items-center gap-3">
-									<span class="min-w-0">{row.name}</span>
+									<a
+										href="/companies/{row.slug}"
+										target="_blank"
+										rel="noopener noreferrer"
+										class="link min-w-0"
+										title="Open {row.name}'s public page — {row.board_jobs_count} on the board"
+									>
+										{row.name}
+									</a>
 									<button type="button" class="btn btn-quiet ml-auto shrink-0 px-2 py-1" onclick={() => startEditName(row)}>Edit</button>
 								</span>
 							{/if}
