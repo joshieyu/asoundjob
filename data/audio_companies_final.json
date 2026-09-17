@@ -1701,19 +1701,18 @@
   },
   {
     "name": "Bosch Group",
-    "careers_url": "https://jobs.smartrecruiters.com/BoschGroup",
+    "careers_url": "https://jobs.smartrecruiters.com/BoschGroup?q=audio+sound",
     "category": "Consumer Electronics & Tech",
     "verified": true,
     "source": "auto",
-    "scrape_method": "http"
-  },
-  {
-    "name": "Bosch Security",
-    "careers_url": "https://www.boschsecurity.com/careers",
-    "category": "Professional Audio & Live Sound",
-    "verified": false,
-    "source": "auto",
-    "scrape_method": "http"
+    "scrape_method": "http",
+    "extra_careers_urls": [
+      "https://jobs.smartrecruiters.com/BoschGroup?q=acoustic+akustik",
+      "https://jobs.smartrecruiters.com/BoschGroup?q=%22signal+processing%22",
+      "https://jobs.smartrecruiters.com/BoschGroup?q=nvh+vibration",
+      "https://jobs.smartrecruiters.com/BoschGroup?q=dsp+noise",
+      "https://jobs.smartrecruiters.com/BoschGroup?q=akustisch+speech"
+    ]
   },
   {
     "name": "Bose",
