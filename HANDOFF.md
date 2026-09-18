@@ -6082,17 +6082,17 @@ API rejects every `website-path` header tried.
 
 ### Still open from this session
 
-- **Ramboll publishes 13 rows of "Ramboll is growing its … team!"** — a
+- **[CLOSED 2026-09-18, see the last session update.]** **Ramboll publishes 13 rows of "Ramboll is growing its … team!"** — a
   talent-pool posting duplicated across locations, 13 of its 25 board rows. It
   scores exactly **45**, the native threshold, because "Power Supply" trips
   `audio_ee`. The other 12 are the real thing. A relevance-tuning call, not
   touched.
-- **Decagon publishes 11 sales roles out of 14** — Director of Sales, Enterprise
+- **[CLOSED 2026-09-18, see the last session update.]** **Decagon publishes 11 sales roles out of 14** — Director of Sales, Enterprise
   Account Executive — because native scope lets the company vouch for them. Same
   class of decision.
 - **ByteDance needs a longer playwright wait**, which would slow every playwright
   company. Worth doing deliberately, not as a side effect.
-- **`TikTok Audio (ByteDance)` and `Resso (ByteDance)`** are both dead entries
+- **[CLOSED 2026-09-18, see the last session update.]** **`TikTok Audio (ByteDance)` and `Resso (ByteDance)`** are both dead entries
   (0 rows) now sitting beside the new `ByteDance`. **`Fusion Marine Audio`**
   points at generic `garmin.com/en-US/careers/` beside the new `Garmin`. All
   three are the user's call.
@@ -6273,7 +6273,7 @@ apply URL before writing a scraper for a proprietary careers front end.
   company. Deliberate change, not a side effect.
 - **Makeshift Software** is unadded pending a title-cleaning rule for the
   `<Title> <City>, <Country> Posted <date>` shape GoHire emits.
-- **Ramboll publishes 13 rows of "Ramboll is growing its … team!"** — scoring
+- **[CLOSED 2026-09-18, see the last session update.]** **Ramboll publishes 13 rows of "Ramboll is growing its … team!"** — scoring
   exactly 45, the native threshold, because "Power Supply" trips `audio_ee`.
   **Decagon publishes 11 sales roles out of 14.** Both are relevance-tuning calls.
 - **`amplifier`/`amplification` are absent from the title vocabulary**, so
@@ -6281,7 +6281,7 @@ apply URL before writing a scraper for a proprietary careers front end.
   assumed: adding them admits six false positives (RF/microwave MMIC design, a
   startup incubator called LaunchBox Amplifier, a `#Amplify_` hashtag) against
   one true one. Left alone deliberately.
-- **`TikTok Audio (ByteDance)` and `Resso (ByteDance)`** are dead entries beside
+- **[CLOSED 2026-09-18, see the last session update.]** **`TikTok Audio (ByteDance)` and `Resso (ByteDance)`** are dead entries beside
   the new `ByteDance`; **`Fusion Marine Audio`** points at generic
   `garmin.com/en-US/careers/` beside the new `Garmin`.
 - **`scraper/demotion_proposals.json`/`.md`** are still untracked and in the
@@ -6427,7 +6427,7 @@ SmartRecruiters tenant `Bosch Group` now reads.
   call; the equivalent check on Synaptics found Talemetry serving the whole board
   server-rendered at `/search/jobs`, reachable by a real browser and nothing
   else. Neither finding was visible from the seed URL.
-- **`check_url --json` samples are not board-prioritised.** `SAMPLE_LIMIT = 10`
+- **[CLOSED 2026-09-18, see the last session update.]** **`check_url --json` samples are not board-prioritised.** `SAMPLE_LIMIT = 10`
   takes the first ten rows in scrape order, so a company whose only audio roles
   sit at position 60 shows ten `[skip]` lines and a board count with nothing
   behind it. Every board-row listing in this session went through
@@ -6959,6 +6959,144 @@ failures, and tells the reader to open it rather than paste it.
   `Resso (ByteDance)` / `Fusion Marine Audio` entries, playwright description
   fetching at its 8 per cent price, `check_url --json` samples not being
   board-prioritised, and LinkedIn built but never run.
+
+## Session update (2026-09-18) — the blocked list, a pipeline ad, and a dedup that would have deleted real jobs
+
+Five more from the open lists. One arrived as a deduplication request and
+measuring it first is the reason the board still has Beltone's thirty-one
+hearing-care openings.
+
+### scrape_blocked did nothing
+
+`scrape_blocked` is loaded from the seed by `company_loader`, carried by
+`export_seed_edits` and `api/api/seed_file.py`, toggleable in the admin panel,
+and read by `api/api/routers/companies.py` to build the public
+blocked-companies page. **Nothing in the scraper ever read it.** `run_cycle`
+selected on `verified` and `careers_url` alone.
+
+So all 15 blocked companies went out on every cycle. Thirteen ran yesterday and
+failed — Allen & Heath, Beyerdynamic, Native Instruments, Neural DSP, Paradigm,
+Peavey, Synaptics, WSP Acoustics, Sound Devices, Frontier Audio, Cinder — which
+is exactly what "blocked" means and exactly what the flag was for. Their
+failures also inflated the cycle's failure rate, so the 45.3 per cent recorded
+for the last full cycle counts companies nobody intended to scrape.
+
+`--only <slug>` still scrapes a blocked company by name, so a block can be
+tested without first editing the seed. The cycle line now carries
+`blocked_skipped`, because a company simply absent from the total is
+indistinguishable from one that was never seeded.
+
+This is also the other half of the ByteDance story. It was blocked in the seed
+the whole time; the block was ignored, so SuccessFactors got to claim it.
+
+### Ramboll was not a deduplication problem
+
+Ramboll Group had **13 board rows that were all one posting** — "Ramboll is
+growing its Rail Power Supply team!" — duplicated across 13 Danish and Swedish
+offices, each with its own location, external id and URL. It reaches the board
+because "Power Supply" trips `audio_ee`. Rail power supply is not audio.
+
+The obvious fix is to collapse identical titles within a company. I priced it
+before writing anything: **161 of the 1,299 board rows would collapse, and 56 of
+those are Beltone's** — `Hearing Care Professional -- Licensed` thirty-one
+times, `Licensed Hearing Instrument Specialist` nine times, each a real opening
+in a different US city with its own requisition id. Decagon's four
+`Enterprise Account Executive` rows are four real offices. Structurally these
+are identical to Ramboll's thirteen: same title, distinct locations, distinct
+ids. A dedup rule cannot tell them apart, and would have deleted real jobs to
+fix a posting *type*.
+
+So `score_relevance` recognises the type instead, returning `0, False` on a
+talent-pool title the same way it already short-circuits a non-positive score.
+69 active rows match, 15 on the board: Ramboll's 13, Demant's
+"Clinicians - Audika's Talent pool", Fortell's "Nationwide Talent Network". The
+off-board 54 are the same shape — two more Ramboll variants including a
+title-case one, Televic's "Spontaneous Application", Samsung's Korean
+rolling-recruitment rows, a dozen "Join our Talent Community" links.
+
+**"Future opportunities" is deliberately absent from the pattern.** Starkey's
+"Hearing Instrument Specialist Trainee - Future Opportunities" is a real trainee
+role with a marketing suffix. Recall beats precision here.
+
+Ramboll keeps its other 16 board rows, which are why it is seeded at all:
+Managing Consultant Acoustics, Senior Acoustic Consultant, Lead Consultant
+Acoustical.
+
+### CORPORATE_ROLE knew about sales managers but not sales
+
+Decagon's remaining shape was not duplication either. Thirteen board rows: four
+excellent — Staff Software Engineer Voice Agent, Senior Research Engineer Audio
+and Speech, Research Engineer Audio and Speech, Solutions Architect Voice — and
+nine at exactly **45**, the native threshold, every one sales or recruiting.
+They score 45 from `+35` job categories and `+10` native bonus with no audio
+signal in title or description at all.
+
+`CORPORATE_ROLE` already carried `sales manager`, `sales operations`,
+`sales enablement`, `account manager` and `business development`. It did not
+carry `account executive` or `director of sales` — the two commonest sales
+titles on this board — so its -70 penalty never fired on them. A native company
+vouching for what it posts is the intended mechanism; a sales title slipping
+past a pattern built to catch it is a gap.
+
+**78 board rows across 18 companies**: Twilio Voice 19, Dialpad 13, Deepgram 9,
+Decagon 9, Zoom 8, RingCentral 3, then singles and pairs. The owner was shown
+these numbers against the narrower alternatives (66 for `account executive`
+alone, or demoting Decagon to partial scope) and chose the full list.
+
+The existing `not title_strong` gate is what makes it safe and was not touched.
+Three matching rows keep their place because their titles really are about
+audio: Sweetwater Sound's "Director of Sales - Home Audio" at 85, and
+iHeartRadio's two "Audio and Digital Account Executive" at 105.
+
+Rescoring the whole board confirms **93 rows leave — 1,299 to 1,206** — the 78
+sales rows plus the 15 talent-pool rows. Nothing is applied until each company's
+next scrape rescores its rows, or `backfill_relevance` is run.
+
+### check_url shows the rows it just counted
+
+`SAMPLE_LIMIT` took the first ten rows in scrape order, so a company whose audio
+roles sat at position 60 printed "would appear on the public board: 2 / 143" and
+then ten `[skip]` lines. The tool answered its own headline question with
+evidence for something else, which is why every board listing in recent sessions
+went through a throwaway script calling `check_url()` directly.
+
+Board rows first, then descending relevance, with sort stability keeping scrape
+order for ties. One helper shared by the text and JSON renderers so they cannot
+drift. The header now reads `sample rows (10 of 143, 2 board rows first)`.
+
+### Three entries deleted
+
+Each sat beside a working entry for the same company. **Fusion Marine Audio**
+pointed at generic `garmin.com/en-US/careers/` and its two active rows were
+product pages — `AXIS™ FLIGHT DISPLAYS`, `CIRQA™ SMART BAND`; Garmin itself is
+seeded at `careers.garmin.com/jobs?keywords=audio` with 16 rows and 5 on the
+board. **TikTok Audio (ByteDance)** pointed at `bytedance.com/en/` and had
+produced nothing in 17 attempts. **Resso (ByteDance)** had never been scraped.
+
+Seed 1,416 to 1,413, database the same, 3 job rows deleted, none on the board.
+`prune_orphans` found those three and nothing else.
+
+### Still open from this session
+
+- **Nothing on the board has changed yet.** The 93 rows leave when each
+  company's next scrape rescores them, or when `backfill_relevance` is run
+  against the existing rows. Until then the site still shows Ramboll's 13 and
+  the 78 sales rows.
+- **Beltone puts 56 near-identical rows on the board**, 31 of them one title. All
+  real, all in different US cities, and correctly kept — but a jobseeker
+  scrolling the board sees one employer thirty-one times. That is a grouping
+  problem for the API or the frontend, not a scraper one, and it has not been
+  looked at.
+- **`NEGATIVE_SIGNALS` never fired on any of this.** Every fix here went through
+  `CORPORATE_ROLE` or a new short-circuit. Whether the negative-signal list is
+  earning its 45-point penalty has not been measured.
+- **Everything in the 2026-09-17 lists stands** apart from what is closed above:
+  MED-EL's nine requisition-code rows, ON Semiconductor's benefits and policy
+  family, the 44 unreviewed `detect_landing_pages` findings, Sivantos capped at
+  about 200 of 243 by `MAX_PAGES`, ByteDance still wanting a working careers URL
+  even though it is blocked, Makeshift Software unadded, the `amplif*` gap,
+  playwright description fetching, and LinkedIn built at `tools/jobspy_fetch/`
+  but never run for want of residential proxies.
 
 ## Running the demo
 
