@@ -9,7 +9,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Optional
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from scraper.company_loader import careers_urls_for, deactivate_expired_jobs
 from scraper.config import Settings, load_settings
@@ -31,6 +31,7 @@ class CycleStats:
     companies_attempted: int = 0
     succeeded: int = 0
     failed: int = 0
+    blocked_skipped: int = 0
     jobs_found: int = 0
     inserted: int = 0
     updated: int = 0
@@ -46,7 +47,8 @@ class CycleStats:
         )
         return (
             f"companies={self.companies_attempted} ok={self.succeeded} "
-            f"failed={self.failed} jobs_found={self.jobs_found} | "
+            f"failed={self.failed} blocked_skipped={self.blocked_skipped} "
+            f"jobs_found={self.jobs_found} | "
             f"db: inserted={self.inserted} updated={self.updated} "
             f"reactivated={self.reactivated} deactivated={self.deactivated} "
             f"deactivation_skips={self.deactivations_skipped} expired={self.expired}"
@@ -135,8 +137,19 @@ async def run_cycle(
     query = select(Company).where(Company.verified.is_(True), Company.careers_url.is_not(None))
     if only_slug:
         query = query.where(Company.slug == only_slug)
+    else:
+        query = query.where(Company.scrape_blocked.is_not(True))
     query = query.order_by(Company.name)
     with session_scope() as session:
+        blocked_skipped = 0
+        if not only_slug:
+            blocked_skipped = session.execute(
+                select(func.count(Company.id)).where(
+                    Company.verified.is_(True),
+                    Company.careers_url.is_not(None),
+                    Company.scrape_blocked.is_(True),
+                )
+            ).scalar_one()
         companies = session.execute(query).scalars().all()
         detached = [
             Company(
@@ -168,7 +181,7 @@ async def run_cycle(
             len(skip_list),
         )
 
-    cycle = CycleStats(companies_attempted=len(scrape_list))
+    cycle = CycleStats(companies_attempted=len(scrape_list), blocked_skipped=blocked_skipped)
     with session_scope() as session:
         cycle.expired = deactivate_expired_jobs(session)
     if cycle.expired:
