@@ -7076,12 +7076,67 @@ produced nothing in 17 attempts. **Resso (ByteDance)** had never been scraped.
 Seed 1,416 to 1,413, database the same, 3 job rows deleted, none on the board.
 `prune_orphans` found those three and nothing else.
 
+### The cycle that applied all of it
+
+```
+companies=711 ok=364 failed=347 blocked_skipped=13 jobs_found=8368 | db: inserted=585
+updated=7783 reactivated=35 deactivated=306 deactivation_skips=7 expired=0
+```
+
+1,592s. Companies 1,413, jobs 18,686 to 19,271, active 11,474 to 11,788, **board
+1,299 to 1,260**.
+
+**The failure rate went up, and that is the honest number.** 347 of 711 attempted
+is 48.8 per cent, against 339 of 726 — 46.7 per cent — last cycle. Removing 13
+guaranteed failures should have moved it the other way, so the rise is worth 21
+companies.
+
+It is almost all one thing. **22 companies that succeeded last cycle failed this
+one**: Best Buy, Bungie, Cisco Webex, Fujitsu, Harmonic, Hilson Moran, Kawasaki
+Motors, LANDR, Modeltalker, Nintendo, PACCAR, Skullcandy, Dear Reality,
+NBCUniversal Audio, LG Electronics, Keysight, AGCO, CNH Industrial, BrightDrop,
+GungHo Online, Paradox Interactive. That is the chrome list. They "succeeded"
+before by inserting navigation furniture; now the extractor drops the furniture,
+finds nothing, and the scrape says so. `page loaded but no job links found` is
+what these companies were always doing. The failure rate is a better number than
+it was, which is why it is worse.
+
+**Ramboll Group is the exception in that list and is not chrome.** It failed with
+the same message, but `check_url` against `careers.smartrecruiters.com/Ramboll3`
+right afterwards returned 1,092 jobs and 16 board rows, and the company config is
+unchanged: no `ats_type`, one careers URL, three prior successes via
+smartrecruiters. Transient, most likely rate limiting on a 1,000-job paginated
+board inside a 711-company run. Deactivation suppression preserved its 29 rows,
+which means **its 13 talent-pool rows are still on the board** until it next
+scrapes cleanly.
+
+Where the rescoring landed, on companies that did scrape:
+
+- **Decagon 13 board rows to 4** — the nine sales rows gone, the four real ones
+  kept: Staff Software Engineer Voice Agent, the two Research Engineer Audio and
+  Speech roles, Solutions Architect Voice.
+- **Twilio Voice 21 to 2**, **Dialpad 24 to 11**.
+
+Of the 93 rows the new rules reject, **76 are gone and 17 remain**: Ramboll's 13
+behind the failed scrape, three RingCentral account-executive rows and one Demant
+talent-pool row that were not re-found this cycle and not deactivated either —
+the cycle reported 7 deactivation skips. Checked for a stale override pinning
+them: the whole database has one `is_audio_related_override` and it is not on any
+of them.
+
+`blocked_skipped=13` is real: zero blocked companies appear in this cycle's
+`scrape_log`.
+
 ### Still open from this session
 
-- **Nothing on the board has changed yet.** The 93 rows leave when each
-  company's next scrape rescores them, or when `backfill_relevance` is run
-  against the existing rows. Until then the site still shows Ramboll's 13 and
-  the 78 sales rows.
+- **17 of the 93 rows are still on the board**, 13 of them Ramboll's, behind a
+  transient SmartRecruiters failure that suppressed its deactivation. They clear
+  on its next clean scrape; `backfill_relevance` would clear the other four now.
+- **The 22 newly-failing chrome companies want a decision.** They publish nothing
+  a jobseeker can use and now say so honestly, but they will fail every cycle
+  forever and cost playwright time doing it. Either their seed URLs are wrong —
+  `detect_landing_pages` flags several of them — or they belong in the blocked
+  list, which now actually works.
 - **Beltone puts 56 near-identical rows on the board**, 31 of them one title. All
   real, all in different US cities, and correctly kept — but a jobseeker
   scrolling the board sees one employer thirty-one times. That is a grouping
