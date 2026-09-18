@@ -4066,14 +4066,6 @@
     "scrape_method": "playwright"
   },
   {
-    "name": "Fusion Marine Audio",
-    "careers_url": "https://www.garmin.com/en-US/careers/",
-    "category": "Car Audio",
-    "verified": true,
-    "source": "auto",
-    "scrape_method": "http"
-  },
-  {
     "name": "Gaana (Times Internet)",
     "careers_url": "https://gaana.com/music-label/sound-talent-media",
     "category": "Streaming & Music Services",
@@ -8325,14 +8317,6 @@
     "scrape_method": "playwright"
   },
   {
-    "name": "Resso (ByteDance)",
-    "careers_url": "https://www.resso.com/careers",
-    "category": "Streaming & Music Services",
-    "verified": false,
-    "source": "auto",
-    "scrape_method": "http"
-  },
-  {
     "name": "RestorEar",
     "careers_url": "https://www.restorear.com/careers",
     "category": "Hearing Aid & Hearing Tech",
@@ -10213,14 +10197,6 @@
     "verified": true,
     "source": "auto",
     "scrape_method": "playwright"
-  },
-  {
-    "name": "TikTok Audio (ByteDance)",
-    "careers_url": "https://www.bytedance.com/en/",
-    "category": "Recording Studios & Post Houses",
-    "verified": true,
-    "source": "auto",
-    "scrape_method": "http"
   },
   {
     "name": "Tillery Acoustics",
