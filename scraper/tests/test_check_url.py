@@ -16,6 +16,7 @@ from scraper.check_url import (
     parse_args,
     report_to_dict,
     resolve_context,
+    sample_rows,
 )
 from scraper.models import Company
 from scraper.normalizer import NormalizedJob
@@ -225,6 +226,73 @@ class TestReportSummary(unittest.TestCase):
         report = self._report(jobs)
         text = format_report(report)
         self.assertIn("would appear on the public board: 1 / 1", text)
+
+
+class TestSampleRows(unittest.TestCase):
+    def test_board_rows_past_position_ten_still_show_in_sample(self) -> None:
+        """The tool exists to show you what reached the board, not the first ten scraped."""
+        jobs = [make_job(f"Skip {i}", 0, False) for i in range(60)]
+        jobs.append(make_job("Audio DSP Engineer", 50, True))
+        ordered = sample_rows(jobs)
+        self.assertEqual(ordered[0].title, "Audio DSP Engineer")
+        self.assertIn(ordered[0], ordered[:10])
+
+    def test_non_board_rows_ordered_by_descending_score(self) -> None:
+        jobs = [
+            make_job("Low", 10, False),
+            make_job("High", 90, False),
+            make_job("Mid", 50, False),
+        ]
+        ordered = sample_rows(jobs)
+        self.assertEqual([job.title for job in ordered], ["High", "Mid", "Low"])
+
+    def test_equal_scores_keep_scrape_order(self) -> None:
+        jobs = [
+            make_job("First", 50, False),
+            make_job("Second", 50, False),
+            make_job("Third", 50, False),
+        ]
+        ordered = sample_rows(jobs)
+        self.assertEqual([job.title for job in ordered], ["First", "Second", "Third"])
+
+    def test_json_output_carries_same_ordering_as_text(self) -> None:
+        jobs = [make_job(f"Skip {i}", 0, False) for i in range(15)]
+        jobs.append(make_job("Audio DSP Engineer", 50, True))
+        context = ResolvedContext(
+            matched_company=None, category=None, audio_scope=DEFAULT_AUDIO_SCOPE, used_default=True
+        )
+        report = Report(
+            url="https://acme.example/careers",
+            context=context,
+            method="greenhouse",
+            success=True,
+            error=None,
+            jobs=jobs,
+        )
+        text = format_report(report)
+        data = report_to_dict(report)
+        text_titles = [line.split("] score=")[1] for line in text.splitlines() if "score=" in line]
+        text_titles = [entry.split(None, 2)[-1] for entry in text_titles]
+        json_titles = [sample["title"] for sample in data["samples"]]
+        self.assertEqual(text_titles, json_titles)
+        self.assertEqual(json_titles[0], "Audio DSP Engineer")
+
+    def test_header_reports_counts_correctly(self) -> None:
+        jobs = [make_job(f"Skip {i}", 0, False) for i in range(15)]
+        jobs.append(make_job("Audio DSP Engineer", 50, True))
+        context = ResolvedContext(
+            matched_company=None, category=None, audio_scope=DEFAULT_AUDIO_SCOPE, used_default=True
+        )
+        report = Report(
+            url="https://acme.example/careers",
+            context=context,
+            method="greenhouse",
+            success=True,
+            error=None,
+            jobs=jobs,
+        )
+        text = format_report(report)
+        self.assertIn("sample rows (10 of 16, 1 board rows first):", text)
 
 
 if __name__ == "__main__":

@@ -63,6 +63,10 @@ class Report:
         return sum(1 for job in self.jobs if job.is_audio_related)
 
 
+def sample_rows(jobs: list[NormalizedJob]) -> list[NormalizedJob]:
+    return sorted(jobs, key=lambda job: (not job.is_audio_related, -job.relevance_score))
+
+
 def find_company_by_name(name: str) -> Optional[Company]:
     with session_scope() as session:
         row = session.execute(
@@ -187,7 +191,7 @@ def report_to_dict(report: Report) -> dict:
                 "categories": job.job_categories,
                 "title": job.title,
             }
-            for job in report.jobs[:SAMPLE_LIMIT]
+            for job in sample_rows(report.jobs)[:SAMPLE_LIMIT]
         ],
     }
 
@@ -235,8 +239,13 @@ def format_report(report: Report) -> str:
     lines.append("")
 
     if report.jobs:
-        lines.append(f"sample rows (showing up to {SAMPLE_LIMIT}):")
-        for job in report.jobs[:SAMPLE_LIMIT]:
+        sample = sample_rows(report.jobs)[:SAMPLE_LIMIT]
+        board_in_sample = sum(1 for job in sample if job.is_audio_related)
+        lines.append(
+            f"sample rows ({len(sample)} of {report.total_jobs}, "
+            f"{board_in_sample} board rows first):"
+        )
+        for job in sample:
             marker = "BOARD" if job.is_audio_related else "skip "
             categories = ",".join(job.job_categories) if job.job_categories else "-"
             lines.append(
