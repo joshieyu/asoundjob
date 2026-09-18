@@ -813,6 +813,16 @@ AUDIO_DESC_WEAK = re.compile(
     re.IGNORECASE,
 )
 
+TALENT_POOL_TITLE = re.compile(
+    r"(?:is growing its .{1,60} team\b|"
+    r"\btalent (?:pool|community|network)\b|"
+    r"\bjoin our talent\b|"
+    r"\b(?:speculative|unsolicited|spontaneous) application\b|"
+    r"\b(?:open|general) applications?\b|"
+    r"\bexpression of interest\b)",
+    re.IGNORECASE,
+)
+
 NEGATIVE_SIGNALS = re.compile(
     r"(architect of record|interior design|building design|k-12 education|"
     r"higher education studio|entertainment release|linear channel)",
@@ -1009,6 +1019,9 @@ def score_relevance(
     job_categories: list[str],
     audio_scope: str = "native",
 ) -> tuple[int, bool]:
+    if TALENT_POOL_TITLE.search(title):
+        return 0, False
+
     score = 0
 
     title_strong = bool(

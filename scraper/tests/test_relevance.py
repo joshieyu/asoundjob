@@ -201,5 +201,64 @@ class TestScoreRelevance(unittest.TestCase):
         self.assertFalse(related)
 
 
+class TestTalentPoolTitles(unittest.TestCase):
+    def test_ramboll_rail_power_supply_is_a_pipeline_ad(self) -> None:
+        """Ramboll Group publishes this exact title 13 times across Danish and
+        Swedish offices with distinct locations, external_ids and URLs. It is
+        one pipeline advertisement duplicated into 13 board rows, not 13 jobs."""
+        score, related = score_relevance(
+            "Ramboll is growing its Rail Power Supply team!",
+            None,
+            ["audio_ee"],
+            "partial",
+        )
+        self.assertEqual(score, 0)
+        self.assertFalse(related)
+
+    def test_ramboll_title_case_variant_is_caught(self) -> None:
+        _, related = score_relevance(
+            "Ramboll Is Growing Its Data Centre Projects Team in Germany",
+            None,
+            [],
+            "partial",
+        )
+        self.assertFalse(related)
+
+    def test_demant_talent_pool_is_caught(self) -> None:
+        _, related = score_relevance(
+            "Clinicians - Audika's Talent pool", None, [], "native"
+        )
+        self.assertFalse(related)
+
+    def test_join_our_talent_community_is_caught(self) -> None:
+        _, related = score_relevance(
+            "Join our Talent Community", None, [], "native"
+        )
+        self.assertFalse(related)
+
+    def test_starkey_future_opportunities_is_not_caught(self) -> None:
+        """"Future opportunities" is deliberately not treated as talent-pool
+        phrasing: this Starkey title is a real trainee role with a marketing
+        suffix, and dropping it would lose a real job. Recall beats precision
+        on this board."""
+        _, related = score_relevance(
+            "Hearing Instrument Specialist Trainee - Future Opportunities",
+            "Train alongside licensed hearing instrument specialists fitting "
+            "hearing aids and supporting patients in clinic.",
+            ["audio_hearing"],
+            "native",
+        )
+        self.assertTrue(related)
+
+    def test_normal_title_with_team_still_scores_normally(self) -> None:
+        _, related = score_relevance(
+            "Audio Team Lead",
+            "Lead the audio engineering team building loudspeaker products.",
+            ["audio_systems"],
+            "native",
+        )
+        self.assertTrue(related)
+
+
 if __name__ == "__main__":
     unittest.main()
