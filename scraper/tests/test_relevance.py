@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from scraper.normalizer import category_to_scope, score_relevance
+from scraper.normalizer import SCOPE_THRESHOLDS, category_to_scope, score_relevance
 
 
 class TestCategoryScope(unittest.TestCase):
@@ -199,6 +199,84 @@ class TestScoreRelevance(unittest.TestCase):
             "Studio Leader, K-12 Education", desc, [], "native"
         )
         self.assertFalse(related)
+
+    def test_decagon_account_executive_is_not_audio_related(self) -> None:
+        """Decagon is a native-scope voice AI company that posts 13 rows to
+        the board. Nine of them are sales and recruiting titles with no
+        audio signal at all; Enterprise Account Executive is five of those
+        nine, and without this pattern each one clears the native threshold
+        on job-category and native-bonus points alone."""
+        score, related = score_relevance(
+            "Enterprise Account Executive",
+            "Own the full sales cycle from prospecting to close.",
+            ["voice_ai"],
+            "native",
+        )
+        self.assertFalse(related)
+        self.assertLess(score, SCOPE_THRESHOLDS["native"])
+
+    def test_decagon_director_of_sales_is_not_audio_related(self) -> None:
+        """Decagon posts Director of Sales, Enterprise three times among its
+        nine sales and recruiting rows; nothing in the title or a generic
+        sales description mentions audio."""
+        score, related = score_relevance(
+            "Director of Sales, Enterprise",
+            "Lead and scale our enterprise go-to-market sales team.",
+            ["voice_ai"],
+            "native",
+        )
+        self.assertFalse(related)
+        self.assertLess(score, SCOPE_THRESHOLDS["native"])
+
+    def test_decagon_recruiting_coordinator_is_not_audio_related(self) -> None:
+        """The ninth of Decagon's nine non-audio rows, Go to Market
+        Recruiting Coordinator, is a recruiting title riding the native
+        bonus with no audio content anywhere in the posting."""
+        score, related = score_relevance(
+            "Go to Market Recruiting Coordinator",
+            "Coordinate interviews and offers for our go-to-market org.",
+            ["voice_ai"],
+            "native",
+        )
+        self.assertFalse(related)
+        self.assertLess(score, SCOPE_THRESHOLDS["native"])
+
+    def test_sweetwater_sound_director_of_sales_home_audio_stays_related(self) -> None:
+        """Sweetwater Sound's Director of Sales - Home Audio matches the new
+        sales terms, but the title itself is strong audio, and the -70
+        corporate penalty is gated on `not title_strong` precisely so a
+        genuine audio sales role keeps its place."""
+        _, related = score_relevance(
+            "Director of Sales - Home Audio",
+            "Lead the home audio sales team and channel partnerships.",
+            ["home_audio"],
+            "partial",
+        )
+        self.assertTrue(related)
+
+    def test_iheartradio_audio_and_digital_account_executive_stays_related(self) -> None:
+        """iHeartRadio's Audio and Digital Account Executive matches the new
+        account executive term, but its strong audio title trips the same
+        `not title_strong` gate and survives."""
+        _, related = score_relevance(
+            "Audio and Digital Account Executive",
+            "Sell audio and digital advertising campaigns to local clients.",
+            ["radio_advertising"],
+            "partial",
+        )
+        self.assertTrue(related)
+
+    def test_decagon_engineering_role_is_unaffected(self) -> None:
+        """Decagon's four genuine engineering rows, like Staff Software
+        Engineer, Voice Agent, carry no sales or recruiting terms at all and
+        are untouched by this pattern."""
+        _, related = score_relevance(
+            "Staff Software Engineer, Voice Agent",
+            "Build the voice agent platform powering real-time conversations.",
+            ["voice_ai"],
+            "native",
+        )
+        self.assertTrue(related)
 
 
 class TestTalentPoolTitles(unittest.TestCase):
