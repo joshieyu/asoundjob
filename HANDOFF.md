@@ -6099,7 +6099,7 @@ API rejects every `website-path` header tried.
 - **David AI's linked YC role** (Applied Audio ML Engineer) is not on its Ashby
   board; its five published rows are generic engineering at native scope.
 - **[CLOSED 2026-09-17, see the last session update.]** **`ats_slug` is still the only DB-only field** with no path back to the seed.
-- **`scraper/demotion_proposals.json`/`.md`** are still untracked and in the
+- **[CLOSED 2026-09-18, see the last session update.]** **`scraper/demotion_proposals.json`/`.md`** are still untracked and in the
   wrong directory.
 - **LinkedIn is built but never run.** Needs residential proxies.
 
@@ -6284,7 +6284,7 @@ apply URL before writing a scraper for a proprietary careers front end.
 - **[CLOSED 2026-09-18, see the last session update.]** **`TikTok Audio (ByteDance)` and `Resso (ByteDance)`** are dead entries beside
   the new `ByteDance`; **`Fusion Marine Audio`** points at generic
   `garmin.com/en-US/careers/` beside the new `Garmin`.
-- **`scraper/demotion_proposals.json`/`.md`** are still untracked and in the
+- **[CLOSED 2026-09-18, see the last session update.]** **`scraper/demotion_proposals.json`/`.md`** are still untracked and in the
   wrong directory.
 - **LinkedIn is built but never run.** Needs residential proxies.
 
@@ -6940,7 +6940,7 @@ failures, and tells the reader to open it rather than paste it.
   The tool exists; nobody has walked its output. Both spot checks I ran were
   dead ends, so expect a low hit rate per entry and read `rows_lead_to` as a
   lead rather than an answer.
-- **`detect_landing_pages` writes its report into `scraper/` by default**, the
+- **[CLOSED 2026-09-18, see the last session update.]** **`detect_landing_pages` writes its report into `scraper/` by default**, the
   same wart as `scraper/demotion_proposals.*`, which are still untracked and
   still in the wrong directory.
 - **Sivantos yields about 200 of its 243** at `MAX_PAGES = 10`. Raising the cap
@@ -7129,7 +7129,7 @@ of them.
 
 ### Still open from this session
 
-- **17 of the 93 rows are still on the board**, 13 of them Ramboll's, behind a
+- **[CLOSED 2026-09-18, see the last session update.]** **17 of the 93 rows are still on the board**, 13 of them Ramboll's, behind a
   transient SmartRecruiters failure that suppressed its deactivation. They clear
   on its next clean scrape; `backfill_relevance` would clear the other four now.
 - **The 22 newly-failing chrome companies want a decision.** They publish nothing
@@ -7142,7 +7142,7 @@ of them.
   scrolling the board sees one employer thirty-one times. That is a grouping
   problem for the API or the frontend, not a scraper one, and it has not been
   looked at.
-- **`NEGATIVE_SIGNALS` never fired on any of this.** Every fix here went through
+- **[CLOSED 2026-09-18, see the last session update.]** **`NEGATIVE_SIGNALS` never fired on any of this.** Every fix here went through
   `CORPORATE_ROLE` or a new short-circuit. Whether the negative-signal list is
   earning its 45-point penalty has not been measured.
 - **Everything in the 2026-09-17 lists stands** apart from what is closed above:
@@ -7152,6 +7152,114 @@ of them.
   even though it is blocked, Makeshift Software unadded, the `amplif*` gap,
   playwright description fetching, and LinkedIn built at `tools/jobspy_fetch/`
   but never run for want of residential proxies.
+
+## Session update (2026-09-18, later) — clearing the list
+
+Housekeeping and measurement, mostly. Two of these were questions rather than
+tasks, and the answers are the deliverable.
+
+### backfill_relevance applied the rescore
+
+Board **1,260 to 1,243**, and the count of board rows the current rules would
+reject went to **zero**. Ramboll Group drops to its 16 real acoustics rows —
+Managing Consultant Acoustics, Senior Acoustic Consultant, Lead Consultant
+Acoustical — without waiting for its next clean scrape. RingCentral 7 to 4,
+Demant 85 to 84.
+
+`backfill_relevance` scores every scraped row, active or not, so the number it
+prints (1,703 audio-related of 19,270) counts inactive rows too. The board is the
+active subset.
+
+### NEGATIVE_SIGNALS barely does anything, and now that is measured
+
+The open item asked whether the 45-point penalty earns its keep. Measured by
+rescoring all 11,788 active rows twice, once with `NEGATIVE_SIGNALS` compiled to
+a pattern that cannot match:
+
+**It changes board membership for 2 rows.** Both are Bose "Technical Marketing
+Lead" roles that would otherwise land at exactly 45. The pattern fires on 114
+rows in total — `building design` 50, `interior design` 48, `k-12 education` 14,
+`linear channel` 2 — but almost all of those are already below threshold on
+their own. Three of its seven phrases (`architect of record`,
+`higher education studio`, `entertainment release`) match nothing in the corpus
+at all.
+
+Not a defect and not worth removing: it is doing a small, correct thing. Worth
+knowing before anyone spends time tuning it.
+
+### The chrome filter closed more than half the landing-page list
+
+`detect_landing_pages` re-run after the cycle: **44 companies down to 20**,
+native 24 down to 10. Most of the original list was flagged on taxonomy rows that
+the chrome vocabulary now drops at extraction, so those companies stopped looking
+like landing pages because they stopped emitting furniture.
+
+Two of the survivors were unambiguous and are fixed:
+
+- **Perkins&Will** was seeded at `perkinswill.com/careers/`, which yielded one
+  row titled "Apply for jobs and internships here." `check_url` against the
+  UltiPro board the row pointed at returns **151 jobs**. None reach the public
+  board — it is an architecture practice and the rows are Interior Designer II,
+  Medical Planner, Project Architect, which is exactly what `NEGATIVE_SIGNALS`
+  is for — but the firm is seeded for its acoustics practice and an acoustics
+  opening will now be seen. No `ats_type` was stored: the ultipro `URL_PATTERN`
+  already claims the URL, and a wrong stored binding is its own hazard.
+- **McIntosh Automotive** was seeded at `mcintoshlabs.com/Page-Not-Found` — not a
+  URL that had rotted, a URL whose path is the site's not-found handler. Their
+  homepage links Employment to `/home/about/employment`, which loads and lists
+  nothing today. It replaces a URL that can never produce a row with one that
+  can.
+
+Both are `source: manual` now so the loader leaves them alone.
+
+### Truncation: one company, and a blind spot
+
+`detect_truncation` flags exactly **one** company: HP Inc., 200 jobs at
+eightfold's 200 cap, **1 board row from 200 fetched**, partial scope, no scoping
+query. The Bosch `?q=` method is the fix, but it could not be validated from
+here: eightfold's `URL_PATTERN` matches only `*.eightfold.ai`, while HP is seeded
+at `apply.hp.com` and bound by a stored `ats_type`. `check_url` builds a company
+with no `ats_type`, so it cannot reproduce the eightfold path at all — it falls
+through to playwright and returns worse rows. Testing a scoping query for HP
+needs a harness that sets the binding.
+
+**Sivantos is not on that list**, at 179 rows against a reported 243. The
+detector models each ATS parser's page cap but not the generic HTTP pager's
+`MAX_PAGES = 10`, so a company truncated by `collect_paginated` is invisible to
+it. That is a real gap in the tool, not a reason to trust the count.
+
+### Generated reports are ignored now
+
+Every report-writing tool defaults `--output` to the current directory, so
+`scraper/demotion_proposals.json` and `.md` had been sitting untracked for weeks,
+listed as an open item for being "in the wrong directory" when the real problem
+is that they are output, not source. All eleven default report filenames are in
+`.gitignore`. `seed_url_audit.md` and `careers_url_proposals.md` are already
+tracked at the root and stay that way — gitignore does not apply to tracked
+files, and deleting them is a separate decision.
+
+### Still open from this session
+
+- **`discover_careers_urls --population failing` was still running when this was
+  written.** It crawls all 347 failing companies proposing corrected URLs, which
+  is the purpose-built tool for the 21 chrome companies. Its output was not
+  reviewed. Re-run it rather than trusting a stale report.
+- **19 of the 21 newly-failing chrome companies are untouched.** They hold 33
+  stale active rows between them, none on the board, and will fail every cycle
+  until their URLs are fixed or they are blocked.
+- **HP Inc. wants the Bosch `?q=` treatment** and needs a test harness that sets
+  `ats_type` before anyone can verify it.
+- **`detect_truncation` cannot see generic-pager truncation.** Teaching it
+  `MAX_PAGES` would have flagged Sivantos before a human noticed.
+- **Beltone holds 81 board rows of 1,243**, 31 under one title, and the top three
+  employers are 21 per cent of the board between them. Real jobs, correctly kept,
+  and still a grouping problem for the API or the frontend.
+- **Everything else in the earlier lists stands**: MED-EL's nine requisition-code
+  rows, ON Semiconductor's benefits and policy family, the remaining 18
+  `detect_landing_pages` findings, Sivantos capped at about 179 of 243, ByteDance
+  without a working careers URL (blocked, so harmless), Makeshift Software
+  unadded, the `amplif*` gap, playwright description fetching, and LinkedIn built
+  at `tools/jobspy_fetch/` but never run.
 
 ## Running the demo
 
