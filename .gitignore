@@ -48,3 +48,20 @@ tools/jobspy_fetch/.venv/
 tools/jobspy_fetch/out/
 tools/jobspy_fetch/proxies.txt
 tools/jobspy_fetch/*.proxies
+
+# Generated diagnostic reports. Every tool under scraper/scraper that writes a
+# report defaults to the current directory, so these land wherever they are run
+# from. They are regenerated on demand and describe a moment in the database,
+# not the code.
+ats_binding_proposals.json
+ats_binding_proposals.md
+company_proposals.json
+company_proposals.md
+demotion_proposals.json
+demotion_proposals.md
+landing_pages_report.md
+nonjob_rows_report.md
+open_application_proposals.md
+seed_export.json
+seed_export.md
+truncation_report.md
