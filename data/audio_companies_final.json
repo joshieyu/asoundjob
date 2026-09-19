@@ -6182,10 +6182,10 @@
   },
   {
     "name": "McIntosh Automotive",
-    "careers_url": "https://www.mcintoshlabs.com/Page-Not-Found",
+    "careers_url": "https://www.mcintoshlabs.com/home/about/employment",
     "category": "Car Audio",
     "verified": true,
-    "source": "auto",
+    "source": "manual",
     "scrape_method": "http"
   },
   {
