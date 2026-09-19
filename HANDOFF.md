@@ -7228,6 +7228,38 @@ detector models each ATS parser's page cap but not the generic HTTP pager's
 `MAX_PAGES = 10`, so a company truncated by `collect_paginated` is invisible to
 it. That is a real gap in the tool, not a reason to trust the count.
 
+### discover_careers_urls: two of six high-confidence proposals were real
+
+It crawled all 347 failing companies: 319 no_candidate, 21 keep_current, 18
+replace, 3 domain_dead. Six of the replacements were labelled **high
+confidence**. Each went through `check_url` before anything was applied, and
+that is the only reason two of them are not in the seed now.
+
+Applied:
+
+- **Biamp Systems**, `/company/careers` to `/company/careers/jobs` — 11 jobs and
+  one board row, Firmware Engineer at `audio_dsp_embedded`. A pro audio company
+  that was contributing nothing.
+- **XPeng Motors**, from a Feishu URL that fails to
+  `boards.greenhouse.io/xpengmotors` — 24 real jobs, none on the board today, but
+  a working board instead of a broken one.
+
+Rejected, and named here so nobody applies them from a stale report:
+
+- **Bethesda** to `boards.greenhouse.io/bethesda` returns **Physical Therapist**
+  and **Physical Therapist Assistant**. It is a different Bethesda. Applying it
+  binds a game studio to a physiotherapy clinic's board.
+- **ZTE** to `com.recruitee.com` returns Recruitee's own marketing blog —
+  "Recruiting automation: a practical guide for European hiring teams". The slug
+  extraction produced a hostname, not a customer.
+- **Bungie** and **Splice** both return zero jobs from their proposed URLs.
+
+**Two of six on the tool's highest-confidence tier.** The checkboxes in its
+report are leads, not answers, and the two wrong ones are the dangerous kind:
+they scrape successfully, so the pipeline would have trusted them and filled the
+board with another company's jobs. The report's own header says approved lines
+must be applied by hand; it should also say verified by `check_url` first.
+
 ### Generated reports are ignored now
 
 Every report-writing tool defaults `--output` to the current directory, so
@@ -7240,13 +7272,13 @@ files, and deleting them is a separate decision.
 
 ### Still open from this session
 
-- **`discover_careers_urls --population failing` was still running when this was
-  written.** It crawls all 347 failing companies proposing corrected URLs, which
-  is the purpose-built tool for the 21 chrome companies. Its output was not
-  reviewed. Re-run it rather than trusting a stale report.
+- **The other 16 `discover_careers_urls` proposals are unreviewed** — 8 medium
+  confidence and the rest lower. Given the hit rate on the high-confidence tier
+  below, budget a `check_url` run per proposal.
 - **19 of the 21 newly-failing chrome companies are untouched.** They hold 33
   stale active rows between them, none on the board, and will fail every cycle
-  until their URLs are fixed or they are blocked.
+  until their URLs are fixed or they are blocked. Bungie is one of them and its
+  proposed URL does not work.
 - **HP Inc. wants the Bosch `?q=` treatment** and needs a test harness that sets
   `ats_type` before anyone can verify it.
 - **`detect_truncation` cannot see generic-pager truncation.** Teaching it
