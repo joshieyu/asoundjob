@@ -7524,11 +7524,11 @@
   },
   {
     "name": "Perkins&Will",
-    "careers_url": "https://perkinswill.com/careers/",
+    "careers_url": "https://recruiting2.ultipro.com/PER1007PWILL/JobBoard/0ca393a4-bf82-4db6-acae-91e6a0315a4a",
     "category": "Acoustic Consulting & Engineering",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "http"
   },
   {
     "name": "Peugeot",
