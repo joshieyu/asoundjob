@@ -1525,10 +1525,10 @@
   },
   {
     "name": "Biamp Systems",
-    "careers_url": "https://www.biamp.com/company/careers",
+    "careers_url": "https://www.biamp.com/company/careers/jobs",
     "category": "Professional Audio & Live Sound",
     "verified": true,
-    "source": "auto",
+    "source": "manual",
     "scrape_method": "playwright"
   },
   {
@@ -11368,11 +11368,11 @@
   },
   {
     "name": "XPeng Motors",
-    "careers_url": "https://xiaopeng.jobs.feishu.cn/963247/?spread=Q3N5BC5",
+    "careers_url": "https://boards.greenhouse.io/xpengmotors",
     "category": "Automotive OEMs",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "http"
   },
   {
     "name": "Xperi (DTS)",
