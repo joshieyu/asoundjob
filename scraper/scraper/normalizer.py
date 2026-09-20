@@ -823,6 +823,32 @@ TALENT_POOL_TITLE = re.compile(
     re.IGNORECASE,
 )
 
+CLINICAL_HEARING_TITLE = re.compile(
+    r"\baudiologist\b|"
+    r"\bdoctor of audiology\b|"
+    r"\baudiology (?:extern|technician|assistant)\b|"
+    r"\bhearing (?:care|instrument|aid)s? (?:professional|specialist|practitioner|"
+    r"trainee|dispenser|consultant|provider|advisor|technician|audiologist)\b|"
+    r"\bhearing wellness advisor\b|"
+    r"\bclinician\b|"
+    r"\bspeech (?:therapist|pathologist)\b|"
+    r"audioproth[ée]siste|audioprotesista|audiolog[íi]a|h[öo]rakustiker|audioloog",
+    re.IGNORECASE,
+)
+
+CLINICAL_EXEMPT = re.compile(
+    r"\b(?:research|scientist|engineer|engineering|dsp|signal|algorithm|firmware|"
+    r"embedded|software|acoustic|acoustics|validation|verification|development|"
+    r"design)\b",
+    re.IGNORECASE,
+)
+
+
+def is_clinical_hearing_title(title: str) -> bool:
+    return bool(CLINICAL_HEARING_TITLE.search(title)) and not CLINICAL_EXEMPT.search(
+        title
+    )
+
 NEGATIVE_SIGNALS = re.compile(
     r"(architect of record|interior design|building design|k-12 education|"
     r"higher education studio|entertainment release|linear channel)",
@@ -1022,6 +1048,9 @@ def score_relevance(
     audio_scope: str = "native",
 ) -> tuple[int, bool]:
     if TALENT_POOL_TITLE.search(title):
+        return 0, False
+
+    if is_clinical_hearing_title(title):
         return 0, False
 
     score = 0

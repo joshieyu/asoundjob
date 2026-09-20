@@ -314,11 +314,13 @@ class TestTalentPoolTitles(unittest.TestCase):
         )
         self.assertFalse(related)
 
-    def test_starkey_future_opportunities_is_not_caught(self) -> None:
+    def test_starkey_future_opportunities_is_not_caught_as_talent_pool(self) -> None:
         """"Future opportunities" is deliberately not treated as talent-pool
-        phrasing: this Starkey title is a real trainee role with a marketing
-        suffix, and dropping it would lose a real job. Recall beats precision
-        on this board."""
+        phrasing on its own -- TALENT_POOL_TITLE still lets this Starkey
+        title through. But "Hearing Instrument Specialist" is a genuine
+        dispensing role (the description trains people to fit hearing aids
+        for patients in clinic), so the clinical-hearing-title filter now
+        correctly removes it from the board instead."""
         _, related = score_relevance(
             "Hearing Instrument Specialist Trainee - Future Opportunities",
             "Train alongside licensed hearing instrument specialists fitting "
@@ -326,7 +328,7 @@ class TestTalentPoolTitles(unittest.TestCase):
             ["audio_hearing"],
             "native",
         )
-        self.assertTrue(related)
+        self.assertFalse(related)
 
     def test_normal_title_with_team_still_scores_normally(self) -> None:
         _, related = score_relevance(
@@ -334,6 +336,81 @@ class TestTalentPoolTitles(unittest.TestCase):
             "Lead the audio engineering team building loudspeaker products.",
             ["audio_systems"],
             "native",
+        )
+        self.assertTrue(related)
+
+
+class TestClinicalHearingTitles(unittest.TestCase):
+    def test_beltone_hearing_care_professional_is_dispensing_not_audio(self) -> None:
+        """Beltone posts this exact title 31 times on the board; it is
+        retail hearing-aid dispensing staffing, not engineering."""
+        score, related = score_relevance(
+            "Hearing Care Professional -- Licensed", None, [], "native"
+        )
+        self.assertEqual(score, 0)
+        self.assertFalse(related)
+
+    def test_beltone_town_variant_audiologist_title_is_dispensing(self) -> None:
+        """Beltone posts town-by-town variants of this title across the
+        board; "Gilbert, AZ" is one storefront among dozens."""
+        _, related = score_relevance(
+            "Audiologist or Hearing Instrument Specialist (Gilbert, AZ)",
+            None,
+            [],
+            "native",
+        )
+        self.assertFalse(related)
+
+    def test_demant_audioprothesiste_is_dispensing_not_audio(self) -> None:
+        """"Audioprothésiste" is the French hearing-aid dispensing title;
+        it is 22 board rows across Demant and Advanced Bionics."""
+        _, related = score_relevance(
+            "Audioprothésiste - Auxerre et alentours (89)", None, [], "native"
+        )
+        self.assertFalse(related)
+
+    def test_spanish_audiologia_receptionist_is_dispensing_not_audio(self) -> None:
+        _, related = score_relevance(
+            "Auxiliar de Audiología / Recepcionista Sevilla", None, [], "native"
+        )
+        self.assertFalse(related)
+
+    def test_demant_clinician_is_dispensing_not_audio(self) -> None:
+        """Demant posts this title for clinical roles in Australia and
+        New Zealand; it is 6 board rows."""
+        _, related = score_relevance("Clinician, Langwarrin", None, [], "native")
+        self.assertFalse(related)
+
+    def test_embedded_audio_dsp_engineer_at_native_hearing_company_survives(
+        self,
+    ) -> None:
+        _, related = score_relevance(
+            "Embedded Audio DSP Engineer", None, ["audio_dsp_embedded"], "native"
+        )
+        self.assertTrue(related)
+
+    def test_audiological_engineer_survives_via_engineering_exemption(self) -> None:
+        """"Audiological Engineer" never matches CLINICAL_HEARING_TITLE at
+        all -- the vocabulary is deliberately narrow -- but the engineering
+        exemption exists precisely so a future clinical-shaped match on a
+        title like this one is not dropped."""
+        _, related = score_relevance(
+            "Audiological Engineer", None, ["audio_ee"], "native"
+        )
+        self.assertTrue(related)
+
+    def test_research_audiology_intern_survives(self) -> None:
+        _, related = score_relevance(
+            "Research Audiology Intern", None, ["audio_hearing"], "native"
+        )
+        self.assertTrue(related)
+
+    def test_audio_technician_is_not_confused_with_audiology_technician(self) -> None:
+        """"Audio Technician (Covington, WA)" is a Starkey engineering role;
+        it must not be caught by the "audiology technician" branch of
+        CLINICAL_HEARING_TITLE."""
+        _, related = score_relevance(
+            "Audio Technician (Covington, WA)", None, ["audio_dsp_embedded"], "native"
         )
         self.assertTrue(related)
 
