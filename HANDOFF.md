@@ -7293,6 +7293,105 @@ files, and deleting them is a separate decision.
   unadded, the `amplif*` gap, playwright description fetching, and LinkedIn built
   at `tools/jobspy_fetch/` but never run.
 
+## Session update (2026-09-20) — hearing-aid retail leaves the board
+
+The board's largest category was `audiology_hearing` at **271 of 1,243 rows**,
+ahead of `audio_dsp_embedded` at 185. Only 43 of those 271 were
+engineering-shaped. The rest were storefront dispensing: "Hearing Care
+Professional -- Licensed" 31 times, "Licensed Hearing Instrument Specialist" 9,
+then dozens of town-by-town "Audiologist or Hearing Instrument Specialist
+(Gilbert, AZ)" variants. Same mechanism as the sales roles: a native-scope
+manufacturer vouches for everything it posts, so its retail staffing landed
+beside DSP work.
+
+### Why CORPORATE_ROLE could not carry it
+
+The obvious move was another `CORPORATE_ROLE` entry. It would have done nothing.
+That pattern's -70 penalty is gated on `not title_strong`, and
+`AUDIO_TITLE_STRONG` matches `audiolog` — so **"Audiologist" is already
+title_strong** and the penalty could never fire on the exact rows being targeted.
+
+So this is a short-circuit beside `TALENT_POOL_TITLE`, and the protection for
+genuine engineering roles lives **inside** the pattern: a clinical vocabulary,
+and a `CLINICAL_EXEMPT` engineering vocabulary that overrides it.
+
+### What it cost and what it kept
+
+**227 board rows across 8 companies, 1,243 to 1,016.** Beltone 81, Demant 61,
+Starkey 40, Advanced Bionics 18, Sivantos 18, Fortell 5, GN 3, Cochlear 1.
+**Beltone goes 81 to 0** — it is a retail dispensing chain and every row it
+publishes is storefront. Correct, not a bug.
+
+Verified by name rather than by count, because a count cannot tell you which 227:
+
+| kept | score |
+| --- | --- |
+| Advanced Bionics — Embedded Audio DSP Engineer | 105 |
+| Advanced Bionics — Audiological Engineer | 70 |
+| Advanced Bionics — Research Audiology Intern | 105 |
+| GN Store Nord — DSP Software Developer to GN Hearing | 140 |
+| Starkey — Audio Technician (Covington, WA) | 105 |
+| Sivantos — Intern, Electroacoustic Simulation Correlation | 45 |
+
+That Starkey row is the one to watch: **"Audio Technician" must not be read as
+"Audiology Technician"**, and there is a test for it.
+
+**A third of the vocabulary is not English.** `audioprothésiste` alone is 22 rows
+across Demant and Advanced Bionics, `audiolog[íi]a` is 3 Spanish
+"Auxiliar de Audiología / Recepcionista" rows, and `clinician` is 6 Demant roles
+in Australia and New Zealand. `hörakustiker`, `audioloog` and `audioprotesista`
+match nothing today and are in deliberately — same trade, same employers, and
+these companies post across Europe constantly.
+
+`CLINICAL_EXEMPT` protects **zero** rows right now: the clinical vocabulary is
+precise enough that it never matches an engineering title in the first place. It
+stays anyway. It is what stops a future "Research Audiologist" or "Clinical
+Audiology Scientist" being swept up, and removing it as dead code would be a
+trap for whoever adds the next term.
+
+### The board after backfill_relevance
+
+1,243 to **1,016**, applied in place rather than waiting for a cycle. The
+composition inverted, which was the point:
+
+- **`audio_dsp_embedded` is now the largest category at 185**, where it was
+  second behind `audiology_hearing` at 271. `audiology_hearing` is 70.
+- Top employers are now **Shure 101, Apple 71, Qualcomm 61, Cirrus Logic 58,
+  Amazon 57, Bose 32**. Beltone, Demant and Starkey are gone from the list
+  entirely; they were three of the top six.
+
+### Two existing tests changed, both deliberately
+
+- **The Starkey "Future Opportunities" case, protected two days ago, is now
+  dropped on purpose.** Its description trains people to fit hearing aids for
+  patients in clinic. The talent-pool assertion the test was written for still
+  holds — `TALENT_POOL_TITLE` still lets it through — and the test now says both
+  things. The earlier call was right for the filter it was about; the policy
+  changed around it.
+- **`Audioprothésiste` was removed from `terms-fr.txt` rather than excepted in
+  its test.** `test_intl_search_terms` asserts every international search term
+  would survive the classifier — *do not search for jobs you would discard* —
+  and that invariant is worth more than the term. Checked all five term files:
+  it was the only one affected. `Ingénieur audioprothèse` stays.
+
+### Still open from this session
+
+- **The board is 1,016 rows and no cycle has run since.** The next cycle will
+  also re-scrape the companies whose seed URLs changed (Perkins&Will, McIntosh,
+  Biamp, XPeng), so expect movement beyond this change.
+- **Duplicate titles are largely solved as a side effect.** Beltone's 31x, 9x and
+  6x groups were the bulk of the 138 collapsible rows. Whatever remains has not
+  been re-measured.
+- **295 board rows carried no job category at all** before this change and were
+  never investigated — they reach the board on title and description signal
+  alone. Worth a look, and the number will have moved.
+- **Everything else in the 2026-09-18 lists stands**: the 16 unreviewed
+  `discover_careers_urls` proposals at a 2-in-6 hit rate, 19 chrome companies
+  still failing every cycle, MED-EL's requisition-code titles, ON Semiconductor's
+  benefits family, HP Inc. wanting a `?q=` it cannot be tested for,
+  `detect_truncation` blind to generic-pager truncation, and LinkedIn built but
+  never run.
+
 ## Running the demo
 
 ```bash
