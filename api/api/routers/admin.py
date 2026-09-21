@@ -184,6 +184,9 @@ def admin_company_health(
     grade: Optional[str] = Query(
         None, pattern="^(failing|silent|furniture|thin|idle|healthy|unscraped)$"
     ),
+    url_shape: Optional[str] = Query(
+        None, pattern="^(bad_page|not_careers|careers_shaped|ats_board|missing)$"
+    ),
     q: Optional[str] = None,
     page: int = Query(1, ge=1),
     per_page: int = Query(50, ge=1, le=200),
@@ -199,6 +202,7 @@ def admin_company_health(
     items, total, summary = company_health_page(
         db,
         grade=grade,
+        url_shape=url_shape,
         q=q,
         page=safe_page,
         per_page=safe_per,

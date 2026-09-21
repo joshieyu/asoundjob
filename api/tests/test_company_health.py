@@ -50,6 +50,7 @@ def add_job(session: Session, company: Company, title: str, **kwargs) -> Job:
 def health(session: Session, **kwargs):
     params = dict(
         grade=None,
+        url_shape=None,
         q=None,
         page=1,
         per_page=50,
@@ -277,6 +278,50 @@ class TestGradeFilter(unittest.TestCase):
         result = health(self.session, grade="healthy")
         self.assertEqual(result.total, 1)
         self.assertEqual(result.items[0].company_id, self.healthy.id)
+
+
+class TestUrlShape(unittest.TestCase):
+    def setUp(self) -> None:
+        self.session = make_session()
+        self.ats = add_company(
+            self.session, "Ats Co", careers_url="https://boards.greenhouse.io/atsco"
+        )
+        self.careers_shaped = add_company(
+            self.session, "Careers Shaped Co", careers_url="https://widgetco.com/careers"
+        )
+        self.not_careers = add_company(
+            self.session, "Not Careers Co", careers_url="https://hegel.com/en/"
+        )
+        self.bad_page = add_company(
+            self.session, "Bad Page Co", careers_url="https://widgetco.com/careers/404"
+        )
+        self.missing = add_company(self.session, "Missing Co", careers_url=None)
+
+    def tearDown(self) -> None:
+        self.session.close()
+
+    def test_rows_carry_the_right_url_shape(self) -> None:
+        result = health(self.session)
+        by_id = {r.company_id: r for r in result.items}
+        self.assertEqual(by_id[self.ats.id].url_shape, "ats_board")
+        self.assertEqual(by_id[self.careers_shaped.id].url_shape, "careers_shaped")
+        self.assertEqual(by_id[self.not_careers.id].url_shape, "not_careers")
+        self.assertEqual(by_id[self.bad_page.id].url_shape, "bad_page")
+        self.assertEqual(by_id[self.missing.id].url_shape, "missing")
+
+    def test_url_shape_filter_narrows_results(self) -> None:
+        result = health(self.session, url_shape="not_careers")
+        self.assertEqual(result.total, 1)
+        self.assertEqual(result.items[0].company_id, self.not_careers.id)
+
+    def test_url_shape_filter_combines_with_grade_filter(self) -> None:
+        result = health(self.session, grade="unscraped", url_shape="missing")
+        self.assertEqual(result.total, 1)
+        self.assertEqual(result.items[0].company_id, self.missing.id)
+
+    def test_url_shape_filter_narrows_summary_counts(self) -> None:
+        result = health(self.session, url_shape="bad_page")
+        self.assertEqual(sum(result.summary.model_dump().values()), 1)
 
 
 class TestSummary(unittest.TestCase):

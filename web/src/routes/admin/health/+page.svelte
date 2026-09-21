@@ -18,6 +18,7 @@
 		board_count: number;
 		grade: string;
 		scraped: boolean;
+		url_shape: string;
 	}
 
 	interface HealthSummary {
@@ -52,6 +53,21 @@
 		unscraped: 'Unscraped'
 	};
 
+	const URL_SHAPES = ['ats_board', 'careers_shaped', 'not_careers', 'bad_page', 'missing'] as const;
+	type UrlShape = (typeof URL_SHAPES)[number];
+
+	const URL_SHAPE_LABELS: Record<UrlShape, string> = {
+		ats_board: 'ATS board',
+		careers_shaped: 'Careers page',
+		not_careers: 'Not a careers page',
+		bad_page: 'Broken URL',
+		missing: 'No URL'
+	};
+
+	function isActionableUrlShape(shape: string): boolean {
+		return shape === 'not_careers' || shape === 'bad_page';
+	}
+
 	let rows = $state<HealthRow[]>([]);
 	let summary = $state<HealthSummary>({
 		failing: 0,
@@ -66,6 +82,7 @@
 	let message = $state('');
 	let search = $state('');
 	let gradeFilter = $state<Grade | null>(null);
+	let urlShapeFilter = $state<UrlShape | null>(null);
 	let page = $state(1);
 	let sort = $state<'grade' | 'board' | 'active' | 'name'>('grade');
 	let direction = $state<'asc' | 'desc'>('desc');
@@ -88,6 +105,7 @@
 		});
 		if (search.trim()) params.set('q', search.trim());
 		if (gradeFilter) params.set('grade', gradeFilter);
+		if (urlShapeFilter) params.set('url_shape', urlShapeFilter);
 		return params;
 	}
 
@@ -122,6 +140,12 @@
 
 	function toggleGrade(grade: Grade) {
 		gradeFilter = gradeFilter === grade ? null : grade;
+		page = 1;
+		load();
+	}
+
+	function toggleUrlShape(shape: UrlShape) {
+		urlShapeFilter = urlShapeFilter === shape ? null : shape;
 		page = 1;
 		load();
 	}
@@ -185,6 +209,12 @@
 		nothing.
 	</p>
 
+	<p class="mt-2 max-w-prose text-meta leading-relaxed text-muted">
+		The URL column describes the seeded careers URL's shape, judged from the URL alone with
+		no network call. A company grading Failing or Silent whose URL is not a careers page
+		usually needs its URL fixed, not the company demoted.
+	</p>
+
 	<div class="mt-6 flex flex-wrap items-center gap-1.5" role="group" aria-label="Filter by grade">
 		{#each GRADES as grade (grade)}
 			<button
@@ -195,6 +225,23 @@
 			>
 				{GRADE_LABELS[grade]}
 				<span class="coord">{summary[grade]}</span>
+			</button>
+		{/each}
+	</div>
+
+	<div
+		class="mt-1.5 flex flex-wrap items-center gap-1.5"
+		role="group"
+		aria-label="Filter by URL shape"
+	>
+		{#each URL_SHAPES as shape (shape)}
+			<button
+				type="button"
+				class="btn btn-quiet {urlShapeFilter === shape ? 'is-on' : ''}"
+				aria-pressed={urlShapeFilter === shape}
+				onclick={() => toggleUrlShape(shape)}
+			>
+				{URL_SHAPE_LABELS[shape]}
 			</button>
 		{/each}
 	</div>
@@ -227,8 +274,9 @@
 	>
 		<table class="w-full min-w-[72rem] text-left text-meta">
 			<caption class="sr-only">
-				Companies with their derived health grade, board count, active row count, described
-				and role share, last scrape status and consecutive failures
+				Companies with their derived health grade, seeded careers URL shape, board count,
+				active row count, described and role share, last scrape status and consecutive
+				failures
 			</caption>
 			<thead>
 				<tr class="axis-label border-b border-muted">
@@ -242,6 +290,7 @@
 							Grade{sortMark('grade')}
 						</button>
 					</th>
+					<th scope="col" class="px-4 py-2.5 font-medium">URL</th>
 					<th scope="col" class="px-4 py-2.5 font-medium" aria-sort={ariaSort('board')}>
 						<button type="button" class="hover:underline" onclick={() => sortBy('board')}>
 							On board{sortMark('board')}
@@ -270,6 +319,9 @@
 						<td class="px-4 py-3 {isMutedGrade(row.grade) ? 'text-muted' : 'font-bold'}">
 							{GRADE_LABELS[row.grade as Grade] ?? row.grade}
 						</td>
+						<td class="px-4 py-3 {isActionableUrlShape(row.url_shape) ? 'font-bold' : 'text-muted'}">
+							{URL_SHAPE_LABELS[row.url_shape as UrlShape] ?? row.url_shape}
+						</td>
 						<td class="coord px-4 py-3">{row.board_count}</td>
 						<td class="coord px-4 py-3">{row.active_rows}</td>
 						<td class="coord px-4 py-3">{pct(row.described_share)}</td>
@@ -286,7 +338,7 @@
 					</tr>
 				{:else}
 					<tr>
-						<td colspan="8" class="px-4 py-6 text-center text-meta text-muted">
+						<td colspan="9" class="px-4 py-6 text-center text-meta text-muted">
 							{loading ? 'Loading…' : 'No companies match.'}
 						</td>
 					</tr>

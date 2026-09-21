@@ -15,6 +15,7 @@ from scraper.company_health import (
     shape_shares,
 )
 from scraper.models import Company, Job, ScrapeLog
+from scraper.url_shape import URL_SHAPES, classify_careers_url
 
 
 def paginate_params(page: int, per_page: int) -> tuple[int, int]:
@@ -318,6 +319,7 @@ def company_health_rows(session: Session, q: Optional[str] = None) -> list:
                 "board_count": board_count,
                 "grade": grade,
                 "scraped": scraped,
+                "url_shape": classify_careers_url(careers_url),
             }
         )
     return rows
@@ -326,6 +328,7 @@ def company_health_rows(session: Session, q: Optional[str] = None) -> list:
 def company_health_page(
     session: Session,
     grade: Optional[str] = None,
+    url_shape: Optional[str] = None,
     q: Optional[str] = None,
     page: int = 1,
     per_page: int = 50,
@@ -334,6 +337,8 @@ def company_health_page(
 ):
     rows = company_health_rows(session, q=q)
     filtered = [r for r in rows if r["grade"] == grade] if grade in GRADE_ORDER else rows
+    if url_shape in URL_SHAPES:
+        filtered = [r for r in filtered if r["url_shape"] == url_shape]
 
     summary = {g: 0 for g in GRADE_ORDER}
     for row in filtered:

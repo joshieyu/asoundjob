@@ -20,6 +20,7 @@ from scraper.company_health import (
 )
 from scraper.database import dispose_engine, get_session_factory
 from scraper.models import Company, Job, ScrapeLog
+from scraper.url_shape import classify_careers_url
 
 MAX_SAMPLE_TITLES = 8
 DEFAULT_GRADES = ("furniture",)
@@ -61,6 +62,7 @@ class DemotionCandidate:
     slug: str
     category: str
     careers_url: Optional[str]
+    url_shape: str
     audio_scope: str
     grade: str
     active_rows: int
@@ -172,6 +174,7 @@ def gather_candidates(session: Session) -> list[DemotionCandidate]:
                 slug=slug,
                 category=category,
                 careers_url=careers_url,
+                url_shape=classify_careers_url(careers_url),
                 audio_scope=audio_scope,
                 grade=grade,
                 active_rows=active_rows,
@@ -277,6 +280,11 @@ def render(
         '`"verified": false` on that entry — this tool never does that '
         "itself.",
         "",
+        "Each candidate's url_shape is judged from its seeded careers_url "
+        "alone, with no network call. A candidate whose url_shape is "
+        "not_careers or bad_page is probably a wrong seeded URL rather than "
+        "a company that deserves demoting — fix the URL before demoting.",
+        "",
         f"Filters used: grades={', '.join(grades)}, min_active={min_active}, "
         f"min_consecutive_failures={min_consecutive_failures} "
         "(only applied to the failing grade).",
@@ -322,7 +330,10 @@ def render(
         lines.append(f"- slug: {candidate.slug}")
         lines.append(f"- category: {candidate.category}")
         lines.append(f"- audio_scope: {candidate.audio_scope}")
-        lines.append(f"- careers_url: {candidate.careers_url or '(none)'}")
+        lines.append(
+            f"- careers_url: {candidate.careers_url or '(none)'} "
+            f"(url_shape={candidate.url_shape})"
+        )
         lines.append(f"- grade: {candidate.grade}")
         lines.append(
             f"- active_rows={candidate.active_rows} "

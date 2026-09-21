@@ -512,6 +512,7 @@ class CompanyHealthRow(BaseModel):
     board_count: int
     grade: str
     scraped: bool
+    url_shape: str
 
 
 class CompanyHealthSummary(BaseModel):

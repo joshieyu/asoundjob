@@ -9,19 +9,7 @@ from typing import Any
 from urllib.parse import urlparse
 
 from scraper.config import load_settings
-
-ATS_HOSTS = (
-    "greenhouse.io", "lever.co", "workable.com", "ashbyhq.com", "smartrecruiters.com",
-    "recruitee.com", "bamboohr.com", "myworkdayjobs.com", "workday.com", "icims.com",
-    "taleo.net", "successfactors", "teamtailor.com", "personio", "jobvite.com",
-    "pinpointhq.com", "adp.com", "oraclecloud.com", "paylocity.com", "breezy.hr",
-    "jazzhr.com", "ultipro.com", "dayforcehcm.com", "eightfold.ai", "avature.net",
-    "zenats.com", "applytojob.com", "paycomonline.net", "trakstar.com", "rippling.com",
-    "phenompeople.com", "brassring.com", "silkroad", "careers-page.com", "join.com",
-    "softgarden", "hrmdirect", "clearcompany.com", "paycor.com", "dayforce.com",
-    "isolvedhire.com", "bullhorn", "myworkdaysite.com", "zohopublic", "recruitee",
-    "jobs.gecareers", "eightfold", "hirehive", "workforcenow",
-)
+from scraper.url_shape import CAREERS_VOCAB, HARD_BAD, host_of, is_ats_host
 
 STOP = {
     "the", "and", "inc", "llc", "ltd", "gmbh", "corp", "corporation", "co", "company",
@@ -29,19 +17,6 @@ STOP = {
     "labs", "lab", "studios", "studio", "international", "holdings", "sa", "ag", "kg",
     "bv", "srl", "spa", "plc", "limited", "of", "for", "by",
 }
-
-CAREERS_VOCAB = re.compile(
-    r"career|job|vacan|recruit|join|hiring|hire|employment|opportunit|work-with|"
-    r"workwith|work-for|working-at|life-at|people|talent|stellen|emploi|karriere|"
-    r"lavora|trabaja|empleo|saiyo|recruitment",
-    re.IGNORECASE,
-)
-
-HARD_BAD = re.compile(
-    r"accessdenied|/error|404|page-not-found|buy-domain|domain_profile|"
-    r"press-releases?|/newsroom|\.pdf$|/password\b|aspxerrorpath",
-    re.IGNORECASE,
-)
 
 MAX_NAME_LEN = 32
 MAX_URL_LEN = 105
@@ -65,17 +40,6 @@ class AuditResult:
 def name_tokens(name: str) -> list[str]:
     parts = re.split(r"[^a-z0-9]+", name.lower())
     return [p for p in parts if p and p not in STOP and len(p) > 2]
-
-
-def host_of(url: str) -> str:
-    host = (urlparse(url).netloc or "").lower()
-    if host.startswith("www."):
-        host = host[4:]
-    return host.split(":")[0]
-
-
-def is_ats_host(host: str) -> bool:
-    return any(marker in host for marker in ATS_HOSTS)
 
 
 def classify(rows: list[dict[str, Any]]) -> AuditResult:

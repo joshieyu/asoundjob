@@ -134,7 +134,7 @@ venv active:
 | `python -m scraper.detect_nonjob_rows` | whose stored rows are navigation chrome rather than jobs? |
 | `python -m scraper.detect_truncation` | who hit their parser's page cap and is only showing you page one? |
 | `python -m scraper.diagnose_failures` | why did these scrapes come back empty? |
-| `python -m scraper.audit_seed_urls` | which seeded URLs are error pages, parked domains or the wrong company, judged from the URL alone? |
+| `python -m scraper.audit_seed_urls` | which seeded URLs are error pages, parked domains or the wrong company, judged from the URL alone — the same judgement also shows per company on the admin health page |
 | `python -m scraper.check_links` | which published job URLs are dead? |
 | `python -m scraper.export_seed_edits` | what would the seed look like if it caught up with admin edits? |
 | `python -m scraper.propose_ats_bindings` | which stored `ats_type`/`ats_slug` bindings are wrong? `--verify` actually runs them. |
