@@ -7546,6 +7546,175 @@ different bad automatic signal is the obvious way to repeat the mistake — whic
 is why the recommendation above is to **rank** the human review queue rather than
 to empty it.
 
+## 2026-09-20 — the triage list is a URL list, and two of my own recommendations died
+
+Follow-up to the design note above. The owner asked to tackle the `verified`
+problem. I measured first, and most of what the design note recommended turned
+out to be wrong.
+
+### What shipped: `idle` was three different things (commit `dcff932`)
+
+The admin health page graded **680 never-scraped companies `idle`** — the same
+label it gave the 179 that scrape cleanly and produce no audio job. The real
+review queue was buried under 4.6× its own volume in companies the scraper never
+even visits.
+
+`grade_company()` now takes a `scraped` flag derived from exactly the condition
+`run_cycle` uses (`verified AND careers_url IS NOT NULL AND NOT scrape_blocked`)
+and returns `unscraped` ahead of everything else. Zero rows with a successful
+scrape now returns `silent`. So `idle` finally means what it says: rows arrived,
+none were audio.
+
+| before | after |
+| --- | --- |
+| idle 828 | unscraped 680, idle 148, silent 31 |
+
+Everything else is unchanged: failing 350, furniture 45, thin 59, healthy 99.
+
+`propose_demotions.py` could not see any of this. `gather_candidates` skipped
+every company with no job rows — **294 of them, the single biggest bucket** — and
+`--min-active 3` then silently dropped most `failing` companies too, so
+`--grades failing` returned a near-empty report for a reason it never stated.
+Both fixed; `min_active` now applies only to `furniture` and `thin`, the two
+grades whose definition rests on having enough rows to judge. Candidates now
+carry `audio_scope`, because a native-scope company producing nothing is a
+coverage bug and a partial-scope one may be working as intended.
+
+Also corrected the health page's own description of `verified`. It said "a human
+confirmed the careers URL". Neither half was true.
+
+### Dead end 1: the homepage classifier I recommended has no input and no signal
+
+The design note's one piece of genuinely new tooling was "fetch the company's own
+`website_url` and classify whether it is an audio business". Two problems.
+
+**`website_url` is empty for all 1,412 seed entries and all 732 scraped
+companies.** So are `description` and `headquarters`. The key-presence semantics
+the README documents for those fields are machinery that has never once been
+exercised. The only URL we have for any company is `careers_url`.
+
+A homepage can still be derived from `careers_url` when the host is not an ATS —
+537 of the 593 problem companies qualify. So I built the probe and ran it on a
+70-company sample across all three buckets, scoring page text with
+`AUDIO_DESC_STRONG` / `AUDIO_DESC_WEAK`.
+
+**It does not separate the buckets.** In the known-good control group — companies
+currently producing board rows — Teenage Engineering, CereProc, Infineon and
+Audison all score **zero** strong hits. Modern homepages are JS-rendered
+marketing shells with almost no extractable text. A score of 0 means "we could
+not read this page", not "not an audio company". At the other end a score of 1 is
+noise: Grasshopper, a virtual phone system company, hits on the bare word
+"audio".
+
+The classifier can only ever clear a company, never condemn one, which is the
+wrong direction for finding the Sound Sleeps. **Do not build it.**
+
+### Dead end 2: the iframe lead
+
+**262 of the 294 zero-row companies fail with one identical error:
+`ScrapeError: page loaded but no job links found`.** Not blocks, not 404s, not
+timeouts. 234 are `native` scope and 194 already run under Playwright, so it is
+not simply "needs JS".
+
+A 30-company sample suggested a third of them embed the real board in an
+`<iframe>` we never follow. Scanned across all 262 with media/consent iframes
+filtered out: **only 12 embed a non-media iframe, and only about 6 are real job
+boards** — DSP Concepts (`app.trinethire.com`), Earlens (`hrmdirect`), Line 6
+(`appone.com`), MTX Audio (`careers.mitekusa.com`), Slate Digital
+(`jobs.personio.de`), Dynaudio Automotive (`jobmatchprofile.com`). Worth a small
+follow-up, not a systemic fix. The first sample was misleading because it counted
+YouTube and cookie-consent iframes.
+
+### What is actually wrong: `careers_url` is as untrustworthy as `verified`
+
+I fetched all 209 native zero-row "no job links" pages and classified their text.
+**34 are correct failures** — 25 say outright they have no current openings, 9
+only invite speculative applications. Those companies are working as designed and
+must not be treated as coverage bugs.
+
+Then I spot-checked the ones that looked recoverable, and the answer was not a
+parser gap at all:
+
+| company | seeded `careers_url` | what the page actually is |
+| --- | --- | --- |
+| Hegel Music Systems | `hegel.com/en/` | the homepage |
+| Raal Requisite | `requisiteaudio.com/` | the homepage |
+| QuietOn | `quieton.com` | the homepage |
+| SVS | `/pages/about-us` | the about page — the "Director of…" lines are the **management team** |
+| RF Venue | `/about#jobs` | the leadership page — "Director, Key Accounts" is a **staff bio** |
+| Fulcrum Acoustic | `/projects/benson-center-for-arts-and-learning` | a project case study |
+| Hidizs | `/pages/influencer-recruit` | influencer recruitment, not jobs |
+| Electro-Voice | `ev.com/new-cars` | not even the right product line |
+
+`page loaded but no job links found` is mostly **the extractor correctly refusing
+to scrape an about page**. Note what that implies about the chrome-vocabulary
+work earlier this session: had extraction been left more permissive, SVS and
+RF Venue would have entered the public board as executive-team rosters. The
+rising failure rate is the pipeline getting more honest, exactly as recorded.
+
+So the seed has the same category error in its `careers_url` field that
+Sound Sleep had in its company field, and for the same reason — an earlier agent
+checked that a URL resolves. `hegel.com/en/` resolves perfectly.
+
+### The URL shape predicts the outcome, and the tool for it already existed
+
+Cross-tabbing `careers_url` shape against health grade across the 732 scraped
+companies:
+
+| URL shape | companies | % grading healthy |
+| --- | --- | --- |
+| ATS host (greenhouse, lever, workday…) | 121 | **44.6%** |
+| careers vocabulary in host or path | 484 | 8.9% |
+| neither | 117 | **1.7%** |
+| known-bad page (404, parked domain, press release) | 10 | **0.0%** |
+
+**127 scraped companies have a seeded URL that is not a job board, and only 5 of
+them have ever produced a board row.** For those the correct action is *fix the
+URL*, which is the opposite of the *demote the company* action the health page
+implied. That distinction is the whole point.
+
+And `audit_seed_urls.py` — read-only, no network calls, written weeks ago —
+**already found every one of them**. Hegel, SVS, RF Venue, Fulcrum Acoustic,
+QuietOn, Raal Requisite and Electro-Voice are all sitting in its bucket C,
+"right host, but no careers vocabulary in the URL", 101 entries, 99 verified.
+
+Its vocabulary did have gaps, worth 7 false positives out of 117 — including
+both companies on the list that actually produce board rows. `life-at` was
+hyphenated so `lifeatspotify.com` missed, `position` was absent entirely so
+Musixmatch's `/open-positions` missed, French `recrutement` and `carriere` were
+missing, and `welcomekit.co` was not in `ATS_HOSTS`. Added, with `\bpositions?\b`
+bounded so it cannot match "composition" — it matches exactly 2 URLs in the seed
+and both are real. That leaves **120 actionable companies, 3 of which produce
+board rows**.
+
+This was never a missing-tool problem. The report was written, printed to a
+markdown file, and never acted on — which is precisely the owner's standing
+complaint that the admin panel should be authoritative without running backend
+utilities. So the fix is not a fourth detector. It is moving the judgement
+`audit_seed_urls` already makes into the panel where the work happens: the
+URL-shape vocabulary is extracted to `scraper/scraper/url_shape.py`, and
+`url_shape` is now a column and a filter on `/admin/health`.
+
+### Revised recommendation
+
+The design note said the 261 unreadable companies were the bigger prize and
+implied a parser-coverage push. That was half wrong. Ordered by evidence now:
+
+1. **Fix seeded URLs — 120 companies, visible in the panel.** Highest confidence
+   of anything on this list: 1.7% healthy versus 44.6% for ATS-hosted URLs. Many
+   are one hand-edit in the admin panel. This is the triage list that was asked
+   for, and it is a URL list, not a company list.
+2. **Leave the 34 "no current openings" companies alone.** They are correct.
+3. **The ~6 iframe boards**, if a cheap bounded fetch-the-iframe-src step can be
+   added to the pipeline.
+4. **Bucket 2 — rows but never a board row — still needs a human**, and still has
+   no automatable signal. The homepage classifier was that idea and it is dead.
+   Ranking that queue remains the honest goal; emptying it automatically does not.
+
+The caveat from the design note stands and got stronger. Every automated
+judgement this seed has inherited — `verified`, `careers_url` — was made by an
+agent answering an easier question than the one that mattered.
+
 ## Running the demo
 
 ```bash
