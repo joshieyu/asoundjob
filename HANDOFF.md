@@ -7374,11 +7374,54 @@ composition inverted, which was the point:
   and that invariant is worth more than the term. Checked all five term files:
   it was the only one affected. `Ingénieur audioprothèse` stays.
 
+### The cycle that confirmed it
+
+```
+companies=711 ok=364 failed=347 blocked_skipped=13 jobs_found=8575 | db: inserted=515
+updated=8060 reactivated=91 deactivated=433 deactivation_skips=7 expired=0
+```
+
+1,550s. Jobs 19,271 to 19,784, active 11,788 to 11,960, **board 1,016 to 1,013**
+— flat, because `backfill_relevance` had already applied the clinical filter.
+The cycle's job was to prove it survives a real scrape rather than a rescore, and
+it does: **Beltone came back with 123 active rows and 0 on the board.**
+
+Category order held: `audio_dsp_embedded` 191, `test_measurement_qa` 128,
+`audio_systems` 113, `audio_aiml` 101, `audiology_hearing` 69. Top employers
+Shure 102, Apple 71, Qualcomm 61, Cirrus Logic 58, Amazon 56.
+
+All four repointed seed URLs took effect on their first cycle:
+
+| company | result |
+| --- | --- |
+| Perkins&Will | **152 jobs via ultipro**, was 1 chrome row |
+| Biamp Systems | 11 jobs, **1 board row: Firmware Engineer** |
+| XPeng Motors | 24 jobs via greenhouse, was a failing Feishu URL |
+| McIntosh Automotive | failed, 0 jobs — the Employment page lists nothing |
+
+McIntosh failing is the honest outcome, not a regression: it now fails against a
+real page instead of succeeding against a 404 handler.
+
+### Ramboll fails inside the cycle and only inside the cycle
+
+Second consecutive cycle failure, so the "transient" note from 2026-09-18 is
+wrong. `check_url` against `careers.smartrecruiters.com/Ramboll3` immediately
+afterwards returns **1,013 jobs and 16 board rows**, via smartrecruiters, every
+time. The company config is unchanged and it succeeded via smartrecruiters three
+times before 2026-09-18.
+
+What is different inside a cycle is concurrency: a ~1,000-job paginated
+SmartRecruiters board being walked while 711 companies run. Rate limiting is the
+obvious candidate and has not been confirmed. Deactivation suppression preserves
+its 1,195 rows and its 16 board rows are correct and current, so nothing is
+visibly wrong — which is exactly why this would go unnoticed.
+
 ### Still open from this session
 
-- **The board is 1,016 rows and no cycle has run since.** The next cycle will
-  also re-scrape the companies whose seed URLs changed (Perkins&Will, McIntosh,
-  Biamp, XPeng), so expect movement beyond this change.
+- **Ramboll Group fails on every cycle and succeeds on every direct check.**
+  Two consecutive cycles now. Worth a run with reduced concurrency, or a look at
+  whether SmartRecruiters is rate limiting a 1,000-job walk. It costs nothing
+  visible today because suppression holds its rows, so it will stay invisible.
 - **Duplicate titles are largely solved as a side effect.** Beltone's 31x, 9x and
   6x groups were the bulk of the 138 collapsible rows. Whatever remains has not
   been re-measured.
