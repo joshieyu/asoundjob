@@ -5489,12 +5489,19 @@ scraper fail.
   narrower two-up column on `/jobs`. The home page column is wide enough.
 - Specialty chips are not links. Making them filter the board is an obvious
   next step but changes the card's affordances — deliberately not done.
-- Two fixes were spun off as separate tasks and are independent of this branch:
-  **(1)** stored XSS — `JSON.stringify` does not escape `/`, and unsanitized
-  scraped `job.title` / `company.name` go into the JSON-LD `<script>` at
-  `web/src/routes/jobs/[id]/+page.svelte:26`. **(2)** free-text search is
-  broken — frontend sends `q`, `api/api/routers/jobs.py:64` expects `search`, so
-  FastAPI silently drops it while the UI shows a "Search:" chip.
+- **[CLOSED — both verified fixed 2026-09-21.]** Two fixes were spun off as
+  separate tasks and are independent of this branch:
+  **(1)** stored XSS — now fixed: `web/src/lib/jsonld.ts` `serializeJsonLd()`
+  escapes `<`, `>` and `&` before the JSON-LD reaches `{@html}`.
+  **(2)** free-text search — **not broken, and never re-verified before being
+  listed again for ten days.** `/api/jobs` does expect `search` and does ignore
+  a bare `q`, but the browser never calls it directly: the SvelteKit loader at
+  `web/src/routes/jobs/+page.server.ts` maps `q` to `search` through
+  `API_PARAM_ALIASES`, and `api/tests/test_jobs_search.py`
+  `test_search_is_the_name_sent_for_free_text` guards exactly that contract.
+  Checked end to end against the running site: `/jobs?q=microphone` renders 20
+  cards, `/jobs?q=asdfzzqq` renders 0. Curling `/api/jobs?q=` proves nothing
+  about the site and is what made this look broken twice.
 - Company dropdown still shows 100 of 722 verified companies.
 - Pagination is a ±2 window with no first/last on a 52-page board.
 - The four WIP sections (company directory, company detail, interview prep,
