@@ -7435,6 +7435,117 @@ visibly wrong — which is exactly why this would go unnoticed.
   `detect_truncation` blind to generic-pager truncation, and LinkedIn built but
   never run.
 
+## Design note (2026-09-20) — what `verified` actually means, and the triage that follows
+
+Written in response to the owner's observation that only ~99 companies grade
+healthy, that some of those are questionable, and that Sound Sleep — **a mattress
+company** — sat in the seed as a verified audio company until it was deleted by
+hand through the admin panel.
+
+### The diagnosis
+
+`verified` was set by an earlier agent that checked two things: does the URL
+resolve, and does the page contain some careers-ish keywords. That answers *"is
+this a live web page?"* It is being asked *"is this an audio company whose job
+board we should scrape and publish?"* Those are different questions, and Sound
+Sleep is the proof: a working careers URL on a company with no connection to
+audio. No URL checker catches a category error.
+
+Worse, the flag is doing **three unrelated jobs** at once:
+
+1. **`run_cycle`** scrapes exactly the verified, unblocked companies with a URL.
+2. **`api/api/routers/companies.py:57`** gates the **public company directory**,
+   and `:132` the open-applications page. So Sound Sleep was publicly listed as
+   an audio company.
+3. **Every diagnostic** — `detect_nonjob_rows`, `detect_truncation`,
+   `detect_landing_pages` — scopes itself to verified companies.
+
+One boolean, set by a URL checker, controlling what we scrape, what the public
+sees, and what our own tools are allowed to examine.
+
+### What we know now that we did not when the flag was set
+
+Weeks of pipeline output. Every company has a scrape history, row counts, board
+counts, chrome classification and description coverage. That is a far better
+signal than any URL check, and it is already sitting in the database.
+
+The scrape population is 732 companies (verified, unblocked, has a URL):
+
+| bucket | count |
+| --- | --- |
+| no rows ever, last scrape **failed** | **261** |
+| rows, but **never a board row**, last scrape succeeded | 221 |
+| rows, but never a board row, last scrape failed | 85 |
+| **has produced board rows** | 160 |
+| no rows ever, last scrape succeeded (genuinely empty) | 5 |
+
+And the board is extremely concentrated. Of 1,013 board rows:
+
+- **top 10 companies supply 492 — 49 per cent**
+- top 25 supply 725, top 50 supply 862, **top 100 supply 974 — 96 per cent**
+- only **139** companies contribute a board row at all
+
+So 1,312 of 1,412 seeded companies contribute four per cent of the board or
+nothing, and we spend 1,550 seconds a cycle to learn that again.
+
+### Why this is not one triage list
+
+The instinct is to list the unhealthy companies and prune. That merges three
+different questions that want different answers:
+
+**1. The 261 we cannot read — and 212 of them are `native` scope.** This is not a
+`verified` problem, it is a scraper coverage problem, and it is the biggest prize
+on the list. These are companies the seed says are core audio employers, and we
+get nothing from them. Some are the known chrome companies, some are landing
+pages, some need a parser we do not have. Recovering even a tenth of them is
+worth more than deleting every dead entry, because these are the ones that are
+*supposed* to be contributing.
+
+**2. The 221 that scrape cleanly and have never produced an audio job.** This is
+the `verified`-means-nothing problem and Sound Sleep's bucket. It needs the
+category question — *is this an audio company at all?* — which **cannot be
+answered from scrape output**. A legitimate audio firm with no current openings
+and a mattress company look identical from here. This is where human hours have
+to go, and the triage list's real job is to **order** those hours, not replace
+them.
+
+**3. The 160 that work.** Leave them alone.
+
+### What I would do, in order
+
+**Split the flag first.** At minimum separate *"scrape this"* from *"show this in
+the public directory"*. They are not the same decision, and today one boolean
+makes both. A company can be worth scraping in case it posts an audio role
+without belonging in a published directory of audio companies. Sound Sleep
+belonged in neither, but the failure was only visible because a human recognised
+the name.
+
+**Then build the triage list from pipeline evidence, not from URLs.**
+`propose_demotions.py` already grades companies on exactly this data and is the
+right foundation — extend it rather than writing a fourth detector. Each row
+should carry the evidence (rows ever, board rows ever, recent scrape outcomes,
+chrome share, description share) and a suggested disposition.
+
+**Dispositions must differ, and default to the reversible one.** Setting
+`verified: false` stops the scrape and keeps the record; deletion does not come
+back. *Never produced a board row* is not grounds for deletion on its own — it is
+grounds for `verified: false` plus a human look.
+
+**The category question probably wants a different signal entirely.** The seed
+already has `website_url` and `description` fields. A read-only tool that fetches
+a company's own homepage and classifies whether it is an audio business would
+answer the Sound Sleep question directly, which no amount of job-row analysis
+can. That is the one genuinely new piece of tooling this needs.
+
+### The honest caveat
+
+I would not trust any automated disposition on bucket 2 without review. The
+whole reason `verified` is untrustworthy is that a previous agent automated a
+judgement it could not actually make. Replacing a bad automatic signal with a
+different bad automatic signal is the obvious way to repeat the mistake — which
+is why the recommendation above is to **rank** the human review queue rather than
+to empty it.
+
 ## Running the demo
 
 ```bash
