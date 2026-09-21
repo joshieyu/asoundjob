@@ -181,7 +181,9 @@ def admin_list_companies(
 
 @router.get("/companies/health", response_model=CompanyHealthResponse)
 def admin_company_health(
-    grade: Optional[str] = Query(None, pattern="^(failing|furniture|thin|idle|healthy)$"),
+    grade: Optional[str] = Query(
+        None, pattern="^(failing|silent|furniture|thin|idle|healthy|unscraped)$"
+    ),
     q: Optional[str] = None,
     page: int = Query(1, ge=1),
     per_page: int = Query(50, ge=1, le=200),

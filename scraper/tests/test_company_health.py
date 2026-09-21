@@ -9,6 +9,7 @@ from scraper.company_health import (
     GRADE_ORDER,
     grade_company,
     grade_rank,
+    in_scrape_population,
     is_described,
     looks_like_role,
     shape_shares,
@@ -118,6 +119,79 @@ class TestGradeCompany(unittest.TestCase):
             last_scrape_status="success",
         )
         self.assertEqual(grade, "furniture")
+
+
+class TestUnscrapedGrade(unittest.TestCase):
+    def test_not_in_scrape_population_grades_unscraped_even_with_failed_status(
+        self,
+    ) -> None:
+        self.assertEqual(
+            grade_company(
+                active_rows=0,
+                described_share=0.0,
+                role_share=0.0,
+                board_count=0,
+                last_scrape_status="failed",
+                scraped=False,
+            ),
+            "unscraped",
+        )
+
+
+class TestSilentGrade(unittest.TestCase):
+    def test_zero_active_rows_with_successful_scrape_is_silent(self) -> None:
+        self.assertEqual(
+            grade_company(
+                active_rows=0,
+                described_share=0.0,
+                role_share=0.0,
+                board_count=0,
+                last_scrape_status="success",
+                scraped=True,
+            ),
+            "silent",
+        )
+
+    def test_rows_present_but_zero_board_rows_is_idle_not_silent(self) -> None:
+        self.assertEqual(
+            grade_company(
+                active_rows=4,
+                described_share=1.0,
+                role_share=1.0,
+                board_count=0,
+                last_scrape_status="success",
+                scraped=True,
+            ),
+            "idle",
+        )
+
+
+class TestInScrapePopulation(unittest.TestCase):
+    def test_unverified_is_not_in_population(self) -> None:
+        self.assertFalse(
+            in_scrape_population(
+                verified=False, careers_url="https://example.com", scrape_blocked=False
+            )
+        )
+
+    def test_missing_careers_url_is_not_in_population(self) -> None:
+        self.assertFalse(
+            in_scrape_population(verified=True, careers_url=None, scrape_blocked=False)
+        )
+
+    def test_blocked_is_not_in_population(self) -> None:
+        self.assertFalse(
+            in_scrape_population(
+                verified=True, careers_url="https://example.com", scrape_blocked=True
+            )
+        )
+
+    def test_verified_with_url_and_not_blocked_is_in_population(self) -> None:
+        self.assertTrue(
+            in_scrape_population(
+                verified=True, careers_url="https://example.com", scrape_blocked=False
+            )
+        )
 
 
 class TestLooksLikeRole(unittest.TestCase):

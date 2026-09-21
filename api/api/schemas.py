@@ -511,14 +511,17 @@ class CompanyHealthRow(BaseModel):
     role_share: float
     board_count: int
     grade: str
+    scraped: bool
 
 
 class CompanyHealthSummary(BaseModel):
     failing: int
+    silent: int
     furniture: int
     thin: int
     idle: int
     healthy: int
+    unscraped: int
 
 
 class CompanyHealthResponse(BaseModel):

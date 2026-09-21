@@ -19,13 +19,14 @@ def make_session() -> Session:
 
 
 def add_company(session: Session, name: str, **kwargs) -> Company:
-    company = Company(
-        name=name,
+    defaults = dict(
         slug=name.lower().replace(" ", "-"),
         category="Audio Software",
         verified=True,
-        **kwargs,
+        careers_url="https://example.com/careers",
     )
+    defaults.update(kwargs)
+    company = Company(name=name, **defaults)
     session.add(company)
     session.flush()
     return company
@@ -146,11 +147,81 @@ class TestIdleGrade(unittest.TestCase):
 
     def test_clean_company_with_zero_audio_jobs_grades_idle(self) -> None:
         company = add_company(self.session, "Empty Board Co")
+        add_job(
+            self.session,
+            company,
+            "Office Manager",
+            description="A detailed and genuine job description. " * 10,
+            is_audio_related=False,
+        )
+        result = health(self.session)
+        row = next(r for r in result.items if r.company_id == company.id)
+        self.assertEqual(row.active_rows, 1)
+        self.assertEqual(row.board_count, 0)
+        self.assertEqual(row.grade, "idle")
+
+
+class TestUnscrapedGrade(unittest.TestCase):
+    def setUp(self) -> None:
+        self.session = make_session()
+
+    def tearDown(self) -> None:
+        self.session.close()
+
+    def test_unverified_company_grades_unscraped_and_reports_scraped_false(self) -> None:
+        company = add_company(self.session, "Not Yet Verified Co", verified=False)
+        result = health(self.session)
+        row = next(r for r in result.items if r.company_id == company.id)
+        self.assertEqual(row.grade, "unscraped")
+        self.assertFalse(row.scraped)
+
+
+class TestSilentGrade(unittest.TestCase):
+    def setUp(self) -> None:
+        self.session = make_session()
+
+    def tearDown(self) -> None:
+        self.session.close()
+
+    def test_scraped_company_with_no_rows_grades_silent(self) -> None:
+        company = add_company(self.session, "Nothing Found Co")
+        self.session.add(
+            ScrapeLog(company_id=company.id, status="success", started_at=NOW)
+        )
+        self.session.flush()
         result = health(self.session)
         row = next(r for r in result.items if r.company_id == company.id)
         self.assertEqual(row.active_rows, 0)
-        self.assertEqual(row.board_count, 0)
-        self.assertEqual(row.grade, "idle")
+        self.assertEqual(row.grade, "silent")
+        self.assertTrue(row.scraped)
+
+
+class TestNewGradeFilters(unittest.TestCase):
+    def setUp(self) -> None:
+        self.session = make_session()
+        self.silent = add_company(self.session, "Silent Co")
+        self.unscraped = add_company(self.session, "Unscraped Co", verified=False)
+
+    def tearDown(self) -> None:
+        self.session.close()
+
+    def test_grade_filter_accepts_silent(self) -> None:
+        result = health(self.session, grade="silent")
+        self.assertEqual(result.total, 1)
+        self.assertEqual(result.items[0].company_id, self.silent.id)
+
+    def test_grade_filter_accepts_unscraped(self) -> None:
+        result = health(self.session, grade="unscraped")
+        self.assertEqual(result.total, 1)
+        self.assertEqual(result.items[0].company_id, self.unscraped.id)
+
+    def test_summary_dict_contains_all_seven_grades(self) -> None:
+        result = health(self.session)
+        summary_fields = set(result.summary.model_dump().keys())
+        self.assertEqual(
+            summary_fields,
+            {"failing", "silent", "furniture", "thin", "idle", "healthy", "unscraped"},
+        )
 
 
 class TestConsecutiveFailures(unittest.TestCase):
@@ -225,6 +296,7 @@ class TestSummary(unittest.TestCase):
                 is_audio_related=True,
             )
         self.idle = add_company(self.session, "Idle Co")
+        add_job(self.session, self.idle, "Office Manager", is_audio_related=False)
 
     def tearDown(self) -> None:
         self.session.close()
@@ -238,6 +310,8 @@ class TestSummary(unittest.TestCase):
         self.assertEqual(result.summary.idle, 1)
         self.assertEqual(result.summary.failing, 0)
         self.assertEqual(result.summary.thin, 0)
+        self.assertEqual(result.summary.silent, 0)
+        self.assertEqual(result.summary.unscraped, 0)
 
 
 class TestNoWrites(unittest.TestCase):

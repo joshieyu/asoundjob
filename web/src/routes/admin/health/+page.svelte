@@ -17,14 +17,17 @@
 		role_share: number;
 		board_count: number;
 		grade: string;
+		scraped: boolean;
 	}
 
 	interface HealthSummary {
 		failing: number;
+		silent: number;
 		furniture: number;
 		thin: number;
 		idle: number;
 		healthy: number;
+		unscraped: number;
 	}
 
 	interface HealthResponse {
@@ -36,19 +39,29 @@
 		summary: HealthSummary;
 	}
 
-	const GRADES = ['failing', 'furniture', 'thin', 'idle', 'healthy'] as const;
+	const GRADES = ['failing', 'silent', 'furniture', 'thin', 'idle', 'healthy', 'unscraped'] as const;
 	type Grade = (typeof GRADES)[number];
 
 	const GRADE_LABELS: Record<Grade, string> = {
 		failing: 'Failing',
+		silent: 'Silent',
 		furniture: 'Furniture',
 		thin: 'Thin',
 		idle: 'Idle',
-		healthy: 'Healthy'
+		healthy: 'Healthy',
+		unscraped: 'Unscraped'
 	};
 
 	let rows = $state<HealthRow[]>([]);
-	let summary = $state<HealthSummary>({ failing: 0, furniture: 0, thin: 0, idle: 0, healthy: 0 });
+	let summary = $state<HealthSummary>({
+		failing: 0,
+		silent: 0,
+		furniture: 0,
+		thin: 0,
+		idle: 0,
+		healthy: 0,
+		unscraped: 0
+	});
 	let loading = $state(true);
 	let message = $state('');
 	let search = $state('');
@@ -150,6 +163,10 @@
 		return `${Math.round(share * 100)}%`;
 	}
 
+	function isMutedGrade(grade: string): boolean {
+		return grade === 'healthy' || grade === 'unscraped';
+	}
+
 	$effect(() => {
 		load();
 		return () => clearTimeout(searchTimer);
@@ -159,9 +176,13 @@
 <section class="mt-10">
 	<h1 class="text-title font-semibold">Company health</h1>
 	<p class="mt-2 max-w-prose text-meta leading-relaxed text-muted">
-		Verified only means a human confirmed the careers URL, not that the scrape produces real
-		jobs. This view derives each company's grade at query time from what its active rows
-		actually look like — nothing here is stored.
+		Verified means an automated check once found the careers URL resolving. It does not mean
+		a human looked, that the URL points at a job board, or that the company is in audio at
+		all. This view derives each company's grade at query time from what its active rows
+		actually look like — nothing here is stored. Unscraped means the company isn't in the
+		scrape population at all — unverified, blocked, or missing a careers URL — so there's
+		nothing to judge yet. Silent means the scrape ran and succeeded but came back with
+		nothing.
 	</p>
 
 	<div class="mt-6 flex flex-wrap items-center gap-1.5" role="group" aria-label="Filter by grade">
@@ -246,7 +267,7 @@
 							</a>
 							<span class="coord block text-muted">{row.category}</span>
 						</th>
-						<td class="px-4 py-3 {row.grade === 'healthy' ? 'text-muted' : 'font-bold'}">
+						<td class="px-4 py-3 {isMutedGrade(row.grade) ? 'text-muted' : 'font-bold'}">
 							{GRADE_LABELS[row.grade as Grade] ?? row.grade}
 						</td>
 						<td class="coord px-4 py-3">{row.board_count}</td>

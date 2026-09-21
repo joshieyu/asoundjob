@@ -15,6 +15,7 @@ from scraper.company_health import (
     GRADE_ORDER,
     grade_company,
     grade_rank,
+    in_scrape_population,
     shape_shares,
 )
 from scraper.database import dispose_engine, get_session_factory
@@ -40,6 +41,16 @@ GRADE_DESCRIPTIONS: dict[str, str] = {
         "ever reached the public board."
     ),
     "healthy": "not a demotion candidate.",
+    "silent": (
+        "the scrape succeeds but comes back with nothing. Either the "
+        "company genuinely has no openings, or the parser cannot read the "
+        "board — check audio_scope, because a native-scope company here is "
+        "a coverage bug, not a demotion candidate."
+    ),
+    "unscraped": (
+        "not in the scrape population at all (unverified, blocked, or no "
+        "careers URL), so there is nothing to demote."
+    ),
 }
 
 
@@ -50,6 +61,7 @@ class DemotionCandidate:
     slug: str
     category: str
     careers_url: Optional[str]
+    audio_scope: str
     grade: str
     active_rows: int
     board_count: int
@@ -115,14 +127,26 @@ def gather_candidates(session: Session) -> list[DemotionCandidate]:
             Company.slug,
             Company.category,
             Company.careers_url,
+            Company.verified,
+            Company.scrape_blocked,
+            Company.audio_scope,
         ).where(Company.verified.is_(True))
     ).all()
 
     candidates: list[DemotionCandidate] = []
-    for company_id, name, slug, category, careers_url in companies:
-        entry = job_data.get(company_id)
-        if entry is None:
-            continue
+    for (
+        company_id,
+        name,
+        slug,
+        category,
+        careers_url,
+        verified,
+        scrape_blocked,
+        audio_scope,
+    ) in companies:
+        entry = job_data.get(company_id) or {
+            "titles": [], "described_flags": [], "board_count": 0,
+        }
         titles: list[str] = entry["titles"]
         active_rows = len(titles)
         described_share, role_share = shape_shares(
@@ -132,12 +156,14 @@ def gather_candidates(session: Session) -> list[DemotionCandidate]:
         last_scrape_status, consecutive_failures = scrape_status.get(
             company_id, (None, 0)
         )
+        scraped = in_scrape_population(verified, careers_url, scrape_blocked)
         grade = grade_company(
             active_rows,
             described_share,
             role_share,
             board_count,
             last_scrape_status,
+            scraped=scraped,
         )
         candidates.append(
             DemotionCandidate(
@@ -146,6 +172,7 @@ def gather_candidates(session: Session) -> list[DemotionCandidate]:
                 slug=slug,
                 category=category,
                 careers_url=careers_url,
+                audio_scope=audio_scope,
                 grade=grade,
                 active_rows=active_rows,
                 board_count=board_count,
@@ -171,7 +198,10 @@ def filter_candidates(
     for candidate in candidates:
         if candidate.grade not in grade_set:
             continue
-        if candidate.active_rows < min_active:
+        if (
+            candidate.grade in ("furniture", "thin")
+            and candidate.active_rows < min_active
+        ):
             continue
         if (
             candidate.grade == "failing"
@@ -291,6 +321,7 @@ def render(
             )
         lines.append(f"- slug: {candidate.slug}")
         lines.append(f"- category: {candidate.category}")
+        lines.append(f"- audio_scope: {candidate.audio_scope}")
         lines.append(f"- careers_url: {candidate.careers_url or '(none)'}")
         lines.append(f"- grade: {candidate.grade}")
         lines.append(

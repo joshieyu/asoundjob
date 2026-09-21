@@ -6,7 +6,9 @@ from typing import Optional
 from scraper.detect_nonjob_rows import classify_title
 
 DESCRIPTION_MIN_CHARS = 200
-GRADE_ORDER: tuple[str, ...] = ("failing", "furniture", "thin", "idle", "healthy")
+GRADE_ORDER: tuple[str, ...] = (
+    "failing", "silent", "furniture", "thin", "idle", "healthy", "unscraped",
+)
 FURNITURE_MIN_ROWS = 3
 FURNITURE_MAX_ROLE_SHARE = 0.25
 
@@ -50,15 +52,26 @@ def shape_shares(
     )
 
 
+def in_scrape_population(
+    verified: bool, careers_url: Optional[str], scrape_blocked: bool
+) -> bool:
+    return bool(verified) and careers_url is not None and not scrape_blocked
+
+
 def grade_company(
     active_rows: int,
     described_share: float,
     role_share: float,
     board_count: int,
     last_scrape_status: Optional[str],
+    scraped: bool = True,
 ) -> str:
+    if not scraped:
+        return "unscraped"
     if last_scrape_status == "failed":
         return "failing"
+    if active_rows == 0:
+        return "silent"
     if (
         active_rows >= FURNITURE_MIN_ROWS
         and described_share == 0

@@ -10,6 +10,7 @@ from scraper.company_health import (
     GRADE_ORDER,
     grade_company,
     grade_rank,
+    in_scrape_population,
     is_described,
     shape_shares,
 )
@@ -271,6 +272,7 @@ def company_health_rows(session: Session, q: Optional[str] = None) -> list:
         Company.category,
         Company.verified,
         Company.careers_url,
+        Company.scrape_blocked,
     )
     if q and q.strip():
         stmt = stmt.where(Company.name.ilike(f"%{q.strip()}%"))
@@ -281,7 +283,7 @@ def company_health_rows(session: Session, q: Optional[str] = None) -> list:
     empty_jobs = {"titles": [], "described_flags": [], "board_count": 0}
 
     rows = []
-    for company_id, name, slug, category, verified, careers_url in companies:
+    for company_id, name, slug, category, verified, careers_url, scrape_blocked in companies:
         scrape = scrape_summary.get(company_id)
         jobs = job_summary.get(company_id, empty_jobs)
         titles = jobs["titles"]
@@ -289,8 +291,14 @@ def company_health_rows(session: Session, q: Optional[str] = None) -> list:
         described_share, role_share = shape_shares(titles, jobs["described_flags"])
         board_count = jobs["board_count"]
         last_scrape_status = scrape["last_scrape_status"] if scrape else None
+        scraped = in_scrape_population(verified, careers_url, scrape_blocked)
         grade = grade_company(
-            active_rows, described_share, role_share, board_count, last_scrape_status
+            active_rows,
+            described_share,
+            role_share,
+            board_count,
+            last_scrape_status,
+            scraped=scraped,
         )
         rows.append(
             {
@@ -309,6 +317,7 @@ def company_health_rows(session: Session, q: Optional[str] = None) -> list:
                 "role_share": role_share,
                 "board_count": board_count,
                 "grade": grade,
+                "scraped": scraped,
             }
         )
     return rows
