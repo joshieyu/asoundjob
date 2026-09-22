@@ -70,6 +70,67 @@ zero, ZTE's proposal is Recruitee's own marketing site, Frontier Audio's is
 Wellfound's candidate signup page, and University of York's is the student
 careers service. That is 5 bad out of 16 before anyone opens a browser.
 
+## Tier 0 — the seeded URL returns a hard HTTP error (33)
+
+**Highest confidence in this file, and it is not a judgement call.** Found by
+reading the 2026-09-22 cycle log, not the database — the pipeline tries http, then
+playwright, then playwright_stealth, and `ScrapeLog.error_message` keeps only the
+last attempt. A 404 from the http attempt is overwritten by the generic "page
+loaded but no job links found" from the playwright retry, so **these are invisible
+to every diagnostic we have**, including the tiers below. 33 seeded URLs returned a
+hard HTTP status this cycle, and for 27 of them that status was discarded by a
+later retry.
+
+### Broken ATS bindings (5) — fix `ats_slug`, not `careers_url`
+
+The URL is machine-generated from the stored `ats_type`/`ats_slug`. A 404 means the
+slug is wrong. `python -m scraper.propose_ats_bindings --verify` is the tool for
+this.
+
+| code | company | generated endpoint |
+| --- | --- | --- |
+| 403 | Clarion | `https://jobs.faurecia.com/api/pcsx/search?domain=faurecia.com&query=&location=&start=0` |
+| 404 | DiGiCo | `https://digico.biz/api/pcsx/search?domain=digico.biz&query=&location=&start=0&sort_by=` |
+| 404 | DSP Concepts | `https://boards-api.greenhouse.io/v1/boards/dspconcepts/jobs?content=true` |
+| 404 | Knowles Corporation | `https://workforcenow.adp.com/mascsr/default/careercenter/public/events/staffing/v1/job` |
+| 404 | Switchcraft | `https://workforcenow.adp.com/mascsr/default/careercenter/public/events/staffing/v1/job` |
+
+### Dead careers URLs (28) — fix `careers_url`
+
+| code | company | seeded URL |
+| --- | --- | --- |
+| 202 | Audison | `https://elettromedia.com/careers` |
+| 400 | Two Big Ears | `https://www.metacareers.com/` |
+| 403 | General Motors | `https://search-careers.gm.com/` |
+| 403 | Guitar Center | `https://www.guitarcenter.com/careers` |
+| 403 | Musicnotes | `https://www.musicnotes.com/careers` |
+| 404 | Anker Cables | `https://www.anker.com/careers` |
+| 404 | Audeze | `https://www.audeze.com/pages/careers` |
+| 404 | Audi | `https://www.audi.com/en/company/jobs-and-career.html` |
+| 404 | Audiotool | `https://www.audiotool.com/careers` |
+| 404 | AWAL (Sony) | `https://www.awal.com/jobs` |
+| 404 | Boss Corporation | `https://www.roland.com/us/company/careers/` |
+| 404 | Danley Sound Labs | `https://www.danleysoundlabs.com/careers/` |
+| 404 | DaVinci Resolve Audio (Blackmagic) | `https://www.blackmagicdesign.com/careers` |
+| 404 | DJ.Studio | `https://dj.studio/careers` |
+| 404 | Flik | `https://www.flik.com/404-page-not-found/` |
+| 404 | Kurzweil Music Systems | `https://kurzweil.com/careers/` |
+| 404 | Magnepan | `https://magnepan.com/pages/careers` |
+| 404 | Olive Union | `https://www.oliveunion.com/pages/careers` |
+| 404 | Ortofon | `https://www.ortofon.com/about-us/career` |
+| 404 | Rivian | `https://rivian.com/careers-home/` |
+| 404 | Shanling | `https://www.shenzhenaudio.com/pages/careers` |
+| 404 | SleepPhones | `https://www.sleepphones.com/careers` |
+| 404 | Sommer Cable | `https://www.sommercable.com/en-us/company/careers.html` |
+| 404 | Talaske Acoustics | `https://www.talaske.com/careers` |
+| 404 | Thorens | `https://www.thorens.com/en/careers/` |
+| 404 | TrueFire | `https://truefire.com/careers` |
+| 404 | University of York Audio Lab | `https://www.york.ac.uk/study/work/` |
+| 422 | Fisker | `https://fisker.wd1.myworkdayjobs.com/wday/cxs/fisker/Fisker_Careers/jobs` |
+
+A 403 here is blocking rather than a dead page — Guitar Center, Musicnotes,
+General Motors and Clarion need the blocked-list decision, not a new URL.
+
 ## Tier 1 — a replacement URL was found and it parses (9)
 
 A candidate URL on the company's own domain returned jobs the real extractor
@@ -476,6 +537,7 @@ demote them and do not change their URLs.
 
 ## Counts
 
+- Tier 0 (hard HTTP error, highest confidence): 33
 - Tier 1 (candidate found): 9
 - Tier 2 (needs a human, productive category): 36
 - Tier 3 (needs a human, low-yield category): 76

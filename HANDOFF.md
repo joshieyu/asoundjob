@@ -7722,6 +7722,60 @@ The caveat from the design note stands and got stronger. Every automated
 judgement this seed has inherited — `verified`, `careers_url` — was made by an
 agent answering an easier question than the one that mattered.
 
+## Session update (2026-09-22) — the cycle, and the error the database throws away
+
+Cycle: `companies=710 ok=364 failed=346 blocked_skipped=13 jobs_found=8605` in
+1572s. `inserted=690 updated=7915 reactivated=206 deactivated=548`. The board
+moved 1,013 -> 1,014; grades barely moved (healthy 99->96, idle 148->149,
+failing 350->348, silent 31->32). **Ramboll has now failed three consecutive
+cycles** while holding 1,195 active rows and 16 board rows behind deactivation
+suppression.
+
+### `ScrapeLog.error_message` keeps the wrong error
+
+The pipeline tries http, then playwright, then playwright_stealth, and stores
+only the **last** attempt's message. Audeze is the clean example:
+
+```
+08:39:55  http                Audeze failed: HTTP 404 for .../pages/careers
+08:52:54  playwright          Audeze failed: page loaded but no job links found
+08:53:21  playwright_stealth  Audeze failed: page loaded but no job links found
+   stored: ScrapeError: page loaded but no job links found
+```
+
+The 404 — the one diagnostically useful fact — is discarded. **27 of 345
+failures this cycle were hiding a more specific error this way**, 26 of them HTTP
+status codes. Measured honestly, that is 8 per cent of failures, not the
+systemic thing it first looked like; the other 318 really do fail the same way
+at every stage.
+
+But it matters more than 8 per cent suggests, because the discarded errors are
+exactly the *unambiguous* ones. Across the cycle log, 33 seeded URLs returned a
+hard HTTP status: 27x 404, 4x 403, 2x 422, one 400, one 202. A 404 is not a
+judgement call, and **not one of them is visible to any diagnostic we have** —
+`propose_demotions`, `detect_landing_pages` and the admin health page all read
+`ScrapeLog.error_message`.
+
+Five are broken ATS bindings rather than bad careers URLs, because the URL is
+generated from `ats_type`/`ats_slug`: Knowles Corporation and Switchcraft (ADP
+`workforcenow`), DSP Concepts (a Greenhouse board API 404), DiGiCo and Clarion
+(Faurecia `pcsx`). Knowles is the company the 2026-09-08 triage singled out as
+the reason not to dismiss the remaining ATS platforms, and its binding has been
+returning 404 the whole time.
+
+These went into `TRIAGE.md` as **Tier 0**, above everything else in the file.
+
+**The root fix is to keep the most specific error, not the last one** — or to
+store every attempt. Until that happens this list can only be rebuilt by reading
+a cycle log, which nothing else does.
+
+### Corrected from two days ago
+
+The claim that "262 companies fail with one identical error, so there is no
+single systemic cause" was built on a truncated signal. The conclusion happens
+to survive — 318 of 345 genuinely fail the same way at every stage — but it was
+not knowable from the database at the time it was written.
+
 ## Running the demo
 
 ```bash
