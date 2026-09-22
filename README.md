@@ -163,7 +163,11 @@ Everything has a working default; none of this is needed for local development.
 
 **API** — `ADMIN_USERNAME`, `ADMIN_PASSWORD`, `ADMIN_SECRET_KEY`,
 `TOKEN_EXPIRE_MINUTES` (720), `CORS_ORIGINS`, `SUBMISSIONS_PER_IP_PER_DAY` (3),
-`COMMUNITY_JOB_TTL_DAYS` (30).
+`COMMUNITY_JOB_TTL_DAYS` (30), `ASOUNDJOB_ENV`.
+
+Setting `ASOUNDJOB_ENV=production` makes the API refuse to start while
+`ADMIN_PASSWORD` or `ADMIN_SECRET_KEY` is unset, still the dev default, or
+shorter than 12 and 32 characters respectively. Any deploy must set it.
 
 In production the API process needs **write access to `data/`**, because that is
 where admin edits land. This is a newer requirement than the rest of the deploy.
