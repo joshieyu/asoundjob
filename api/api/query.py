@@ -5,7 +5,7 @@ from typing import Optional, Union
 from sqlalchemy import String, case, func, or_, select
 from sqlalchemy.orm import Session, selectinload
 
-from api.config import MAX_PER_PAGE
+from api.config import MAX_PER_PAGE, STALE_AFTER_FAILURES
 from scraper.company_health import (
     GRADE_ORDER,
     grade_company,
@@ -48,6 +48,15 @@ def _as_list(value: Union[str, list[str], None]) -> Optional[list[str]]:
     return cleaned or None
 
 
+def listable_clause():
+    return or_(
+        Job.source == "community",
+        Job.is_active_override.is_(True),
+        Job.company_id.is_(None),
+        Job.company.has(Company.consecutive_failures < STALE_AFTER_FAILURES),
+    )
+
+
 def apply_job_filters(
     stmt,
     category: Optional[list[str]] = None,
@@ -64,7 +73,7 @@ def apply_job_filters(
     include_unrelated: bool = False,
     ids: Optional[list[int]] = None,
 ):
-    stmt = stmt.where(Job.is_active.is_(True))
+    stmt = stmt.where(Job.is_active.is_(True), listable_clause())
     if ids is not None:
         stmt = stmt.where(Job.id.in_(ids))
     if not include_unrelated:
@@ -163,7 +172,7 @@ def companies_with_counts(
                 "board_count"
             ),
         )
-        .where(Job.is_active.is_(True))
+        .where(Job.is_active.is_(True), listable_clause())
         .group_by(Job.company_id)
         .subquery()
     )
@@ -274,6 +283,7 @@ def company_health_rows(session: Session, q: Optional[str] = None) -> list:
         Company.verified,
         Company.careers_url,
         Company.scrape_blocked,
+        Company.consecutive_failures,
     )
     if q and q.strip():
         stmt = stmt.where(Company.name.ilike(f"%{q.strip()}%"))
@@ -284,7 +294,16 @@ def company_health_rows(session: Session, q: Optional[str] = None) -> list:
     empty_jobs = {"titles": [], "described_flags": [], "board_count": 0}
 
     rows = []
-    for company_id, name, slug, category, verified, careers_url, scrape_blocked in companies:
+    for (
+        company_id,
+        name,
+        slug,
+        category,
+        verified,
+        careers_url,
+        scrape_blocked,
+        consecutive_failures,
+    ) in companies:
         scrape = scrape_summary.get(company_id)
         jobs = job_summary.get(company_id, empty_jobs)
         titles = jobs["titles"]
@@ -320,6 +339,7 @@ def company_health_rows(session: Session, q: Optional[str] = None) -> list:
                 "grade": grade,
                 "scraped": scraped,
                 "url_shape": classify_careers_url(careers_url),
+                "hidden_from_board": consecutive_failures >= STALE_AFTER_FAILURES,
             }
         )
     return rows

@@ -32,6 +32,8 @@ MAX_COMMUNITY_JOB_DAYS = int(os.environ.get("MAX_COMMUNITY_JOB_DAYS", "365"))
 DEFAULT_PER_PAGE = 25
 MAX_PER_PAGE = 100
 
+STALE_AFTER_FAILURES = int(os.environ.get("STALE_AFTER_FAILURES", "3"))
+
 
 def production_config_errors(env: Mapping[str, str]) -> list[str]:
     if env.get("ASOUNDJOB_ENV", "").strip().lower() != "production":

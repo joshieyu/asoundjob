@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session, selectinload
 from api.database import get_db
 from api.query import (
     companies_with_counts,
+    listable_clause,
     page_envelope,
     paginate_params,
 )
@@ -75,6 +76,7 @@ def _board_jobs_exist():
             Job.company_id == Company.id,
             Job.is_active.is_(True),
             Job.is_audio_related.is_(True),
+            listable_clause(),
         )
         .exists()
     )
@@ -85,7 +87,9 @@ def list_company_categories(db: Session = Depends(get_db)):
     board_jobs = func.sum(
         case(
             (
-                Job.is_active.is_(True) & Job.is_audio_related.is_(True),
+                Job.is_active.is_(True)
+                & Job.is_audio_related.is_(True)
+                & listable_clause(),
                 1,
             ),
             else_=0,
@@ -121,7 +125,7 @@ def list_open_applications(db: Session = Depends(get_db)):
                 "open_roles"
             ),
         )
-        .where(Job.is_active.is_(True))
+        .where(Job.is_active.is_(True), listable_clause())
         .group_by(Job.company_id)
         .subquery()
     )
@@ -154,6 +158,7 @@ def list_blocked_companies(db: Session = Depends(get_db)):
             Job.company_id == Company.id,
             Job.is_active.is_(True),
             Job.is_audio_related.is_(True),
+            listable_clause(),
         )
         .exists()
     )
@@ -183,6 +188,7 @@ def get_company(slug: str, db: Session = Depends(get_db)):
                 Job.company_id == company.id,
                 Job.is_active.is_(True),
                 Job.is_audio_related.is_(True),
+                listable_clause(),
             )
             .options(selectinload(Job.company))
             .order_by(Job.posted_date.desc().nullslast(), Job.scraped_at.desc())
@@ -202,6 +208,7 @@ def get_company(slug: str, db: Session = Depends(get_db)):
                     Job.company_id == company.id,
                     Job.is_active.is_(True),
                     Job.is_audio_related.is_(True),
+                    listable_clause(),
                 )
             ).scalar_one()
         )

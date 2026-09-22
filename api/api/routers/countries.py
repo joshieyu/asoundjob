@@ -5,6 +5,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from api.database import get_db
+from api.query import listable_clause
 from api.schemas import CountriesResponse, CountryInfo
 from scraper.countries import country_name
 from scraper.models import Job
@@ -16,7 +17,7 @@ router = APIRouter(prefix="/api/countries", tags=["countries"])
 def get_countries(db: Session = Depends(get_db)):
     rows = db.execute(
         select(Job.country, func.count(Job.id))
-        .where(Job.is_active.is_(True), Job.is_audio_related.is_(True))
+        .where(Job.is_active.is_(True), Job.is_audio_related.is_(True), listable_clause())
         .group_by(Job.country)
     ).all()
 

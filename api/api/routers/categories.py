@@ -7,6 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from api.database import get_db
+from api.query import listable_clause
 from api.schemas import CategoriesResponse, CategoryInfo
 from scraper.config import REPO_ROOT, load_settings
 from scraper.models import Job
@@ -32,7 +33,7 @@ def get_categories(db: Session = Depends(get_db)):
     counts: dict[str, int] = {}
     rows = db.execute(
         select(Job.job_categories).where(
-            Job.is_active.is_(True), Job.is_audio_related.is_(True)
+            Job.is_active.is_(True), Job.is_audio_related.is_(True), listable_clause()
         )
     ).all()
     for (cats,) in rows:

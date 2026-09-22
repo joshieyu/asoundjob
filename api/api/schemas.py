@@ -513,6 +513,7 @@ class CompanyHealthRow(BaseModel):
     grade: str
     scraped: bool
     url_shape: str
+    hidden_from_board: bool
 
 
 class CompanyHealthSummary(BaseModel):

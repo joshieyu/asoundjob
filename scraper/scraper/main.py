@@ -70,6 +70,9 @@ def persist_result(
 ) -> tuple[int, ReconcileStats | None]:
     if not result.success:
         with session_scope() as session:
+            managed = session.get(Company, company.id)
+            if managed is not None:
+                managed.consecutive_failures = (managed.consecutive_failures or 0) + 1
             session.add(
                 ScrapeLog(
                     company_id=company.id,
@@ -115,6 +118,7 @@ def persist_result(
             )
         )
         managed.last_scraped_at = finished_at
+        managed.consecutive_failures = 0
         return len(normalized_jobs), stats
 
 

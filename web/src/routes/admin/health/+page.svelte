@@ -19,6 +19,7 @@
 		grade: string;
 		scraped: boolean;
 		url_shape: string;
+		hidden_from_board: boolean;
 	}
 
 	interface HealthSummary {
@@ -206,7 +207,8 @@
 		actually look like — nothing here is stored. Unscraped means the company isn't in the
 		scrape population at all — unverified, blocked, or missing a careers URL — so there's
 		nothing to judge yet. Silent means the scrape ran and succeeded but came back with
-		nothing.
+		nothing. A company whose scrape has failed several cycles in a row keeps its jobs
+		active but they drop off the public board until it scrapes cleanly again.
 	</p>
 
 	<p class="mt-2 max-w-prose text-meta leading-relaxed text-muted">
@@ -315,6 +317,9 @@
 								{row.name}
 							</a>
 							<span class="coord block text-muted">{row.category}</span>
+							{#if row.hidden_from_board}
+								<span class="coord block text-muted">hidden from board</span>
+							{/if}
 						</th>
 						<td class="px-4 py-3 {isMutedGrade(row.grade) ? 'text-muted' : 'font-bold'}">
 							{GRADE_LABELS[row.grade as Grade] ?? row.grade}

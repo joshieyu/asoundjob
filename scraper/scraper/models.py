@@ -39,6 +39,9 @@ class Company(Base):
     extra_careers_urls: Mapped[Optional[list[str]]] = mapped_column(StringList)
     open_application: Mapped[bool] = mapped_column(Boolean, default=False)
     scrape_blocked: Mapped[bool] = mapped_column(Boolean, default=False)
+    consecutive_failures: Mapped[int] = mapped_column(
+        Integer, default=0, server_default="0", nullable=False
+    )
     website_url: Mapped[Optional[str]] = mapped_column(Text)
     verified: Mapped[bool] = mapped_column(Boolean, default=False)
     source: Mapped[str] = mapped_column(Text, default="auto")

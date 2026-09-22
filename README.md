@@ -163,7 +163,7 @@ Everything has a working default; none of this is needed for local development.
 
 **API** — `ADMIN_USERNAME`, `ADMIN_PASSWORD`, `ADMIN_SECRET_KEY`,
 `TOKEN_EXPIRE_MINUTES` (720), `CORS_ORIGINS`, `SUBMISSIONS_PER_IP_PER_DAY` (3),
-`COMMUNITY_JOB_TTL_DAYS` (30), `ASOUNDJOB_ENV`.
+`COMMUNITY_JOB_TTL_DAYS` (30), `STALE_AFTER_FAILURES` (3), `ASOUNDJOB_ENV`.
 
 Setting `ASOUNDJOB_ENV=production` makes the API refuse to start while
 `ADMIN_PASSWORD` or `ADMIN_SECRET_KEY` is unset, still the dev default, or
@@ -207,7 +207,12 @@ and almost none do. If you want rows gone, that is `prune_orphans`.
 suppressed on failure and on partial multi-URL scrapes, so a company can sit on
 stale rows indefinitely while its scrapes fail. This is deliberate — the
 alternative is wiping a real board over one bad afternoon — but it means "the
-fix didn't apply" is often really "that company failed".
+fix didn't apply" is often really "that company failed". Those rows are still
+never deactivated by a failure, but once a company has failed
+`STALE_AFTER_FAILURES` consecutive cycles its jobs drop off the public board
+(listings, search and counts) while staying active in the database, and
+reappear automatically on its next clean scrape. The admin health page marks
+such companies "hidden from board".
 
 **`updated_at` is not a freshness signal.** SQLAlchemy emits no UPDATE when a
 re-found row's values are unchanged, so a row that is refound identically every
