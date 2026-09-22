@@ -225,6 +225,7 @@ class ScrapePipeline:
 
         stored_ats_failed = False
         ats_claim_failed = False
+        ats_failures: list[tuple[str, str]] = []
         if company.ats_type and company.ats_type in self._ats_map:
             scraper = self._ats_map[company.ats_type]
             result = await self._attempt(
@@ -234,6 +235,7 @@ class ScrapePipeline:
                 result.trust_empty = True
                 return result
             stored_ats_failed = True
+            ats_failures.append((company.ats_type, result.error or "unknown error"))
 
         ats_scrapers = (
             self.greenhouse,
@@ -273,6 +275,7 @@ class ScrapePipeline:
                     result.error,
                 )
                 ats_claim_failed = True
+                ats_failures.append((ats.name, result.error or "unknown error"))
                 break
 
         # A generic fallback after an ATS scraper claimed the board reads only
@@ -305,6 +308,11 @@ class ScrapePipeline:
             return result
 
         last_error = result.error or "all methods failed"
+        if ats_failures:
+            binding_errors = "; ".join(
+                f"{label} binding failed: {error}" for label, error in ats_failures
+            )
+            last_error = f"{binding_errors}; careers page: {last_error}"
         return ScrapeResult(company_id=company.id, method="none", error=last_error)
 
     async def _try_discovery(

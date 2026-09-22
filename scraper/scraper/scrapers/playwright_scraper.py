@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import Any
+from typing import Any, Optional
 
 from scraper.scrapers.base import BaseScraper, RawJob, ScrapeError
 from scraper.scrapers.pagination import collect_paginated
@@ -28,6 +28,7 @@ class PlaywrightScraper(BaseScraper):
         self._playwright: Any | None = None
         self._browser: Any | None = None
         self._lock = asyncio.Lock()
+        self._page_status: dict[str, int] = {}
 
     async def _ensure_browser(self):
         if self._browser is None:
@@ -60,21 +61,34 @@ class PlaywrightScraper(BaseScraper):
             page = await context.new_page()
             timeout_ms = int(self.settings.page_load_timeout * 1000)
             try:
-                await page.goto(url, wait_until="networkidle", timeout=timeout_ms)
+                response = await page.goto(url, wait_until="networkidle", timeout=timeout_ms)
             except PlaywrightTimeoutError:
-                await page.goto(url, wait_until="domcontentloaded", timeout=timeout_ms)
+                response = await page.goto(
+                    url, wait_until="domcontentloaded", timeout=timeout_ms
+                )
+            self._record_status(url, response)
             await page.wait_for_timeout(500)
             return await page.content()
         finally:
             await context.close()
 
+    def _record_status(self, url: str, response: Any | None) -> None:
+        if response is not None:
+            self._page_status[url] = response.status
+
     async def fetch_jobs(self, company) -> list[RawJob]:
         if not company.careers_url:
             raise ValueError(f"Company {company.name} has no careers_url")
         url = company.careers_url.strip()
-        jobs, first_page_html = await collect_paginated(self.fetch_page_html, url)
+        status: Optional[int] = None
+        try:
+            jobs, first_page_html = await collect_paginated(self.fetch_page_html, url)
+        finally:
+            status = self._page_status.pop(url, None)
         self._last_html = first_page_html
         if not jobs:
+            if status is not None and status >= 400:
+                raise ScrapeError(f"HTTP {status} for {url}")
             raise ScrapeError("page loaded but no job links found")
         return jobs
 
