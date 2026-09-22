@@ -7860,6 +7860,34 @@ Knowles under "an ATS platform with no parser"; it was right and the previous
 update misread it. DSP Concepts' board is a TriNet Hire iframe. DiGiCo and
 Clarion are Eightfold guesses. `TRIAGE.md` is corrected.
 
+### TRIAGE.md was wrong four ways, and is rebuilt
+
+The owner noticed companies in `TRIAGE.md` that they had already been through and
+whose jobs are on the board. Cross-checked against the database: the file listed
+**healthy, board-producing companies** as broken, in two places.
+
+1. **Tier 0 took every `failed: HTTP …` line from the cycle log without checking
+   the company's final outcome.** 9 of its 33 had succeeded. DiGiCo is healthy
+   with board jobs; its "404" was an Eightfold discovery guess made before the
+   real page scraped fine.
+2. **Tier 4 was "every odd-shaped URL with board rows"**, headed "the scrape fails
+   anyway" — so Valve and Naim Audio, both healthy, sat under it.
+3. **`source: manual` was never consulted.** Rivian, Keysight, McIntosh Automotive,
+   Tymphany and DiGiGrid were all listed as things to fix, though the owner had
+   chosen those URLs.
+4. **Two snapshots were mixed**: tiers from 2026-09-21, Tier 0 from 2026-09-22.
+
+The rebuild takes final outcomes from the database only, takes errors only from
+attempts on the careers URL itself (never an ATS guess), excludes the 133
+companies that work, and confines manual companies to their own section. The same
+cross-check that caught the old file reports zero problems on the new one, and all
+16 section-A URLs were re-checked live with a browser user agent (15x 404, one TLS
+failure).
+
+**Before handing over any generated worklist, run it against the database for the
+things the owner already knows to be true** — what is on the board, and what they
+already checked. That check took one query and would have caught all four.
+
 ### Noticed, not changed
 
 `scraper/scraper/scrapers/pipeline.py` carries a few code comments, although the
