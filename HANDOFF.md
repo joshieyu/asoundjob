@@ -7756,12 +7756,14 @@ judgement call, and **not one of them is visible to any diagnostic we have** —
 `propose_demotions`, `detect_landing_pages` and the admin health page all read
 `ScrapeLog.error_message`.
 
-Five are broken ATS bindings rather than bad careers URLs, because the URL is
-generated from `ats_type`/`ats_slug`: Knowles Corporation and Switchcraft (ADP
-`workforcenow`), DSP Concepts (a Greenhouse board API 404), DiGiCo and Clarion
-(Faurecia `pcsx`). Knowles is the company the 2026-09-08 triage singled out as
-the reason not to dismiss the remaining ATS platforms, and its binding has been
-returning 404 the whole time.
+**[WRONG — corrected in the next session update.]** Five are broken ATS bindings
+rather than bad careers URLs, because the URL is generated from
+`ats_type`/`ats_slug`: Knowles Corporation and Switchcraft (ADP `workforcenow`),
+DSP Concepts (a Greenhouse board API 404), DiGiCo and Clarion (Faurecia `pcsx`).
+Knowles is the company the 2026-09-08 triage singled out as the reason not to
+dismiss the remaining ATS platforms, and its binding has been returning 404 the
+whole time. *(None of the five has a stored binding; these were discovery
+guesses. Commit `98ba1f2`'s message repeats the error.)*
 
 These went into `TRIAGE.md` as **Tier 0**, above everything else in the file.
 
@@ -7775,6 +7777,93 @@ The claim that "262 companies fail with one identical error, so there is no
 single systemic cause" was built on a truncated signal. The conclusion happens
 to survive — 318 of 345 genuinely fail the same way at every stage — but it was
 not knowable from the database at the time it was written.
+
+## Session update (2026-09-22, later) — four pre-launch fixes, and a correction
+
+The owner asked what to tackle next. The recommendation was to ship: the scraper
+work has hit diminishing returns (10 verified replacement URLs added 4 audio jobs
+between them), and nothing has ever run in a production configuration — no
+Dockerfile, compose file or nginx config, no PostgreSQL or Docker on the dev
+machine, and 349 commits on this branch that are not on `main` (last updated
+2026-08-28; PR #1 from 2026-08-29 is still open and stale). The owner then asked
+for everything that does not need their decision.
+
+### Decisions still with the owner
+
+1. **SQLite or PostgreSQL in production.** Recommended SQLite for launch: one
+   machine, one nightly writer, ~20k rows, backup is a file copy, and it removes
+   the dialect bug below entirely.
+2. **The domain** — `SITE_URL`, canonicals and the sitemap depend on it.
+3. **Launch scope** — `/resources` and `/resources/interview-prep` still render
+   `Wip.svelte`, which is what AGENTS.md originally planned to ship.
+4. **How to merge** 349 commits into `main`.
+
+**Known PostgreSQL bug, deliberately not fixed:** `api/api/query.py`'s category
+filter uses `Job.job_categories.cast(String).like('%"cat"%')`. On SQLite the JSON
+column casts to `["a","b"]` and the quotes match. On PostgreSQL the column is
+`ARRAY(Text)`, whose text form is `{a,b}` with no quotes, so the site's main
+filter would return nothing. Unverified against a live PostgreSQL because there
+is none here. Left alone because it only matters if PostgreSQL is chosen.
+
+### What shipped
+
+- **`b2da429` — production refuses dev credentials.** With
+  `ASOUNDJOB_ENV=production`, the lifespan raises before `init_db` or
+  `seed_file.enable` when `ADMIN_PASSWORD` or `ADMIN_SECRET_KEY` is unset, still
+  the dev default, or shorter than 12 / 32 characters. Messages name the variable
+  and the rule, never the value. Development is unchanged apart from a warning.
+  Before this, a deploy with no environment protected the seed-writing admin
+  panel with the password printed in the README.
+- **`4ef35f1` — Playwright reports the HTTP status behind an empty page.** It
+  discarded `page.goto`'s response, so a dead URL rendered its 404 page and was
+  stored as "page loaded but no job links found". The 194 `scrape_method =
+  playwright` companies skip the http attempt, so for them a 404 was never seen
+  at all. Status is ignored when jobs are found, so an SPA that serves 404 on a
+  deep link and still renders its board keeps working. Checked live: Audeze now
+  stores `HTTP 404 for …/pages/careers`. The pipeline also keeps a failed stored
+  or claiming ATS attempt's error as `{ats} binding failed: …; careers page: …`.
+  Discovery probes of guessed slugs are excluded on purpose — see below.
+- **`b8c5762` — a company's jobs leave the public board after three failed
+  cycles in a row.** `companies.consecutive_failures` (migration `b539a9545442`,
+  backfilled from scrape history and matching the log-derived count for all
+  1,412 companies) is maintained by `persist_result`. `listable_clause()` in
+  `api/api/query.py` hides the jobs from every public surface — listings, search,
+  the sitemap, country, category and directory counts, company pages — once the
+  count reaches `STALE_AFTER_FAILURES` (3). **Nothing is deactivated**, so the
+  CRITICAL rule in AGENTS.md holds; the jobs reappear on the next clean scrape.
+  Community jobs, admin-pinned jobs (`is_active_override`), admin views and the
+  single-job page are exempt. Board 1,014 -> **997**: Ramboll Group 16,
+  Fairphone 1. **Any new public job query must use `listable_clause()`.**
+- **`af86327` — AGENTS.md corrected.** It said Python 3.11+ (reality: 3.9, and
+  both `pyproject.toml` files pin it), called `scraper/BRIEF.md` active work
+  (every phase is ticked), listed Redis and RQ (nothing imports them), and sent
+  seed edits through `scripts/` instead of the admin panel.
+
+The migration was applied to the real database after an online backup, which is
+at `asoundjob-backup-20260922.db` in the repo root (gitignored). Delete it once
+the next cycle has run cleanly.
+
+### Correction: there were no broken ATS bindings
+
+The previous update and `TRIAGE.md` Tier 0 called Knowles, Switchcraft, DSP
+Concepts, DiGiCo and Clarion "broken ATS bindings — fix `ats_slug`". **None of
+the five has an `ats_type` or `ats_slug`.** The cycle log shows each ATS attempt
+firing about two seconds after a generic attempt: that is `_try_discovery`
+parsing the page, guessing an ATS and slug, probing the guess, and persisting
+nothing when it fails. Working as designed.
+
+What they really are: Knowles and Switchcraft are on ADP **MyJobs**
+(`myjobs.adp.com`), a different product from the Workforce Now API the `adp`
+scraper speaks — the only two MyJobs companies in the seed, and the fix is a
+parser, not a seed edit. That is what the 2026-09-08 triage meant by listing
+Knowles under "an ATS platform with no parser"; it was right and the previous
+update misread it. DSP Concepts' board is a TriNet Hire iframe. DiGiCo and
+Clarion are Eightfold guesses. `TRIAGE.md` is corrected.
+
+### Noticed, not changed
+
+`scraper/scraper/scrapers/pipeline.py` carries a few code comments, although the
+README says the codebase has none. Left exactly as they were.
 
 ## Running the demo
 

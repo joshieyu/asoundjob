@@ -81,13 +81,27 @@ to every diagnostic we have**, including the tiers below. 33 seeded URLs returne
 hard HTTP status this cycle, and for 27 of them that status was discarded by a
 later retry.
 
-### Broken ATS bindings (5) — fix `ats_slug`, not `careers_url`
+### Discovery guesses that failed (5) — there is no stored binding to fix
 
-The URL is machine-generated from the stored `ats_type`/`ats_slug`. A 404 means the
-slug is wrong. `python -m scraper.propose_ats_bindings --verify` is the tool for
-this.
+**Corrected 2026-09-22.** An earlier version of this section called these broken
+ATS bindings and said to fix `ats_slug`. None of these companies has an `ats_type`
+or `ats_slug` at all. The pipeline's discovery step parsed each careers page,
+guessed an ATS and a slug, tried the guess, and the guess failed; nothing was
+persisted. The endpoints below are evidence about what the careers page embeds,
+not about a binding.
 
-| code | company | generated endpoint |
+- **Knowles Corporation and Switchcraft** are on ADP **MyJobs** (`myjobs.adp.com`),
+  a different product from the Workforce Now API our `adp` scraper speaks.
+  Discovery maps the MyJobs path onto Workforce Now and the guessed `cid` does not
+  exist there. They are the only two MyJobs companies in the seed. The fix is a
+  MyJobs parser, not a seed edit — which is what the 2026-09-08 triage meant when
+  it listed Knowles under "an ATS platform with no parser".
+- **DSP Concepts**' real board is an iframe to `app.trinethire.com`, found by the
+  2026-09-20 iframe probe. The Greenhouse guess is wrong, and TriNet Hire has no
+  parser either.
+- **DiGiCo and Clarion** are Eightfold `pcsx` guesses, returning 404 and 403.
+
+| code | company | guessed endpoint |
 | --- | --- | --- |
 | 403 | Clarion | `https://jobs.faurecia.com/api/pcsx/search?domain=faurecia.com&query=&location=&start=0` |
 | 404 | DiGiCo | `https://digico.biz/api/pcsx/search?domain=digico.biz&query=&location=&start=0&sort_by=` |
