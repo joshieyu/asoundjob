@@ -7,11 +7,23 @@ with filtering, search, and SEO-optimized detail pages. It also includes
 a community job submission system (admin-approved), an audio company
 directory, and an interview prep guide.
 
+## Current State — read these first
+
+This file is the original build plan. For what is actually true now, read:
+
+- `README.md` — how to run everything, the three gates, the data flow, every tool
+- `HANDOFF.md` — the running engineering log; check it before assuming anything here
+- `TRIAGE.md` — the ranked list of seeded careers URLs that need fixing
+
+As of 2026-09-22: Phases 1–3 below are built, with the resources hub and interview
+prep still the WIP placeholders the plan called for; **Phase 4 (deploy) has not started**
+— there is no Dockerfile, compose file or nginx config, and nothing has ever run
+on PostgreSQL.
+
 ## Key Files
 - `ARCHITECTURE.md` — full architecture plan, database schema, API design, scraper design
-- `scraper/BRIEF.md` — ACTIVE WORK: scraper improvement plan (ATS parsers, discovery,
-  JSON-LD extraction). Execute top-to-bottom; update STATUS boxes as phases complete.
-- `data/audio_companies_final.json` — 1,385 companies with careers URLs (source of truth)
+- `scraper/BRIEF.md` — completed 2026-08-26 (every phase ticked). Historical; not active work.
+- `data/audio_companies_final.json` — 1,412 companies with careers URLs (source of truth)
 - `data/audio_job_categories.json` — 14 audio-specific job categories for filtering
 - `data/schema.json` — JSON schema for the company data
 - `data/README.md` — data workflow documentation
@@ -23,15 +35,19 @@ directory, and an interview prep guide.
 - **Scraper**: Python, Playwright, requests, BeautifulSoup, SQLAlchemy, RQ
 - **API**: Python, FastAPI, SQLAlchemy, Pydantic
 - **Frontend**: SvelteKit (TypeScript, Svelte 5)
-- **Database**: PostgreSQL (prod), SQLite (dev)
-- **Queue**: Redis + RQ
-- **Hosting**: Hetzner VPS, nginx, Docker
+- **Database**: PostgreSQL (prod, planned — never yet exercised), SQLite (dev).
+  Known SQLite-only code: the category filter in `api/api/query.py` matches
+  `job_categories` with `cast(String).like('%"cat"%')`, which relies on SQLite's
+  JSON text and will not match PostgreSQL's `{a,b}` array text.
+- **Queue**: Redis + RQ (planned, not used — cycles run in-process with asyncio via
+  `python -m scraper.main --once`)
+- **Hosting**: Hetzner VPS, nginx, Docker (planned — not started)
 
 ## Site Sections
 1. **Job Board** — scraped + community-submitted jobs with robust filtering/sorting
 2. **Community Job Submissions** — public form, admin approval queue
-3. **Company Directory** — 1,385 audio companies, browseable by category (WIP placeholder page first)
-4. **Interview Prep Guide** — structured multi-article guide (WIP placeholder page first)
+3. **Company Directory** — 1,412 audio companies, browseable by category (built)
+4. **Interview Prep Guide** — structured multi-article guide (still the WIP placeholder)
 5. **Career Resources** — resume, salary, career path, freelancing articles
 6. **Admin Dashboard** — submission approval, scraper monitoring, company management
 
@@ -44,7 +60,9 @@ directory, and an interview prep guide.
 ## Build Conventions
 
 ### General
-- Use Python 3.11+ for scraper and API
+- Use **Python 3.9** for scraper and API. The venv is 3.9.6 and both `pyproject.toml`
+  files pin `py39`; every module starts with `from __future__ import annotations`.
+  Code that needs 3.10+ syntax breaks the gates.
 - Use TypeScript everywhere in the frontend
 - Keep scraper and API in separate packages but share database models
 - Write tests for ATS parsers (they have predictable output)
@@ -185,11 +203,18 @@ Returns: { offers: [{ id, title, description, location, url, ... }] }
 ## Important Notes
 
 - The company JSON is the seed data. Do NOT modify it from the scraper.
-  The scraper reads it once (via company_loader.py) and then works from the DB.
-- Manual additions/fixes to the JSON should be done via `scripts/add_company.py`
-  or `scripts/validate_companies.py`, then re-run company_loader.
-- The `source: "manual"` flag in the JSON means the entry was hand-verified.
-  Never overwrite or re-verify these from automated scripts.
+  `company_loader.py` reconciles the DB against it at the start of every cycle.
+- Manual additions/fixes go through the admin panel (`/admin/companies`), which
+  writes the JSON via `api/api/seed_file.py`. `scripts/` is historical from the
+  initial build and not part of any current workflow.
+- Never run `git checkout`/`restore`/`stash`/`reset`/`clean` against the JSON, and
+  never stage it with `git add -A` — it often carries uncommitted hand edits.
+- The `source: "manual"` flag in the JSON means the entry was hand-verified;
+  editing a company in the admin panel sets it. Never overwrite or re-verify
+  these from automated scripts.
+- `verified: true` does **not** mean a human checked the company. An earlier
+  agent set it after checking only that the careers URL resolved. See the
+  2026-09-20 design note in `HANDOFF.md`.
 - Playwright workers are expensive (~200MB RAM each). Limit to 5-10 concurrent.
   HTTP workers are cheap. Limit to 50 concurrent.
 - ATS JSON APIs are the fast path — no browser needed, just HTTP GET.
@@ -210,13 +235,21 @@ Returns: { offers: [{ id, title, description, location, url, ... }] }
 
 ## Job Deactivation (critical to get right)
 
-The scraper re-visits every verified company's careers page nightly. When it
+The scraper re-visits every verified company's careers page each cycle (meant to
+be nightly; today cycles are run by hand). When it
 fetches a page successfully and a previously-active job is no longer listed,
 it deactivates that job (sets `is_active=false`).
 
 **CRITICAL**: If the scraper FAILS to fetch a page (403, timeout, network error),
 it must NOT deactivate any jobs for that company. We can only deactivate jobs
 when we've confirmed the page loaded and the job is genuinely gone.
+
+Failures are bounded for the public board, not in the database: once a company
+has failed `STALE_AFTER_FAILURES` (default 3) consecutive cycles, its jobs stay
+active but drop off every public listing and count, and reappear on its next
+clean scrape. `companies.consecutive_failures` holds the count; the predicate is
+`listable_clause()` in `api/api/query.py`, and any new public job query must
+use it.
 
 Community-submitted jobs (`source='community'`) are never re-scraped.
 They auto-expire after 30 days (via `expires_date`) or are manually
