@@ -12,7 +12,8 @@ directory, and an interview prep guide.
 This file is the original build plan. For what is actually true now, read:
 
 - `README.md` — how to run everything, the three gates, the data flow, every tool
-- `HANDOFF.md` — the running engineering log; check it before assuming anything here
+- `HANDOFF.md` — current state, standing rules, open work and traps, by topic; check it
+  before assuming anything here (the full chronological log is `git show 0286282:HANDOFF.md`)
 - `TRIAGE.md` — the ranked list of seeded careers URLs that need fixing
 
 As of 2026-09-22: Phases 1–3 below are built, with the resources hub and interview
@@ -28,7 +29,7 @@ on PostgreSQL.
 - `data/schema.json` — JSON schema for the company data
 - `data/README.md` — data workflow documentation
 - `assets/YAP_logo.png` — Young Audio Professionals logo (placeholder)
-- `assets/discord_link.txt` — YAP Discord invite link (currently empty, fill before launch)
+- `assets/discord_link.txt` — YAP Discord invite link (filled; used by header, footer and About)
 - `requirements.txt` — Python dependencies
 
 ## Tech Stack
@@ -54,7 +55,7 @@ on PostgreSQL.
 ## Branding
 - **Organization**: Young Audio Professionals (YAP)
 - **Logo**: `assets/YAP_logo.png` (placeholder, replace later)
-- **Discord**: `assets/discord_link.txt` (currently empty — fill before launch)
+- **Discord**: `assets/discord_link.txt` (filled)
 - **About page**: Mentions YAP, links to Discord, explains community-driven mission
 
 ## Build Conventions

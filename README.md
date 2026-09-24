@@ -186,7 +186,7 @@ where admin edits land. This is a newer requirement than the rest of the deploy.
 | `data/` | the seed, the job category vocabulary, the JSON schema. See `data/README.md` |
 | `tools/jobspy_fetch/` | a standalone LinkedIn/Indeed fetcher with its **own** venv, because `python-jobspy` needs Python ≥3.10 and pulls in numpy, neither of which may enter the scraper's 3.9 dependency tree. Built but never run — it needs residential proxies and refuses to start without them. |
 | `scripts/` | one-off migration and crawl scripts from the initial build. Historical; not part of any current workflow |
-| `HANDOFF.md` | the running engineering log. Long, chronological, and the place to look before assuming anything below is still true |
+| `HANDOFF.md` | current state, standing rules, open work, traps and company notes, by topic — the place to look before assuming anything below is still true. The full chronological log is `git show 0286282:HANDOFF.md` |
 | `ARCHITECTURE.md`, `PRODUCT.md`, `DESIGN.md` | the plan, the product, the visual system |
 
 ## Things that will bite you
@@ -225,5 +225,5 @@ inverts that** — an ambiguous location resolves to NULL rather than a guess.
 **Every regex quantifier is bounded.** No bare `+` or `*` anywhere in the
 matching code. Match the surrounding style.
 
-**No code comments.** The codebase has none. Commit messages and `HANDOFF.md`
+**No code comments.** Do not add any (a few pre-existing ones remain in `scrapers/pipeline.py`). Commit messages and `HANDOFF.md`
 carry the reasoning instead.
