@@ -304,8 +304,8 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   (`Job.job_categories.cast(String).like('%"cat"%')`) matches SQLite's JSON text
   and will match nothing against PostgreSQL's `{a,b}` array text. Unverified —
   there is no PostgreSQL here.
-- Delete `asoundjob-backup-20260922.db` (repo root, gitignored) once a cycle has
-  run cleanly after migration `b539a9545442`.
+- `asoundjob-backup-20260922.db` (repo root, gitignored) can be deleted: the
+  2026-09-24 cycle ran cleanly after migration `b539a9545442`.
 
 ### Seed URLs and data quality — start with `TRIAGE.md`
 - `TRIAGE.md` (rebuilt 2026-09-22, cross-checked): **A. 16 dead careers URLs,
@@ -316,9 +316,12 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   are no openings.
 - **Switchcraft's URL is HEICO's aerospace board** (`myjobs.adp.com/heico/…`, the
   keyword is ignored server-side). Unverify or repoint.
-- **Ramboll Group** has failed 3 cycles running and succeeds on every `check_url`
-  (~1,013 jobs via SmartRecruiters). Suspect rate limiting on a ~1,000-job walk
-  under cycle concurrency; untested. Its 16 board rows are now hidden as stale.
+- **Ramboll Group times out.** The 2026-09-24 cycle stored
+  `smartrecruiters binding failed: timeout after 90.0s` — the ~1,000-job walk
+  exceeds `per_company_timeout` under cycle load, while `check_url` (running
+  alone) succeeds. Not rate limiting. Likely fix: Bosch-style query-scoped
+  `extra_careers_urls` (acoustics etc.) instead of walking the whole board — a
+  seed edit, owner's call. 4 failures; its 16 board rows are hidden as stale.
 - ~6 iframe-embedded boards could be read with a bounded fetch of the iframe
   `src`: DSP Concepts (TriNet Hire), Earlens (hrmdirect), Line 6 (appone),
   MTX Audio, Slate Digital (Personio), Dynaudio Automotive.
@@ -445,6 +448,11 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 
 ## 9. Log (newest first, keep entries short)
 
+- **2026-09-24, cycle** — 710 companies, 366 ok, 1,601 s; board-eligible 1,025,
+  publicly listed 1,008. First cycle on the new error reporting: 61 failures
+  stored a real HTTP status (32× 403, 26× 404 — 9 of those from Playwright-only
+  companies no tool could see before), and Ramboll's cause surfaced as a
+  SmartRecruiters timeout. Failure counters live: Audison recovered to 0.
 - **2026-09-24** — Handoff rewritten from the 7,910-line log (full text at
   `0286282`). Corrected on the way: the Sep 22 claim that Knowles needs a MyJobs
   parser (the original Sep 4 finding — don't build it — stands); the old open item
