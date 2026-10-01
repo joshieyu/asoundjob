@@ -12,17 +12,21 @@ the careers pages of seeded companies, a relevance model decides which jobs reac
 the public board, and a SvelteKit site serves them. Branch
 `redesign-type-specimen`.
 
-As of the 2026-09-22 cycle:
+As of the 2026-10-01 cycle:
 
 | | |
 | --- | --- |
 | companies in the seed / DB | 1,412 (745 verified, 30 `source: manual`, 15 `scrape_blocked`) |
 | scrape population (verified, unblocked, has URL) | 732; a cycle scrapes ~710 after shared-URL dedup |
-| cycle | ~26 min; ok 364 / failed 346 — ~50% failure is normal |
-| job rows / active / board-eligible | 20,474 / 12,308 / 1,014 |
-| **publicly listed** | **997** (17 hidden as stale: Ramboll 16, Fairphone 1) |
-| companies contributing to the board | 136; top: Shure ~101, Apple 70, Qualcomm 61, Cirrus Logic 59, Amazon 56, Bose 38 |
-| health grades (scraped) | healthy 96, idle 149, failing 348, furniture 46, silent 32, thin 61; unscraped 680 |
+| cycle | ~27–31 min; ok 369 / failed 341 — ~50% failure is normal |
+| job rows / active / board-eligible | 23,400 / 12,305 / 1,005 |
+| **publicly listed** | **1,004** (1 hidden as stale: Fairphone) |
+| companies contributing to the board | 131; top: Shure 105, Apple 70, Cirrus Logic 61, Qualcomm 55, Amazon 49, Bose 40 |
+| health grades (scraped, 2026-09-22) | healthy 96, idle 149, failing 348, furniture 46, silent 32, thin 61; unscraped 680 |
+
+**GN's careers site is offline until early November** (§5): GN Store Nord, Jabra
+and SteelSeries lost their 31 board rows on 2026-10-01, most of that cycle's drop
+of 36 from 1,040 listed; the rest is Qualcomm's fallback rows clearing.
 
 **Not launched.** No Dockerfile, compose file or nginx config; nothing has ever
 run on PostgreSQL (none installed locally, nor Docker). **~355 commits on this
@@ -332,6 +336,16 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   board). Those two links are now Zoom's only active rows (off the board — they
   score 0). `check_url` afterwards fails on a navigation timeout. Needs a new URL
   (seed edit, owner's call); the underlying gap is in "Scraper and relevance".
+- **GN's careers site is offline until early November.** On 2026-10-01 the
+  `gn.wd3` Workday tenant returned `total: 0` (HTTP 200, no facets) for all three
+  seeded sites — `GN-Careers` (GN Store Nord), `JabraCareers`, `SteelSeriesCareers`
+  — and, being a trusted ATS empty, deactivated their 31 board rows (24 + 6 + 1).
+  The page itself says the site is "temporarily offline as we prepare for the sale
+  of our Hearing business to Amplifon S.p.A." and points applicants to LinkedIn
+  until it returns. The deactivation is correct by the rules; the rows reactivate
+  on the first scrape that sees them again, if their `external_id`s survive.
+  Nothing to do now. When it returns, check whether ReSound/Beltone hearing roles
+  have moved to Amplifon's board (Amplifon and Audigy are in the seed).
 - **Amplitude's Greenhouse board is gone (2026-09-29).** Both
   `boards-api.greenhouse.io/v1/boards/amplitude` and
   `job-boards.greenhouse.io/amplitude` 404; it had 38 jobs every prior cycle,
@@ -483,6 +497,7 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 | Fender / inMusic / Logitech | Each board was being claimed by a sub-brand via shared-URL dedup; sub-brands are `verified: false`. |
 | Focusrite / Music Tribe | One board per group (Workable; Jobvite `musictribe`); brand entries retired. Check footers for umbrella owners. |
 | Garmin | Jibe JSON API via `JIBE_HOSTS` allowlist. |
+| GN Store Nord / Jabra / SteelSeries | One Workday tenant (`gn.wd3`), three sites. Offline from 2026-10-01 until early November for the sale of GN Hearing to Amplifon; 31 board rows deactivated (§5). |
 | Gibson | Own scraper — the public ADP endpoint withholds 17 of 36 requisitions. MESA/Boogie retired into it. |
 | Google | `?q=audio`, `scrape_method: http`; needed `<base href>` handling and pagination. |
 | Harman | Several `extra_careers_urls` queries; no Avature parser needed. |
@@ -518,6 +533,14 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   `resolve_database_url`, so running from `scraper/` is fine).
 
 ## 9. Log (newest first, keep entries short)
+
+- **2026-10-01, cycle** — 710 companies, 369 ok, 1,609 s; deactivated 923,
+  inserted 835, reactivated 88. Board-eligible 1,005, publicly listed 1,004 (from
+  1,040): GN's careers site went offline (−31, §5), and 09-29's malformed fallback
+  rows cleared as predicted (Shure's four "Job Title …", Qualcomm's five).
+  Claimed-ATS fallbacks this time: Demant, Belden, Twilio Voice, iHeartRadio,
+  Samsung, Analog Devices (timeouts); Sigma Connectivity (connection reset);
+  Amplitude (404).
 
 - **2026-09-29, cycle** — 710 companies, 367 ok, 1,862 s; deactivated 945,
   inserted 859, reactivated 150. Board-eligible 1,041, publicly listed 1,040
