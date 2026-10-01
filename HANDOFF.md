@@ -150,7 +150,10 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   jobs are found — some SPAs 404 and still render a board). A failed stored or
   claiming ATS attempt is kept as `{ats} binding failed: …; careers page: …`.
   Discovery guesses are deliberately excluded — they are guesses, not bindings.
-- **An http scrape that returns only nav chrome still counts as success** and
+- **A scrape that returns only nav chrome still counts as success** — http or
+  Playwright. Being a trusted success it resets the failure count and deactivates
+  every job it did not see: on 2026-09-29 Zoom's 60 real jobs were replaced by
+  "Continue Reading" and "Career Search Tips". An http result of this kind also
   never falls through to Playwright (Garmin, ByteDance, Tensor). When a company
   returns furniture, check `scrape_method` first.
 - `_dedupe_shared_urls`: when companies share a board, only the first
@@ -203,6 +206,13 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   `api/api/query.py`, reappearing on its next clean scrape. Community jobs,
   admin-pinned jobs (`is_active_override = True`) and admin views are exempt.
   **Any new public job query must use `listable_clause()`.**
+- **The staleness bound cannot see a claimed-ATS fallback.** When a dedicated
+  parser claims a board and fails, the generic fallback's result is `partial`
+  (no deactivation) but `persist_result` still logs `status=success` with no
+  error and resets `consecutive_failures` to 0 (`scraper/main.py:121`). A company
+  whose ATS fails every cycle therefore keeps its last-known ATS rows on the
+  board indefinitely, and neither `scrape_log` nor the admin panel shows the ATS
+  failure — only the cycle log's `claimed this board but failed` lines do. See §5.
 - `is_active_override`, `categories_override` and `is_audio_related_override` are
   read through `scraper/overrides.py` (`effective_*`). Every write site that
   recomputes a job must honour them, or corrections revert next cycle.
@@ -314,14 +324,28 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   Automotive, Tymphany, DiGiGrid); C/D. not a careers page; E. stores navigation;
   F. careers-looking but failing (mostly parser problems); 46 correctly say there
   are no openings.
+- **Zoom's careers URL is dead, and the scrape wiped its board (2026-09-29).**
+  `careers.zoom.us/jobs/search` now 404s (`careers.zoom.us/` redirects to
+  `www.careers.zoom.us/`; `zoom.com/en/careers/` also 404s). During the cycle
+  Playwright reached a page carrying only "Continue Reading" and "Career Search
+  Tips"; that counted as success and deactivated all 60 real jobs (1 was on the
+  board). Those two links are now Zoom's only active rows (off the board — they
+  score 0). `check_url` afterwards fails on a navigation timeout. Needs a new URL
+  (seed edit, owner's call); the underlying gap is in "Scraper and relevance".
+- **Amplitude's Greenhouse board is gone (2026-09-29).** Both
+  `boards-api.greenhouse.io/v1/boards/amplitude` and
+  `job-boards.greenhouse.io/amplitude` 404; it had 38 jobs every prior cycle,
+  none on the board. Repoint or unverify.
 - **Switchcraft's URL is HEICO's aerospace board** (`myjobs.adp.com/heico/…`, the
   keyword is ignored server-side). Unverify or repoint.
-- **Ramboll Group times out.** The 2026-09-24 cycle stored
-  `smartrecruiters binding failed: timeout after 90.0s` — the ~1,000-job walk
-  exceeds `per_company_timeout` under cycle load, while `check_url` (running
-  alone) succeeds. Not rate limiting. Likely fix: Bosch-style query-scoped
-  `extra_careers_urls` (acoustics etc.) instead of walking the whole board — a
-  seed edit, owner's call. 4 failures; its 16 board rows are hidden as stale.
+- **Ramboll Group times out intermittently, not always.** SmartRecruiters hit the
+  90 s `per_company_timeout` on every cycle 2026-09-18 → 09-24 (its 16 board
+  rows were hidden as stale), then succeeded on 2026-09-25 (996 jobs; it
+  deactivated 362 rows that had closed meanwhile, none audio) and 2026-09-29
+  (1,028). `check_url` running alone always succeeds; not rate limiting. Same
+  cause as the claimed-ATS timeouts below. Bosch-style query-scoped
+  `extra_careers_urls` (acoustics etc.) would still shrink the walk — a seed edit,
+  owner's call.
 - ~6 iframe-embedded boards could be read with a bounded fetch of the iframe
   `src`: DSP Concepts (TriNet Hire), Earlens (hrmdirect), Line 6 (appone),
   MTX Audio, Slate Digital (Personio), Dynaudio Automotive.
@@ -329,6 +353,41 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   Propellerhead. Makeshift Software unadded (GoHire's title shape needs cleaning).
 
 ### Scraper and relevance
+- **Claimed-ATS timeouts under cycle load — the largest scraper problem found so
+  far.** Every cycle 7–8 large ATS boards exceed the 90 s `per_company_timeout`
+  and fall back to the generic scrapers with deactivation suppressed:
+  - 2026-09-25: DLR Group (Greenhouse ReadTimeout), Belden and Demant
+    (SuccessFactors), Analog Devices, Logitech and McGill (Workday), HP (Eightfold).
+  - 2026-09-29: Shure (iCIMS), Samsung and Analog Devices (Workday), Demant and
+    Belden (SuccessFactors), Twilio Voice (Eightfold); Qualcomm got HTTP 429 from
+    Eightfold (its 63 board rows were unaffected).
+
+  The suppression works — nothing was wrongly deactivated. Three things follow:
+  1. **Fallback rows are malformed, and some reach the public board:** Shure
+     titles prefixed "Job Title …" ("Job Title Intern, DSP"), Qualcomm titles with
+     location and department glued on plus a duplicate under an `apply?pid=` URL,
+     Twilio "Senior Manager, Customer Success Customer Success". Their
+     `external_id`s differ from the ATS rows', so the next ATS success deactivates
+     them and re-inserts — the churn behind Samsung 751 ↔ 23, Logitech 218 ↔ 21,
+     McGill 272 ↔ 17, Nissan 233 ↔ 1, HP 200 ↔ 7, and most of 2026-09-29's 945
+     deactivations.
+  2. **The staleness bound never fires for these** (§4.4). Demant's SuccessFactors
+     board (~300 jobs) last succeeded 2026-09-11; every cycle since has fallen
+     back to ~10 rows while its 26 board rows sit unconfirmed and will never be
+     hidden. Analog Devices' Workday board (~840) succeeded once in the last six
+     cycles, Belden's SuccessFactors once.
+  3. **It is invisible** in `scrape_log` and the admin panel.
+
+  Not decided. Options: when a claimed ATS fails, persist nothing and count a
+  failure (keeps last-known rows, lets the staleness bound work, ends the churn;
+  a genuinely broken binding already surfaces as `{ats} binding failed`); give
+  ATS-claimed companies a longer timeout, or run the large boards early or apart
+  from the Playwright load. Measure first whether Demant's SuccessFactors walk
+  completes when run alone (`--company`), since Ramboll's does.
+- **A navigation-only result is a trusted success** (§4.2) and can deactivate a
+  real board (Zoom, 2026-09-29). A result whose every row is non-job furniture
+  should count as failed, or at least `partial`. Measure first: 46 companies were
+  graded `furniture` on 2026-09-22, and some may be genuinely empty boards.
 - 276 board rows carry no job category; never investigated.
 - Board concentration: Shure alone is ~10%, the top five ~34% — a grouping or
   default-sort question for the API/frontend.
@@ -389,6 +448,13 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   simulation).
 - **The HTTP scraper once returned `[]` as success** — a stage returning nothing
   must never look like a genuinely empty board.
+- **A big swing in a company's `jobs_found` is usually a claimed-ATS timeout
+  falling back, not a board change.** Grep the cycle log for
+  `claimed this board but failed` before investigating the board itself.
+- **Counting a cycle's deactivations by `updated_at` overcounts.** The shared-URL
+  dedup re-stamps already-inactive sub-brand rows at the start of every cycle
+  (Sonnox, Novation DJ): 900 by timestamp on 2026-09-25 against the summary's 754.
+  Use the summary's `deactivated=`, or exclude rows stamped at the cycle's start.
 
 ## 7. Company notes
 
@@ -410,7 +476,7 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 | Cirrus Logic | Lever EU tenant (`api.eu.lever.co`); `api_url_for` derives the host from the careers URL. Category `Audio Semiconductors` (native). |
 | Cochlear | Native hearing tech; many board rows are clinical/commercial via the category bonus — accepted trade-off. |
 | Delart | Embed-only Greenhouse board; do not repoint to delartech.com. Agency scope. |
-| Demant | Correct URL `careers.demant.com/search/`; `careers.demant.com/` (marketing) and `careers.us.demant.com/jobs` (clinic hiring) are both traps. |
+| Demant | Correct URL `careers.demant.com/search/`; `careers.demant.com/` (marketing) and `careers.us.demant.com/jobs` (clinic hiring) are both traps. SuccessFactors walk has timed out every cycle since 2026-09-11; its 26 board rows are unconfirmed since then (§5). |
 | DiGiCo | `digico.biz/recruitment/`, healthy. |
 | Dolby | Eightfold `/api/pcsx/search`, `domain=dolby.com`; new Eightfold companies need two cycles (slug derived). |
 | ElevenLabs | Not seeded on purpose: 52 of 54 reachable board rows would be sales; research roles score 4 against the cutoff of 5. |
@@ -428,12 +494,14 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 | Qualcomm / Infineon | `extra_careers_urls` for audio + dsp (+ acoustic) because Eightfold capped at 120; "dsp" admits some NPU/modem noise, accepted. |
 | Ramboll Group | See §5. Talent-pool "Rail Power Supply" rows fixed by `TALENT_POOL_TITLE`, not dedup. |
 | Rohde & Schwarz | Avature board, `http` method (Playwright rendered a country selector). |
+| Samsung | Workday `sec.wd3/Samsung_Careers`, ~750 jobs, 5 on the board; times out under cycle load about four cycles in five and falls back to 23 Playwright rows (§5). |
 | Sigma Connectivity | Group JSON API filtered client-side via `company_startswith`; do not "fix" it to the server's exact-match `?company=`. |
 | Sony | Workday `sonyglobal`; only Europe/US/China/Japan sites exist; global contributes 0 board rows correctly. |
 | Starkey | UltiPro `LoadSearchResults` API. |
 | Tymphany | Replaced Peerless; `open_application`, manual; contact form only, so failing is correct. |
 | Vifa | Still points at `dst.dk`; `verified: false` on purpose. |
 | Waymo | Search param is `query`; alphabetical pagination needs several narrow queries. |
+| Zoom | `careers.zoom.us/jobs/search` dead since 2026-09-29; its 60 jobs were deactivated by a navigation-only scrape (§5). Needs a new URL. |
 
 ## 8. Stale files in the repo
 
@@ -442,11 +510,25 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   They are tracked; a fresh session may trust the wrong one. Owner to decide on
   deletion.
 - `scraper/BRIEF.md` is complete and historical.
+- `README.md`'s headline numbers are from 2026-09-18 (1,413 companies, 1,260 on
+  the board), and its "The audience is audio engineers" paragraph is one side of
+  the open question in §2.5.
 - `web/asoundjob.db` is a stray empty file; the real database is `asoundjob.db` at
   the repo root (relative SQLite URLs are anchored to the repo root by
   `resolve_database_url`, so running from `scraper/` is fine).
 
 ## 9. Log (newest first, keep entries short)
+
+- **2026-09-29, cycle** — 710 companies, 367 ok, 1,862 s; deactivated 945,
+  inserted 859, reactivated 150. Board-eligible 1,041, publicly listed 1,040
+  (Fairphone hidden). Found: Zoom's board wiped by a navigation-only scrape, and
+  claimed-ATS timeouts churning large boards and hiding Demant's staleness (§5).
+  Amplitude's Greenhouse board 404s.
+- **2026-09-25, cycle** — 710 companies, 366 ok, 1,872 s; deactivated 754 (Ramboll
+  362 on its first success since 09-17, Samsung 133). Board-eligible 1,022,
+  publicly listed 1,021; Ramboll's 16 rows listed again. Seven claimed ATS boards
+  timed out and fell back (§5). The seed carries an uncommitted owner deletion of
+  Sound Sleep; its DB row was already gone.
 
 - **2026-09-24, cycle** — 710 companies, 366 ok, 1,601 s; board-eligible 1,025,
   publicly listed 1,008. First cycle on the new error reporting: 61 failures
