@@ -12,16 +12,16 @@ the careers pages of seeded companies, a relevance model decides which jobs reac
 the public board, and a SvelteKit site serves them. Branch
 `redesign-type-specimen`.
 
-As of the 2026-10-01 cycle:
+As of the 2026-10-04 cycle:
 
 | | |
 | --- | --- |
 | companies in the seed / DB | 1,412 (745 verified, 30 `source: manual`, 15 `scrape_blocked`) |
 | scrape population (verified, unblocked, has URL) | 732; a cycle scrapes ~710 after shared-URL dedup |
-| cycle | ~27–31 min; ok 369 / failed 341 — ~50% failure is normal |
-| job rows / active / board-eligible | 23,400 / 12,305 / 1,005 |
-| **publicly listed** | **1,004** (1 hidden as stale: Fairphone) |
-| companies contributing to the board | 131; top: Shure 105, Apple 70, Cirrus Logic 61, Qualcomm 55, Amazon 49, Bose 40 |
+| cycle | ~26–31 min; ok 369 / failed 341 — ~50% failure is normal |
+| job rows / active / board-eligible | 24,072 / 12,208 / 1,004 |
+| **publicly listed** | **1,003** (1 hidden as stale: Fairphone) |
+| companies contributing to the board | 131; top: Shure 104, Apple 72, Cirrus Logic 61, Qualcomm 60, Amazon 49, Bose 40 |
 | health grades (scraped, 2026-09-22) | healthy 96, idle 149, failing 348, furniture 46, silent 32, thin 61; unscraped 680 |
 
 **GN's careers site is offline until early November** (§5): GN Store Nord, Jabra
@@ -350,6 +350,9 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   `boards-api.greenhouse.io/v1/boards/amplitude` and
   `job-boards.greenhouse.io/amplitude` 404; it had 38 jobs every prior cycle,
   none on the board. Repoint or unverify.
+- **CD Baby's Greenhouse board is gone (2026-10-04).** `cdbabyjobs` now 404s on
+  the API (the board page 500s); it had returned zero jobs for weeks before that.
+  No board rows. Repoint or unverify.
 - **Switchcraft's URL is HEICO's aerospace board** (`myjobs.adp.com/heico/…`, the
   keyword is ignored server-side). Unverify or repoint.
 - **Ramboll Group times out intermittently, not always.** SmartRecruiters hit the
@@ -477,7 +480,7 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 | Adobe | Renamed from "Adobe Audition"; whole-company Workday board scoped with `?q=audio`, partial scope. |
 | Amazon | amazon.jobs `search.json` needs `base_query` (audio, speech, signal processing); "dsp" is a trap here. |
 | Apple | Parser reads `?search=` from seed URLs so `extra_careers_urls` can scope it; Beats by Dre was deleted after an empty-slug Apple binding scraped 245 Apple rows. |
-| Arup | Avature facet derivation ends at a stable `/jobs/search/<id>`; never seed the session-stateful `/add/category/<id>` URL (same for Hoare Lea, Ramboll, Stantec, Sweco). |
+| Arup | Avature facet derivation ends at a stable `/jobs/search/<id>`; never seed the session-stateful `/add/category/<id>` URL (same for Hoare Lea, Ramboll, Stantec, Sweco). Reposts roles under new requisition numbers; the superseded rows stay listed as duplicates while either of its two URLs fails (a partial result), then clear (11 on 2026-10-04). |
 | Audible | Deleted from seed and DB; 112 jobs, 1 misattributed board row. Do not re-add without measuring. |
 | Audio Precision | Native `Audio Testing & Measurement`; no `open_application` on purpose (page refuses unsolicited CVs). |
 | Bang & Olufsen | SAP DWR board, unfetchable; `verified: false` by design. |
@@ -533,6 +536,12 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   `resolve_database_url`, so running from `scraper/` is fine).
 
 ## 9. Log (newest first, keep entries short)
+
+- **2026-10-04, cycle** — 710 companies, 369 ok, 1,533 s; deactivated 866,
+  inserted 672, reactivated 97. Board-eligible 1,004, publicly listed 1,003 —
+  steady. Arup cleared 11 superseded reposts; GN still offline. Claimed-ATS
+  fallbacks: Demant, Qualcomm, Analog Devices, McGill, HP (timeouts); Amplitude
+  and CD Baby (Greenhouse 404).
 
 - **2026-10-01, cycle** — 710 companies, 369 ok, 1,609 s; deactivated 923,
   inserted 835, reactivated 88. Board-eligible 1,005, publicly listed 1,004 (from
