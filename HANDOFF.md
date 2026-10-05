@@ -12,16 +12,16 @@ the careers pages of seeded companies, a relevance model decides which jobs reac
 the public board, and a SvelteKit site serves them. Branch
 `redesign-type-specimen`.
 
-As of the 2026-10-04 cycle:
+As of the 2026-10-05 cycle:
 
 | | |
 | --- | --- |
 | companies in the seed / DB | 1,412 (745 verified, 30 `source: manual`, 15 `scrape_blocked`) |
 | scrape population (verified, unblocked, has URL) | 732; a cycle scrapes ~710 after shared-URL dedup |
-| cycle | ~26–31 min; ok 369 / failed 341 — ~50% failure is normal |
-| job rows / active / board-eligible | 24,072 / 12,208 / 1,004 |
-| **publicly listed** | **1,003** (1 hidden as stale: Fairphone) |
-| companies contributing to the board | 131; top: Shure 104, Apple 72, Cirrus Logic 61, Qualcomm 60, Amazon 49, Bose 40 |
+| cycle | ~26–31 min; ok 366 / failed 344 — ~50% failure is normal |
+| job rows / active / board-eligible | 24,332 / 12,233 / 1,000 |
+| **publicly listed** | **999** (1 hidden as stale: Fairphone; Ramboll's 16 hide after two more failures) |
+| companies contributing to the board | 132; top: Shure 103, Apple 72, Cirrus Logic 70, Qualcomm 55, Amazon 49, Bose 40 |
 | health grades (scraped, 2026-09-22) | healthy 96, idle 149, failing 348, furniture 46, silent 32, thin 61; unscraped 680 |
 
 **GN's careers site is offline until early November** (§5): GN Store Nord, Jabra
@@ -359,7 +359,10 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   90 s `per_company_timeout` on every cycle 2026-09-18 → 09-24 (its 16 board
   rows were hidden as stale), then succeeded on 2026-09-25 (996 jobs; it
   deactivated 362 rows that had closed meanwhile, none audio) and 2026-09-29
-  (1,028). `check_url` running alone always succeeds; not rate limiting. Same
+  (1,028), 10-01 and 10-04, then failed again on 10-05 (`consecutive_failures`
+  1; its 16 board rows hide at 3). Unlike the fallbacks below, Ramboll's
+  fallback also fails, so it is counted as a real failure. `check_url` running
+  alone always succeeds; not rate limiting. Same
   cause as the claimed-ATS timeouts below. Bosch-style query-scoped
   `extra_careers_urls` (acoustics etc.) would still shrink the walk — a seed edit,
   owner's call.
@@ -536,6 +539,13 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   `resolve_database_url`, so running from `scraper/` is fine).
 
 ## 9. Log (newest first, keep entries short)
+
+- **2026-10-05, cycle** — 710 companies, 366 ok, 1,607 s; deactivated 281,
+  inserted 260, reactivated 46 — the quietest cycle in this run. Board-eligible
+  1,000, publicly listed 999. Ramboll failed again (timeout, fallback empty);
+  Qualcomm's malformed fallback rows, revived by 10-04's fallback, cleared again.
+  Claimed-ATS fallbacks: Ramboll, Demant, Analog Devices, McGill, HP, Samsung
+  (timeouts); Amplitude and CD Baby (404). GN still offline.
 
 - **2026-10-04, cycle** — 710 companies, 369 ok, 1,533 s; deactivated 866,
   inserted 672, reactivated 97. Board-eligible 1,004, publicly listed 1,003 —
