@@ -12,16 +12,16 @@ the careers pages of seeded companies, a relevance model decides which jobs reac
 the public board, and a SvelteKit site serves them. Branch
 `redesign-type-specimen`.
 
-As of the 2026-10-05 cycle:
+As of the 2026-10-07 cycle:
 
 | | |
 | --- | --- |
 | companies in the seed / DB | 1,412 (745 verified, 30 `source: manual`, 15 `scrape_blocked`) |
 | scrape population (verified, unblocked, has URL) | 732; a cycle scrapes ~710 after shared-URL dedup |
-| cycle | ~26–31 min; ok 366 / failed 344 — ~50% failure is normal |
-| job rows / active / board-eligible | 24,332 / 12,233 / 1,000 |
-| **publicly listed** | **999** (1 hidden as stale: Fairphone; Ramboll's 16 hide after two more failures) |
-| companies contributing to the board | 132; top: Shure 103, Apple 72, Cirrus Logic 70, Qualcomm 55, Amazon 49, Bose 40 |
+| cycle | ~26–31 min; ok 372 / failed 338 — ~50% failure is normal |
+| job rows / active / board-eligible | 25,127 / 12,365 / 996 |
+| **publicly listed** | **995** (1 hidden as stale: Fairphone; Ramboll's 17 hide after two more failures) |
+| companies contributing to the board | 134; top: Shure 102, Apple 71, Cirrus Logic 70, Qualcomm 51, Amazon 48, Bose 41 |
 | health grades (scraped, 2026-09-22) | healthy 96, idle 149, failing 348, furniture 46, silent 32, thin 61; unscraped 680 |
 
 **GN's careers site is offline until early November** (§5): GN Store Nord, Jabra
@@ -359,8 +359,9 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   90 s `per_company_timeout` on every cycle 2026-09-18 → 09-24 (its 16 board
   rows were hidden as stale), then succeeded on 2026-09-25 (996 jobs; it
   deactivated 362 rows that had closed meanwhile, none audio) and 2026-09-29
-  (1,028), 10-01 and 10-04, then failed again on 10-05 (`consecutive_failures`
-  1; its 16 board rows hide at 3). Unlike the fallbacks below, Ramboll's
+  (1,028), 10-01 and 10-04; failed 10-05, succeeded in a partial run on 10-07,
+  failed again in that day's full cycle (`consecutive_failures` 1; its board
+  rows hide at 3) — 6 failures in the last 11 runs. Unlike the fallbacks below, Ramboll's
   fallback also fails, so it is counted as a real failure. `check_url` running
   alone always succeeds; not rate limiting. Same
   cause as the claimed-ATS timeouts below. Bosch-style query-scoped
@@ -404,6 +405,21 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   ATS-claimed companies a longer timeout, or run the large boards early or apart
   from the Playwright load. Measure first whether Demant's SuccessFactors walk
   completes when run alone (`--company`), since Ramboll's does.
+- **The same churn happens without an ATS: Rohde & Schwarz.** Its seeded method is
+  `http` (Avature `/en_US/careers/JobDetail/…`, ~59 rows). When that attempt times
+  out or raises, the scrape falls through to Playwright, which renders the country
+  selector plus `/uk/career/jobs/…` pages (~77 rows, ~40 of them one link per
+  country). Both count as full successes, so every switch deactivates the other
+  shape's rows — 12 board rows out, 3 in on 2026-10-07. Playwright won 8 of the
+  last 12 runs, with 6 switches between the two. That the http attempt timed out
+  or raised is inferred: it left no warning in the log (next item). A fallback
+  past a seeded `http` method
+  arguably deserves the same `partial` treatment as one past a claimed ATS.
+- **`_attempt` does not log timeouts or exceptions**
+  (`scrapers/pipeline.py:116–125`): they go only into `self.attempts`, so a
+  generic stage that times out leaves no line in the cycle log. Rohde & Schwarz's
+  http failures above are invisible for this reason; only the `scrape_method`
+  recorded in `scrape_log` gives them away.
 - **A navigation-only result is a trusted success** (§4.2) and can deactivate a
   real board (Zoom, 2026-09-29). A result whose every row is non-job furniture
   should count as failed, or at least `partial`. Measure first: 46 companies were
@@ -514,7 +530,7 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 | Perkins&Will | Real board on UltiPro (152 jobs, none audio); kept for its acoustics practice. |
 | Qualcomm / Infineon | `extra_careers_urls` for audio + dsp (+ acoustic) because Eightfold capped at 120; "dsp" admits some NPU/modem noise, accepted. |
 | Ramboll Group | See §5. Talent-pool "Rail Power Supply" rows fixed by `TALENT_POOL_TITLE`, not dedup. |
-| Rohde & Schwarz | Avature board, `http` method (Playwright rendered a country selector). |
+| Rohde & Schwarz | Avature board, `http` method (Playwright rendered a country selector). The http attempt still fails silently in about two runs of three, and each switch to or from Playwright swaps the board rows (§5). |
 | Samsung | Workday `sec.wd3/Samsung_Careers`, ~750 jobs, 5 on the board; times out under cycle load about four cycles in five and falls back to 23 Playwright rows (§5). |
 | Sigma Connectivity | Group JSON API filtered client-side via `company_startswith`; do not "fix" it to the server's exact-match `?company=`. |
 | Sony | Workday `sonyglobal`; only Europe/US/China/Japan sites exist; global contributes 0 board rows correctly. |
@@ -539,6 +555,15 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   `resolve_database_url`, so running from `scraper/` is fine).
 
 ## 9. Log (newest first, keep entries short)
+
+- **2026-10-07, cycle** — a first run was stopped at 293/710 because the owner's
+  connection was unreliable (results kept; no network errors among its
+  failures). The full cycle then ran: 710 companies, 372 ok, 1,815 s;
+  deactivated 447, inserted 299, reactivated 175. Board-eligible 996, publicly
+  listed 995. Rohde & Schwarz swapped 12 board rows for 3 (§5, new finding);
+  HP's Eightfold recovered (3 → 200). Claimed-ATS fallbacks: Ramboll, Demant,
+  Samsung, Analog Devices, McGill (timeouts); Amplitude, CD Baby (404). GN still
+  offline. Run cycles on a stable connection: a dropout records unearned failures.
 
 - **2026-10-05, cycle** — 710 companies, 366 ok, 1,607 s; deactivated 281,
   inserted 260, reactivated 46 — the quietest cycle in this run. Board-eligible
