@@ -12,16 +12,16 @@ the careers pages of seeded companies, a relevance model decides which jobs reac
 the public board, and a SvelteKit site serves them. Branch
 `redesign-type-specimen`.
 
-As of the 2026-10-08 cycle:
+As of the 2026-10-09 cycle (run on a degraded network — see the Log):
 
 | | |
 | --- | --- |
 | companies in the seed / DB | 1,412 (745 verified, 30 `source: manual`, 15 `scrape_blocked`) |
 | scrape population (verified, unblocked, has URL) | 732; a cycle scrapes ~710 after shared-URL dedup |
-| cycle | ~26–31 min; ok 368 / failed 342 — ~50% failure is normal |
-| job rows / active / board-eligible | 25,484 / 12,489 / 994 |
-| **publicly listed** | **993** (1 hidden as stale: Fairphone). **Ramboll is at 2 consecutive failures — its 17 hide on the next one** |
-| companies contributing to the board | 132; top: Shure 103, Cirrus Logic 71, Apple 68, Qualcomm 52, Amazon 45, Bose 41 |
+| cycle | ~26–31 min on a good connection; ok ~368 / failed ~342 — ~50% failure is normal |
+| job rows / active / board-eligible | 25,798 / 12,534 / 989 |
+| **publicly listed** | **971** (18 hidden as stale: **Ramboll 17**, Fairphone 1) |
+| companies contributing to the board | 130; top: Shure 103, Cirrus Logic 71, Apple 67, Qualcomm 51, Amazon 45, Bose 42 |
 | health grades (scraped, 2026-09-22) | healthy 96, idle 149, failing 348, furniture 46, silent 32, thin 61; unscraped 680 |
 
 **GN's careers site is offline until early November** (§5): GN Store Nord, Jabra
@@ -360,8 +360,9 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   rows were hidden as stale), then succeeded on 2026-09-25 (996 jobs; it
   deactivated 362 rows that had closed meanwhile, none audio) and 2026-09-29
   (1,028), 10-01 and 10-04; failed 10-05, succeeded in a partial run on 10-07,
-  failed again in that day's full cycle and on 10-08 (`consecutive_failures` 2;
-  its 17 board rows hide at 3) — 7 failures in the last 12 runs. Unlike the fallbacks below, Ramboll's
+  failed again in that day's full cycle, on 10-08 and on 10-09 — **its 17 board
+  rows have been hidden as stale since 10-09** (`consecutive_failures` 3) and
+  return on its next clean scrape. 8 failures in the last 13 runs. Unlike the fallbacks below, Ramboll's
   fallback also fails, so it is counted as a real failure. `check_url` running
   alone always succeeds; not rate limiting. Same
   cause as the claimed-ATS timeouts below. Bosch-style query-scoped
@@ -487,6 +488,12 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 - **A big swing in a company's `jobs_found` is usually a claimed-ATS timeout
   falling back, not a board change.** Grep the cycle log for
   `claimed this board but failed` before investigating the board itself.
+- **A bad connection shows up as page-load timeouts, not as network errors.** A
+  normal cycle has ~4 `Page.goto: Timeout 25000ms exceeded`; on 2026-10-09 there
+  were 141, spread evenly through the run, on a network that dropped all ICMP
+  and could not open TCP to some hosts (Calrec, ESS). Count that string before
+  trusting a cycle's failures; `net::ERR_NETWORK_CHANGED` marks only a brief
+  interface change. A connectivity probe that passes proves little.
 - **Counting a cycle's deactivations by `updated_at` overcounts.** The shared-URL
   dedup re-stamps already-inactive sub-brand rows at the start of every cycle
   (Sonnox, Novation DJ): 900 by timestamp on 2026-09-25 against the summary's 754.
@@ -555,6 +562,18 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   `resolve_database_url`, so running from `scraper/` is fine).
 
 ## 9. Log (newest first, keep entries short)
+
+- **2026-10-09, cycle — degraded network** — 710 companies, 350 ok, **2,740 s**
+  (vs ~1,700); deactivated 341, inserted 314. 141 Playwright page-load timeouts
+  (4 the day before), evenly spread: the machine's network (gateway 10.33.64.1)
+  dropped all ICMP and could not connect to some hosts. 20 companies that
+  succeeded on 10-08 failed, 18 on page-load timeouts — unearned, all at
+  `consecutive_failures` 1, nothing hidden: Advanced Bionics (7 board rows),
+  xMEMS 3, ESS 2, HEAD acoustics 2, SoundSense 2, SAE 1. **Ramboll reached 3
+  and its 17 rows are hidden** (its usual SmartRecruiters timeout, though the
+  slow network cannot have helped). Board-eligible 989, publicly listed 971.
+  Run the next cycle on a good connection; two more like this would hide the
+  companies above too.
 
 - **2026-10-08, cycle** — 710 companies, 368 ok, 1,727 s; deactivated 376,
   inserted 357, reactivated 143. Board-eligible 994, publicly listed 993 —
