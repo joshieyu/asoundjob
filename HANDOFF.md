@@ -12,15 +12,15 @@ the careers pages of seeded companies, a relevance model decides which jobs reac
 the public board, and a SvelteKit site serves them. Branch
 `redesign-type-specimen`.
 
-As of the 2026-10-09 cycle (run on a degraded network — see the Log):
+As of the 2026-10-12 cycle:
 
 | | |
 | --- | --- |
 | companies in the seed / DB | 1,412 (745 verified, 30 `source: manual`, 15 `scrape_blocked`) |
 | scrape population (verified, unblocked, has URL) | 732; a cycle scrapes ~710 after shared-URL dedup |
-| cycle | ~26–31 min on a good connection; ok ~368 / failed ~342 — ~50% failure is normal |
-| job rows / active / board-eligible | 25,798 / 12,534 / 989 |
-| **publicly listed** | **971** (18 hidden as stale: **Ramboll 17**, Fairphone 1) |
+| cycle | ~26–31 min on a good connection; ok 367 / failed 343 — ~50% failure is normal |
+| job rows / active / board-eligible | 26,062 / 12,540 / 993 |
+| **publicly listed** | **974** (19 hidden as stale: **Ramboll 17**, Fairphone 1, Valcom 1) |
 | companies contributing to the board | 130; top: Shure 103, Cirrus Logic 71, Apple 67, Qualcomm 51, Amazon 45, Bose 42 |
 | health grades (scraped, 2026-09-22) | healthy 96, idle 149, failing 348, furniture 46, silent 32, thin 61; unscraped 680 |
 
@@ -353,6 +353,16 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 - **CD Baby's Greenhouse board is gone (2026-10-04).** `cdbabyjobs` now 404s on
   the API (the board page 500s); it had returned zero jobs for weeks before that.
   No board rows. Repoint or unverify.
+- **IK Multimedia moved its careers page (2026-10-12).** `ikmultimedia.com/careers/`
+  now 404s; the homepage links `/pages/careers`, which lists 10 jobs (Modena and
+  Sunrise FL), including all 4 on our board. But they are expandable entries with
+  no links, so `check_url` on the new URL finds nothing. Repointing alone will not
+  help — it needs the URL change plus parser work for that layout. Its 4 board
+  rows (still genuinely open) hide after two more failures.
+- **Valcom** has failed three cycles with "no job links found" after five with one
+  job; its single board row is hidden as stale. Most likely the job closed and an
+  empty generic page counts as a failure, not as an empty board — correct, and
+  the row stays hidden.
 - **Switchcraft's URL is HEICO's aerospace board** (`myjobs.adp.com/heico/…`, the
   keyword is ignored server-side). Unverify or repoint.
 - **Ramboll Group times out intermittently, not always.** SmartRecruiters hit the
@@ -360,9 +370,11 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   rows were hidden as stale), then succeeded on 2026-09-25 (996 jobs; it
   deactivated 362 rows that had closed meanwhile, none audio) and 2026-09-29
   (1,028), 10-01 and 10-04; failed 10-05, succeeded in a partial run on 10-07,
-  failed again in that day's full cycle, on 10-08 and on 10-09 — **its 17 board
-  rows have been hidden as stale since 10-09** (`consecutive_failures` 3) and
-  return on its next clean scrape. 8 failures in the last 13 runs. Unlike the fallbacks below, Ramboll's
+  failed again in that day's full cycle, on 10-08, 10-09 and 10-12 (the last on a
+  healthy network) — **its 17 board rows have been hidden as stale since 10-09**
+  (`consecutive_failures` 4) and return on its next clean scrape. 9 failures in
+  the last 14 runs: hidden is now its usual state, so this is the most pressing
+  of the timeout cases. Unlike the fallbacks below, Ramboll's
   fallback also fails, so it is counted as a real failure. `check_url` running
   alone always succeeds; not rate limiting. Same
   cause as the claimed-ATS timeouts below. Bosch-style query-scoped
@@ -562,6 +574,16 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   `resolve_database_url`, so running from `scraper/` is fine).
 
 ## 9. Log (newest first, keep entries short)
+
+- **2026-10-12, cycle** — on a healthy network (3 page-load timeouts): 710
+  companies, 367 ok, 1,598 s; deactivated 399, inserted 264, reactivated 141.
+  Board-eligible 993, publicly listed 974. 18 of the 20 companies that took an
+  unearned failure on 10-09 recovered; Calrec and Amplifon now load but show "no
+  job links" (2 failures each, no board rows — worth a look, since the Calrec
+  note below says it works and Amplifon matters for GN). Ramboll failed a fourth time and stays
+  hidden; Valcom reached 3 (1 row hidden); IK Multimedia's careers URL now 404s
+  (§5). Claimed-ATS fallbacks unchanged: Ramboll, Demant, Belden, Samsung,
+  Analog Devices, McGill (timeouts); Amplitude, CD Baby (404).
 
 - **2026-10-09, cycle — degraded network** — 710 companies, 350 ok, **2,740 s**
   (vs ~1,700); deactivated 341, inserted 314. 141 Playwright page-load timeouts
