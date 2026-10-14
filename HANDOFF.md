@@ -12,16 +12,16 @@ the careers pages of seeded companies, a relevance model decides which jobs reac
 the public board, and a SvelteKit site serves them. Branch
 `redesign-type-specimen`.
 
-As of the 2026-10-12 cycle:
+As of the 2026-10-14 cycle:
 
 | | |
 | --- | --- |
 | companies in the seed / DB | 1,412 (745 verified, 30 `source: manual`, 15 `scrape_blocked`) |
 | scrape population (verified, unblocked, has URL) | 732; a cycle scrapes ~710 after shared-URL dedup |
-| cycle | ~26–31 min on a good connection; ok 367 / failed 343 — ~50% failure is normal |
-| job rows / active / board-eligible | 26,062 / 12,540 / 993 |
-| **publicly listed** | **974** (19 hidden as stale: **Ramboll 17**, Fairphone 1, Valcom 1) |
-| companies contributing to the board | 130; top: Shure 103, Cirrus Logic 71, Apple 67, Qualcomm 51, Amazon 45, Bose 42 |
+| cycle | ~26–31 min on a good connection; ok 365 / failed 345 — ~50% failure is normal |
+| job rows / active / board-eligible | 26,784 / 12,661 / 1,007 |
+| **publicly listed** | **1,005** (2 hidden as stale: Fairphone 1, Valcom 1) |
+| companies contributing to the board | 129; top: Shure 104, Cirrus Logic 72, Apple 67, Qualcomm 54, Amazon 44, Bose 42 |
 | health grades (scraped, 2026-09-22) | healthy 96, idle 149, failing 348, furniture 46, silent 32, thin 61; unscraped 680 |
 
 **GN's careers site is offline until early November** (§5): GN Store Nord, Jabra
@@ -371,10 +371,10 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   deactivated 362 rows that had closed meanwhile, none audio) and 2026-09-29
   (1,028), 10-01 and 10-04; failed 10-05, succeeded in a partial run on 10-07,
   failed again in that day's full cycle, on 10-08, 10-09 and 10-12 (the last on a
-  healthy network) — **its 17 board rows have been hidden as stale since 10-09**
-  (`consecutive_failures` 4) and return on its next clean scrape. 9 failures in
-  the last 14 runs: hidden is now its usual state, so this is the most pressing
-  of the timeout cases. Unlike the fallbacks below, Ramboll's
+  healthy network), so its 17 board rows were hidden as stale 10-09 → 10-12; it
+  succeeded on 10-14 (1,112 jobs) and they are listed again. 9 failures in the
+  last 15 runs — expect it to be hidden about half the time until fixed, the
+  most visible of the timeout cases. Unlike the fallbacks below, Ramboll's
   fallback also fails, so it is counted as a real failure. `check_url` running
   alone always succeeds; not rate limiting. Same
   cause as the claimed-ATS timeouts below. Bosch-style query-scoped
@@ -445,6 +445,12 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 - Generic pager `MAX_PAGES = 10` caps Sivantos at ~180–200 of 243;
   `detect_truncation` cannot see generic-pager truncation.
 - HP Inc. wants Bosch-style `?q=` narrowing; needs a harness that sets `ats_type`.
+  **Measured 2026-10-14 why it matters:** HP's Eightfold board is larger than the
+  parser's cap (`MAX_PAGES = 20` → 200 rows), and the 200 returned differ almost
+  entirely between cycles (`sort_by=timestamp` in the seed URL notwithstanding).
+  Each successful cycle deactivates 87–192 HP rows and reactivates a similar
+  number; HP's few board rows flicker on and off. `detect_truncation` should
+  flag it.
 - `COMPANY_CATEGORY_FALLBACK` lacks `Acoustic Consulting & Engineering` and
   `Audio Testing & Measurement` (measured +22 rows, ~6 junk; left undone).
   `sound_design` fires on about one row. `amplif*` is deliberately absent (6 false
@@ -574,6 +580,16 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   `resolve_database_url`, so running from `scraper/` is fine).
 
 ## 9. Log (newest first, keep entries short)
+
+- **2026-10-14, cycle** — healthy network (6 page-load timeouts): 710 companies,
+  365 ok, 1,651 s; deactivated 887, inserted 722, reactivated 286. Board-eligible
+  1,007, **publicly listed 1,005** (from 974): Ramboll succeeded (1,112 jobs) and
+  its 17 rows are back. Churn sources: HP's rotating 200-row Eightfold window
+  (192, §5), McGill clearing fallback rows (124), Rohde & Schwarz swapping back
+  to http (79), Ramboll closures since 10-04 (67). Amplifon recovered; Calrec
+  reached 3 (no board rows); IK Multimedia at 2 (4 board rows hide next
+  failure); Otter.ai (3) and XLN Audio (1) took first failures on "no job links".
+  Zoom's dead URL now times out. Qualcomm got Eightfold 429 again.
 
 - **2026-10-12, cycle** — on a healthy network (3 page-load timeouts): 710
   companies, 367 ok, 1,598 s; deactivated 399, inserted 264, reactivated 141.
