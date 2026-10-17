@@ -12,16 +12,20 @@ the careers pages of seeded companies, a relevance model decides which jobs reac
 the public board, and a SvelteKit site serves them. Branch
 `redesign-type-specimen`.
 
-As of the 2026-10-15 cycle:
+As of the 2026-10-17 cycle:
 
 | | |
 | --- | --- |
-| companies in the seed / DB | 1,412 (745 verified, 30 `source: manual`, 15 `scrape_blocked`) |
-| scrape population (verified, unblocked, has URL) | 732; a cycle scrapes ~710 after shared-URL dedup |
-| cycle | ~26–31 min on a good connection; ok 366 / failed 344 — ~50% failure is normal |
-| job rows / active / board-eligible | 27,061 / 12,696 / 1,004 |
-| **publicly listed** | **998** (6 hidden as stale: IK Multimedia 4, Fairphone 1, Valcom 1). At 2 failures, hiding on the next: Otter.ai 3, XLN Audio 1 |
-| companies contributing to the board | 127; top: Shure 106, Cirrus Logic 71, Apple 68, Qualcomm 55, Amazon 45, Bose 41 |
+| companies in the seed / DB | 1,412 (745 verified, 31 `source: manual`, 15 `scrape_blocked`) |
+| scrape population (verified, unblocked, has URL) | 732; a cycle scrapes ~711 after shared-URL dedup |
+| cycle | ~26–31 min on a good connection; ok 368 / failed 343 — ~50% failure is normal |
+| job rows / active / board-eligible | 27,481 / 12,454 / 1,016 |
+| **publicly listed** | **1,006** (10 hidden as stale: IK Multimedia 4, Otter.ai 3, XLN Audio 1, Fairphone 1, Valcom 1). Ramboll at 2 failures — its 17 hide on the next |
+| companies contributing to the board | 128; top: Shure 106, Cirrus Logic 71, Apple 68, Qualcomm 57, Bose 42, Amazon 42 |
+
+**The seed carries two uncommitted edits:** the owner's deletion of Sound Sleep,
+and Microsoft repointed to Eightfold on 2026-10-17 (owner-approved, §7). Commit
+them together when the owner says so.
 | health grades (scraped, 2026-09-22) | healthy 96, idle 149, failing 348, furniture 46, silent 32, thin 61; unscraped 680 |
 
 **GN's careers site is offline until early November** (§5): GN Store Nord, Jabra
@@ -359,15 +363,15 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   no links, so `check_url` on the new URL finds nothing. Repointing alone will not
   help — it needs the URL change plus parser work for that layout. Its 4 board
   rows (still genuinely open) have been hidden as stale since 2026-10-15.
-- **Otter.ai's careers page stopped rendering job links (2026-10-14).** Two
-  failures, 3 board rows that hide on the next. The jobs live on a public
+- **Otter.ai's careers page stopped rendering job links (2026-10-14).** Its 3
+  board rows have been hidden as stale since 2026-10-17. The jobs live on a public
   Greenhouse board: `check_url https://job-boards.greenhouse.io/otterai` (run
   2026-10-15) → greenhouse success, 25 jobs, **5 board rows** (Senior Applied
   Scientist, Speech; two ML engineers; and two marketing/customer-success roles
   that score 45 at native scope — see §2.5). A ready seed edit, owner's call.
-- **XLN Audio has no openings, and the board still shows one.** Its Teamtailor
-  page says "No open positions right now"; the C++ Developer row stays listed
-  until a third failure hides it, because an empty generic page is a failure,
+- **XLN Audio has no openings.** Its Teamtailor page says "No open positions
+  right now"; the closed C++ Developer row stayed listed until its third failure
+  hid it on 2026-10-17, because an empty generic page is a failure,
   never a trusted empty board. A Teamtailor-specific empty state (it is
   recognisable) could be trusted.
 - **Valcom** has failed three cycles with "no job links found" after five with one
@@ -444,6 +448,14 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   generic stage that times out leaves no line in the cycle log. Rohde & Schwarz's
   http failures above are invisible for this reason; only the `scrape_method`
   recorded in `scrape_log` gives them away.
+- **Eightfold 429s.** Qualcomm has drawn HTTP 429 on four cycles (09-29, 10-14,
+  10-15, 10-17) and Microsoft once (10-17, ~90 s after a single-company scrape of
+  it). Both fell back and Microsoft's fallback put two malformed copies of a board
+  job up until the next clean scrape. A plausible cause, unmeasured: per-job
+  enrichment fetches up to 200 `position_details` at concurrency
+  `min(http_concurrency, 50)` (`eightfold.py:94`), a burst per company. Lowering
+  that is the cheap thing to try first. Don't scrape an Eightfold company by hand
+  right before a cycle.
 - **A navigation-only result is a trusted success** (§4.2) and can deactivate a
   real board (Zoom, 2026-09-29). A result whose every row is non-job furniture
   should count as failed, or at least `partial`. Measure first: 46 companies were
@@ -561,6 +573,7 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 | Harman | Several `extra_careers_urls` queries; no Avature parser needed. |
 | **Knowles Corporation** | ADP **MyJobs**, which the `adp` parser (Workforce Now) does not speak. **Do not build a MyJobs parser:** Knowles yields 0 audio jobs even at native scope, and the only other MyJobs company is Switchcraft (whose URL is HEICO's). The API recipe is in the old log (`DO NOT REPEAT: Knowles`). It has no stored ATS binding; 404s against Workforce Now are discovery guesses. |
 | Meta | Playwright; 400s on job links are bot defence, whitelisted in `check_links`; ceiling 3 board jobs. |
+| Microsoft | Repointed 2026-10-17 (owner-approved, `source: manual`): Eightfold `apply.careers.microsoft.com/careers?query=audio` + `?query=speech`, `ats_type: eightfold`, `ats_slug: microsoft.com`. The old URL was the marketing homepage, which only ever yielded "Hiring tips" and "Contractor roles". The unfiltered board is ~2,490 jobs, far past the 200 cap, so it must stay query-scoped. 6 board rows (Audio and Acoustics research intern, Azure Speech, Voice Agent roles). Custom-domain Eightfold needs the stored binding — `check_url` cannot test it (it builds the company with no `ats_type`); a harness that sets it is the only way to measure first. Xbox Game Studios and Playground Games still point at the old homepage (2 furniture rows, never on the board); unverify or repoint them. |
 | Native Instruments | JS SPA with no ATS link; blocked-list. |
 | Northrop Grumman | Eightfold needs `domain=ngc.com`. |
 | Perkins&Will | Real board on UltiPro (152 jobs, none audio); kept for its acoustics practice. |
@@ -591,6 +604,16 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   `resolve_database_url`, so running from `scraper/` is fine).
 
 ## 9. Log (newest first, keep entries short)
+
+- **2026-10-17** — Microsoft repointed to its Eightfold board at the owner's
+  request, to list "Research Intern - Audio and Acoustics"; measured first with a
+  harness that sets the binding (`check_url` cannot), applied via `seed_file`'s
+  writer after a byte-identical round-trip check, scraped with `--company`: 6
+  board rows. Full cycle, healthy network (5 page-load timeouts): 711 companies,
+  368 ok, 1,608 s; deactivated 815, inserted 371. Microsoft's Eightfold drew a 429
+  during the cycle and its fallback put two malformed duplicates up; a second
+  single-company scrape cleared them. Otter.ai (3) and XLN Audio (1) now hidden;
+  Ramboll at 2. Board-eligible 1,016, publicly listed 1,006.
 
 - **2026-10-15, cycle** — healthy network (9 page-load timeouts): 710 companies,
   366 ok, 1,656 s; deactivated 337, inserted 277, reactivated 95. Board-eligible
