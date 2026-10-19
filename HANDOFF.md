@@ -12,16 +12,16 @@ the careers pages of seeded companies, a relevance model decides which jobs reac
 the public board, and a SvelteKit site serves them. Branch
 `redesign-type-specimen`.
 
-As of the 2026-10-17 cycle:
+As of the 2026-10-19 cycle:
 
 | | |
 | --- | --- |
 | companies in the seed / DB | 1,412 (745 verified, 31 `source: manual`, 15 `scrape_blocked`) |
 | scrape population (verified, unblocked, has URL) | 732; a cycle scrapes ~711 after shared-URL dedup |
 | cycle | ~26–31 min on a good connection; ok 368 / failed 343 — ~50% failure is normal |
-| job rows / active / board-eligible | 27,481 / 12,454 / 1,016 |
-| **publicly listed** | **1,006** (10 hidden as stale: IK Multimedia 4, Otter.ai 3, XLN Audio 1, Fairphone 1, Valcom 1). Ramboll at 2 failures — its 17 hide on the next |
-| companies contributing to the board | 128; top: Shure 106, Cirrus Logic 71, Apple 68, Qualcomm 57, Bose 42, Amazon 42 |
+| job rows / active / board-eligible | 27,672 / 12,354 / 1,005 |
+| **publicly listed** | **978** (27 hidden as stale: Ramboll 17, IK Multimedia 4, Otter.ai 3, XLN Audio 1, Fairphone 1, Valcom 1) |
+| companies contributing to the board | 124; top: Shure 106, Cirrus Logic 71, Apple 67, Qualcomm 54, Bose 41, Amazon 39 |
 
 **The seed carries two uncommitted edits:** the owner's deletion of Sound Sleep,
 and Microsoft repointed to Eightfold on 2026-10-17 (owner-approved, §7). Commit
@@ -387,9 +387,10 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   (1,028), 10-01 and 10-04; failed 10-05, succeeded in a partial run on 10-07,
   failed again in that day's full cycle, on 10-08, 10-09 and 10-12 (the last on a
   healthy network), so its 17 board rows were hidden as stale 10-09 → 10-12; it
-  succeeded on 10-14 (1,112 jobs) and they are listed again. 9 failures in the
-  last 15 runs — expect it to be hidden about half the time until fixed, the
-  most visible of the timeout cases. Unlike the fallbacks below, Ramboll's
+  succeeded on 10-14 (1,112 jobs), then failed 10-15, 10-17 and 10-19, so they
+  are **hidden again since 10-19**. 12 failures in the last 18 runs — hidden
+  more often than not until fixed, the most visible of the timeout cases.
+  Unlike the fallbacks below, Ramboll's
   fallback also fails, so it is counted as a real failure. `check_url` running
   alone always succeeds; not rate limiting. Same
   cause as the claimed-ATS timeouts below. Bosch-style query-scoped
@@ -604,6 +605,15 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   `resolve_database_url`, so running from `scraper/` is fine).
 
 ## 9. Log (newest first, keep entries short)
+
+- **2026-10-19, cycle** — healthy network (3 page-load timeouts): 711 companies,
+  368 ok, 1,657 s; deactivated 344, inserted 191, reactivated 53. Board-eligible
+  1,005, **publicly listed 978**: Ramboll's third straight failure hid its 17
+  rows again. Microsoft and Qualcomm both scraped cleanly on Eightfold (no 429);
+  Microsoft 47 jobs, 6 board rows. Treble Technologies' BambooHR board dropped to
+  only "Open Application" — its 5 roles closed (4 board rows, verified live).
+  Demant's SuccessFactors failed on a ConnectionError rather than its usual
+  timeout. Claimed-ATS fallbacks otherwise as usual.
 
 - **2026-10-17** — Microsoft repointed to its Eightfold board at the owner's
   request, to list "Research Intern - Audio and Acoustics"; measured first with a
