@@ -12,16 +12,21 @@ the careers pages of seeded companies, a relevance model decides which jobs reac
 the public board, and a SvelteKit site serves them. Branch
 `redesign-type-specimen`.
 
-As of the 2026-10-19 cycle:
+As of the 2026-10-23 cycle:
 
 | | |
 | --- | --- |
 | companies in the seed / DB | 1,412 (745 verified, 31 `source: manual`, 15 `scrape_blocked`) |
 | scrape population (verified, unblocked, has URL) | 732; a cycle scrapes ~711 after shared-URL dedup |
-| cycle | ~26–31 min on a good connection; ok 368 / failed 343 — ~50% failure is normal |
-| job rows / active / board-eligible | 27,672 / 12,354 / 1,005 |
-| **publicly listed** | **978** (27 hidden as stale: Ramboll 17, IK Multimedia 4, Otter.ai 3, XLN Audio 1, Fairphone 1, Valcom 1) |
-| companies contributing to the board | 124; top: Shure 106, Cirrus Logic 71, Apple 67, Qualcomm 54, Bose 41, Amazon 39 |
+| cycle | ~26–32 min on a good connection; ok 365 / failed 346 — ~50% failure is normal |
+| job rows / active / board-eligible | 28,848 / 12,250 / 1,007 |
+| **publicly listed** | **980** (27 hidden as stale: Ramboll 17, IK Multimedia 4, Otter.ai 3, XLN Audio 1, Fairphone 1, Valcom 1) |
+| companies contributing to the board | 126; top: Shure 108, Cirrus Logic 71, Apple 66, Qualcomm 60, Bose 43, Amazon 38 |
+
+**Running locally:** the app's preview launcher cannot start the API — macOS
+blocks it from reading `venv/pyvenv.cfg` (`Operation not permitted`; the
+CommandLineTools Python is its own app bundle), though it starts the web server
+fine. Start the API from a terminal as the README says.
 
 **The seed carries two uncommitted edits:** the owner's deletion of Sound Sleep,
 and Microsoft repointed to Eightfold on 2026-10-17 (owner-approved, §7). Commit
@@ -449,14 +454,21 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   generic stage that times out leaves no line in the cycle log. Rohde & Schwarz's
   http failures above are invisible for this reason; only the `scrape_method`
   recorded in `scrape_log` gives them away.
-- **Eightfold 429s.** Qualcomm has drawn HTTP 429 on four cycles (09-29, 10-14,
-  10-15, 10-17) and Microsoft once (10-17, ~90 s after a single-company scrape of
-  it). Both fell back and Microsoft's fallback put two malformed copies of a board
-  job up until the next clean scrape. A plausible cause, unmeasured: per-job
-  enrichment fetches up to 200 `position_details` at concurrency
-  `min(http_concurrency, 50)` (`eightfold.py:94`), a burst per company. Lowering
-  that is the cheap thing to try first. Don't scrape an Eightfold company by hand
-  right before a cycle.
+- **Eightfold 429s — now the most visible board-quality problem.** Qualcomm has
+  drawn HTTP 429 on five cycles (09-29, 10-14, 10-15, 10-17, 10-23) and Microsoft
+  on two (10-17, 10-23). On 10-23 both came within a minute of each other at the
+  start of the cycle with no manual scrape before it — on different hosts
+  (`apply.careers.microsoft.com`, `careers.qualcomm.com`), which points to
+  Eightfold limiting by client IP across tenants. Each 429 falls back to
+  Playwright, whose malformed rows go on the board beside the real ones (on 10-23
+  Microsoft showed 9 board rows for 7 jobs: two copies of the Audio and Acoustics
+  intern, one with the location glued on) until the next clean Eightfold scrape.
+  Likely cause, unmeasured: per-job enrichment fetches up to 200
+  `position_details` at concurrency `min(http_concurrency, 50)` (`eightfold.py:94`),
+  a burst per company, with up to seven Eightfold companies early in the cycle.
+  Cheap fixes to try: a small fixed enrichment concurrency (e.g. 4) and/or a
+  shared Eightfold semaphore; and the claimed-ATS item above would stop the
+  fallback rows. Don't scrape an Eightfold company by hand right before a cycle.
 - **A navigation-only result is a trusted success** (§4.2) and can deactivate a
   real board (Zoom, 2026-09-29). A result whose every row is non-job furniture
   should count as failed, or at least `partial`. Measure first: 46 companies were
@@ -605,6 +617,15 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   `resolve_database_url`, so running from `scraper/` is fine).
 
 ## 9. Log (newest first, keep entries short)
+
+- **2026-10-23, cycle** — servers relaunched first (nothing held 8000/5173; both
+  had stopped; API started from a terminal, see §1). Healthy network (16
+  page-load timeouts; the one connection error was GAC Group's dead SSL domain):
+  711 companies, 365 ok, 1,939 s; deactivated 1,429, inserted 1,176 — mostly
+  Analog Devices' first Workday success since 09-24 (522 out, 290 in), with
+  McGill and Nissan also recovering. Board-eligible 1,007, publicly listed 980.
+  Microsoft and Qualcomm both drew Eightfold 429 within a minute (§5) and fell
+  back; Ramboll failed a fourth straight time and stays hidden.
 
 - **2026-10-19, cycle** — healthy network (3 page-load timeouts): 711 companies,
   368 ok, 1,657 s; deactivated 344, inserted 191, reactivated 53. Board-eligible
