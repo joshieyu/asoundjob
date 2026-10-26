@@ -12,15 +12,15 @@ the careers pages of seeded companies, a relevance model decides which jobs reac
 the public board, and a SvelteKit site serves them. Branch
 `redesign-type-specimen`.
 
-As of the 2026-10-23 cycle:
+As of the 2026-10-26 cycle (board reduced by an iCIMS bug — see §5):
 
 | | |
 | --- | --- |
 | companies in the seed / DB | 1,412 (745 verified, 31 `source: manual`, 15 `scrape_blocked`) |
 | scrape population (verified, unblocked, has URL) | 732; a cycle scrapes ~711 after shared-URL dedup |
 | cycle | ~26–32 min on a good connection; ok 365 / failed 346 — ~50% failure is normal |
-| job rows / active / board-eligible | 28,848 / 12,250 / 1,007 |
-| **publicly listed** | **980** (27 hidden as stale: Ramboll 17, IK Multimedia 4, Otter.ai 3, XLN Audio 1, Fairphone 1, Valcom 1) |
+| job rows / active / board-eligible | 29,351 / 12,164 / 913 |
+| **publicly listed** | **903** (10 hidden as stale: IK Multimedia 4, Otter.ai 3, XLN Audio 1, Fairphone 1, Valcom 1) |
 | companies contributing to the board | 126; top: Shure 108, Cirrus Logic 71, Apple 66, Qualcomm 60, Bose 43, Amazon 38 |
 
 **Running locally:** the app's preview launcher cannot start the API — macOS
@@ -408,6 +408,15 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   Propellerhead. Makeshift Software unadded (GoHire's title shape needs cleaning).
 
 ### Scraper and relevance
+- **URGENT — the iCIMS parser stops after a short first page and wipes the
+  board (2026-10-26).** `_fetch_all` breaks when a page has fewer than
+  `PAGE_SIZE` (20) rows (`scrapers/ats/icims.py:84`). Shure's page 0 showed 19
+  that day (live pages: 19, 20, 20, 20, 20, 20, 13 — ~132 jobs), so the scrape
+  stopped at 19, was trusted as complete (`trust_empty`, not partial), and
+  **deactivated 94 of Shure's board rows that are still open**. Fix: drop the
+  short-page break and stop only on an empty page or no new ids (one extra
+  request per board), with a test using a 19-row first page. Until fixed, any
+  iCIMS board whose first page is short loses everything past it.
 - **Claimed-ATS timeouts under cycle load — the largest scraper problem found so
   far.** Every cycle 7–8 large ATS boards exceed the 90 s `per_company_timeout`
   and fall back to the generic scrapers with deactivation suppressed:
@@ -617,6 +626,13 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   `resolve_database_url`, so running from `scraper/` is fine).
 
 ## 9. Log (newest first, keep entries short)
+
+- **2026-10-26, cycle** — healthy network (0 page-load timeouts): 711 companies,
+  365 ok, 1,608 s; deactivated 809, inserted 503. **Board-eligible 913, publicly
+  listed 903 (from 980)**: Shure's iCIMS scrape stopped after a 19-row first page
+  and deactivated 94 open board rows (§5, urgent). Ramboll succeeded (1,168) and
+  its 17 rows are back. Microsoft and Qualcomm drew Eightfold 429 again
+  (Microsoft 10 board rows for 7 jobs). Rohde & Schwarz swapped back to http.
 
 - **2026-10-23, cycle** — servers relaunched first (nothing held 8000/5173; both
   had stopped; API started from a terminal, see §1). Healthy network (16
