@@ -12,15 +12,15 @@ the careers pages of seeded companies, a relevance model decides which jobs reac
 the public board, and a SvelteKit site serves them. Branch
 `redesign-type-specimen`.
 
-As of the 2026-10-26 cycle (board reduced by an iCIMS bug — see §5):
+As of the 2026-10-28 cycle (board reduced by an iCIMS bug — see §5):
 
 | | |
 | --- | --- |
 | companies in the seed / DB | 1,412 (745 verified, 31 `source: manual`, 15 `scrape_blocked`) |
 | scrape population (verified, unblocked, has URL) | 732; a cycle scrapes ~711 after shared-URL dedup |
 | cycle | ~26–32 min on a good connection; ok 365 / failed 346 — ~50% failure is normal |
-| job rows / active / board-eligible | 29,351 / 12,164 / 913 |
-| **publicly listed** | **903** (10 hidden as stale: IK Multimedia 4, Otter.ai 3, XLN Audio 1, Fairphone 1, Valcom 1) |
+| job rows / active / board-eligible | 29,962 / 12,235 / 905 |
+| **publicly listed** | **895** (10 hidden as stale: IK Multimedia 4, Otter.ai 3, XLN Audio 1, Fairphone 1, Valcom 1) |
 | companies contributing to the board | 126; top: Shure 108, Cirrus Logic 71, Apple 66, Qualcomm 60, Bose 43, Amazon 38 |
 
 **Running locally:** the app's preview launcher cannot start the API — macOS
@@ -626,6 +626,13 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   `resolve_database_url`, so running from `scraper/` is fine).
 
 ## 9. Log (newest first, keep entries short)
+
+- **2026-10-28, cycle** — healthy network (0 page-load timeouts): 711 companies,
+  360 ok, 1,709 s; deactivated 715, inserted 611. Board-eligible 905, publicly
+  listed 895. Shure's first iCIMS page still shows 19, so it again stopped at 19
+  (still unfixed, §5). Microsoft's Eightfold succeeded and cleared its fallback
+  duplicates (6 board rows); Qualcomm drew 429 a sixth time. Ramboll succeeded
+  again (1,128). Rohde & Schwarz swapped (5 board rows out).
 
 - **2026-10-26, cycle** — healthy network (0 page-load timeouts): 711 companies,
   365 ok, 1,608 s; deactivated 809, inserted 503. **Board-eligible 913, publicly
