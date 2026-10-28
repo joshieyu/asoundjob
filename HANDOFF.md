@@ -631,7 +631,7 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   360 ok, 1,709 s; deactivated 715, inserted 611. Board-eligible 905, publicly
   listed 895. Shure's first iCIMS page still shows 19, so it again stopped at 19
   (still unfixed, §5). Microsoft's Eightfold succeeded and cleared its fallback
-  duplicates (6 board rows); Qualcomm drew 429 a sixth time. Ramboll succeeded
+  duplicates (7 board rows, now including the Germany audio and speech intern); Qualcomm drew 429 a sixth time. Ramboll succeeded
   again (1,128). Rohde & Schwarz swapped (5 board rows out).
 
 - **2026-10-26, cycle** — healthy network (0 page-load timeouts): 711 companies,
