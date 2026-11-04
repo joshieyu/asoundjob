@@ -194,6 +194,26 @@ class TestIcimsFetchJobs(unittest.TestCase):
         self.assertEqual(enriched.description, "<p>Work on DSP pipelines.</p>")
         self.assertEqual(enriched.location, "Chicago, IL")
 
+    def test_fetch_jobs_continues_past_short_page(self) -> None:
+        def listing(ids: range) -> str:
+            return "<html><body>" + "".join(
+                f'<a href="https://careershub-shure.icims.com/jobs/{i}/role-{i}/job">Role {i}</a>'
+                for i in ids
+            ) + "</body></html>"
+
+        pages = {0: listing(range(19)), 1: listing(range(100, 120)), 2: listing(range(200, 213))}
+
+        def fake_fetch_html(url: str, settings: object) -> str:
+            for index, html in pages.items():
+                if f"pr={index}" in url and "jobs/search" in url:
+                    return html
+            return "<html><body>no jobs were found</body></html>"
+
+        with patch("scraper.scrapers.ats.icims.fetch_html", side_effect=fake_fetch_html):
+            jobs = asyncio.run(self.scraper.fetch_jobs(self.company))
+
+        self.assertEqual(len(jobs), 52)
+
     def test_fetch_jobs_empty_board_returns_empty_list(self) -> None:
         with patch(
             "scraper.scrapers.ats.icims.fetch_html", side_effect=lambda url, settings: NO_JOBS_HTML

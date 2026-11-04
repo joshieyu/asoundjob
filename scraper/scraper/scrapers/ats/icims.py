@@ -81,8 +81,6 @@ class IcimsScraper(BaseScraper):
                 break
             seen_ids.update(j.external_id for j in new_jobs if j.external_id)
             jobs.extend(new_jobs)
-            if len(page_jobs) < PAGE_SIZE:
-                break
         return jobs
 
     async def _fetch_descriptions(self, jobs: list[RawJob]) -> None:
