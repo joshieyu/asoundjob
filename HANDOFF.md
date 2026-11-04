@@ -12,16 +12,16 @@ the careers pages of seeded companies, a relevance model decides which jobs reac
 the public board, and a SvelteKit site serves them. Branch
 `redesign-type-specimen`.
 
-As of the 2026-10-28 cycle (board reduced by an iCIMS bug — see §5):
+As of the 2026-11-04 cycle (iCIMS short-page bug fixed, Shure restored):
 
 | | |
 | --- | --- |
 | companies in the seed / DB | 1,412 (745 verified, 31 `source: manual`, 15 `scrape_blocked`) |
 | scrape population (verified, unblocked, has URL) | 732; a cycle scrapes ~711 after shared-URL dedup |
-| cycle | ~26–32 min on a good connection; ok 365 / failed 346 — ~50% failure is normal |
-| job rows / active / board-eligible | 29,962 / 12,235 / 905 |
-| **publicly listed** | **895** (10 hidden as stale: IK Multimedia 4, Otter.ai 3, XLN Audio 1, Fairphone 1, Valcom 1) |
-| companies contributing to the board | 126; top: Shure 108, Cirrus Logic 71, Apple 66, Qualcomm 60, Bose 43, Amazon 38 |
+| cycle | ~26–36 min on a good connection; ok 360 / failed 351 — ~50% failure is normal |
+| job rows / active / board-eligible | 30,869 / 12,482 / 996 |
+| **publicly listed** | **986** (10 hidden as stale: IK Multimedia 4, Otter.ai 3, XLN Audio 1, Fairphone 1, Valcom 1) |
+| companies contributing to the board | 129; top: Shure 104, Apple 77, Cirrus Logic 69, Qualcomm 52, Bose 51, Amazon 39 |
 
 **Running locally:** the app's preview launcher cannot start the API — macOS
 blocks it from reading `venv/pyvenv.cfg` (`Operation not permitted`; the
@@ -408,15 +408,12 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   Propellerhead. Makeshift Software unadded (GoHire's title shape needs cleaning).
 
 ### Scraper and relevance
-- **URGENT — the iCIMS parser stops after a short first page and wipes the
-  board (2026-10-26).** `_fetch_all` breaks when a page has fewer than
-  `PAGE_SIZE` (20) rows (`scrapers/ats/icims.py:84`). Shure's page 0 showed 19
-  that day (live pages: 19, 20, 20, 20, 20, 20, 13 — ~132 jobs), so the scrape
-  stopped at 19, was trusted as complete (`trust_empty`, not partial), and
-  **deactivated 94 of Shure's board rows that are still open**. Fix: drop the
-  short-page break and stop only on an empty page or no new ids (one extra
-  request per board), with a test using a 19-row first page. Until fixed, any
-  iCIMS board whose first page is short loses everything past it.
+- **Fixed 2026-11-04 (`30c7b15`) — iCIMS stopped after a short first page.**
+  `_fetch_all` broke on any page under 20 rows; Shure's page 0 shows 19 of ~130,
+  so 2026-10-26 and 10-28 were trusted at 19 and 94 open board rows were
+  deactivated. Pagination now stops only on an empty page or no new ids. A
+  Shure-only scrape found 126 and reactivated 103 (104 board rows). Note
+  `MAX_DETAIL_FETCHES = 100`: Shure's last ~26 jobs get no description.
 - **Claimed-ATS timeouts under cycle load — the largest scraper problem found so
   far.** Every cycle 7–8 large ATS boards exceed the 90 s `per_company_timeout`
   and fall back to the generic scrapers with deactivation suppressed:
@@ -626,6 +623,19 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   `resolve_database_url`, so running from `scraper/` is fine).
 
 ## 9. Log (newest first, keep entries short)
+
+- **2026-11-04, iCIMS fix + cycle** — fixed the iCIMS short-page break (§5) and
+  re-scraped Shure (126 found, 104 board rows). Cycle: healthy network (3
+  page-load timeouts), 711 companies, 360 ok, 2,175 s (slower; part is iCIMS now
+  paging and enriching fully); deactivated 1,007, inserted 891. **Board-eligible
+  996, publicly listed 986 (from 895).** Microsoft drew an Eightfold 429 and
+  left fallback duplicates again; a Microsoft-only re-scrape ~40 min later was
+  clean (52 found, 9 board rows). Qualcomm succeeded (279; 52 board rows, window
+  rotated: 14 out, 5 in). GN back (26 found, 9 board rows). Ramboll failed
+  (SmartRecruiters timeout); HP timed out to fallback. Sonnox and Novation DJ
+  (12 rows) were duplicates of Focusrite's shared Workable board and cleared;
+  Focusrite keeps 15. Both dev servers had stopped (their terminal tabs were
+  closed); restarted in new tabs.
 
 - **2026-10-28, cycle** — healthy network (0 page-load timeouts): 711 companies,
   360 ok, 1,709 s; deactivated 715, inserted 611. Board-eligible 905, publicly
