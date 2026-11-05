@@ -12,16 +12,16 @@ the careers pages of seeded companies, a relevance model decides which jobs reac
 the public board, and a SvelteKit site serves them. Branch
 `redesign-type-specimen`.
 
-As of the 2026-11-04 cycle (iCIMS short-page bug fixed, Shure restored):
+As of the 2026-11-05 cycle:
 
 | | |
 | --- | --- |
 | companies in the seed / DB | 1,412 (745 verified, 31 `source: manual`, 15 `scrape_blocked`) |
-| scrape population (verified, unblocked, has URL) | 732; a cycle scrapes ~711 after shared-URL dedup |
-| cycle | ~26–36 min on a good connection; ok 360 / failed 351 — ~50% failure is normal |
-| job rows / active / board-eligible | 30,869 / 12,482 / 996 |
-| **publicly listed** | **986** (10 hidden as stale: IK Multimedia 4, Otter.ai 3, XLN Audio 1, Fairphone 1, Valcom 1) |
-| companies contributing to the board | 129; top: Shure 104, Apple 77, Cirrus Logic 69, Qualcomm 52, Bose 51, Amazon 39 |
+| scrape population (verified, unblocked, has URL) | 738; a cycle scrapes ~717 after shared-URL dedup |
+| cycle | ~26–36 min on a good connection; ok 369 / failed 348 — ~50% failure is normal |
+| job rows / active / board-eligible | 32,259 / ~12,850 / 1,029 |
+| **publicly listed** | **1,019** (10 hidden as stale: IK Multimedia 4, Otter.ai 3, XLN Audio 1, Fairphone 1, Valcom 1) |
+| companies contributing to the board | 136; top: Shure 104, Apple 74, Cirrus Logic 69, Bose 58, Qualcomm 52, Amazon 41 |
 
 **Running locally:** the app's preview launcher cannot start the API — macOS
 blocks it from reading `venv/pyvenv.cfg` (`Operation not permitted`; the
@@ -635,6 +635,18 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   `resolve_database_url`, so running from `scraper/` is fine).
 
 ## 9. Log (newest first, keep entries short)
+
+- **2026-11-05, cycle** — 717 companies (the six new ones included), 369 ok,
+  1,962 s; 7 page-load timeouts; deactivated 1,247, inserted 630. The owner
+  closed the laptop lid from ~13:09 to 13:42: macOS dark-woke for under a minute
+  at a time, so the cycle crawled but did not fail en masse (failed scrapes never
+  deactivate). Keep the lid open during a cycle. Microsoft and Qualcomm both drew
+  Eightfold 429s in the cycle's first two minutes and left fallback rows;
+  company-only re-scrapes right after the cycle were clean (Microsoft 9 board
+  rows, Qualcomm 52). **Board-eligible 1,029, publicly listed 1,019 (from
+  1,012).** Bose churned (15 in, 10 out). All six owner pins still listed; the
+  new companies held (Syntiant 8, Holoplot 7, Muse 4, JAM 2). Sonnox/Novation's
+  "lost 12" is the `updated_at` overcount trap — those rows were already inactive.
 
 - **2026-11-04, owner's ten listings** — all ten publicly listed (board 1,012).
   Four scored on once their companies existed (Syntiant, BandLab already there,
