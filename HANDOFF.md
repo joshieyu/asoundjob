@@ -28,11 +28,7 @@ blocks it from reading `venv/pyvenv.cfg` (`Operation not permitted`; the
 CommandLineTools Python is its own app bundle), though it starts the web server
 fine. Start the API from a terminal as the README says.
 
-**The seed carries uncommitted edits:** the owner's deletion of Sound Sleep,
-Microsoft repointed to Eightfold on 2026-10-17, and (2026-11-04, owner-requested)
-six new companies — Syntiant, Holoplot, Muse Group, JAM Industries, ai-coustics,
-Anthropic — plus Splice repointed to Greenhouse (§7). Commit them together when
-the owner says so.
+**The seed has no uncommitted edits** (all owner-approved edits committed 2026-11-04).
 
 **Six owner-pinned jobs live only in the DB** (`is_audio_related_override = True`,
 2026-11-04): Muse Group CPO (36373), L-Acoustics Exec. Director of Product
