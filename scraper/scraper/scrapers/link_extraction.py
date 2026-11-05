@@ -16,7 +16,10 @@ JOB_HINT = re.compile(
     re.IGNORECASE,
 )
 
-SLUG_BOARD_HOSTS = frozenset({"jobs.world.luccasoftware.com"})
+SLUG_BOARD_HOSTS = frozenset({"jobs.world.luccasoftware.com", "join.com"})
+
+INNER_HEADING_TITLE_HOSTS = frozenset({"join.com"})
+INNER_HEADING_TITLE_SUFFIXES = (".jobs.personio.de", ".jobs.personio.com")
 
 NON_JOB_URL = re.compile(
     r"(mailto:|tel:|javascript:|^#$|^$)",
@@ -916,6 +919,13 @@ def is_slug_board_host(netloc: str) -> bool:
     return host in SLUG_BOARD_HOSTS
 
 
+def prefers_inner_heading_title(netloc: str) -> bool:
+    host = netloc.strip().lower()
+    if host.startswith("www."):
+        host = host[4:]
+    return host in INNER_HEADING_TITLE_HOSTS or host.endswith(INNER_HEADING_TITLE_SUFFIXES)
+
+
 def resolve_document_base(soup: BeautifulSoup, base_url: str) -> str:
     tag = soup.find("base", href=True)
     if tag is None:
@@ -938,6 +948,7 @@ def extract_job_links(html: str, base_url: str) -> list[RawJob]:
     base_netloc = base_parsed.netloc.lower()
     base_has_job_hint = bool(JOB_HINT.search(base_path))
     slug_board = is_slug_board_host(base_netloc)
+    inner_heading_titles = prefers_inner_heading_title(base_netloc)
     named_anchors = {
         _clean_text(tag.get("name"))
         for tag in soup.find_all("a", attrs={"name": True})
@@ -982,7 +993,11 @@ def extract_job_links(html: str, base_url: str) -> list[RawJob]:
             or len(candidate_title) > MAX_TITLE_LEN
             or is_furniture_title(candidate_title)
         )
-        if flat_unusable:
+        inner_heading = _heading_text(anchor) if inner_heading_titles else None
+        if inner_heading:
+            candidate_title, job_type = _clean_job_title_and_type(inner_heading)
+            came_from_structure = True
+        elif flat_unusable:
             structural_raw = _structural_title(anchor)
             if structural_raw:
                 candidate_title, job_type = _clean_job_title_and_type(structural_raw)

@@ -28,9 +28,18 @@ blocks it from reading `venv/pyvenv.cfg` (`Operation not permitted`; the
 CommandLineTools Python is its own app bundle), though it starts the web server
 fine. Start the API from a terminal as the README says.
 
-**The seed carries two uncommitted edits:** the owner's deletion of Sound Sleep,
-and Microsoft repointed to Eightfold on 2026-10-17 (owner-approved, §7). Commit
-them together when the owner says so.
+**The seed carries uncommitted edits:** the owner's deletion of Sound Sleep,
+Microsoft repointed to Eightfold on 2026-10-17, and (2026-11-04, owner-requested)
+six new companies — Syntiant, Holoplot, Muse Group, JAM Industries, ai-coustics,
+Anthropic — plus Splice repointed to Greenhouse (§7). Commit them together when
+the owner says so.
+
+**Six owner-pinned jobs live only in the DB** (`is_audio_related_override = True`,
+2026-11-04): Muse Group CPO (36373), L-Acoustics Exec. Director of Product
+Management (12328), Splice Senior Brand Marketing Manager (37097), DistroKid Growth
+PM (834), ai-coustics Head of Marketing (36410), Anthropic AV Production Specialist
+(36483). The owner wanted these non-engineering roles listed; the scorer holds
+them back (15–35). There is no admin UI to pin a job on, and a fresh DB loses them.
 | health grades (scraped, 2026-09-22) | healthy 96, idle 149, failing 348, furniture 46, silent 32, thin 61; unscraped 680 |
 
 **GN's careers site is offline until early November** (§5): GN Store Nord, Jabra
@@ -592,6 +601,13 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 | Harman | Several `extra_careers_urls` queries; no Avature parser needed. |
 | **Knowles Corporation** | ADP **MyJobs**, which the `adp` parser (Workforce Now) does not speak. **Do not build a MyJobs parser:** Knowles yields 0 audio jobs even at native scope, and the only other MyJobs company is Switchcraft (whose URL is HEICO's). The API recipe is in the old log (`DO NOT REPEAT: Knowles`). It has no stored ATS binding; 404s against Workforce Now are discovery guesses. |
 | Meta | Playwright; 400s on job links are bot defence, whitelisted in `check_links`; ceiling 3 board jobs. |
+| Anthropic | Added 2026-11-04 at the owner's request for one AV Production Specialist role (pinned). Greenhouse, 682 jobs; category `Consumer Electronics & Tech` so scope is partial — native scope put 22 rows on the board including Customer Success Managers. 0 scored board rows; the AV Engineer roles score 60, under partial's 65. |
+| ai-coustics | Added 2026-11-04. `join.com/companies/ai-coustics`; join.com job URLs are bare slugs, so `join.com` is in `SLUG_BOARD_HOSTS` and `INNER_HEADING_TITLE_HOSTS` (card text otherwise carries location and department). 5 jobs, none scored onto the board; Head of Marketing pinned. |
+| Holoplot | Added 2026-11-04. Personio `holoplot.jobs.personio.de`, generic http; Personio hosts read the title from the card's `<h3>` (`INNER_HEADING_TITLE_SUFFIXES`) — before that the title carried "Berlin Full-time Permanent employee". Personio also serves `/xml` if a dedicated parser is ever wanted. 7 of 8 on the board. |
+| JAM Industries | Added 2026-11-04 (Canadian distributor; owns Ashly Audio). Dayforce `jobs.dayforcehcm.com/en-US/jam/CANDIDATEPORTAL`, Playwright only (http finds no links). Partial scope; 2 board rows (Ashly DSP and Embedded engineers). |
+| Muse Group | Added 2026-11-04 (MuseScore, Audacity, Ultimate Guitar). `www.mu.se/positions`, http, 26 jobs; 1 scored board row (Full Stack Producer, Audio ML) plus the pinned CPO. |
+| Syntiant | Added 2026-11-04. Workable `syntiant`, `Audio Semiconductors`; 8 of 12 on the board. |
+| Splice | Repointed 2026-11-04 from `splice.com/careers` (22 consecutive failures) to `job-boards.greenhouse.io/splice`; 6 jobs, none scored on, Senior Brand Marketing Manager pinned. |
 | Microsoft | Repointed 2026-10-17 (owner-approved, `source: manual`): Eightfold `apply.careers.microsoft.com/careers?query=audio` + `?query=speech`, `ats_type: eightfold`, `ats_slug: microsoft.com`. The old URL was the marketing homepage, which only ever yielded "Hiring tips" and "Contractor roles". The unfiltered board is ~2,490 jobs, far past the 200 cap, so it must stay query-scoped. 6 board rows (Audio and Acoustics research intern, Azure Speech, Voice Agent roles). Custom-domain Eightfold needs the stored binding — `check_url` cannot test it (it builds the company with no `ats_type`); a harness that sets it is the only way to measure first. Xbox Game Studios and Playground Games still point at the old homepage (2 furniture rows, never on the board); unverify or repoint them. |
 | Native Instruments | JS SPA with no ATS link; blocked-list. |
 | Northrop Grumman | Eightfold needs `domain=ngc.com`. |
@@ -623,6 +639,11 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   `resolve_database_url`, so running from `scraper/` is fine).
 
 ## 9. Log (newest first, keep entries short)
+
+- **2026-11-04, owner's ten listings** — all ten publicly listed (board 1,012).
+  Four scored on once their companies existed (Syntiant, BandLab already there,
+  Holoplot, JAM/Ashly); six pinned in the DB (§1). Added six companies, repointed
+  Splice. join.com and Personio title fix in `link_extraction.py`.
 
 - **2026-11-04, iCIMS fix + cycle** — fixed the iCIMS short-page break (§5) and
   re-scraped Shure (126 found, 104 board rows). Cycle: healthy network (3

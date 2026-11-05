@@ -15,6 +15,7 @@ from scraper.scrapers.link_extraction import (
     extract_jsonld_jobs,
     is_furniture_title,
     is_slug_board_host,
+    prefers_inner_heading_title,
 )
 
 
@@ -1293,6 +1294,39 @@ class TestSlugBoardHosts(unittest.TestCase):
         self.assertTrue(is_slug_board_host("WWW.Jobs.World.Luccasoftware.com"))
         self.assertFalse(is_slug_board_host("evil-jobs.world.luccasoftware.com.attacker.net"))
         self.assertFalse(is_slug_board_host("luccasoftware.com"))
+
+
+
+class TestInnerHeadingTitleHosts(unittest.TestCase):
+    JOIN_HTML = """
+    <a href="https://join.com/companies/ai-coustics/16892597-head-of-marketing">
+      <div><h3>Head of Marketing / Marketing Lead</h3></div>
+      <div>Berlin, Germany</div><div>Employee</div><div>Marketing Manager</div>
+    </a>
+    """
+    PERSONIO_HTML = """
+    <a href="/job/2856994"><div><h3>Senior Research Engineer (f/m/d)</h3>
+      <div>Berlin</div><div>Full-time</div><div>Permanent employee</div></div></a>
+    """
+
+    def test_join_bare_slug_card_uses_its_heading(self) -> None:
+        jobs = extract_job_links(self.JOIN_HTML, "https://join.com/companies/ai-coustics")
+        self.assertEqual([job.title for job in jobs], ["Head of Marketing / Marketing Lead"])
+
+    def test_personio_card_uses_its_heading(self) -> None:
+        jobs = extract_job_links(self.PERSONIO_HTML, "https://holoplot.jobs.personio.de/")
+        self.assertEqual([job.title for job in jobs], ["Senior Research Engineer (f/m/d)"])
+
+    def test_other_hosts_keep_the_flat_text(self) -> None:
+        jobs = extract_job_links(self.PERSONIO_HTML, "https://example.com/careers")
+        self.assertTrue(jobs)
+        self.assertNotEqual(jobs[0].title, "Senior Research Engineer (f/m/d)")
+
+    def test_host_matching(self) -> None:
+        self.assertTrue(prefers_inner_heading_title("join.com"))
+        self.assertTrue(prefers_inner_heading_title("holoplot.jobs.personio.de"))
+        self.assertFalse(prefers_inner_heading_title("join.com.attacker.net"))
+        self.assertFalse(prefers_inner_heading_title("jobs.personio.de.evil.net"))
 
 
 if __name__ == "__main__":
