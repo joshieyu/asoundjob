@@ -296,6 +296,14 @@
     "scrape_method": "playwright"
   },
   {
+    "name": "ai-coustics",
+    "careers_url": "https://join.com/companies/ai-coustics",
+    "category": "AI/ML Audio",
+    "verified": true,
+    "source": "manual",
+    "scrape_method": "http"
+  },
+  {
     "name": "Aiphone",
     "careers_url": "https://www.aiphone.com/careers/",
     "category": "Professional Audio & Live Sound",
@@ -628,6 +636,14 @@
     "open_application": true,
     "source": "auto",
     "scrape_method": "playwright"
+  },
+  {
+    "name": "Anthropic",
+    "careers_url": "https://job-boards.greenhouse.io/anthropic",
+    "category": "Consumer Electronics & Tech",
+    "verified": true,
+    "source": "manual",
+    "scrape_method": "http"
   },
   {
     "name": "API (plugins)",
@@ -4726,6 +4742,14 @@
     "scrape_method": "http"
   },
   {
+    "name": "Holoplot",
+    "careers_url": "https://holoplot.jobs.personio.de/",
+    "category": "Professional Audio & Live Sound",
+    "verified": true,
+    "source": "manual",
+    "scrape_method": "http"
+  },
+  {
     "name": "Honda",
     "careers_url": "https://careers.honda.com/us/en",
     "category": "Automotive OEMs",
@@ -5128,6 +5152,14 @@
     "category": "Automotive OEMs",
     "verified": true,
     "source": "auto",
+    "scrape_method": "playwright"
+  },
+  {
+    "name": "JAM Industries",
+    "careers_url": "https://jobs.dayforcehcm.com/en-US/jam/CANDIDATEPORTAL",
+    "category": "Audio Retailers & Distributors",
+    "verified": true,
+    "source": "manual",
     "scrape_method": "playwright"
   },
   {
@@ -6342,11 +6374,16 @@
   },
   {
     "name": "Microsoft",
-    "careers_url": "https://careers.microsoft.com/v2/global/en/home.html",
+    "careers_url": "https://apply.careers.microsoft.com/careers?query=audio",
     "category": "Consumer Electronics & Tech",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "http",
+    "extra_careers_urls": [
+      "https://apply.careers.microsoft.com/careers?query=speech"
+    ],
+    "ats_type": "eightfold",
+    "ats_slug": "microsoft.com"
   },
   {
     "name": "Middle Atlantic",
@@ -6613,6 +6650,14 @@
     "verified": true,
     "source": "auto",
     "scrape_method": "playwright"
+  },
+  {
+    "name": "Muse Group",
+    "careers_url": "https://www.mu.se/positions",
+    "category": "DAW & Music Production Software",
+    "verified": true,
+    "source": "manual",
+    "scrape_method": "http"
   },
   {
     "name": "Musi",
@@ -9261,14 +9306,6 @@
     "scrape_method": "playwright"
   },
   {
-    "name": "Sound Sleep",
-    "careers_url": "https://soundsleep.com/careers/",
-    "category": "Audio Health & Wellness",
-    "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
-  },
-  {
     "name": "Sound Yeti",
     "careers_url": "https://www.soundyeti.com/careers",
     "category": "Audio Plugins & Virtual Instruments",
@@ -9528,11 +9565,11 @@
   },
   {
     "name": "Splice",
-    "careers_url": "https://splice.com/careers",
+    "careers_url": "https://job-boards.greenhouse.io/splice",
     "category": "DAW & Music Production Software",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "http"
   },
   {
     "name": "Sports Interactive",
@@ -9863,6 +9900,14 @@
     "category": "Voice & Speech Technology",
     "verified": false,
     "source": "auto",
+    "scrape_method": "http"
+  },
+  {
+    "name": "Syntiant",
+    "careers_url": "https://apply.workable.com/syntiant/",
+    "category": "Audio Semiconductors",
+    "verified": true,
+    "source": "manual",
     "scrape_method": "http"
   },
   {
