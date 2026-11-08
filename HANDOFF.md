@@ -12,15 +12,15 @@ the careers pages of seeded companies, a relevance model decides which jobs reac
 the public board, and a SvelteKit site serves them. Branch
 `redesign-type-specimen`.
 
-As of the 2026-11-05 cycle:
+As of the 2026-11-08 cycle (plus OpenAI added and Meta's pager walked after it):
 
 | | |
 | --- | --- |
 | companies in the seed / DB | 1,412 (745 verified, 31 `source: manual`, 15 `scrape_blocked`) |
 | scrape population (verified, unblocked, has URL) | 738; a cycle scrapes ~717 after shared-URL dedup |
-| cycle | ~26–36 min on a good connection; ok 369 / failed 348 — ~50% failure is normal |
-| job rows / active / board-eligible | 32,259 / ~12,850 / 1,029 |
-| **publicly listed** | **1,019** (10 hidden as stale: IK Multimedia 4, Otter.ai 3, XLN Audio 1, Fairphone 1, Valcom 1) |
+| cycle | ~26–36 min on a good connection; ok 368 / failed 349 — ~50% failure is normal |
+| job rows / active / board-eligible | ~33,500 / ~13,750 / 1,026 |
+| **publicly listed** | **999** (27 hidden as stale: Ramboll 17 — SmartRecruiters timeouts, 3 in a row — IK Multimedia 4, Otter.ai 3, XLN Audio 1, Fairphone 1, Valcom 1) |
 | companies contributing to the board | 136; top: Shure 104, Apple 74, Cirrus Logic 69, Bose 58, Qualcomm 52, Amazon 41 |
 
 **Running locally:** the app's preview launcher cannot start the API — macOS
@@ -28,7 +28,7 @@ blocks it from reading `venv/pyvenv.cfg` (`Operation not permitted`; the
 CommandLineTools Python is its own app bundle), though it starts the web server
 fine. Start the API from a terminal as the README says.
 
-**The seed has no uncommitted edits** (all owner-approved edits committed 2026-11-04).
+**The seed carries uncommitted edits (2026-11-08, owner-requested):** OpenAI added and Meta repointed to two `jobsearch` queries (§7). Commit when the owner says.
 
 **Six owner-pinned jobs live only in the DB** (`is_audio_related_override = True`,
 2026-11-04): Muse Group CPO (36373), L-Acoustics Exec. Director of Product
@@ -535,8 +535,11 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 - **Blocked means blocked:** Tesla (Akamai), Neural DSP (Cloudflare behind a
   JS-set iframe), Frontier Audio and Cinder (Wellfound/Compas behind Cloudflare),
   Allen & Heath, Sound Devices, Synaptics (edge). Do not build evasion.
-- **Meta rate-limits hard** (~8 probes in 20 min → a 429 for ~2.5 h). Its board
-  ceiling is 3 audio jobs; a GraphQL parser was measured and not worth it.
+- **Meta rate-limits hard** (~8 probes in 20 min → a 429 for ~2.5 h, measured in
+  an earlier session). Since 2026-11-08 a Meta scrape is ~12 page loads (8 pages of
+  `q=audio`, 4 of `q=sound`); ~25 loads in 10 min that day drew no 429. Watch
+  `scrape_log` for Meta 429s; if they start, drop the `sound` query first. A 429 on
+  a later page now fails the scrape (no deactivation) rather than truncating it.
 - **A vendor name in markup is not evidence of that vendor's behaviour**
   ("cloudflare", "captcha" in a script tag).
 - **Follow-one-link-to-find-an-ATS was measured and rejected** (~2 boards from 125
@@ -596,7 +599,8 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 | Google | `?q=audio`, `scrape_method: http`; needed `<base href>` handling and pagination. |
 | Harman | Several `extra_careers_urls` queries; no Avature parser needed. |
 | **Knowles Corporation** | ADP **MyJobs**, which the `adp` parser (Workforce Now) does not speak. **Do not build a MyJobs parser:** Knowles yields 0 audio jobs even at native scope, and the only other MyJobs company is Switchcraft (whose URL is HEICO's). The API recipe is in the old log (`DO NOT REPEAT: Knowles`). It has no stored ATS binding; 404s against Workforce Now are discovery guesses. |
-| Meta | Playwright; 400s on job links are bot defence, whitelisted in `check_links`; ceiling 3 board jobs. |
+| Meta | Repointed 2026-11-08 (owner-requested, `source: manual`): `metacareers.com/jobsearch/?q=audio` + extra `?q=sound`. The pager is JS buttons, so it was read one page deep for months (14 rows, 10 on the board, of 75 audio results). `PAGE_PARAM_HOSTS` in `pagination.py` now walks `?page=N` until a page brings no new jobs; titles come from the card `<h3>` (`INNER_HEADING_TITLE_HOSTS`). 103 rows, 21 on the board. "Project Manager, Organic Content Integrity Operations - Speech Problems" scores on and is not audio work. 400s on job links are bot defence, whitelisted in `check_links`. See the rate-limit trap in §6. |
+| OpenAI | Added 2026-11-08 at the owner's request ("Audio Engineer, Live Video"). Ashby `openai`, 816 jobs; `Consumer Electronics & Tech` for partial scope, like Anthropic. 2 board rows. |
 | Anthropic | Added 2026-11-04 at the owner's request for one AV Production Specialist role (pinned). Greenhouse, 682 jobs; category `Consumer Electronics & Tech` so scope is partial — native scope put 22 rows on the board including Customer Success Managers. 0 scored board rows; the AV Engineer roles score 60, under partial's 65. |
 | ai-coustics | Added 2026-11-04. `join.com/companies/ai-coustics`; join.com job URLs are bare slugs, so `join.com` is in `SLUG_BOARD_HOSTS` and `INNER_HEADING_TITLE_HOSTS` (card text otherwise carries location and department). 5 jobs, none scored onto the board; Head of Marketing pinned. |
 | Holoplot | Added 2026-11-04. Personio `holoplot.jobs.personio.de`, generic http; Personio hosts read the title from the card's `<h3>` (`INNER_HEADING_TITLE_SUFFIXES`) — before that the title carried "Berlin Full-time Permanent employee". Personio also serves `/xml` if a dedicated parser is ever wanted. 7 of 8 on the board. |
@@ -635,6 +639,16 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   `resolve_database_url`, so running from `scraper/` is fine).
 
 ## 9. Log (newest first, keep entries short)
+
+- **2026-11-08, cycle + OpenAI + Meta** — cycle: 717 companies, 368 ok, 1,720 s,
+  4 page-load timeouts; deactivated 526, inserted 392. **Ramboll crossed the
+  staleness bound** (SmartRecruiters timed out a third time) and its 17 board rows
+  are hidden — narrowing its board is the fix. Microsoft and Qualcomm drew Eightfold
+  429s again; company-only re-scrapes after the cycle were clean (8 and 52 board
+  rows). Then added OpenAI (2 board rows) and walked Meta's pager (10 → 21 board
+  rows), both owner-requested, with a Playwright guard so a 4xx on a later page
+  fails the scrape instead of truncating it. **Board-eligible 1,026, publicly
+  listed 999.** Seed edits for OpenAI and Meta are uncommitted until the owner says.
 
 - **2026-11-05, cycle** — 717 companies (the six new ones included), 369 ok,
   1,962 s; 7 page-load timeouts; deactivated 1,247, inserted 630. The owner
