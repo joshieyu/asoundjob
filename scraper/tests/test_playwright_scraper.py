@@ -172,5 +172,60 @@ class TestRecordStatusSeam(unittest.TestCase):
         self.assertEqual(scraper._page_status, {})
 
 
+
+class TestPlaywrightPaginationErrors(unittest.TestCase):
+    START = "https://www.metacareers.com/jobsearch/?q=audio"
+
+    def _scraper(self, pages: dict, statuses: dict) -> PlaywrightScraper:
+        scraper = PlaywrightScraper(load_settings())
+
+        async def fake_fetch(url: str) -> str:
+            scraper._page_status[url] = statuses.get(url, 200)
+            return pages[url]
+
+        scraper.fetch_page_html = fake_fetch  # type: ignore[method-assign]
+        return scraper
+
+    def _company(self) -> Company:
+        company = make_company()
+        company.careers_url = self.START
+        return company
+
+    def card(self, job_id: int) -> str:
+        return f'<a href="/profile/job_details/{job_id}"><h3>Audio Role {job_id}</h3></a>'
+
+    def test_error_status_on_a_later_page_fails_the_scrape(self) -> None:
+        pages = {
+            self.START: self.card(1),
+            self.START + "&page=2": "<html><body>Too many requests</body></html>",
+        }
+        async def go():
+            scraper = self._scraper(pages, {self.START + "&page=2": 429})
+            try:
+                await scraper.fetch_jobs(self._company())
+            except ScrapeError as exc:
+                return scraper, exc
+            return scraper, None
+
+        scraper, exc = asyncio.run(go())
+        self.assertIsNotNone(exc)
+        self.assertIn("HTTP 429", str(exc))
+        self.assertEqual(scraper._page_status, {})
+
+    def test_clean_pagination_returns_every_page(self) -> None:
+        pages = {
+            self.START: self.card(1),
+            self.START + "&page=2": self.card(2),
+            self.START + "&page=3": "<html><body></body></html>",
+        }
+        async def go():
+            scraper = self._scraper(pages, {})
+            return scraper, await scraper.fetch_jobs(self._company())
+
+        scraper, jobs = asyncio.run(go())
+        self.assertEqual(sorted(job.title for job in jobs), ["Audio Role 1", "Audio Role 2"])
+        self.assertEqual(scraper._page_status, {})
+
+
 if __name__ == "__main__":
     unittest.main()

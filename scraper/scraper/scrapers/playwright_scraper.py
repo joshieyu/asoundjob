@@ -81,8 +81,19 @@ class PlaywrightScraper(BaseScraper):
             raise ValueError(f"Company {company.name} has no careers_url")
         url = company.careers_url.strip()
         status: Optional[int] = None
+
+        async def fetch_checked(page_url: str) -> str:
+            html = await self.fetch_page_html(page_url)
+            if page_url != url:
+                page_status = self._page_status.pop(page_url, None)
+                if page_status is not None and page_status >= 400:
+                    raise ScrapeError(
+                        f"HTTP {page_status} for {page_url} while paginating {url}"
+                    )
+            return html
+
         try:
-            jobs, first_page_html = await collect_paginated(self.fetch_page_html, url)
+            jobs, first_page_html = await collect_paginated(fetch_checked, url)
         finally:
             status = self._page_status.pop(url, None)
         self._last_html = first_page_html
