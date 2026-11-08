@@ -4,7 +4,12 @@ import asyncio
 import unittest
 from typing import Dict
 
-from scraper.scrapers.pagination import MAX_PAGES, collect_paginated, find_next_page
+from scraper.scrapers.pagination import (
+    MAX_PAGES,
+    collect_paginated,
+    find_next_page,
+    page_param_next,
+)
 
 START_URL = "https://example.com/careers?page=1"
 
@@ -401,6 +406,42 @@ class TestAccordionFallback(unittest.TestCase):
         jobs, _ = asyncio.run(collect_paginated(make_fetch(pages), START_URL))
         self.assertEqual(len(jobs), 1)
         self.assertEqual(jobs[0].url, "https://example.com/careers/jobs/1")
+
+
+
+class TestPageParamHosts(unittest.TestCase):
+    BASE = "https://www.metacareers.com/jobsearch/"
+
+    def meta_card(self, job_id: int) -> str:
+        return (
+            f'<a href="/profile/job_details/{job_id}"><div><h3>Audio Role {job_id}</h3>'
+            f"<span>Sunnyvale, CA</span></div></a>"
+        )
+
+    def test_next_url_increments_the_page_param(self) -> None:
+        self.assertEqual(
+            page_param_next(self.BASE + "?q=audio"), self.BASE + "?q=audio&page=2"
+        )
+        self.assertEqual(
+            page_param_next(self.BASE + "?q=audio&page=2"), self.BASE + "?q=audio&page=3"
+        )
+
+    def test_unknown_hosts_are_not_synthesized(self) -> None:
+        self.assertIsNone(page_param_next("https://example.com/careers?q=audio"))
+        self.assertIsNone(page_param_next("https://metacareers.com.evil.net/?q=a"))
+
+    def test_buttons_only_pager_is_walked_until_no_new_jobs(self) -> None:
+        footer = '<a href="/hiring-process/">Hiring Process</a>'
+        pages = {
+            self.BASE + "?q=audio": self.meta_card(1) + self.meta_card(2) + footer,
+            self.BASE + "?q=audio&page=2": self.meta_card(3) + footer,
+            self.BASE + "?q=audio&page=3": footer,
+        }
+        jobs, _ = asyncio.run(collect_paginated(make_fetch(pages), self.BASE + "?q=audio"))
+        self.assertEqual(
+            sorted(job.title for job in jobs if job.title.startswith("Audio")),
+            ["Audio Role 1", "Audio Role 2", "Audio Role 3"],
+        )
 
 
 if __name__ == "__main__":

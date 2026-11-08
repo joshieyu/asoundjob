@@ -18,7 +18,7 @@ JOB_HINT = re.compile(
 
 SLUG_BOARD_HOSTS = frozenset({"jobs.world.luccasoftware.com", "join.com"})
 
-INNER_HEADING_TITLE_HOSTS = frozenset({"join.com"})
+INNER_HEADING_TITLE_HOSTS = frozenset({"join.com", "metacareers.com"})
 INNER_HEADING_TITLE_SUFFIXES = (".jobs.personio.de", ".jobs.personio.com")
 
 NON_JOB_URL = re.compile(

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from typing import Awaitable, Callable, List, Optional, Set, Tuple
-from urllib.parse import urljoin, urlparse
+from urllib.parse import parse_qsl, urlencode, urljoin, urlparse, urlunparse
 
 from bs4 import BeautifulSoup, Tag
 
@@ -14,6 +14,9 @@ from scraper.scrapers.link_extraction import (
 )
 
 MAX_PAGES = 10
+
+PAGE_PARAM_HOSTS = frozenset({"metacareers.com"})
+PAGE_PARAM = "page"
 
 ARIA_NEXT_RE = re.compile(
     r"\bnext\s+page\b|\bgo\s+to\s+next\b|^next$",
@@ -137,6 +140,25 @@ def find_next_page(html: str, base_url: str) -> Optional[str]:
     return None
 
 
+def page_param_next(url: str) -> Optional[str]:
+    parsed = urlparse(url)
+    host = parsed.netloc.strip().lower()
+    if host.startswith("www."):
+        host = host[4:]
+    if host not in PAGE_PARAM_HOSTS:
+        return None
+    params = parse_qsl(parsed.query, keep_blank_values=True)
+    current = 1
+    for key, value in params:
+        if key == PAGE_PARAM:
+            if not value.isdigit():
+                return None
+            current = int(value)
+    kept = [(key, value) for key, value in params if key != PAGE_PARAM]
+    kept.append((PAGE_PARAM, str(current + 1)))
+    return urlunparse(parsed._replace(query=urlencode(kept)))
+
+
 FetchFn = Callable[[str], Awaitable[str]]
 
 
@@ -163,7 +185,7 @@ async def collect_paginated(
             seen_job_urls.add(job.url)
             jobs.append(job)
 
-        next_url = find_next_page(html, url)
+        next_url = find_next_page(html, url) or page_param_next(url)
         if not next_url:
             break
         next_key = _page_key(next_url)
