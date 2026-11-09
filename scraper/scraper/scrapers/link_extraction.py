@@ -486,6 +486,12 @@ TRAILING_DECORATION_RE = re.compile(
     r"\s*(?:-->|->|&gt;|[" + TRAILING_DECORATION_CHARS + r"]){1,3}\s*$"
 )
 
+FILE_ANNOTATION_RE = re.compile(
+    r"\s*[(\[]\s*(?:(?:PDF|DOCX?)\s*(?:[,\-\u2013:]\s*)?)?"
+    r"(?:\d{1,5}(?:[.,]\d{1,2})?\s*[KMG]i?B|(?<=[(\[])(?:PDF|DOCX?))\s*[)\]]\s*$",
+    re.IGNORECASE,
+)
+
 EMPLOYMENT_SUFFIX_RE = re.compile(
     r"(?<=\S)" + SEP + r"+(?P<emp>Full[- ]?Time|Part[- ]?Time|Permanent|"
     r"Temporary|Contract)\s*$",
@@ -666,7 +672,9 @@ def _clean_job_title_and_type(text: str) -> tuple[str, Optional[str]]:
     job_type: Optional[str] = None
 
     for _ in range(8):
-        new_title = POSTED_AGO_RE.sub("", title)
+        new_title = FILE_ANNOTATION_RE.sub("", title)
+        if new_title == title:
+            new_title = POSTED_AGO_RE.sub("", title)
         if new_title == title:
             new_title = CTA_SUFFIX_RE.sub("", title)
         if new_title == title:

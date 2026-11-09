@@ -78,6 +78,28 @@ class TestCleanJobTitleRealExamples(unittest.TestCase):
         )
 
 
+class TestCleanJobTitleFileAnnotations(unittest.TestCase):
+    def test_pdf_size_suffixes_are_stripped(self) -> None:
+        cases = {
+            "Accounting Clerk (PDF, 124 KB)": "Accounting Clerk",
+            "Graphic Artist / Motion Graphics Designer (PDF, 213 KB)":
+                "Graphic Artist / Motion Graphics Designer",
+            "Electrical Design Engineer [PDF - 1.2 MB]": "Electrical Design Engineer",
+            "Sound Designer (pdf)": "Sound Designer",
+            "Audio Engineer (DOCX, 88kB)": "Audio Engineer",
+        }
+        for raw, expected in cases.items():
+            self.assertEqual(clean_job_title(raw), expected, raw)
+
+    def test_real_parentheticals_are_kept(self) -> None:
+        for raw in (
+            "Acoustic Engineer (f/m/d)",
+            "Firmware Engineer (DSP)",
+            "Audio Engineer (Level 2)",
+        ):
+            self.assertEqual(clean_job_title(raw), raw)
+
+
 class TestCleanJobTitleJobType(unittest.TestCase):
     def test_trailing_contract_captured_as_job_type(self) -> None:
         html = """

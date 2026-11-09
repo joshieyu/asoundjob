@@ -28,7 +28,7 @@ blocks it from reading `venv/pyvenv.cfg` (`Operation not permitted`; the
 CommandLineTools Python is its own app bundle), though it starts the web server
 fine. Start the API from a terminal as the README says.
 
-**The seed carries uncommitted edits (2026-11-08/09, owner-requested):** OpenAI added, Meta repointed to two `jobsearch` queries, and "Rockford Marine" renamed to Rockford Fosgate (DB row renamed in step, slug `rockford-fosgate`) (§7). Commit when the owner says.
+**Seed edits of 2026-11-08/09 are committed:** OpenAI added, Meta repointed to two `jobsearch` queries, and "Rockford Marine" renamed to Rockford Fosgate (DB row renamed in step, slug `rockford-fosgate`) (§7).
 
 **Six owner-pinned jobs live only in the DB** (`is_audio_related_override = True`,
 2026-11-04): Muse Group CPO (36373), L-Acoustics Exec. Director of Product
@@ -653,7 +653,9 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   (§4.2). Re-scraped the 16 companies with PDF job links: Rockford 3 → 5 board
   rows, Kicker 1 → 2 (Graphic Artist, borderline at 45); GRAS and RF Venue
   unchanged but now described; no furniture PDF gained board status. **Publicly
-  listed 1,003.** Kicker titles carry "(PDF, 124 KB)" suffixes — not yet cleaned.
+  listed 1,003.** Titles now drop file annotations like "(PDF, 124 KB)" /
+  "[220KB]" (`FILE_ANNOTATION_RE`), which Kicker carried. Seed edits (OpenAI,
+  Meta, Rockford rename) committed at the owner's say-so.
 
 - **2026-11-08, cycle + OpenAI + Meta** — cycle: 717 companies, 368 ok, 1,720 s,
   4 page-load timeouts; deactivated 526, inserted 392. **Ramboll crossed the
