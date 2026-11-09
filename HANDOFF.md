@@ -28,7 +28,7 @@ blocks it from reading `venv/pyvenv.cfg` (`Operation not permitted`; the
 CommandLineTools Python is its own app bundle), though it starts the web server
 fine. Start the API from a terminal as the README says.
 
-**The seed carries uncommitted edits (2026-11-08, owner-requested):** OpenAI added and Meta repointed to two `jobsearch` queries (§7). Commit when the owner says.
+**The seed carries uncommitted edits (2026-11-08/09, owner-requested):** OpenAI added, Meta repointed to two `jobsearch` queries, and "Rockford Marine" renamed to Rockford Fosgate (DB row renamed in step, slug `rockford-fosgate`) (§7). Commit when the owner says.
 
 **Six owner-pinned jobs live only in the DB** (`is_audio_related_override = True`,
 2026-11-04): Muse Group CPO (36373), L-Acoustics Exec. Director of Product
@@ -191,6 +191,12 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 - Location comes only from an element labelled as location, never blind card
   text; multi-location cards join with `"; "`. JSON-LD `jobLocation` may be an
   array. `resolve_document_base()` applies wherever relative URLs are resolved.
+- **PDF job links** (`scrapers/pdf_description.py`, http and Playwright): a job whose
+  URL path ends `.pdf` gets its description from the PDF text (`pypdf`, first 10
+  pages, ≤ 5 MB, ≤ 25 per company, inside the 85% enrichment budget). Titles that
+  read as brochures, applications, benefits or policy/EEO notices are skipped, so
+  furniture PDFs never gain audio-heavy text. Scanned (image-only) PDFs yield
+  nothing and keep a title-only score (Rockford's Quality Engineer).
 - `--limit 0` means no limit. `--company <slug>` scrapes one company and bypasses
   `scrape_blocked`. `scrape_blocked` is honoured by `run_cycle`
   (`blocked_skipped=` in the summary).
@@ -606,6 +612,7 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 | Holoplot | Added 2026-11-04. Personio `holoplot.jobs.personio.de`, generic http; Personio hosts read the title from the card's `<h3>` (`INNER_HEADING_TITLE_SUFFIXES`) — before that the title carried "Berlin Full-time Permanent employee". Personio also serves `/xml` if a dedicated parser is ever wanted. 7 of 8 on the board. |
 | JAM Industries | Added 2026-11-04 (Canadian distributor; owns Ashly Audio). Dayforce `jobs.dayforcehcm.com/en-US/jam/CANDIDATEPORTAL`, Playwright only (http finds no links). Partial scope; 2 board rows (Ashly DSP and Embedded engineers). |
 | Muse Group | Added 2026-11-04 (MuseScore, Audacity, Ultimate Guitar). `www.mu.se/positions`, http, 26 jobs; 1 scored board row (Full Stack Producer, Audio ML) plus the pinned CPO. |
+| Rockford Fosgate | Was "Rockford Marine" until 2026-11-09 (renamed in seed and DB together, now manual). Careers page lists each job as a card linking a PDF; descriptions come from the PDFs. 5 of 9 on the board; Quality Engineer's PDF is a scan. |
 | Syntiant | Added 2026-11-04. Workable `syntiant`, `Audio Semiconductors`; 8 of 12 on the board. |
 | Splice | Repointed 2026-11-04 from `splice.com/careers` (22 consecutive failures) to `job-boards.greenhouse.io/splice`; 6 jobs, none scored on, Senior Brand Marketing Manager pinned. |
 | Microsoft | Repointed 2026-10-17 (owner-approved, `source: manual`): Eightfold `apply.careers.microsoft.com/careers?query=audio` + `?query=speech`, `ats_type: eightfold`, `ats_slug: microsoft.com`. The old URL was the marketing homepage, which only ever yielded "Hiring tips" and "Contractor roles". The unfiltered board is ~2,490 jobs, far past the 200 cap, so it must stay query-scoped. 6 board rows (Audio and Acoustics research intern, Azure Speech, Voice Agent roles). Custom-domain Eightfold needs the stored binding — `check_url` cannot test it (it builds the company with no `ats_type`); a harness that sets it is the only way to measure first. Xbox Game Studios and Playground Games still point at the old homepage (2 furniture rows, never on the board); unverify or repoint them. |
@@ -639,6 +646,14 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   `resolve_database_url`, so running from `scraper/` is fine).
 
 ## 9. Log (newest first, keep entries short)
+
+- **2026-11-09, PDF job descriptions** — owner asked about Rockford Fosgate, whose
+  jobs are PDF links. It was already scraped (as "Rockford Marine", renamed) but
+  descriptions were empty for every PDF job site-wide. Added PDF text extraction
+  (§4.2). Re-scraped the 16 companies with PDF job links: Rockford 3 → 5 board
+  rows, Kicker 1 → 2 (Graphic Artist, borderline at 45); GRAS and RF Venue
+  unchanged but now described; no furniture PDF gained board status. **Publicly
+  listed 1,003.** Kicker titles carry "(PDF, 124 KB)" suffixes — not yet cleaned.
 
 - **2026-11-08, cycle + OpenAI + Meta** — cycle: 717 companies, 368 ok, 1,720 s,
   4 page-load timeouts; deactivated 526, inserted 392. **Ramboll crossed the

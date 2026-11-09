@@ -2,12 +2,17 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from time import monotonic
 from typing import Any, Optional
 
 from scraper.scrapers.base import BaseScraper, RawJob, ScrapeError
 from scraper.scrapers.pagination import collect_paginated
+from scraper.scrapers.pdf_description import enrich_pdf_jobs
 
 logger = logging.getLogger(__name__)
+
+PDF_ENRICHMENT_BUDGET_FRACTION = 0.85
+MIN_PDF_DESCRIPTION_CHARS = 200
 
 STEALTH_INIT_SCRIPT = """
 Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
@@ -77,6 +82,7 @@ class PlaywrightScraper(BaseScraper):
             self._page_status[url] = response.status
 
     async def fetch_jobs(self, company) -> list[RawJob]:
+        start = monotonic()
         if not company.careers_url:
             raise ValueError(f"Company {company.name} has no careers_url")
         url = company.careers_url.strip()
@@ -101,6 +107,8 @@ class PlaywrightScraper(BaseScraper):
             if status is not None and status >= 400:
                 raise ScrapeError(f"HTTP {status} for {url}")
             raise ScrapeError("page loaded but no job links found")
+        deadline = start + self.settings.per_company_timeout * PDF_ENRICHMENT_BUDGET_FRACTION
+        await enrich_pdf_jobs(jobs, self.settings, deadline, MIN_PDF_DESCRIPTION_CHARS)
         return jobs
 
     async def close(self) -> None:

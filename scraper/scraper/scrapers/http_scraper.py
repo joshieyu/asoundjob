@@ -11,6 +11,7 @@ from bs4 import BeautifulSoup, Tag
 from scraper.scrapers.base import BaseScraper, RawJob, ScrapeError
 from scraper.scrapers.fetch import fetch_html
 from scraper.scrapers.pagination import collect_paginated
+from scraper.scrapers.pdf_description import enrich_pdf_jobs, is_pdf_url
 
 logger = logging.getLogger(__name__)
 
@@ -39,16 +40,19 @@ class HttpScraper(BaseScraper):
         if not jobs:
             raise ScrapeError("page loaded but no job links found")
 
+        deadline = start + self.settings.per_company_timeout * ENRICHMENT_BUDGET_FRACTION
+        await enrich_pdf_jobs(jobs, self.settings, deadline, MIN_DESCRIPTION_CHARS)
+
         host = urlparse(url).netloc.lower()
         candidates = [
             job
             for job in jobs
             if _needs_enrichment(job)
+            and not is_pdf_url(job.url)
             and urlparse(job.url).netloc.lower() == host
             and not _is_same_page_anchor(job.url, url)
         ][:MAX_DETAIL_FETCHES]
 
-        deadline = start + self.settings.per_company_timeout * ENRICHMENT_BUDGET_FRACTION
         semaphore = asyncio.Semaphore(DETAIL_FETCH_CONCURRENCY)
         counts = {"enriched": 0, "budget_skipped": 0}
         await asyncio.gather(
