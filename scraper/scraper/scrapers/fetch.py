@@ -29,7 +29,9 @@ def _get_session(settings: Settings) -> requests.Session:
 
 
 class FetchError(Exception):
-    pass
+    def __init__(self, message: str, status: int | None = None) -> None:
+        super().__init__(message)
+        self.status = status
 
 
 def fetch_json(url: str, settings: Settings, timeout: float | None = None) -> Any:
@@ -37,7 +39,7 @@ def fetch_json(url: str, settings: Settings, timeout: float | None = None) -> An
         url, timeout=timeout or settings.request_timeout
     )
     if response.status_code != 200:
-        raise FetchError(f"HTTP {response.status_code} for {url}")
+        raise FetchError(f"HTTP {response.status_code} for {url}", response.status_code)
     try:
         return json.loads(response.text)
     except json.JSONDecodeError as exc:
@@ -51,7 +53,7 @@ def post_json(
         url, json=payload, timeout=timeout or settings.request_timeout
     )
     if response.status_code != 200:
-        raise FetchError(f"HTTP {response.status_code} for {url}")
+        raise FetchError(f"HTTP {response.status_code} for {url}", response.status_code)
     try:
         return json.loads(response.text)
     except json.JSONDecodeError as exc:
@@ -63,7 +65,7 @@ def fetch_html(url: str, settings: Settings, timeout: float | None = None) -> st
         url, timeout=timeout or settings.request_timeout
     )
     if response.status_code != 200:
-        raise FetchError(f"HTTP {response.status_code} for {url}")
+        raise FetchError(f"HTTP {response.status_code} for {url}", response.status_code)
     return response.text
 
 

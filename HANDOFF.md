@@ -471,21 +471,19 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   generic stage that times out leaves no line in the cycle log. Rohde & Schwarz's
   http failures above are invisible for this reason; only the `scrape_method`
   recorded in `scrape_log` gives them away.
-- **Eightfold 429s — now the most visible board-quality problem.** Qualcomm has
-  drawn HTTP 429 on five cycles (09-29, 10-14, 10-15, 10-17, 10-23) and Microsoft
-  on two (10-17, 10-23). On 10-23 both came within a minute of each other at the
-  start of the cycle with no manual scrape before it — on different hosts
-  (`apply.careers.microsoft.com`, `careers.qualcomm.com`), which points to
-  Eightfold limiting by client IP across tenants. Each 429 falls back to
-  Playwright, whose malformed rows go on the board beside the real ones (on 10-23
-  Microsoft showed 9 board rows for 7 jobs: two copies of the Audio and Acoustics
-  intern, one with the location glued on) until the next clean Eightfold scrape.
-  Likely cause, unmeasured: per-job enrichment fetches up to 200
-  `position_details` at concurrency `min(http_concurrency, 50)` (`eightfold.py:94`),
-  a burst per company, with up to seven Eightfold companies early in the cycle.
-  Cheap fixes to try: a small fixed enrichment concurrency (e.g. 4) and/or a
-  shared Eightfold semaphore; and the claimed-ATS item above would stop the
-  fallback rows. Don't scrape an Eightfold company by hand right before a cycle.
+- **Eightfold 429s — fixed 2026-11-09, confirm over the next cycles.** Qualcomm and
+  Microsoft drew 429s on most cycles (Eightfold appears to limit by client IP across
+  tenants). Now: one `EightfoldScraper` instance holds shared slots — 2 search, 6
+  detail requests at once across all Eightfold companies (was up to 50 per company);
+  a 429 on a search page retries after 5 s and 15 s, then raises
+  `RateLimitedError`; a 429 on a detail fetch stops that company's enrichment
+  (jobs kept). A rate-limited ATS result **skips the generic fallback** (pipeline
+  `_rate_limited_result`), so no more malformed duplicate rows — the company simply
+  fails that cycle and keeps its jobs. Trade-off: repeated 429s now count toward the
+  3-failure staleness bound instead of being masked by a partial fallback success.
+  Solo re-scrapes after the fix: Microsoft 14 s (cleared 16 fallback rows),
+  Qualcomm 41 s at 4 detail slots — raised to 6 so two concurrent Eightfold
+  companies still finish enrichment inside the 76 s budget. Unmeasured in a cycle.
 - **A navigation-only result is a trusted success** (§4.2) and can deactivate a
   real board (Zoom, 2026-09-29). A result whose every row is non-job furniture
   should count as failed, or at least `partial`. Measure first: 46 companies were
@@ -591,6 +589,7 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 | ByteDance | Blocked; entries for TikTok Audio and Resso deleted as dead duplicates. |
 | Calrec | `careers.calrec.com`, works; no longer blocked. |
 | Cirrus Logic | Lever EU tenant (`api.eu.lever.co`); `api_url_for` derives the host from the careers URL. Category `Audio Semiconductors` (native). |
+| Cisco Webex | Repointed 2026-11-09 from the Phenom landing page (scraped only nav links) to Cisco's Workday board `cisco.wd5…/Cisco_Careers?q=audio`; recategorised `Consumer Electronics & Tech` (partial) because native scope let 5 sales/CS roles onto the board. "speech" query added nothing. 22 jobs, 2 board rows. |
 | Cochlear | Native hearing tech; many board rows are clinical/commercial via the category bonus — accepted trade-off. |
 | Delart | Embed-only Greenhouse board; do not repoint to delartech.com. Agency scope. |
 | Demant | Correct URL `careers.demant.com/search/`; `careers.demant.com/` (marketing) and `careers.us.demant.com/jobs` (clinic hiring) are both traps. SuccessFactors walk has timed out every cycle since 2026-09-11; its 26 board rows are unconfirmed since then (§5). |
@@ -646,6 +645,17 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   `resolve_database_url`, so running from `scraper/` is fine).
 
 ## 9. Log (newest first, keep entries short)
+
+- **2026-11-09, cycle + Eightfold fix + Cisco** — cycle: 718 companies, 372 ok,
+  1,774 s, no page-load timeouts; deactivated 167, inserted 261, reactivated 127.
+  Microsoft drew an Eightfold 429 again (old code); Qualcomm did not. Built the
+  Eightfold throttle/retry/no-fallback fix (§5) and re-scraped both cleanly
+  (Microsoft 7 board rows, Qualcomm 52). Cisco repointed to Workday (§7): the
+  owner's Audio Signal Processing Engineer is on the board; Cochlear's Senior
+  Firmware (Audio & Signal Processing) role was already there. Ramboll still
+  hidden. **Board-eligible 1,073, publicly listed 1,046** (27 hidden: Ramboll 17,
+  IK 4, Otter 3, XLN 1, Valcom 1, Fairphone 1). `test_diagnose_failures`'s
+  timing test flakes while a cycle loads the CPU.
 
 - **2026-11-09, PDF job descriptions** — owner asked about Rockford Fosgate, whose
   jobs are PDF links. It was already scraped (as "Rockford Marine", renamed) but

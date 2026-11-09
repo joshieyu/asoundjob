@@ -36,9 +36,14 @@ class ScrapeResult:
     trust_empty: bool = False
     partial: bool = False
     html: Optional[str] = None
+    rate_limited: bool = False
 
 
 class ScrapeError(Exception):
+    pass
+
+
+class RateLimitedError(ScrapeError):
     pass
 
 
@@ -77,6 +82,7 @@ class BaseScraper(ABC):
                 "scraper=%s company=%s failed: %s", self.name, company.name, exc
             )
             result.error = f"{type(exc).__name__}: {exc}"
+            result.rate_limited = isinstance(exc, RateLimitedError)
         result.html = self._last_html
         result.duration = round(time.monotonic() - started, 2)
         return result

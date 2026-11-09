@@ -5,8 +5,8 @@ import re
 from typing import TYPE_CHECKING, Any
 from urllib.parse import parse_qs, quote, urlparse
 
-from scraper.scrapers.base import BaseScraper, RawJob, ScrapeError
-from scraper.scrapers.fetch import fetch_json, parse_date
+from scraper.scrapers.base import BaseScraper, RateLimitedError, RawJob, ScrapeError
+from scraper.scrapers.fetch import FetchError, fetch_json, parse_date
 
 if TYPE_CHECKING:
     from scraper.models import Company
@@ -22,6 +22,10 @@ DETAIL_PATH = "/api/pcsx/position_details"
 MAX_PAGES = 20
 MAX_DETAIL_FETCHES = 200
 ENRICHMENT_BUDGET_FRACTION = 0.85
+DETAIL_CONCURRENCY = 6
+SEARCH_CONCURRENCY = 2
+RATE_LIMIT_STATUS = 429
+RATE_LIMIT_BACKOFF_SECONDS = (5.0, 15.0)
 
 SPECIAL_SECOND_LEVEL_LABELS = frozenset({"co", "com", "net", "org", "ac", "gov", "edu"})
 
@@ -38,8 +42,45 @@ def registrable_domain(host: str) -> str:
     return ".".join(labels[-2:])
 
 
+def is_rate_limited(exc: BaseException) -> bool:
+    return isinstance(exc, FetchError) and exc.status == RATE_LIMIT_STATUS
+
+
 class EightfoldScraper(BaseScraper):
     name = "eightfold"
+
+    def __init__(self, settings) -> None:
+        super().__init__(settings)
+        self._search_slots: asyncio.Semaphore | None = None
+        self._detail_slots: asyncio.Semaphore | None = None
+
+    def _slots(self, kind: str) -> asyncio.Semaphore:
+        if kind == "search":
+            if self._search_slots is None:
+                self._search_slots = asyncio.Semaphore(SEARCH_CONCURRENCY)
+            return self._search_slots
+        if self._detail_slots is None:
+            self._detail_slots = asyncio.Semaphore(DETAIL_CONCURRENCY)
+        return self._detail_slots
+
+    async def _get_json(self, url: str, kind: str) -> Any:
+        async with self._slots(kind):
+            return await asyncio.to_thread(fetch_json, url, self.settings)
+
+    async def _search_page(self, url: str) -> Any:
+        for delay in (*RATE_LIMIT_BACKOFF_SECONDS, None):
+            try:
+                return await self._get_json(url, "search")
+            except FetchError as exc:
+                if not is_rate_limited(exc):
+                    raise
+                if delay is None:
+                    raise RateLimitedError(
+                        f"eightfold rate limited (HTTP 429) after "
+                        f"{len(RATE_LIMIT_BACKOFF_SECONDS)} retries: {url}"
+                    ) from exc
+                await asyncio.sleep(delay)
+        raise AssertionError("unreachable")
 
     def can_handle(self, company: Company) -> bool:
         if company.ats_type == "eightfold":
@@ -64,7 +105,7 @@ class EightfoldScraper(BaseScraper):
                 f"https://{host}{SEARCH_PATH}?domain={quote(domain)}"
                 f"&query={quote(query)}&location=&start={start}&sort_by=relevance"
             )
-            payload = await asyncio.to_thread(fetch_json, url, self.settings)
+            payload = await self._search_page(url)
             if page_index == 0:
                 try:
                     parse_positions(payload, host)
@@ -91,12 +132,15 @@ class EightfoldScraper(BaseScraper):
         self, jobs: list[RawJob], host: str, domain: str
     ) -> None:
         fetch_list = jobs[:MAX_DETAIL_FETCHES]
-        sem = asyncio.Semaphore(min(self.settings.http_concurrency, 50))
+        throttled = False
 
         async def fetch_one(job: RawJob) -> None:
-            if not job.external_id:
+            nonlocal throttled
+            if not job.external_id or throttled:
                 return
-            async with sem:
+            async with self._slots("detail"):
+                if throttled:
+                    return
                 try:
                     detail = await asyncio.to_thread(
                         fetch_json,
@@ -104,9 +148,11 @@ class EightfoldScraper(BaseScraper):
                         f"{quote(job.external_id)}&domain={quote(domain)}&hl=en",
                         self.settings,
                     )
-                    job.description = _extract_description(detail)
-                except Exception:
-                    pass
+                except Exception as exc:
+                    if is_rate_limited(exc):
+                        throttled = True
+                    return
+            job.description = _extract_description(detail)
 
         timeout = self.settings.per_company_timeout * ENRICHMENT_BUDGET_FRACTION
         try:

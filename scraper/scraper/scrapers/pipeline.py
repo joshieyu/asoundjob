@@ -234,6 +234,8 @@ class ScrapePipeline:
             if result.success:
                 result.trust_empty = True
                 return result
+            if result.rate_limited:
+                return self._rate_limited_result(company, company.ats_type, result)
             stored_ats_failed = True
             ats_failures.append((company.ats_type, result.error or "unknown error"))
 
@@ -264,6 +266,8 @@ class ScrapePipeline:
                 if result.success:
                     result.trust_empty = True
                     return result
+                if result.rate_limited:
+                    return self._rate_limited_result(company, ats.name, result)
                 # A dedicated scraper recognised this board and could not read it.
                 # Whatever the generic fallbacks return next is a first page at
                 # best, so it must not be trusted to retire the rest.
@@ -314,6 +318,17 @@ class ScrapePipeline:
             )
             last_error = f"{binding_errors}; careers page: {last_error}"
         return ScrapeResult(company_id=company.id, method="none", error=last_error)
+
+    def _rate_limited_result(
+        self, company: Company, label: str, result: ScrapeResult
+    ) -> ScrapeResult:
+        logger.info("%s: %s rate limited, skipping generic fallback", company.name, label)
+        return ScrapeResult(
+            company_id=company.id,
+            method="none",
+            error=f"{label} binding failed: {result.error}",
+            rate_limited=True,
+        )
 
     async def _try_discovery(
         self, company: Company, html: str | None, overwrite: bool = False

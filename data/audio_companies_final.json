@@ -2310,11 +2310,11 @@
   },
   {
     "name": "Cisco Webex",
-    "careers_url": "https://careers.cisco.com/global/en",
-    "category": "Voice & Speech Technology",
+    "careers_url": "https://cisco.wd5.myworkdayjobs.com/Cisco_Careers?q=audio",
+    "category": "Consumer Electronics & Tech",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "http"
   },
   {
     "name": "Citroen",
