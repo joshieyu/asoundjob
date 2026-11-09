@@ -6310,11 +6310,14 @@
   },
   {
     "name": "Meta",
-    "careers_url": "https://www.metacareers.com/jobs?q=audio",
+    "careers_url": "https://www.metacareers.com/jobsearch/?q=audio",
     "category": "Consumer Electronics & Tech",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "playwright",
+    "extra_careers_urls": [
+      "https://www.metacareers.com/jobsearch/?q=sound"
+    ]
   },
   {
     "name": "Metric Halo",
@@ -7318,6 +7321,14 @@
     "verified": true,
     "source": "auto",
     "scrape_method": "playwright"
+  },
+  {
+    "name": "OpenAI",
+    "careers_url": "https://jobs.ashbyhq.com/openai",
+    "category": "Consumer Electronics & Tech",
+    "verified": true,
+    "source": "manual",
+    "scrape_method": "http"
   },
   {
     "name": "Oppo",
@@ -8514,11 +8525,11 @@
     "scrape_method": "playwright"
   },
   {
-    "name": "Rockford Marine",
+    "name": "Rockford Fosgate",
     "careers_url": "https://rockfordfosgate.com/careers/",
     "category": "Car Audio",
     "verified": true,
-    "source": "auto",
+    "source": "manual",
     "scrape_method": "http"
   },
   {
