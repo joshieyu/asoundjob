@@ -13,11 +13,12 @@ resolve toward that.
 
 ## First-time setup
 
-Needs Python 3.9 (the code and both `pyproject.toml` files target it) and
+Needs Python 3.9 (the code and both `pyproject.toml` files target it; on macOS
+the system `python3` is 3.9.6 — check with `python3 --version`) and
 Node 20.19+ or 22.12+ (Vite 8). From the repo root:
 
 ```bash
-python3.9 -m venv venv && venv/bin/pip install -r requirements.txt
+python3 -m venv venv && venv/bin/pip install -r requirements.txt
 ```
 
 ```bash
