@@ -5,11 +5,37 @@ A scraper visits the careers pages of ~1,400 audio companies, a relevance model
 decides which of the jobs it finds belong in front of an audio engineer, and a
 SvelteKit site serves what survives.
 
-As of 2026-09-18: **1,413 companies, 19,271 job rows, 1,260 on the public board.**
+As of 2026-11-10: **1,424 companies, ~34,600 job rows, 1,071 on the public board.**
 
 The audience is audio engineers. DSP, audio systems, EE, embedded and acoustics
 roles are the priority, and most of the judgement calls in the relevance code
 resolve toward that.
+
+## First-time setup
+
+Needs Python 3.9 (the code and both `pyproject.toml` files target it) and
+Node 20.19+ or 22.12+ (Vite 8). From the repo root:
+
+```bash
+python3.9 -m venv venv && venv/bin/pip install -r requirements.txt
+```
+
+```bash
+venv/bin/python -m playwright install chromium
+```
+
+```bash
+npm --prefix web install
+```
+
+There is no database in the repo (`*.db` is gitignored; the tables hold
+submitter emails). The first run of the API or the scraper creates an empty
+SQLite file at `./asoundjob.db`. To fill it, run one scrape cycle (below, about
+30 minutes): it loads all companies from `data/audio_companies_final.json` and
+scrapes them. Until then the site runs but shows no jobs.
+
+The web app reaches the API at `http://127.0.0.1:8000` unless `PUBLIC_API_URL`
+says otherwise. Nothing else needs configuring for local use.
 
 ## Running it locally
 
@@ -96,7 +122,7 @@ cd scraper && source ../venv/bin/activate && python -m scraper.main --once
 ```
 
 A full cycle takes about 26 minutes and scrapes the verified, unblocked
-companies that have a careers URL — currently 711 of 1,413.
+companies that have a careers URL — currently about 718 of 1,424.
 
 | flag | effect |
 | --- | --- |

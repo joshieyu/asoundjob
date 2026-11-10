@@ -12,30 +12,31 @@ the careers pages of seeded companies, a relevance model decides which jobs reac
 the public board, and a SvelteKit site serves them. Branch
 `redesign-type-specimen`.
 
-As of the 2026-11-08 cycle (plus OpenAI added and Meta's pager walked after it):
+As of the 2026-11-10 cycle (plus the owner's 2026-11-10 additions scraped after it):
 
 | | |
 | --- | --- |
-| companies in the seed / DB | 1,412 (745 verified, 31 `source: manual`, 15 `scrape_blocked`) |
-| scrape population (verified, unblocked, has URL) | 738; a cycle scrapes ~717 after shared-URL dedup |
-| cycle | ~26–36 min on a good connection; ok 368 / failed 349 — ~50% failure is normal |
-| job rows / active / board-eligible | ~33,500 / ~13,750 / 1,026 |
-| **publicly listed** | **999** (27 hidden as stale: Ramboll 17 — SmartRecruiters timeouts, 3 in a row — IK Multimedia 4, Otter.ai 3, XLN Audio 1, Fairphone 1, Valcom 1) |
-| companies contributing to the board | 136; top: Shure 104, Apple 74, Cirrus Logic 69, Bose 58, Qualcomm 52, Amazon 41 |
+| companies in the seed / DB | 1,424 (756 verified, 48 `source: manual`, 15 `scrape_blocked`) |
+| scrape population (verified, unblocked, has URL) | a cycle scrapes ~718 after shared-URL dedup |
+| cycle | ~26–36 min on a good connection; ok 370 / failed 348 — ~50% failure is normal |
+| job rows / active / board-eligible | ~34,600 / ~12,800 / 1,081 |
+| **publicly listed** | **1,071** (10 hidden as stale: IK Multimedia 4, Otter.ai 3, XLN Audio 1, Fairphone 1, Valcom 1) |
+| companies contributing to the board | 138; top: Shure 104, Apple 74, Cirrus Logic 71, Bose 55, Qualcomm 51, Amazon 42 |
 
 **Running locally:** the app's preview launcher cannot start the API — macOS
 blocks it from reading `venv/pyvenv.cfg` (`Operation not permitted`; the
 CommandLineTools Python is its own app bundle), though it starts the web server
 fine. Start the API from a terminal as the README says.
 
-**Seed edits of 2026-11-08/09 are committed:** OpenAI added, Meta repointed to two `jobsearch` queries, and "Rockford Marine" renamed to Rockford Fosgate (DB row renamed in step, slug `rockford-fosgate`) (§7).
+**All seed edits through 2026-11-10 are committed** (OpenAI, Meta, Rockford Fosgate rename, Cisco, Ramboll scoping, Sesame, Quippy, Laran, Stryker, Anaheim Ducks, Sonova repoint, Advanced Bionics unverified; §7).
 
-**Six owner-pinned jobs live only in the DB** (`is_audio_related_override = True`,
-2026-11-04): Muse Group CPO (36373), L-Acoustics Exec. Director of Product
+**Seven owner-pinned jobs live only in the DB** (`is_audio_related_override = True`):
+Muse Group CPO (36373), L-Acoustics Exec. Director of Product
 Management (12328), Splice Senior Brand Marketing Manager (37097), DistroKid Growth
 PM (834), ai-coustics Head of Marketing (36410), Anthropic AV Production Specialist
-(36483). The owner wanted these non-engineering roles listed; the scorer holds
-them back (15–35). There is no admin UI to pin a job on, and a fresh DB loses them.
+(36483), all 2026-11-04; Sonova/Advanced Bionics Sr. Research Engineer, Valencia
+(39980, 2026-11-10 — cochlear-implant signal processing, scores 30). The owner
+wanted these listed; the scorer holds them back (15–35). There is no admin UI to pin a job on, and a fresh DB loses them.
 | health grades (scraped, 2026-09-22) | healthy 96, idle 149, failing 348, furniture 46, silent 32, thin 61; unscraped 680 |
 
 **GN's careers site is offline until early November** (§5): GN Store Nord, Jabra
@@ -43,9 +44,9 @@ and SteelSeries lost their 31 board rows on 2026-10-01, most of that cycle's dro
 of 36 from 1,040 listed; the rest is Qualcomm's fallback rows clearing.
 
 **Not launched.** No Dockerfile, compose file or nginx config; nothing has ever
-run on PostgreSQL (none installed locally, nor Docker). **~355 commits on this
-branch are not on `main`** (last touched 2026-08-28); PR #1 from 2026-08-29 is
-open and stale.
+run on PostgreSQL (none installed locally, nor Docker). **`main` was
+fast-forwarded to `redesign-type-specimen` on 2026-11-10**, so a fresh clone of
+`main` is the current code; README "First-time setup" covers a clean machine.
 
 Where to look: `README.md` (running, gates, data flow, every tool),
 `AGENTS.md` (original build plan and rules), `TRIAGE.md` (seed-URL worklist),
@@ -396,22 +397,12 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   the row stays hidden.
 - **Switchcraft's URL is HEICO's aerospace board** (`myjobs.adp.com/heico/…`, the
   keyword is ignored server-side). Unverify or repoint.
-- **Ramboll Group times out intermittently, not always.** SmartRecruiters hit the
-  90 s `per_company_timeout` on every cycle 2026-09-18 → 09-24 (its 16 board
-  rows were hidden as stale), then succeeded on 2026-09-25 (996 jobs; it
-  deactivated 362 rows that had closed meanwhile, none audio) and 2026-09-29
-  (1,028), 10-01 and 10-04; failed 10-05, succeeded in a partial run on 10-07,
-  failed again in that day's full cycle, on 10-08, 10-09 and 10-12 (the last on a
-  healthy network), so its 17 board rows were hidden as stale 10-09 → 10-12; it
-  succeeded on 10-14 (1,112 jobs), then failed 10-15, 10-17 and 10-19, so they
-  are **hidden again since 10-19**. 12 failures in the last 18 runs — hidden
-  more often than not until fixed, the most visible of the timeout cases.
-  Unlike the fallbacks below, Ramboll's
-  fallback also fails, so it is counted as a real failure. `check_url` running
-  alone always succeeds; not rate limiting. Same
-  cause as the claimed-ATS timeouts below. Bosch-style query-scoped
-  `extra_careers_urls` (acoustics etc.) would still shrink the walk — a seed edit,
-  owner's call.
+- **Ramboll Group — fixed 2026-11-10 by scoping.** Its whole SmartRecruiters board
+  (~1,000 jobs) kept exceeding the 90 s budget (12 failures in 18 runs, hidden as
+  stale more often than not). The seed now reads `?q=acoustics%20noise` (54 jobs,
+  all described). Measured the same day: the unscoped board put 21 jobs on the
+  board and the scoped one 21, but the unscoped run described only 27 of 998 jobs.
+  The first scoped scrape deactivated ~1,100 non-acoustic Ramboll rows, as intended.
 - ~6 iframe-embedded boards could be read with a bounded fetch of the iframe
   `src`: DSP Concepts (TriNet Hire), Earlens (hrmdirect), Line 6 (appone),
   MTX Audio, Slate Digital (Personio), Dynaudio Automotive.
@@ -483,7 +474,12 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   3-failure staleness bound instead of being masked by a partial fallback success.
   Solo re-scrapes after the fix: Microsoft 14 s (cleared 16 fallback rows),
   Qualcomm 41 s at 4 detail slots — raised to 6 so two concurrent Eightfold
-  companies still finish enrichment inside the 76 s budget. Unmeasured in a cycle.
+  companies still finish enrichment inside the 76 s budget. **First cycle with the
+  fix (2026-11-10):** Qualcomm clean; Microsoft's `audio` URL still drew a 429 on
+  its second search page after both retries, but its `speech` URL succeeded, so
+  the result was partial (no deactivation, failure count stays 0) and no fallback
+  rows appeared. If Microsoft keeps 429ing, lengthen the backoff or drop to one
+  search slot before anything cleverer.
 - **A navigation-only result is a trusted success** (§4.2) and can deactivate a
   real board (Zoom, 2026-09-29). A result whose every row is non-job furniture
   should count as failed, or at least `partial`. Measure first: 46 companies were
@@ -576,7 +572,9 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 | company | what matters |
 | --- | --- |
 | Adobe | Renamed from "Adobe Audition"; whole-company Workday board scoped with `?q=audio`, partial scope. |
+| Advanced Bionics | A Sonova brand sharing `sonova.com/careers/`, so it was the company scraping Sonova's jobs (91 rows, no descriptions). Set `verified: false` 2026-11-10; Sonova now scrapes `jobs.sonova.com` itself. |
 | Amazon | amazon.jobs `search.json` needs `base_query` (audio, speech, signal processing); "dsp" is a trap here. |
+| Anaheim Ducks | Added 2026-11-10 (owner). Workday site `Linkedin` scoped `?q=audio`; 3 jobs, 1 board row (Lead Audio Engineer). Category `Professional Audio & Live Sound` for lack of a sports one. |
 | Apple | Parser reads `?search=` from seed URLs so `extra_careers_urls` can scope it; Beats by Dre was deleted after an empty-slug Apple binding scraped 245 Apple rows. |
 | Arup | Avature facet derivation ends at a stable `/jobs/search/<id>`; never seed the session-stateful `/add/category/<id>` URL (same for Hoare Lea, Ramboll, Stantec, Sweco). Reposts roles under new requisition numbers; the superseded rows stay listed as duplicates while either of its two URLs fails (a partial result), then clear (11 on 2026-10-04). |
 | Audible | Deleted from seed and DB; 112 jobs, 1 misattributed board row. Do not re-add without measuring. |
@@ -588,6 +586,7 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 | Bosch Group | Six curated SmartRecruiters searches cut 4,836 rows to 107 with all board rows kept; Bosch Security deleted. |
 | ByteDance | Blocked; entries for TikTok Audio and Resso deleted as dead duplicates. |
 | Calrec | `careers.calrec.com`, works; no longer blocked. |
+| Cinder | Blocked on purpose (Wellfound/Compas behind Cloudflare; the Wix page renders no list). Owner asked for one job 2026-11-10: route it through community submission, not evasion. |
 | Cirrus Logic | Lever EU tenant (`api.eu.lever.co`); `api_url_for` derives the host from the careers URL. Category `Audio Semiconductors` (native). |
 | Cisco Webex | Repointed 2026-11-09 from the Phenom landing page (scraped only nav links) to Cisco's Workday board `cisco.wd5…/Cisco_Careers?q=audio`; recategorised `Consumer Electronics & Tech` (partial) because native scope let 5 sales/CS roles onto the board. "speech" query added nothing. 22 jobs, 2 board rows. |
 | Cochlear | Native hearing tech; many board rows are clinical/commercial via the category bonus — accepted trade-off. |
@@ -604,6 +603,7 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 | Google | `?q=audio`, `scrape_method: http`; needed `<base href>` handling and pagination. |
 | Harman | Several `extra_careers_urls` queries; no Avature parser needed. |
 | **Knowles Corporation** | ADP **MyJobs**, which the `adp` parser (Workforce Now) does not speak. **Do not build a MyJobs parser:** Knowles yields 0 audio jobs even at native scope, and the only other MyJobs company is Switchcraft (whose URL is HEICO's). The API recipe is in the old log (`DO NOT REPEAT: Knowles`). It has no stored ATS binding; 404s against Workforce Now are discovery guesses. |
+| Laran | Added 2026-11-10 (owner). Custom page, http; titles carried "→ Los Angeles, ITAR-Eligible", stripped by `ARROW_SUFFIX_RE`. 3 jobs, all on the board (two founding roles at the 45 line). |
 | Meta | Repointed 2026-11-08 (owner-requested, `source: manual`): `metacareers.com/jobsearch/?q=audio` + extra `?q=sound`. The pager is JS buttons, so it was read one page deep for months (14 rows, 10 on the board, of 75 audio results). `PAGE_PARAM_HOSTS` in `pagination.py` now walks `?page=N` until a page brings no new jobs; titles come from the card `<h3>` (`INNER_HEADING_TITLE_HOSTS`). 103 rows, 21 on the board. "Project Manager, Organic Content Integrity Operations - Speech Problems" scores on and is not audio work. 400s on job links are bot defence, whitelisted in `check_links`. See the rate-limit trap in §6. |
 | OpenAI | Added 2026-11-08 at the owner's request ("Audio Engineer, Live Video"). Ashby `openai`, 816 jobs; `Consumer Electronics & Tech` for partial scope, like Anthropic. 2 board rows. |
 | Anthropic | Added 2026-11-04 at the owner's request for one AV Production Specialist role (pinned). Greenhouse, 682 jobs; category `Consumer Electronics & Tech` so scope is partial — native scope put 22 rows on the board including Customer Success Managers. 0 scored board rows; the AV Engineer roles score 60, under partial's 65. |
@@ -611,7 +611,11 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 | Holoplot | Added 2026-11-04. Personio `holoplot.jobs.personio.de`, generic http; Personio hosts read the title from the card's `<h3>` (`INNER_HEADING_TITLE_SUFFIXES`) — before that the title carried "Berlin Full-time Permanent employee". Personio also serves `/xml` if a dedicated parser is ever wanted. 7 of 8 on the board. |
 | JAM Industries | Added 2026-11-04 (Canadian distributor; owns Ashly Audio). Dayforce `jobs.dayforcehcm.com/en-US/jam/CANDIDATEPORTAL`, Playwright only (http finds no links). Partial scope; 2 board rows (Ashly DSP and Embedded engineers). |
 | Muse Group | Added 2026-11-04 (MuseScore, Audacity, Ultimate Guitar). `www.mu.se/positions`, http, 26 jobs; 1 scored board row (Full Stack Producer, Audio ML) plus the pinned CPO. |
+| Quippy | Added 2026-11-10 (owner). Ashby; 7 jobs, 1 board row (Realtime Voice Engineer). |
 | Rockford Fosgate | Was "Rockford Marine" until 2026-11-09 (renamed in seed and DB together, now manual). Careers page lists each job as a card linking a PDF; descriptions come from the PDFs. 5 of 9 on the board; Quality Engineer's PDF is a scan. |
+| Sesame | Added 2026-11-10 (owner). Ashby; 18 jobs, 3 board rows (Audio Systems, Speaker Systems, HW Test Automation at 45). |
+| Sonova (Phonak/Unitron) | Repointed 2026-11-10 to SuccessFactors `jobs.sonova.com/search/?q=engineer` plus `q=audio`, `q=acoustic`. Unscoped it has 384 jobs, but only 150 get descriptions (`MAX_DETAIL_FETCHES`), so the rest score on title alone. Scoped: 116 jobs, all described, 32 board rows; clinical audiologist listings mostly drop out. |
+| Stryker | Added 2026-11-10 (owner). Workday `StrykerCareers?q=acoustic` (`Stryker_Careers` 404s); 2 jobs, both on the board. Partial scope. |
 | Syntiant | Added 2026-11-04. Workable `syntiant`, `Audio Semiconductors`; 8 of 12 on the board. |
 | Splice | Repointed 2026-11-04 from `splice.com/careers` (22 consecutive failures) to `job-boards.greenhouse.io/splice`; 6 jobs, none scored on, Senior Brand Marketing Manager pinned. |
 | Microsoft | Repointed 2026-10-17 (owner-approved, `source: manual`): Eightfold `apply.careers.microsoft.com/careers?query=audio` + `?query=speech`, `ats_type: eightfold`, `ats_slug: microsoft.com`. The old URL was the marketing homepage, which only ever yielded "Hiring tips" and "Contractor roles". The unfiltered board is ~2,490 jobs, far past the 200 cap, so it must stay query-scoped. 6 board rows (Audio and Acoustics research intern, Azure Speech, Voice Agent roles). Custom-domain Eightfold needs the stored binding — `check_url` cannot test it (it builds the company with no `ats_type`); a harness that sets it is the only way to measure first. Xbox Game Studios and Playground Games still point at the old homepage (2 furniture rows, never on the board); unverify or repoint them. |
@@ -645,6 +649,19 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   `resolve_database_url`, so running from `scraper/` is fine).
 
 ## 9. Log (newest first, keep entries short)
+
+- **2026-11-10, cycle + Ramboll + owner additions + main fast-forward** — cycle:
+  718 companies, 370 ok, 1,794 s, no page-load timeouts; deactivated 1,701 (≈1,100
+  of them Ramboll's non-acoustic rows after scoping, §5), inserted 308. Ramboll
+  back on the board (21 rows). Eightfold: Qualcomm clean, Microsoft partial (§5).
+  Bose flipped Workday → own site → Workday across 11-08/09/10 and each flip
+  retires the other URL family (75 this cycle) — the claimed-ATS fallback item.
+  Owner's 11 links: Nudge, Meyer Sound (ADP), Syntiant (via Adzuna) were already on
+  the board; added Sesame, Quippy, Laran, Stryker, Anaheim Ducks; Sonova repointed
+  and its Valencia Sr. Research Engineer pinned; Cinder (blocked) and A2Z ProHire
+  (PeoplePilot IT agency, 33 non-audio jobs) left for community submission.
+  **Board-eligible 1,081, publicly listed 1,071.** README gained first-time setup;
+  `main` fast-forwarded to this branch.
 
 - **2026-11-09, cycle + Eightfold fix + Cisco** — cycle: 718 companies, 372 ok,
   1,774 s, no page-load timeouts; deactivated 167, inserted 261, reactivated 127.
