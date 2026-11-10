@@ -8,8 +8,10 @@ from pathlib import Path
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
+from api.query import search_terms, term_pattern
 from api.routers.jobs import list_jobs
-from scraper.models import Base, Job
+from api.routers.search import search_jobs
+from scraper.models import Base, Company, Job
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 JOBS_LOADER = REPO_ROOT / "web" / "src" / "routes" / "jobs" / "+page.server.ts"
@@ -23,10 +25,11 @@ def make_session():
     return sessionmaker(bind=engine)()
 
 
-def make_job(session, title: str, description: str) -> Job:
+def make_job(session, title: str, description: str, company=None) -> Job:
     job = Job(
         title=title,
         description=description,
+        company=company,
         url=f"https://example.com/{title.lower().replace(' ', '-')}",
         is_active=True,
         is_audio_related=True,
@@ -97,6 +100,92 @@ class TestJobSearchFiltering(unittest.TestCase):
 
     def test_search_with_no_match_returns_nothing(self) -> None:
         self.assertEqual(call_list_jobs(self.session, search="zzzznope")["total"], 0)
+
+
+def make_company(session, name: str) -> Company:
+    company = Company(
+        name=name, slug=name.lower().replace(" ", "-"), category="Audio", verified=True
+    )
+    session.add(company)
+    session.flush()
+    return company
+
+
+def titles(result) -> list:
+    return [job.title for job in result["items"]]
+
+
+class TestSearchMatching(unittest.TestCase):
+    def setUp(self) -> None:
+        self.session = make_session()
+        meta = make_company(self.session, "Meta")
+        metalworks = make_company(self.session, "Metalworks Audio")
+        other = make_company(self.session, "Acme Sound")
+        make_job(self.session, "Audio Software Engineer", "Build spatial audio.", meta)
+        make_job(self.session, "Enclosure Designer", "Design metal stampings.", metalworks)
+        make_job(self.session, "Metadata Librarian", "Tag the catalogue.", other)
+        make_job(self.session, "Acoustics Consultant", "Room acoustics work.", other)
+        make_job(self.session, "DSP Engineer", "Prior work at Meta, Google or Apple.", other)
+        make_job(self.session, "Firmware Engineer", "Write C++ for DSP chips.", other)
+
+    def tearDown(self) -> None:
+        self.session.close()
+
+    def test_company_name_matches(self) -> None:
+        result = call_list_jobs(self.session, search="meta")
+        self.assertEqual(titles(result)[0], "Audio Software Engineer")
+
+    def test_short_terms_match_whole_words_only(self) -> None:
+        found = set(titles(call_list_jobs(self.session, search="meta")))
+        self.assertEqual(found, {"Audio Software Engineer", "DSP Engineer"})
+
+    def test_headline_matches_rank_before_description_matches(self) -> None:
+        self.assertEqual(
+            titles(call_list_jobs(self.session, search="meta")),
+            ["Audio Software Engineer", "DSP Engineer"],
+        )
+
+    def test_long_terms_match_word_prefixes(self) -> None:
+        self.assertEqual(
+            titles(call_list_jobs(self.session, search="acoust")), ["Acoustics Consultant"]
+        )
+
+    def test_search_is_case_insensitive(self) -> None:
+        self.assertEqual(
+            titles(call_list_jobs(self.session, search="METADATA")), ["Metadata Librarian"]
+        )
+
+    def test_every_term_must_match_somewhere(self) -> None:
+        self.assertEqual(
+            titles(call_list_jobs(self.session, search="firmware dsp")),
+            ["Firmware Engineer"],
+        )
+
+    def test_symbols_in_terms_are_literal(self) -> None:
+        self.assertEqual(
+            titles(call_list_jobs(self.session, search="c++")), ["Firmware Engineer"]
+        )
+
+    def test_search_endpoint_uses_the_same_rules(self) -> None:
+        result = search_jobs(
+            q="meta", page=1, per_page=25, sort="newest", category=None,
+            seniority=None, remote=None, include_unrelated=False, db=self.session,
+        )
+        self.assertEqual(titles(result), ["Audio Software Engineer", "DSP Engineer"])
+
+
+class TestSearchTerms(unittest.TestCase):
+    def test_terms_are_lowercased_trimmed_and_deduplicated(self) -> None:
+        self.assertEqual(search_terms('  "Audio," audio  DSP! '), ["audio", "dsp"])
+
+    def test_programming_symbols_survive(self) -> None:
+        self.assertEqual(search_terms("C++ C# .NET"), ["c++", "c#", ".net"])
+
+    def test_blank_search_has_no_terms(self) -> None:
+        self.assertEqual(search_terms("   "), [])
+
+    def test_patterns_escape_regex_characters(self) -> None:
+        self.assertIn("c\\+\\+", term_pattern("c++"))
 
 
 class TestJobsLoaderParamContract(unittest.TestCase):

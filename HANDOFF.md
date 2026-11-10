@@ -316,6 +316,16 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   `API_PARAM_ALIASES`, guarded by `test_search_is_the_name_sent_for_free_text`.
   **Curling `/api/jobs?q=` proves nothing about the site** — it made this look
   broken twice.
+- **Search rules** (`search_terms` / `search_clause` / `search_rank` in
+  `api/api/query.py`, since 2026-11-10): the query splits into words and every word
+  must match the title, the **company name** or the description. Words of ≤ 4
+  characters match whole words only ("meta" ≠ metal/metadata, "dsp", "c++");
+  longer words match word starts ("acoust" → acoustics). Title/company matches rank
+  above description-only ones, then the chosen sort. Implemented with
+  `regexp_match` and an inline `(?i)` — SQLAlchemy drops `flags=` on SQLite, and
+  `(?i)` plus `[^a-z0-9]` boundaries also work in PostgreSQL's regex dialect (`\b`
+  would not). Before this, "meta" returned 47 metal/metadata rows and none of
+  Meta's 21 (Meta's rows have no descriptions and its titles never say "Meta").
 - Public pages show board counts, never active counts. New `/companies/…`
   sub-routes register above `/{slug}`. The sitemap reads `/api/jobs`; page caps
   are named constants (a silent 422 once lost 1,074 URLs). `.gitignore` covers
@@ -661,7 +671,8 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   and its Valencia Sr. Research Engineer pinned; Cinder (blocked) and A2Z ProHire
   (PeoplePilot IT agency, 33 non-audio jobs) left for community submission.
   **Board-eligible 1,081, publicly listed 1,071.** README gained first-time setup;
-  `main` fast-forwarded to this branch.
+  `main` fast-forwarded to this branch. Then the owner found search for "meta"
+  returned no Meta jobs; search now matches company names and whole words (§4.7).
 
 - **2026-11-09, cycle + Eightfold fix + Cisco** — cycle: 718 companies, 372 ok,
   1,774 s, no page-load timeouts; deactivated 167, inserted 261, reactivated 127.

@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import re
 from typing import Optional, Union
 
-from sqlalchemy import String, case, func, or_, select
+from sqlalchemy import String, and_, case, func, or_, select
 from sqlalchemy.orm import Session, selectinload
 
 from api.config import MAX_PER_PAGE, STALE_AFTER_FAILURES
@@ -57,6 +58,54 @@ def listable_clause():
     )
 
 
+MAX_SEARCH_TERMS = 8
+WHOLE_WORD_MAX_LEN = 4
+_TERM_EDGE = re.compile(r"^[^\w+#.]+|[^\w+#]+$")
+_WORD_START = "(^|[^a-z0-9])"
+_WORD_END = "($|[^a-z0-9])"
+
+
+def search_terms(text: Optional[str]) -> list[str]:
+    terms: list[str] = []
+    for raw in (text or "").lower().split():
+        term = _TERM_EDGE.sub("", raw)
+        if term and term not in terms:
+            terms.append(term)
+    return terms[:MAX_SEARCH_TERMS]
+
+
+def term_pattern(term: str) -> str:
+    end = _WORD_END if len(term) <= WHOLE_WORD_MAX_LEN else ""
+    return f"(?i){_WORD_START}{re.escape(term)}{end}"
+
+
+def _matches(column, term: str):
+    return column.regexp_match(term_pattern(term))
+
+
+def _headline_match(term: str):
+    return or_(
+        _matches(Job.title, term),
+        Job.company.has(_matches(Company.name, term)),
+    )
+
+
+def search_clause(text: Optional[str]):
+    terms = search_terms(text)
+    if not terms:
+        return None
+    return and_(
+        *(or_(_headline_match(term), _matches(Job.description, term)) for term in terms)
+    )
+
+
+def search_rank(text: Optional[str]):
+    terms = search_terms(text)
+    if not terms:
+        return None
+    return case((and_(*(_headline_match(term) for term in terms)), 0), else_=1)
+
+
 def apply_job_filters(
     stmt,
     category: Optional[list[str]] = None,
@@ -100,9 +149,9 @@ def apply_job_filters(
         stmt = stmt.where(or_(Job.salary_max.is_(None), Job.salary_max >= salary_min))
     if salary_max is not None:
         stmt = stmt.where(or_(Job.salary_min.is_(None), Job.salary_min <= salary_max))
-    if search:
-        pattern = f"%{search}%"
-        stmt = stmt.where(or_(Job.title.ilike(pattern), Job.description.ilike(pattern)))
+    matched = search_clause(search)
+    if matched is not None:
+        stmt = stmt.where(matched)
     if category:
         like_conds = [
             Job.job_categories.cast(String).like(f'%"{cat}"%') for cat in category
@@ -132,10 +181,14 @@ def fetch_job_page(
     per_page: int,
     sort: str = "newest",
     country_first: Optional[str] = None,
+    search: Optional[str] = None,
 ):
     order_by = list(SORT_OPTIONS.get(sort, SORT_OPTIONS["newest"]))
     if country_first:
         order_by.insert(0, case((Job.country == country_first.upper(), 0), else_=1))
+    rank = search_rank(search)
+    if rank is not None:
+        order_by.insert(0, rank)
     total = session.execute(
         select(func.count()).select_from(base_stmt.subquery())
     ).scalar_one()

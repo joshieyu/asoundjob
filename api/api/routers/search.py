@@ -38,7 +38,7 @@ def search_jobs(
         search=q,
         include_unrelated=include_unrelated,
     )
-    jobs, total = fetch_job_page(db, stmt, safe_page, safe_per, sort)
+    jobs, total = fetch_job_page(db, stmt, safe_page, safe_per, sort, search=q)
     return page_envelope(
         [JobSummary.model_validate(job) for job in jobs], total, safe_page, safe_per
     )

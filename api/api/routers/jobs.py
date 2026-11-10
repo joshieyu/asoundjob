@@ -85,7 +85,7 @@ def list_jobs(
         ids=_parse_ids(ids),
     )
     jobs, total = fetch_job_page(
-        db, stmt, safe_page, safe_per, sort, country_first=country
+        db, stmt, safe_page, safe_per, sort, country_first=country, search=search
     )
     return page_envelope(
         [JobSummary.model_validate(job) for job in jobs], total, safe_page, safe_per
