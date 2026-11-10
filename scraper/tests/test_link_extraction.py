@@ -91,6 +91,17 @@ class TestCleanJobTitleFileAnnotations(unittest.TestCase):
         for raw, expected in cases.items():
             self.assertEqual(clean_job_title(raw), expected, raw)
 
+    def test_arrow_location_suffix_is_stripped(self) -> None:
+        cases = {
+            "Founding Audio ML Engineer \u2192 Los Angeles, ITAR-Eligible":
+                "Founding Audio ML Engineer",
+            "Founding Forward-Deployed Engineer, Spanish Markets \u2192 Los Angeles, "
+            "Travel Required, ITAR-Eligible": "Founding Forward-Deployed Engineer, Spanish Markets",
+            "Audio Engineer \u2192": "Audio Engineer",
+        }
+        for raw, expected in cases.items():
+            self.assertEqual(clean_job_title(raw), expected, raw)
+
     def test_real_parentheticals_are_kept(self) -> None:
         for raw in (
             "Acoustic Engineer (f/m/d)",

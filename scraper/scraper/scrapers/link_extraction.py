@@ -492,6 +492,8 @@ FILE_ANNOTATION_RE = re.compile(
     re.IGNORECASE,
 )
 
+ARROW_SUFFIX_RE = re.compile(r"(?<=\S)\s+[\u2192\u27f6\u279c\u2794]\s+\S.*$")
+
 EMPLOYMENT_SUFFIX_RE = re.compile(
     r"(?<=\S)" + SEP + r"+(?P<emp>Full[- ]?Time|Part[- ]?Time|Permanent|"
     r"Temporary|Contract)\s*$",
@@ -673,6 +675,8 @@ def _clean_job_title_and_type(text: str) -> tuple[str, Optional[str]]:
 
     for _ in range(8):
         new_title = FILE_ANNOTATION_RE.sub("", title)
+        if new_title == title:
+            new_title = ARROW_SUFFIX_RE.sub("", title)
         if new_title == title:
             new_title = POSTED_AGO_RE.sub("", title)
         if new_title == title:
