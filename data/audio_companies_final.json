@@ -243,8 +243,8 @@
     "name": "Advanced Bionics",
     "careers_url": "https://www.sonova.com/careers/",
     "category": "Hearing Aid & Hearing Tech",
-    "verified": true,
-    "source": "auto",
+    "verified": false,
+    "source": "manual",
     "scrape_method": "playwright"
   },
   {
@@ -555,6 +555,14 @@
     "verified": true,
     "source": "auto",
     "scrape_method": "playwright"
+  },
+  {
+    "name": "Anaheim Ducks",
+    "careers_url": "https://anaheimducks.wd5.myworkdayjobs.com/Linkedin?q=audio",
+    "category": "Professional Audio & Live Sound",
+    "verified": true,
+    "source": "manual",
+    "scrape_method": "http"
   },
   {
     "name": "Analog Devices",
@@ -5603,6 +5611,14 @@
     "scrape_method": "playwright"
   },
   {
+    "name": "Laran",
+    "careers_url": "https://laran.com/careers/",
+    "category": "AI/ML Audio",
+    "verified": true,
+    "source": "manual",
+    "scrape_method": "http"
+  },
+  {
     "name": "Larian Studios",
     "careers_url": "https://eu.merch.larian.com/products/divinity-original-sin-the-boardgame",
     "category": "Gaming, VR & Immersive Audio",
@@ -8106,6 +8122,14 @@
     "scrape_method": "http"
   },
   {
+    "name": "Quippy",
+    "careers_url": "https://jobs.ashbyhq.com/quippy",
+    "category": "Voice & Speech Technology",
+    "verified": true,
+    "source": "manual",
+    "scrape_method": "http"
+  },
+  {
     "name": "Raal Requisite",
     "careers_url": "https://requisiteaudio.com/",
     "category": "Headphones & Personal Audio",
@@ -8139,10 +8163,10 @@
   },
   {
     "name": "Ramboll Group",
-    "careers_url": "https://careers.smartrecruiters.com/Ramboll3",
+    "careers_url": "https://careers.smartrecruiters.com/Ramboll3?q=acoustics%20noise",
     "category": "Acoustic Consulting & Engineering",
     "verified": true,
-    "source": "auto",
+    "source": "manual",
     "scrape_method": "http"
   },
   {
@@ -8870,6 +8894,14 @@
     "scrape_method": "playwright"
   },
   {
+    "name": "Sesame",
+    "careers_url": "https://jobs.ashbyhq.com/sesame",
+    "category": "Voice & Speech Technology",
+    "verified": true,
+    "source": "manual",
+    "scrape_method": "http"
+  },
+  {
     "name": "Shanling",
     "careers_url": "https://www.shenzhenaudio.com/pages/careers",
     "category": "Headphones & Personal Audio",
@@ -9242,11 +9274,15 @@
   },
   {
     "name": "Sonova (Phonak/Unitron)",
-    "careers_url": "https://www.sonova.com/careers/",
+    "careers_url": "https://jobs.sonova.com/search/?q=engineer",
     "category": "Hearing Aid & Hearing Tech",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "playwright",
+    "extra_careers_urls": [
+      "https://jobs.sonova.com/search/?q=audio",
+      "https://jobs.sonova.com/search/?q=acoustic"
+    ]
   },
   {
     "name": "Sonus Faber",
@@ -9742,6 +9778,14 @@
     "category": "Hearing Aid & Hearing Tech",
     "verified": false,
     "source": "auto",
+    "scrape_method": "http"
+  },
+  {
+    "name": "Stryker",
+    "careers_url": "https://stryker.wd1.myworkdayjobs.com/StrykerCareers?q=acoustic",
+    "category": "Consumer Electronics & Tech",
+    "verified": true,
+    "source": "manual",
     "scrape_method": "http"
   },
   {
