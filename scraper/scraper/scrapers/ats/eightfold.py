@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import re
+from time import monotonic
 from typing import TYPE_CHECKING, Any
 from urllib.parse import parse_qs, quote, urlparse
 
@@ -90,6 +91,7 @@ class EightfoldScraper(BaseScraper):
         return URL_PATTERN.match(company.careers_url.strip()) is not None
 
     async def fetch_jobs(self, company: Company) -> list[RawJob]:
+        deadline = monotonic() + self.settings.per_company_timeout * ENRICHMENT_BUDGET_FRACTION
         careers_url = (company.careers_url or "").strip()
         parsed = urlparse(careers_url)
         host = parsed.netloc
@@ -125,11 +127,11 @@ class EightfoldScraper(BaseScraper):
                 break
 
         jobs = parse_positions({"data": {"positions": all_positions}}, host)
-        await self._enrich_descriptions(jobs, host, domain)
+        await self._enrich_descriptions(jobs, host, domain, deadline)
         return jobs
 
     async def _enrich_descriptions(
-        self, jobs: list[RawJob], host: str, domain: str
+        self, jobs: list[RawJob], host: str, domain: str, deadline: float
     ) -> None:
         fetch_list = jobs[:MAX_DETAIL_FETCHES]
         throttled = False
@@ -154,7 +156,9 @@ class EightfoldScraper(BaseScraper):
                     return
             job.description = _extract_description(detail)
 
-        timeout = self.settings.per_company_timeout * ENRICHMENT_BUDGET_FRACTION
+        timeout = deadline - monotonic()
+        if timeout <= 0:
+            return
         try:
             await asyncio.wait_for(
                 asyncio.gather(*(fetch_one(j) for j in fetch_list)),

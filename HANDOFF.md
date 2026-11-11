@@ -489,7 +489,10 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   its second search page after both retries, but its `speech` URL succeeded, so
   the result was partial (no deactivation, failure count stays 0) and no fallback
   rows appeared. If Microsoft keeps 429ing, lengthen the backoff or drop to one
-  search slot before anything cleverer.
+  search slot before anything cleverer. **2026-11-11:** no Eightfold 429s at all,
+  but Microsoft's `audio` URL hit the 90 s company timeout: enrichment got a fixed
+  76 s *after* a search slowed by the shared slots. Enrichment now gets only what is
+  left of 85% of the budget measured from the start of `fetch_jobs`.
 - **A navigation-only result is a trusted success** (§4.2) and can deactivate a
   real board (Zoom, 2026-09-29). A result whose every row is non-job furniture
   should count as failed, or at least `partial`. Measure first: 46 companies were
@@ -659,6 +662,14 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   `resolve_database_url`, so running from `scraper/` is fine).
 
 ## 9. Log (newest first, keep entries short)
+
+- **2026-11-11, cycle** — 723 companies, 378 ok, 1,727 s, no page-load timeouts;
+  deactivated 455, inserted 381. No Eightfold 429s (first clean cycle for them);
+  Microsoft timed out instead and the enrichment budget was fixed (§5), then a
+  solo re-scrape was clean (7 s, 6 board rows). Dolby's 11-10 fallback rows
+  cleared on a clean Eightfold scrape (7 board rows). Ramboll, Sonova, Cisco,
+  Meta and Qualcomm all clean. **Board-eligible 1,089, publicly listed 1,079**
+  (10 hidden: IK 4, Otter 3, XLN 1, Valcom 1, Fairphone 1).
 
 - **2026-11-10, cycle + Ramboll + owner additions + main fast-forward** — cycle:
   718 companies, 370 ok, 1,794 s, no page-load timeouts; deactivated 1,701 (≈1,100

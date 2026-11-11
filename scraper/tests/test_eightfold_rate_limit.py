@@ -140,6 +140,34 @@ class TestDetailThrottling(unittest.TestCase):
         self.assertLessEqual(state["peak"], eightfold.DETAIL_CONCURRENCY)
 
 
+class TestEnrichmentBudget(unittest.TestCase):
+    def test_slow_search_leaves_enrichment_only_the_remaining_time(self) -> None:
+        settings = load_settings()
+        budget = settings.per_company_timeout * eightfold.ENRICHMENT_BUDGET_FRACTION
+        clock = {"now": 1000.0}
+        detail_calls: list[str] = []
+
+        def fake_fetch(url, settings, *args, **kwargs):
+            if "position_details" in url:
+                detail_calls.append(url)
+                return {"data": {}}
+            clock["now"] += budget + 1
+            return search_payload(3)
+
+        async def go():
+            scraper = EightfoldScraper(settings)
+            return await scraper.fetch_jobs(make_company())
+
+        with patch(
+            "scraper.scrapers.ats.eightfold.fetch_json", side_effect=fake_fetch
+        ), patch(
+            "scraper.scrapers.ats.eightfold.monotonic", side_effect=lambda: clock["now"]
+        ):
+            jobs = asyncio.run(go())
+        self.assertEqual(len(jobs), 3)
+        self.assertEqual(detail_calls, [])
+
+
 class RateLimitedScraper(BaseScraper):
     name = "eightfold"
 
