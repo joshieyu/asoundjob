@@ -189,6 +189,12 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   three or more, and keeps quoted phrases literal; Radancy ranks the whole corpus
   rather than filtering; Amazon must carry `base_query`. Pick terms by scraping
   unfiltered once and keeping only terms that recover board rows others miss.
+- **Links resolve against the URL the page was actually served from**, after
+  redirects (2026-11-11). `collect_paginated`'s fetch may return `(html,
+  final_url)`; `HttpScraper` uses `fetch_page` (requests' `response.url`) and
+  Playwright `page.url`. The same-host checks and http enrichment use the final
+  host too. Expect a one-time swap of rows (new URLs in, old out) at any company
+  whose careers page redirects across hosts, on its first scrape after this.
 - Location comes only from an element labelled as location, never blind card
   text; multi-location cards join with `"; "`. JSON-LD `jobLocation` may be an
   array. `resolve_document_base()` applies wherever relative URLs are resolved.
@@ -642,7 +648,7 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 | Perkins&Will | Real board on UltiPro (152 jobs, none audio); kept for its acoustics practice. |
 | Qualcomm / Infineon | `extra_careers_urls` for audio + dsp (+ acoustic) because Eightfold capped at 120; "dsp" admits some NPU/modem noise, accepted. |
 | Ramboll Group | See §5. Talent-pool "Rail Power Supply" rows fixed by `TALENT_POOL_TITLE`, not dedup. |
-| Rohde & Schwarz | Avature board, `http` method (Playwright rendered a country selector). The http attempt still fails silently in about two runs of three, and each switch to or from Playwright swaps the board rows (§5). |
+| Rohde & Schwarz | `jobs.rohde-schwarz.com` now redirects to `www.rohde-schwarz.com/uk/career/jobs/career-jobboard_251573.html`, and http cannot reach the `jobs.` host at all, so Playwright scrapes it every run. Until 2026-11-11 its relative job links were resolved against the requested `jobs.` host, which 404s for job pages — every R&S link on the board was dead. Fixed by resolving against the final URL (§4.3); 8 board rows. ~39 rows are country-selector links (`career-jobboard…?change_c=XX`), all off the board. |
 | Samsung | Workday `sec.wd3/Samsung_Careers`, ~750 jobs, 5 on the board; times out under cycle load about four cycles in five and falls back to 23 Playwright rows (§5). |
 | Sigma Connectivity | Group JSON API filtered client-side via `company_startswith`; do not "fix" it to the server's exact-match `?company=`. |
 | Sony | Workday `sonyglobal`; only Europe/US/China/Japan sites exist; global contributes 0 board rows correctly. |
@@ -667,6 +673,11 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   `resolve_database_url`, so running from `scraper/` is fine).
 
 ## 9. Log (newest first, keep entries short)
+
+- **2026-11-11, dead Rohde & Schwarz links** — owner found every R&S link 404ed:
+  relative links were resolved against the pre-redirect host (§4.3). Fixed for
+  http and Playwright; R&S re-scraped (76 jobs, 8 board rows, links verified).
+  Also sorted undated jobs by first-seen day (§4.7).
 
 - **2026-11-11, cycle** — 723 companies, 378 ok, 1,727 s, no page-load timeouts;
   deactivated 455, inserted 381. No Eightfold 429s (first clean cycle for them);

@@ -9,7 +9,7 @@ from urllib.parse import urlparse
 from bs4 import BeautifulSoup, Tag
 
 from scraper.scrapers.base import BaseScraper, RawJob, ScrapeError
-from scraper.scrapers.fetch import fetch_html
+from scraper.scrapers.fetch import fetch_html, fetch_page
 from scraper.scrapers.pagination import collect_paginated
 from scraper.scrapers.pdf_description import enrich_pdf_jobs, is_pdf_url
 
@@ -32,8 +32,12 @@ class HttpScraper(BaseScraper):
             raise ValueError(f"Company {company.name} has no careers_url")
         url = company.careers_url.strip()
 
-        async def fetch(page_url: str) -> str:
-            return await asyncio.to_thread(fetch_html, page_url, self.settings)
+        landed: list[str] = []
+
+        async def fetch(page_url: str) -> tuple[str, str]:
+            html, final_url = await asyncio.to_thread(fetch_page, page_url, self.settings)
+            landed.append(final_url)
+            return html, final_url
 
         jobs, first_page_html = await collect_paginated(fetch, url)
         self._last_html = first_page_html
@@ -43,14 +47,15 @@ class HttpScraper(BaseScraper):
         deadline = start + self.settings.per_company_timeout * ENRICHMENT_BUDGET_FRACTION
         await enrich_pdf_jobs(jobs, self.settings, deadline, MIN_DESCRIPTION_CHARS)
 
-        host = urlparse(url).netloc.lower()
+        listing_url = landed[0] if landed else url
+        host = urlparse(listing_url).netloc.lower()
         candidates = [
             job
             for job in jobs
             if _needs_enrichment(job)
             and not is_pdf_url(job.url)
             and urlparse(job.url).netloc.lower() == host
-            and not _is_same_page_anchor(job.url, url)
+            and not _is_same_page_anchor(job.url, listing_url)
         ][:MAX_DETAIL_FETCHES]
 
         semaphore = asyncio.Semaphore(DETAIL_FETCH_CONCURRENCY)

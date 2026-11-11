@@ -60,6 +60,17 @@ def post_json(
         raise FetchError(f"Invalid JSON from {url}: {exc}") from exc
 
 
+def fetch_page(
+    url: str, settings: Settings, timeout: float | None = None
+) -> tuple[str, str]:
+    response = _get_session(settings).get(
+        url, timeout=timeout or settings.request_timeout
+    )
+    if response.status_code != 200:
+        raise FetchError(f"HTTP {response.status_code} for {url}", response.status_code)
+    return response.text, str(response.url or url)
+
+
 def fetch_html(url: str, settings: Settings, timeout: float | None = None) -> str:
     response = _get_session(settings).get(
         url, timeout=timeout or settings.request_timeout

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import unittest
+from contextlib import contextmanager
 from time import monotonic
 from unittest.mock import patch
 
@@ -15,6 +16,17 @@ from scraper.scrapers.pdf_description import (
     pdf_text,
     wants_pdf_description,
 )
+
+
+@contextmanager
+def fake_fetches(side_effect):
+    def fake_page(url, settings, *args, **kwargs):
+        return side_effect(url, settings), url
+
+    with patch(
+        "scraper.scrapers.http_scraper.fetch_html", side_effect=side_effect
+    ), patch("scraper.scrapers.http_scraper.fetch_page", side_effect=fake_page):
+        yield
 
 
 def make_pdf(lines: list[str]) -> bytes:
@@ -169,8 +181,7 @@ class TestHttpScraperPdfJobs(unittest.TestCase):
                 return make_pdf(JOB_LINES)
             return make_pdf(["Scanned page"])
 
-        with patch(
-            "scraper.scrapers.http_scraper.fetch_html", side_effect=fake_html
+        with fake_fetches(fake_html
         ), patch(
             "scraper.scrapers.pdf_description.fetch_pdf_bytes", side_effect=fake_pdf
         ):

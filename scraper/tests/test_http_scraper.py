@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import json
 import unittest
+from contextlib import contextmanager
 from unittest.mock import patch
 
 from scraper.config import load_settings
@@ -14,6 +15,18 @@ from scraper.scrapers.http_scraper import (
     _is_same_page_anchor,
     extract_description,
 )
+
+
+@contextmanager
+def fake_fetches(side_effect):
+    def fake_page(url, settings, *args, **kwargs):
+        return side_effect(url, settings), url
+
+    with patch(
+        "scraper.scrapers.http_scraper.fetch_html", side_effect=side_effect
+    ), patch("scraper.scrapers.http_scraper.fetch_page", side_effect=fake_page):
+        yield
+
 
 LISTING_HTML = """
 <html><body>
@@ -92,25 +105,19 @@ class TestHttpScraper(unittest.TestCase):
         self.company = make_company()
 
     def test_extracted_jobs_are_returned(self) -> None:
-        with patch(
-            "scraper.scrapers.http_scraper.fetch_html",
-            side_effect=lambda url, settings: LISTING_HTML,
+        with fake_fetches(lambda url, settings: LISTING_HTML,
         ):
             jobs = asyncio.run(self.scraper.fetch_jobs(self.company))
         self.assertEqual(len(jobs), 2)
 
     def test_no_job_links_raises_rather_than_returning_empty(self) -> None:
-        with patch(
-            "scraper.scrapers.http_scraper.fetch_html",
-            side_effect=lambda url, settings: NO_JOBS_HTML,
+        with fake_fetches(lambda url, settings: NO_JOBS_HTML,
         ):
             with self.assertRaises(ScrapeError):
                 asyncio.run(self.scraper.fetch_jobs(self.company))
 
     def test_scrape_reports_failure_so_the_pipeline_falls_through(self) -> None:
-        with patch(
-            "scraper.scrapers.http_scraper.fetch_html",
-            side_effect=lambda url, settings: NO_JOBS_HTML,
+        with fake_fetches(lambda url, settings: NO_JOBS_HTML,
         ):
             result = asyncio.run(self.scraper.scrape(self.company))
         self.assertFalse(result.success)
@@ -128,8 +135,7 @@ class TestHttpScraper(unittest.TestCase):
                 return LISTING_HTML
             return detail_html("Audio DSP Engineer", LONG_DESCRIPTION)
 
-        with patch(
-            "scraper.scrapers.http_scraper.fetch_html", side_effect=fake_fetch
+        with fake_fetches(fake_fetch
         ):
             jobs = asyncio.run(self.scraper.fetch_jobs(self.company))
 
@@ -147,8 +153,7 @@ class TestHttpScraper(unittest.TestCase):
                 return LISTING_WITH_LONG_DESCRIPTION_HTML
             return detail_html("Acoustic Engineer", LONG_DESCRIPTION)
 
-        with patch(
-            "scraper.scrapers.http_scraper.fetch_html", side_effect=fake_fetch
+        with fake_fetches(fake_fetch
         ):
             jobs = asyncio.run(self.scraper.fetch_jobs(self.company))
 
@@ -167,8 +172,7 @@ class TestHttpScraper(unittest.TestCase):
                 raise AssertionError("must not fetch an offsite detail url")
             return detail_html("Audio DSP Engineer", LONG_DESCRIPTION)
 
-        with patch(
-            "scraper.scrapers.http_scraper.fetch_html", side_effect=fake_fetch
+        with fake_fetches(fake_fetch
         ):
             jobs = asyncio.run(self.scraper.fetch_jobs(self.company))
 
@@ -186,8 +190,7 @@ class TestHttpScraper(unittest.TestCase):
                 raise ConnectionError("boom")
             return detail_html("Acoustic Engineer", LONG_DESCRIPTION)
 
-        with patch(
-            "scraper.scrapers.http_scraper.fetch_html", side_effect=fake_fetch
+        with fake_fetches(fake_fetch
         ):
             jobs = asyncio.run(self.scraper.fetch_jobs(self.company))
 
@@ -207,8 +210,7 @@ class TestHttpScraper(unittest.TestCase):
             detail_calls.append(url)
             return detail_html("Audio Engineer", LONG_DESCRIPTION)
 
-        with patch(
-            "scraper.scrapers.http_scraper.fetch_html", side_effect=fake_fetch
+        with fake_fetches(fake_fetch
         ), patch("scraper.scrapers.http_scraper.MAX_DETAIL_FETCHES", 2):
             jobs = asyncio.run(self.scraper.fetch_jobs(self.company))
 
@@ -260,3 +262,41 @@ class TestExtractDescription(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+REDIRECTED_LISTING_HTML = """
+<html><body>
+<a href="/uk/career/jobs/audio-test-engineer_251563-1718151.html">Audio Test Engineer</a>
+<a href="/uk/career/jobs/rf-design-engineer_251563-1718152.html">RF Design Engineer</a>
+</body></html>
+"""
+
+
+class TestRedirectedListing(unittest.TestCase):
+    def test_relative_links_resolve_against_the_page_actually_served(self) -> None:
+        company = make_company()
+        company.careers_url = "https://jobs.example.com/en_US/careers"
+        landed = "https://www.example.com/uk/career/jobs/career-jobboard_251573.html"
+        detail_urls: list = []
+
+        def fake_page(url, settings, *args, **kwargs):
+            return REDIRECTED_LISTING_HTML, landed
+
+        def fake_html(url, settings, *args, **kwargs):
+            detail_urls.append(url)
+            return detail_html("Role", LONG_DESCRIPTION)
+
+        with patch(
+            "scraper.scrapers.http_scraper.fetch_page", side_effect=fake_page
+        ), patch("scraper.scrapers.http_scraper.fetch_html", side_effect=fake_html):
+            jobs = asyncio.run(HttpScraper(load_settings()).fetch_jobs(company))
+
+        urls = sorted(job.url for job in jobs)
+        self.assertEqual(
+            urls,
+            [
+                "https://www.example.com/uk/career/jobs/audio-test-engineer_251563-1718151.html",
+                "https://www.example.com/uk/career/jobs/rf-design-engineer_251563-1718152.html",
+            ],
+        )
+        self.assertEqual(sorted(detail_urls), urls)

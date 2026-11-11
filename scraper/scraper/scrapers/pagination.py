@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import Awaitable, Callable, List, Optional, Set, Tuple
+from typing import Awaitable, Callable, List, Optional, Set, Tuple, Union
 from urllib.parse import parse_qsl, urlencode, urljoin, urlparse, urlunparse
 
 from bs4 import BeautifulSoup, Tag
@@ -159,7 +159,7 @@ def page_param_next(url: str) -> Optional[str]:
     return urlunparse(parsed._replace(query=urlencode(kept)))
 
 
-FetchFn = Callable[[str], Awaitable[str]]
+FetchFn = Callable[[str], Awaitable[Union[str, Tuple[str, str]]]]
 
 
 async def collect_paginated(
@@ -171,13 +171,16 @@ async def collect_paginated(
     seen_job_urls: Set[str] = set()
     visited_pages: Set[Tuple[str, str, str]] = {_page_key(start_url)}
     first_page_html: Optional[str] = None
+    first_page_url = start_url
 
     url = start_url
     for _ in range(max_pages):
-        html = await fetch(url)
+        fetched = await fetch(url)
+        html, page_url = fetched if isinstance(fetched, tuple) else (fetched, url)
         if first_page_html is None:
             first_page_html = html
-        page_jobs = extract_jobs(html, url)
+            first_page_url = page_url
+        page_jobs = extract_jobs(html, page_url)
         new_jobs = [job for job in page_jobs if job.url not in seen_job_urls]
         if not new_jobs:
             break
@@ -185,7 +188,7 @@ async def collect_paginated(
             seen_job_urls.add(job.url)
             jobs.append(job)
 
-        next_url = find_next_page(html, url) or page_param_next(url)
+        next_url = find_next_page(html, page_url) or page_param_next(page_url)
         if not next_url:
             break
         next_key = _page_key(next_url)
@@ -195,6 +198,6 @@ async def collect_paginated(
         url = next_url
 
     if not jobs and first_page_html is not None:
-        jobs = extract_accordion_jobs(first_page_html, start_url)
+        jobs = extract_accordion_jobs(first_page_html, first_page_url)
 
     return jobs, first_page_html

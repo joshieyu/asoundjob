@@ -34,6 +34,7 @@ class PlaywrightScraper(BaseScraper):
         self._browser: Any | None = None
         self._lock = asyncio.Lock()
         self._page_status: dict[str, int] = {}
+        self._final_url: dict[str, str] = {}
 
     async def _ensure_browser(self):
         if self._browser is None:
@@ -73,6 +74,9 @@ class PlaywrightScraper(BaseScraper):
                 )
             self._record_status(url, response)
             await page.wait_for_timeout(500)
+            final_url = getattr(page, "url", None)
+            if isinstance(final_url, str) and final_url.startswith(("http://", "https://")):
+                self._final_url[url] = final_url
             return await page.content()
         finally:
             await context.close()
@@ -88,15 +92,16 @@ class PlaywrightScraper(BaseScraper):
         url = company.careers_url.strip()
         status: Optional[int] = None
 
-        async def fetch_checked(page_url: str) -> str:
+        async def fetch_checked(page_url: str) -> tuple[str, str]:
             html = await self.fetch_page_html(page_url)
+            final_url = self._final_url.pop(page_url, page_url)
             if page_url != url:
                 page_status = self._page_status.pop(page_url, None)
                 if page_status is not None and page_status >= 400:
                     raise ScrapeError(
                         f"HTTP {page_status} for {page_url} while paginating {url}"
                     )
-            return html
+            return html, final_url
 
         try:
             jobs, first_page_html = await collect_paginated(fetch_checked, url)

@@ -446,3 +446,19 @@ class TestPageParamHosts(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestFetchReportingFinalUrl(unittest.TestCase):
+    def test_links_and_next_page_use_the_final_url(self) -> None:
+        listing = (
+            '<html><body><a href="/careers/jobs/1">Audio DSP Engineer</a>'
+            '<a href="/careers/jobs/2">Acoustic Engineer</a></body></html>'
+        )
+
+        async def fetch(url):
+            return listing, "https://www.example.com/careers/jobs"
+
+        jobs, _ = asyncio.run(collect_paginated(fetch, "https://old.example.com/careers"))
+        self.assertTrue(jobs)
+        for job in jobs:
+            self.assertTrue(job.url.startswith("https://www.example.com/"), job.url)
