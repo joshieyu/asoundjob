@@ -316,6 +316,11 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   `API_PARAM_ALIASES`, guarded by `test_search_is_the_name_sent_for_free_text`.
   **Curling `/api/jobs?q=` proves nothing about the site** — it made this look
   broken twice.
+- **Date sorts use the date the card shows** (`SEEN_DATE` in `api/api/query.py`,
+  2026-11-11): `posted_date`, else the day the row was first scraped
+  (`scraped_at` is set on insert only). Before, undated rows (274 of 1,079 board
+  rows — Harman, Meta, Sivantos, Demant…) sorted after every dated row, so a job
+  found today could sit below month-old postings while its card said "seen today".
 - **Search rules** (`search_terms` / `search_clause` / `search_rank` in
   `api/api/query.py`, since 2026-11-10): the query splits into words and every word
   must match the title, the **company name** or the description. Words of ≤ 4

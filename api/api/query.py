@@ -160,16 +160,18 @@ def apply_job_filters(
     return stmt
 
 
+SEEN_DATE = func.coalesce(Job.posted_date, func.date(Job.scraped_at))
+
 SORT_OPTIONS = {
-    "newest": [Job.posted_date.desc().nullslast(), Job.scraped_at.desc()],
-    "oldest": [Job.posted_date.asc().nullsfirst(), Job.scraped_at.asc()],
+    "newest": [SEEN_DATE.desc(), Job.scraped_at.desc()],
+    "oldest": [SEEN_DATE.asc(), Job.scraped_at.asc()],
     "salary_desc": [
         func.coalesce(Job.salary_max, Job.salary_min, 0).desc(),
-        Job.posted_date.desc().nullslast(),
+        SEEN_DATE.desc(),
     ],
     "salary_asc": [
         func.coalesce(Job.salary_max, Job.salary_min, 1_000_000_000).asc(),
-        Job.posted_date.desc().nullslast(),
+        SEEN_DATE.desc(),
     ],
 }
 
