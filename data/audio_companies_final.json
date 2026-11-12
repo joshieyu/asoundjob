@@ -4798,6 +4798,17 @@
     "scrape_method": "playwright"
   },
   {
+    "name": "HP IQ",
+    "careers_url": "https://job-boards.greenhouse.io/hp",
+    "category": "Consumer Electronics & Tech",
+    "verified": true,
+    "source": "manual",
+    "scrape_method": "http",
+    "website_url": "https://www.hp-iq.com",
+    "ats_type": "greenhouse",
+    "ats_slug": "hp"
+  },
+  {
     "name": "HTC (Vive)",
     "careers_url": "https://globalcareers-htcvive.icims.com/jobs/intro?hashed=-435804063&mobile=false&width=988&height=500&bga=true&needsRedirect=false&jan1offset=0&jun1offset=60",
     "category": "Gaming, VR & Immersive Audio",
