@@ -16,11 +16,11 @@ As of the 2026-11-12 cycle plus that day's narrowing and re-scrapes:
 
 | | |
 | --- | --- |
-| companies in the seed / DB | 1,426 (756 verified, 57 `source: manual`, 15 `scrape_blocked`) |
+| companies in the seed / DB | 1,426 (757 verified, 58 `source: manual`, 15 `scrape_blocked`) |
 | scrape population (verified, unblocked, has URL) | a cycle scrapes ~718 after shared-URL dedup |
 | cycle | ~26–36 min on a good connection; ok 370 / failed 348 — ~50% failure is normal |
-| job rows / active / board-eligible | ~35,300 / ~10,800 / 1,076 |
-| **publicly listed** | **1,066** (10 hidden as stale: IK Multimedia 4, Otter.ai 3, XLN Audio 1, Fairphone 1, Valcom 1) |
+| job rows / active / board-eligible | ~35,300 / ~10,800 / 1,080 |
+| **publicly listed** | **1,070** (10 hidden as stale: IK Multimedia 4, Otter.ai 3, XLN Audio 1, Fairphone 1, Valcom 1) |
 | companies contributing to the board | 145; top: Shure 111, Apple 75, Cirrus Logic 71, Bose 61, Qualcomm 49, Amazon 41 |
 
 **Running locally:** the app's preview launcher cannot start the API — macOS
@@ -159,7 +159,7 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 - **`ats_type` is a routing cache, not the mechanism** — every parser also matches
   on URL shape.
 - ATS parsers (`scrapers/ats/`): adp (Workforce Now only), amazon, apple, ashby,
-  bamboohr, eightfold, gibson, greenhouse, icims, jibe, lever, pinpoint,
+  bamboohr, eightfold, gibson, greenhouse, haileyhr, icims, jibe, lever, pinpoint,
   recruitee, sigma, smartrecruiters, successfactors, ultipro, workable, workday.
 - ATS results are `trust_empty` (empty means no jobs); generic results never are.
   If a dedicated parser claimed a board and failed, the fallback result is
@@ -662,6 +662,7 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 | Delart | Embed-only Greenhouse board; do not repoint to delartech.com. Agency scope. |
 | Demant | SuccessFactors `careers.demant.com/search/`, narrowed 2026-11-12 to `?q=engineer` plus `test`, `dsp`, `acoustic` (manual): ~19 s instead of a timeout every cycle since 2026-09-11. That retired 24 unconfirmed board rows, nearly all clinic/admin. `?q=developer`/`software` mostly add clinic roles (the search matches "développement"). `careers.demant.com/` (marketing) and `careers.us.demant.com/jobs` (clinic hiring) are traps. 9 board rows. |
 | DiGiCo | `digico.biz/recruitment/`, healthy. |
+| Dirac Research | Re-verified 2026-11-12 (owner). Swedish audio DSP licensed to car and device makers; moved from Consumer Electronics (partial) to Audio Middleware & SDK (native), which keeps its Home & Pro developer role (score 80; 45 under partial). Jobs are on Hailey HR (`dirac.careers.haileyhr.app`, `scrapers/ats/haileyhr.py`): listing cards put location and department chips before an `<h3>` title, and descriptions are Markdown inside the Next.js `self.__next_f` stream (`<id>:T<hex bytes>,` text chunk), not the HTML. 4 board rows. |
 | Dolby | Eightfold `/api/pcsx/search`, `domain=dolby.com`; new Eightfold companies need two cycles (slug derived). |
 | ElevenLabs | Not seeded on purpose: 52 of 54 reachable board rows would be sales; research roles score 4 against the cutoff of 5. |
 | Fender / inMusic / Logitech | Each board was being claimed by a sub-brand via shared-URL dedup; sub-brands are `verified: false`. |
@@ -702,7 +703,7 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 | Tymphany | Replaced Peerless; `open_application`, manual; contact form only, so failing is correct. |
 | Vifa | Still points at `dst.dk`; `verified: false` on purpose. |
 | Waymo | Search param is `query`; alphabetical pagination needs several narrow queries. |
-| Wienburg | Added 2026-11-12 (owner). Düsseldorf real-time audio for defence/security; one-page jobs list at `wienburg.io/jobs/`. Its "View posting" button carries screen-reader text ": Founding Engineer", which was the longest link text and won the title until `CTA_PREFIX_RE` (§4.2). The "Download PDF · 3 pages" link is stored but scores 0. |
+| Wienburg | Added 2026-11-12 (owner). Düsseldorf real-time audio for defence/security, "redefining hearing in critical scenarios" — Hearing Aid & Hearing Tech (owner's call; was Headphones); one-page jobs list at `wienburg.io/jobs/`. Its "View posting" button carries screen-reader text ": Founding Engineer", which was the longest link text and won the title until `CTA_PREFIX_RE` (§4.2). The "Download PDF · 3 pages" link is stored but scores 0. |
 | Zoom | `careers.zoom.us/jobs/search` dead since 2026-09-29; its 60 jobs were deactivated by a navigation-only scrape (§5). Needs a new URL. |
 
 ## 8. Stale files in the repo
@@ -720,6 +721,11 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   `resolve_database_url`, so running from `scraper/` is fine).
 
 ## 9. Log (newest first, keep entries short)
+
+- **2026-11-12, job-type filter + Dirac** — untyped jobs listed after job-type
+  matches (§5 Frontend); new Hailey HR parser; Dirac Research re-verified on it
+  (4 board rows); Wienburg moved to Hearing Aid & Hearing Tech. Demo servers had
+  died again and were restarted. **Publicly listed 1,070.**
 
 - **2026-11-12, deploy prep + timeouts + small items** — adapter-node and
   proxy-aware rate limits (§5). Narrowed the repeat-timeout boards with search

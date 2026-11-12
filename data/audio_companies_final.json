@@ -3054,11 +3054,12 @@
   },
   {
     "name": "Dirac Research",
-    "careers_url": "https://www.dirac.com/careers",
-    "category": "Consumer Electronics & Tech",
-    "verified": false,
-    "source": "auto",
-    "scrape_method": "http"
+    "careers_url": "https://dirac.careers.haileyhr.app/",
+    "category": "Audio Middleware & SDK",
+    "verified": true,
+    "source": "manual",
+    "scrape_method": "http",
+    "website_url": "https://www.dirac.com"
   },
   {
     "name": "Direct Sound",
@@ -11326,7 +11327,7 @@
   {
     "name": "Wienburg",
     "careers_url": "https://wienburg.io/jobs/",
-    "category": "Headphones & Personal Audio",
+    "category": "Hearing Aid & Hearing Tech",
     "verified": true,
     "source": "manual",
     "scrape_method": "http",

@@ -8,7 +8,7 @@ ATS_HOSTS = (
     "greenhouse.io", "lever.co", "workable.com", "ashbyhq.com", "smartrecruiters.com",
     "recruitee.com", "bamboohr.com", "myworkdayjobs.com", "workday.com", "icims.com",
     "taleo.net", "successfactors", "teamtailor.com", "personio", "jobvite.com",
-    "pinpointhq.com", "adp.com", "oraclecloud.com", "paylocity.com", "breezy.hr",
+    "pinpointhq.com", "haileyhr.app", "adp.com", "oraclecloud.com", "paylocity.com", "breezy.hr",
     "jazzhr.com", "ultipro.com", "dayforcehcm.com", "eightfold.ai", "avature.net",
     "zenats.com", "applytojob.com", "paycomonline.net", "trakstar.com", "rippling.com",
     "phenompeople.com", "brassring.com", "silkroad", "careers-page.com", "join.com",

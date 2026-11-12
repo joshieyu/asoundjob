@@ -69,6 +69,7 @@ SUPPORTED_ATS = frozenset(
         "workday",
         "apple",
         "pinpoint",
+        "haileyhr",
     }
 )
 

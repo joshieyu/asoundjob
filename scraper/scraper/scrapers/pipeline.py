@@ -20,6 +20,7 @@ from scraper.scrapers.ats.bamboohr import BambooHRScraper
 from scraper.scrapers.ats.eightfold import EightfoldScraper
 from scraper.scrapers.ats.gibson import GibsonScraper
 from scraper.scrapers.ats.greenhouse import GreenhouseScraper
+from scraper.scrapers.ats.haileyhr import HaileyHrScraper
 from scraper.scrapers.ats.icims import IcimsScraper
 from scraper.scrapers.ats.jibe import JibeScraper
 from scraper.scrapers.ats.lever import LeverScraper
@@ -59,6 +60,7 @@ class ScrapePipeline:
         self.apple = AppleScraper(settings)
         self.eightfold = EightfoldScraper(settings)
         self.pinpoint = PinpointScraper(settings)
+        self.haileyhr = HaileyHrScraper(settings)
         self.icims = IcimsScraper(settings)
         self.adp = AdpScraper(settings)
         self.ultipro = UltiproScraper(settings)
@@ -82,6 +84,7 @@ class ScrapePipeline:
             "apple": self.apple,
             "eightfold": self.eightfold,
             "pinpoint": self.pinpoint,
+            "haileyhr": self.haileyhr,
             "icims": self.icims,
             "adp": self.adp,
             "ultipro": self.ultipro,
@@ -261,6 +264,7 @@ class ScrapePipeline:
             self.bamboohr,
             self.workday,
             self.pinpoint,
+            self.haileyhr,
             self.icims,
             self.adp,
             self.ultipro,

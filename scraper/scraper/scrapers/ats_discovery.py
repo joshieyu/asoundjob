@@ -76,6 +76,12 @@ PATTERNS: list[tuple[str, re.Pattern[str]]] = [
         ),
     ),
     (
+        "haileyhr",
+        re.compile(
+            r"(?P<slug>[a-z0-9-]{1,63})\.careers\.haileyhr\.app", re.IGNORECASE
+        ),
+    ),
+    (
         "adp",
         re.compile(
             r"myjobs\.adp\.com/(?P<slug>[a-z0-9_]+)", re.IGNORECASE
