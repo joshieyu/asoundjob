@@ -577,7 +577,7 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   counted in `total`; the API's `pages` covers both (`untyped_last` in
   `api/api/query.py`, `page_envelope(trailing=)`). `/api/search` stays strict.
 - Theme toggle is binary with no "system" option; specialty chips are not links;
-  pagination is a fixed ±2 window with no first/last.
+  pagination is a fixed ±2 window, with First/Last buttons since 2026-11-12 (icon-only on phones).
 
 ## 6. Traps — do not repeat
 

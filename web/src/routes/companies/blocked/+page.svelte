@@ -23,13 +23,10 @@
 
 	<div class="mt-12 max-w-[68ch] space-y-6 text-body leading-relaxed">
 		<p>
-			These are companies we've checked by hand and can't read. Some refuse automated readers
-			outright. Some draw their whole job board with
-			JavaScript, or bury it in an embedded portal we can't follow. Either way our scraper comes
-			back with nothing, so roles at these companies never reach the board.
+			These are companies we've checked by hand and that our scraper can't read.
 		</p>
 		<p>
-			We're not saying any of them are hiring right now, we just can't tell. These are real audio companies worth checking yourself.
+			We can't tell if they're hiring right now, but these are real audio companies worth checking out yourself.
 		</p>
 	</div>
 

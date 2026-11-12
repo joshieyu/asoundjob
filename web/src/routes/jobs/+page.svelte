@@ -662,10 +662,9 @@
 					count={blocked.total}
 				>
 					<p class="text-meta text-muted">
-						These are companies we've checked by hand and can't read — some refuse automated
-						readers outright, some draw their board with JavaScript, and some bury it in an
-						embedded portal — so their roles never reach this board even though the careers page
-						opens fine in a normal browser.
+						These are companies we've checked by hand and that our scraper can't read. We can't
+						tell if they're hiring right now, but these are real audio companies worth checking
+						out yourself.
 					</p>
 					<div class="mt-3 p-3">
 						<p class="text-meta">

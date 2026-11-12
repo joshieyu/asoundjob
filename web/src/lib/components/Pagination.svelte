@@ -21,11 +21,12 @@
 
 {#if data.pages > 1}
 	<nav aria-label="Pagination" class="mt-6 flex items-center justify-between gap-2">
-		{#if data.page > 1}
-			<a href={makeHref(data.page - 1)} rel="prev" class="btn btn-quiet"><svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13 8H3M7 4L3 8l4 4"/></svg>Prev</a>
-		{:else}
-			<span></span>
-		{/if}
+		<div class="flex items-center gap-1">
+			{#if data.page > 1}
+				<a href={makeHref(1)} aria-label="First page" title="First page" class="btn btn-quiet !px-2 sm:!px-3"><svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v10M13 4L9 8l4 4"/></svg><span class="hidden sm:inline">First</span></a>
+				<a href={makeHref(data.page - 1)} rel="prev" aria-label="Previous page" class="btn btn-quiet !px-2 sm:!px-3"><svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13 8H3M7 4L3 8l4 4"/></svg><span class="hidden sm:inline">Prev</span></a>
+			{/if}
+		</div>
 
 		<div class="flex items-center gap-1 coord">
 			{#each pages as p (p)}
@@ -43,10 +44,11 @@
 			{/each}
 		</div>
 
-		{#if data.page < data.pages}
-			<a href={makeHref(data.page + 1)} rel="next" class="btn btn-quiet">Next<svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a>
-		{:else}
-			<span></span>
-		{/if}
+		<div class="flex items-center gap-1">
+			{#if data.page < data.pages}
+				<a href={makeHref(data.page + 1)} rel="next" aria-label="Next page" class="btn btn-quiet !px-2 sm:!px-3"><span class="hidden sm:inline">Next</span><svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a>
+				<a href={makeHref(data.pages)} aria-label="Last page, {data.pages}" title="Last page" class="btn btn-quiet !px-2 sm:!px-3"><span class="hidden sm:inline">Last</span><svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3v10M3 4l4 4-4 4"/></svg></a>
+			{/if}
+		</div>
 	</nav>
 {/if}
