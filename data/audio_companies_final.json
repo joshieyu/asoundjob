@@ -11324,6 +11324,15 @@
     "scrape_method": "http"
   },
   {
+    "name": "Wienburg",
+    "careers_url": "https://wienburg.io/jobs/",
+    "category": "Headphones & Personal Audio",
+    "verified": true,
+    "source": "manual",
+    "scrape_method": "http",
+    "website_url": "https://wienburg.io"
+  },
+  {
     "name": "Wiley Consulting",
     "careers_url": "https://www.wileyconsulting.com/careers",
     "category": "Acoustic Consulting & Engineering",

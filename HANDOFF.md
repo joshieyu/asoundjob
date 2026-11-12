@@ -16,11 +16,11 @@ As of the 2026-11-12 cycle plus that day's narrowing and re-scrapes:
 
 | | |
 | --- | --- |
-| companies in the seed / DB | 1,425 (755 verified, 56 `source: manual`, 15 `scrape_blocked`) |
+| companies in the seed / DB | 1,426 (756 verified, 57 `source: manual`, 15 `scrape_blocked`) |
 | scrape population (verified, unblocked, has URL) | a cycle scrapes ~718 after shared-URL dedup |
 | cycle | ~26–36 min on a good connection; ok 370 / failed 348 — ~50% failure is normal |
-| job rows / active / board-eligible | ~35,300 / ~10,800 / 1,075 |
-| **publicly listed** | **1,065** (10 hidden as stale: IK Multimedia 4, Otter.ai 3, XLN Audio 1, Fairphone 1, Valcom 1) |
+| job rows / active / board-eligible | ~35,300 / ~10,800 / 1,076 |
+| **publicly listed** | **1,066** (10 hidden as stale: IK Multimedia 4, Otter.ai 3, XLN Audio 1, Fairphone 1, Valcom 1) |
 | companies contributing to the board | 145; top: Shure 111, Apple 75, Cirrus Logic 71, Bose 61, Qualcomm 49, Amazon 41 |
 
 **Running locally:** the app's preview launcher cannot start the API — macOS
@@ -198,6 +198,10 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   three or more, and keeps quoted phrases literal; Radancy ranks the whole corpus
   rather than filtering; Amazon must carry `base_query`. Pick terms by scraping
   unfiltered once and keeping only terms that recover board rows others miss.
+- **Call-to-action prefixes are stripped from titles** (`CTA_PREFIX_RE`,
+  2026-11-12): "View posting : X", "Apply now – X", "View job: X". A dash only
+  counts with spaces around it, so "Read-Out IC Design Engineer" survives. It
+  matters because the longest link text to a URL wins the title.
 - **Links resolve against the URL the page was actually served from**, after
   redirects (2026-11-11). `collect_paginated`'s fetch may return `(html,
   final_url)`; `HttpScraper` uses `fetch_page` (requests' `response.url`) and
@@ -695,6 +699,7 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 | Tymphany | Replaced Peerless; `open_application`, manual; contact form only, so failing is correct. |
 | Vifa | Still points at `dst.dk`; `verified: false` on purpose. |
 | Waymo | Search param is `query`; alphabetical pagination needs several narrow queries. |
+| Wienburg | Added 2026-11-12 (owner). Düsseldorf real-time audio for defence/security; one-page jobs list at `wienburg.io/jobs/`. Its "View posting" button carries screen-reader text ": Founding Engineer", which was the longest link text and won the title until `CTA_PREFIX_RE` (§4.2). The "Download PDF · 3 pages" link is stored but scores 0. |
 | Zoom | `careers.zoom.us/jobs/search` dead since 2026-09-29; its 60 jobs were deactivated by a navigation-only scrape (§5). Needs a new URL. |
 
 ## 8. Stale files in the repo
@@ -721,8 +726,8 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   104 → 111 board rows). Clinic/front-office titles in other languages filtered
   (§4.5) and the board re-scored with `backfill_relevance`. Near-miss review
   (84 rows within 10 points of the cutoff): nearly all correctly excluded, cutoff
-  left alone. **Board-eligible 1,075, publicly listed 1,065** (Demant −24 stale
-  clinic rows, Sony +5, Shure +7, HP IQ +3).
+  left alone. Added Wienburg (owner). **Board-eligible 1,076, publicly listed
+  1,066** (Demant −24 stale clinic rows, Sony +5, Shure +7, HP IQ +3, Wienburg +1).
 
 - **2026-11-12, cycle + first-seen date fix** — 723 companies, 375 ok, ~29 min
   (13:15–13:44 UTC); deactivated 359, inserted 221, reactivated 144. No Eightfold

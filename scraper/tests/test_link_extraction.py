@@ -102,6 +102,25 @@ class TestCleanJobTitleFileAnnotations(unittest.TestCase):
         for raw, expected in cases.items():
             self.assertEqual(clean_job_title(raw), expected, raw)
 
+    def test_call_to_action_prefix_is_stripped(self) -> None:
+        cases = {
+            "View posting : Founding Engineer": "Founding Engineer",
+            "Apply now - Audio DSP Engineer": "Audio DSP Engineer",
+            "View job: Acoustic Engineer (f/m/d)": "Acoustic Engineer (f/m/d)",
+            "Learn more \u2013 Sound Designer": "Sound Designer",
+        }
+        for raw, expected in cases.items():
+            self.assertEqual(clean_job_title(raw), expected, raw)
+
+    def test_titles_starting_with_cta_words_are_kept(self) -> None:
+        for raw in (
+            "View Synthesis Research Engineer",
+            "Open Source Audio Engineer",
+            "Read-Out IC Design Engineer",
+            "Senior Engineer - Apply DSP",
+        ):
+            self.assertEqual(clean_job_title(raw), raw, raw)
+
     def test_real_parentheticals_are_kept(self) -> None:
         for raw in (
             "Acoustic Engineer (f/m/d)",
