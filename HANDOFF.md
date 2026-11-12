@@ -12,16 +12,16 @@ the careers pages of seeded companies, a relevance model decides which jobs reac
 the public board, and a SvelteKit site serves them. Branch
 `redesign-type-specimen`.
 
-As of the 2026-11-12 cycle:
+As of the 2026-11-12 cycle plus that day's narrowing and re-scrapes:
 
 | | |
 | --- | --- |
-| companies in the seed / DB | 1,424 (756 verified, 48 `source: manual`, 15 `scrape_blocked`) |
+| companies in the seed / DB | 1,425 (755 verified, 56 `source: manual`, 15 `scrape_blocked`) |
 | scrape population (verified, unblocked, has URL) | a cycle scrapes ~718 after shared-URL dedup |
 | cycle | ~26–36 min on a good connection; ok 370 / failed 348 — ~50% failure is normal |
-| job rows / active / board-eligible | ~35,200 / ~12,800 / 1,085 |
-| **publicly listed** | **1,075** (10 hidden as stale: IK Multimedia 4, Otter.ai 3, XLN Audio 1, Fairphone 1, Valcom 1) |
-| companies contributing to the board | 143; top: Shure 104, Apple 75, Cirrus Logic 71, Bose 61, Qualcomm 49, Amazon 41 |
+| job rows / active / board-eligible | ~35,300 / ~10,800 / 1,075 |
+| **publicly listed** | **1,065** (10 hidden as stale: IK Multimedia 4, Otter.ai 3, XLN Audio 1, Fairphone 1, Valcom 1) |
+| companies contributing to the board | 145; top: Shure 111, Apple 75, Cirrus Logic 71, Bose 61, Qualcomm 49, Amazon 41 |
 
 **Running locally:** the app's preview launcher cannot start the API — macOS
 blocks it from reading `venv/pyvenv.cfg` (`Operation not permitted`; the
@@ -164,6 +164,15 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 - ATS results are `trust_empty` (empty means no jobs); generic results never are.
   If a dedicated parser claimed a board and failed, the fallback result is
   `partial` so it cannot deactivate what it did not see.
+- **A stored or claiming ATS that times out or is rate-limited skips the generic
+  fallback entirely** (2026-11-12, `_timed_out_result` / `_rate_limited_result`):
+  the company fails that cycle, keeps its rows, and counts toward the 3-failure
+  staleness bound. Before, a timeout fell back to malformed generic rows that
+  reset the failure count and churned on every ATS success. Other ATS errors (404,
+  parse failure) still fall back, so a stale binding can be rescued.
+- **Extra careers URLs use their own ATS slug** (2026-11-12, `_slug_for_url`): an
+  extra URL on a different board of the same ATS (Sony's `SonyJapanCareers`)
+  used to inherit the stored binding and silently re-scrape the primary board.
 - **Errors:** Playwright now records the page's HTTP status and reports
   `HTTP {status} for {url}` when nothing was found and status ≥ 400 (ignored when
   jobs are found — some SPAs 404 and still render a board). A failed stored or
@@ -263,6 +272,13 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   deleted 161 real jobs), and `is_clinical_hearing_title` (hearing-aid retail and
   clinical roles, with `CLINICAL_EXEMPT` for engineering words — it protects zero
   rows today and stays so the next term cannot sweep up "Research Audiologist").
+  2026-11-12 added `audiologista`, `audionom`, `h[öo]r…akustiker` (Hörsystem-,
+  Hörgeräteakustiker — the same dispensing trade; an older test that expected
+  them to score as audio was reversed) and bare "Hearing Specialist".
+  `CORPORATE_ROLE` gained client-service administrator, call centre (British),
+  customer-service rep/agent, French `administratif` and `développement des
+  affaires`. On the live board that cost exactly one row (a Demant call-centre
+  job); it mainly stops clinic rows a full-board scrape would bring back.
 - `CORPORATE_ROLE` (−70) is gated on `not title_strong`, and `AUDIO_TITLE_STRONG`
   matches `audiolog`, which is why it could not remove clinical roles. It now
   includes sales titles (the owner chose to cut all of them). Extend it only after
@@ -360,6 +376,13 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 - Deploy artifacts: Dockerfile, compose, nginx, a nightly scrape job; the API
   needs write access to `data/`; set `ASOUNDJOB_ENV=production`, real secrets, and
   `STALE_AFTER_FAILURES` if not 3.
+- Done 2026-11-12: the web app builds with `@sveltejs/adapter-node` 5.5.7 (6.x
+  needs SvelteKit 3) — `node web/build`, set `ORIGIN`; and rate limits key on
+  `client_ip()`, which trusts `X-Forwarded-For` only from `TRUSTED_PROXIES`
+  (default loopback). In Docker, set it to the compose network's CIDR and have
+  nginx send `X-Forwarded-For`, or every visitor shares one quota.
+  `SUBMISSIONS_PER_IP_PER_DAY` is now actually read. Limits are in-memory, so run
+  the API as a single worker.
 - **If PostgreSQL is chosen:** the category filter in `api/api/query.py`
   (`Job.job_categories.cast(String).like('%"cat"%')`) matches SQLite's JSON text
   and will match nothing against PostgreSQL's `{a,b}` array text. Unverified —
@@ -439,10 +462,15 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   `_fetch_all` broke on any page under 20 rows; Shure's page 0 shows 19 of ~130,
   so 2026-10-26 and 10-28 were trusted at 19 and 94 open board rows were
   deactivated. Pagination now stops only on an empty page or no new ids. A
-  Shure-only scrape found 126 and reactivated 103 (104 board rows). Note
-  `MAX_DETAIL_FETCHES = 100`: Shure's last ~26 jobs get no description.
-- **Claimed-ATS timeouts under cycle load — the largest scraper problem found so
-  far.** Every cycle 7–8 large ATS boards exceed the 90 s `per_company_timeout`
+  Shure-only scrape found 126 and reactivated 103 (104 board rows). The detail
+  cap is now 250 with an 85% time budget (2026-11-12): all 123 Shure jobs get a
+  description, 111 board rows.
+- **Claimed-ATS timeouts under cycle load — addressed 2026-11-12.** The four
+  repeat offenders were narrowed with search terms so their boards finish in
+  4–14 s (Demant, Analog Devices, Samsung, Belden; §7), and an ATS timeout no
+  longer falls back (§4.2). Watch the next cycles for occasional timeouts at
+  Apple, HP, Logitech, Razer, Dolby: they now show as failures, not fallbacks.
+  History: Every cycle 7–8 large ATS boards exceed the 90 s `per_company_timeout`
   and fall back to the generic scrapers with deactivation suppressed:
   - 2026-09-25: DLR Group (Greenhouse ReadTimeout), Belden and Demant
     (SuccessFactors), Analog Devices, Logitech and McGill (Workday), HP (Eightfold).
@@ -466,12 +494,14 @@ Where to look: `README.md` (running, gates, data flow, every tool),
      cycles, Belden's SuccessFactors once.
   3. **It is invisible** in `scrape_log` and the admin panel.
 
-  Not decided. Options: when a claimed ATS fails, persist nothing and count a
+  Chosen 2026-11-12 (first option, for timeouts only). Options were: when a claimed ATS fails, persist nothing and count a
   failure (keeps last-known rows, lets the staleness bound work, ends the churn;
   a genuinely broken binding already surfaces as `{ats} binding failed`); give
   ATS-claimed companies a longer timeout, or run the large boards early or apart
   from the Playwright load. Measure first whether Demant's SuccessFactors walk
-  completes when run alone (`--company`), since Ramboll's does.
+  completes when run alone (`--company`), since Ramboll's does. Measured: alone,
+  Demant's full board takes 40 s (309 jobs, 18 board rows; the extra rows over
+  the narrowed URLs were all clinic titles).
 - **The same churn happens without an ATS: Rohde & Schwarz.** Its seeded method is
   `http` (Avature `/en_US/careers/JobDetail/…`, ~59 rows). When that attempt times
   out or raises, the scrape falls through to Playwright, which renders the country
@@ -603,12 +633,15 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 | Advanced Bionics | A Sonova brand sharing `sonova.com/careers/`, so it was the company scraping Sonova's jobs (91 rows, no descriptions). Set `verified: false` 2026-11-10; Sonova now scrapes `jobs.sonova.com` itself. |
 | Amazon | amazon.jobs `search.json` needs `base_query` (audio, speech, signal processing); "dsp" is a trap here. |
 | Anaheim Ducks | Added 2026-11-10 (owner). Workday site `Linkedin` scoped `?q=audio`; 3 jobs, 1 board row (Lead Audio Engineer). Category `Professional Audio & Live Sound` for lack of a sports one. |
+| Analog Devices | Workday `analogdevices.wd1/External`, narrowed 2026-11-12 to `?q=audio` + `?q=dsp` (104 jobs, 14 s; unscoped ~805 timed out 3 cycles in 5). Both searches together cover all 4 board rows. |
+| Amplitude | `verified: false` 2026-11-12: a product-analytics company, not audio, and its Greenhouse board 404s. |
 | Apple | Parser reads `?search=` from seed URLs so `extra_careers_urls` can scope it; Beats by Dre was deleted after an empty-slug Apple binding scraped 245 Apple rows. |
 | Arup | Avature facet derivation ends at a stable `/jobs/search/<id>`; never seed the session-stateful `/add/category/<id>` URL (same for Hoare Lea, Ramboll, Stantec, Sweco). Reposts roles under new requisition numbers; the superseded rows stay listed as duplicates while either of its two URLs fails (a partial result), then clear (11 on 2026-10-04). |
 | Audible | Deleted from seed and DB; 112 jobs, 1 misattributed board row. Do not re-add without measuring. |
 | Audio Precision | Native `Audio Testing & Measurement`; no `open_application` on purpose (page refuses unsolicited CVs). |
 | Bang & Olufsen | SAP DWR board, unfetchable; `verified: false` by design. |
 | Beltone | Retail dispensing chain; 0 board rows since the clinical filter — correct, not a bug. |
+| Belden | SuccessFactors `?q=engineer` since 2026-11-12 (53 jobs, 4 s) to stop a 90 s timeout. 0 board rows under every term tried (audio, broadcast, engineer) — a candidate for `verified: false`. |
 | Beyerdynamic | No scrapable listings; NA page is `open_application` + `scrape_blocked`. |
 | BMG Production Music | Points at its own (empty) SmartRecruiters board, not Bertelsmann's 955-job one. |
 | Bosch Group | Six curated SmartRecruiters searches cut 4,836 rows to 107 with all board rows kept; Bosch Security deleted. |
@@ -617,9 +650,10 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 | Cinder | Blocked on purpose (Wellfound/Compas behind Cloudflare; the Wix page renders no list). Owner asked for one job 2026-11-10: route it through community submission, not evasion. |
 | Cirrus Logic | Lever EU tenant (`api.eu.lever.co`); `api_url_for` derives the host from the careers URL. Category `Audio Semiconductors` (native). |
 | Cisco Webex | Repointed 2026-11-09 from the Phenom landing page (scraped only nav links) to Cisco's Workday board `cisco.wd5…/Cisco_Careers?q=audio`; recategorised `Consumer Electronics & Tech` (partial) because native scope let 5 sales/CS roles onto the board. "speech" query added nothing. 22 jobs, 2 board rows. |
+| CD Baby | `verified: false` 2026-11-12: Greenhouse board gone; careers now redirects to Universal Music. |
 | Cochlear | Native hearing tech; many board rows are clinical/commercial via the category bonus — accepted trade-off. |
 | Delart | Embed-only Greenhouse board; do not repoint to delartech.com. Agency scope. |
-| Demant | Correct URL `careers.demant.com/search/`; `careers.demant.com/` (marketing) and `careers.us.demant.com/jobs` (clinic hiring) are both traps. SuccessFactors walk has timed out every cycle since 2026-09-11; its 26 board rows are unconfirmed since then (§5). |
+| Demant | SuccessFactors `careers.demant.com/search/`, narrowed 2026-11-12 to `?q=engineer` plus `test`, `dsp`, `acoustic` (manual): ~19 s instead of a timeout every cycle since 2026-09-11. That retired 24 unconfirmed board rows, nearly all clinic/admin. `?q=developer`/`software` mostly add clinic roles (the search matches "développement"). `careers.demant.com/` (marketing) and `careers.us.demant.com/jobs` (clinic hiring) are traps. 9 board rows. |
 | DiGiCo | `digico.biz/recruitment/`, healthy. |
 | Dolby | Eightfold `/api/pcsx/search`, `domain=dolby.com`; new Eightfold companies need two cycles (slug derived). |
 | ElevenLabs | Not seeded on purpose: 52 of 54 reachable board rows would be sales; research roles score 4 against the cutoff of 5. |
@@ -654,9 +688,9 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 | Qualcomm / Infineon | `extra_careers_urls` for audio + dsp (+ acoustic) because Eightfold capped at 120; "dsp" admits some NPU/modem noise, accepted. |
 | Ramboll Group | See §5. Talent-pool "Rail Power Supply" rows fixed by `TALENT_POOL_TITLE`, not dedup. |
 | Rohde & Schwarz | `jobs.rohde-schwarz.com` now redirects to `www.rohde-schwarz.com/uk/career/jobs/career-jobboard_251573.html`, and http cannot reach the `jobs.` host at all, so Playwright scrapes it every run. Until 2026-11-11 its relative job links were resolved against the requested `jobs.` host, which 404s for job pages — every R&S link on the board was dead. Fixed by resolving against the final URL (§4.3); 8 board rows. ~39 rows are country-selector links (`career-jobboard…?change_c=XX`), all off the board. |
-| Samsung | Workday `sec.wd3/Samsung_Careers`, ~750 jobs, 5 on the board; times out under cycle load about four cycles in five and falls back to 23 Playwright rows (§5). |
+| Samsung | Workday `sec.wd3/Samsung_Careers?q=audio` since 2026-11-12 (manual), 66 jobs in 7 s; the unscoped ~650 timed out most cycles. `?q=acoustic` finds nothing. 2 board rows, both sales directors for TV & audio. |
 | Sigma Connectivity | Group JSON API filtered client-side via `company_startswith`; do not "fix" it to the server's exact-match `?company=`. |
-| Sony | Workday `sonyglobal`; only Europe/US/China/Japan sites exist; global contributes 0 board rows correctly. |
+| Sony | Workday `sonyglobal`, both `SonyGlobalCareers` and `SonyJapanCareers` with `?q=audio` (manual, 2026-11-12). The Japan board was never actually scraped before: the extra URL inherited the global binding (§4.2). Now 5 board rows, all Japan audio-AI research. |
 | Starkey | UltiPro `LoadSearchResults` API. |
 | Tymphany | Replaced Peerless; `open_application`, manual; contact form only, so failing is correct. |
 | Vifa | Still points at `dst.dk`; `verified: false` on purpose. |
@@ -678,6 +712,17 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   `resolve_database_url`, so running from `scraper/` is fine).
 
 ## 9. Log (newest first, keep entries short)
+
+- **2026-11-12, deploy prep + timeouts + small items** — adapter-node and
+  proxy-aware rate limits (§5). Narrowed the repeat-timeout boards with search
+  terms (Demant, Analog Devices, Samsung, Belden; Sony scoped and its Japan board
+  scraped for the first time) and made ATS timeouts skip the generic fallback
+  (§4.2). Amplitude and CD Baby set unverified. iCIMS detail cap 100 → 250 (Shure
+  104 → 111 board rows). Clinic/front-office titles in other languages filtered
+  (§4.5) and the board re-scored with `backfill_relevance`. Near-miss review
+  (84 rows within 10 points of the cutoff): nearly all correctly excluded, cutoff
+  left alone. **Board-eligible 1,075, publicly listed 1,065** (Demant −24 stale
+  clinic rows, Sony +5, Shure +7, HP IQ +3).
 
 - **2026-11-12, cycle + first-seen date fix** — 723 companies, 375 ok, ~29 min
   (13:15–13:44 UTC); deactivated 359, inserted 221, reactivated 144. No Eightfold

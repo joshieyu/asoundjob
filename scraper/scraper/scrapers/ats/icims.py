@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import copy
 import re
+from time import monotonic
 from typing import TYPE_CHECKING, Any
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
@@ -33,7 +34,8 @@ EMPTY_BOARD_RE = re.compile(
 SCREEN_READER_CLASSES = re.compile(r"sr-only|screen-reader|visually-hidden")
 PAGE_SIZE = 20
 MAX_PAGES = 20
-MAX_DETAIL_FETCHES = 100
+MAX_DETAIL_FETCHES = 250
+ENRICHMENT_BUDGET_FRACTION = 0.85
 
 
 class IcimsScraper(BaseScraper):
@@ -53,8 +55,9 @@ class IcimsScraper(BaseScraper):
         slug = company.ats_slug or self.extract_slug(company.careers_url or "")
         if not slug:
             raise ValueError(f"No icims slug in {company.careers_url}")
+        deadline = monotonic() + self.settings.per_company_timeout * ENRICHMENT_BUDGET_FRACTION
         jobs = await self._fetch_all(slug)
-        await self._fetch_descriptions(jobs)
+        await self._fetch_descriptions(jobs, deadline)
         return jobs
 
     async def _fetch_all(self, slug: str) -> list[RawJob]:
@@ -83,11 +86,13 @@ class IcimsScraper(BaseScraper):
             jobs.extend(new_jobs)
         return jobs
 
-    async def _fetch_descriptions(self, jobs: list[RawJob]) -> None:
+    async def _fetch_descriptions(self, jobs: list[RawJob], deadline: float) -> None:
         sem = asyncio.Semaphore(self.settings.http_concurrency)
 
         async def fetch_one(job: RawJob) -> None:
             async with sem:
+                if monotonic() >= deadline:
+                    return
                 try:
                     detail_html = await asyncio.to_thread(
                         fetch_html, detail_url(job.url), self.settings

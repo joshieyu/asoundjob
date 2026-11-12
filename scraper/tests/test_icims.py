@@ -257,6 +257,50 @@ class TestIcimsFetchJobs(unittest.TestCase):
         self.assertEqual(len(jobs), 1)
         self.assertIsNone(jobs[0].description)
 
+    def _large_board(self, count: int):
+        pages = {
+            page: "<html><body>" + "".join(
+                f'<a href="https://careershub-shure.icims.com/jobs/{i}/role-{i}/job">Role {i}</a>'
+                for i in range(page * 20, min(count, page * 20 + 20))
+            ) + "</body></html>"
+            for page in range((count + 19) // 20)
+        }
+        detail_calls: list[str] = []
+
+        def fake_fetch_html(url: str, settings: object) -> str:
+            if "jobs/search" in url:
+                for index, html in pages.items():
+                    if f"pr={index}&" in url or url.endswith(f"pr={index}"):
+                        return html
+                return NO_JOBS_HTML
+            detail_calls.append(url)
+            return DETAIL_JSONLD_HTML
+
+        return fake_fetch_html, detail_calls
+
+    def test_boards_over_a_hundred_jobs_are_all_described(self) -> None:
+        fake_fetch_html, detail_calls = self._large_board(130)
+        with patch("scraper.scrapers.ats.icims.fetch_html", side_effect=fake_fetch_html):
+            jobs = asyncio.run(self.scraper.fetch_jobs(self.company))
+        self.assertEqual(len(jobs), 130)
+        self.assertEqual(len(detail_calls), 130)
+        self.assertTrue(all(job.description for job in jobs))
+
+    def test_enrichment_stops_at_the_deadline(self) -> None:
+        fake_fetch_html, detail_calls = self._large_board(30)
+        clock = {"now": 1000.0}
+
+        def tick() -> float:
+            clock["now"] += 100.0
+            return clock["now"]
+
+        with patch(
+            "scraper.scrapers.ats.icims.fetch_html", side_effect=fake_fetch_html
+        ), patch("scraper.scrapers.ats.icims.monotonic", side_effect=tick):
+            jobs = asyncio.run(self.scraper.fetch_jobs(self.company))
+        self.assertEqual(len(jobs), 30)
+        self.assertEqual(detail_calls, [])
+
 
 if __name__ == "__main__":
     unittest.main()

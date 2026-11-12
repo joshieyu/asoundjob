@@ -37,6 +37,7 @@ class ScrapeResult:
     partial: bool = False
     html: Optional[str] = None
     rate_limited: bool = False
+    timed_out: bool = False
 
 
 class ScrapeError(Exception):

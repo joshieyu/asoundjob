@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import time
+from typing import Optional
 
 from sqlalchemy import select, update
 
@@ -118,6 +119,7 @@ class ScrapePipeline:
                     company_id=company.id,
                     method=label,
                     error=f"timeout after {self.settings.per_company_timeout}s",
+                    timed_out=True,
                 )
             except Exception as exc:
                 result = ScrapeResult(
@@ -158,6 +160,14 @@ class ScrapePipeline:
             return await self._scrape_one(company)
         return await self._scrape_every(company, urls)
 
+    def _slug_for_url(self, company: Company, url: str) -> Optional[str]:
+        scraper = self._ats_map.get(company.ats_type or "")
+        extract = getattr(scraper, "extract_slug", None)
+        if not company.ats_slug or extract is None:
+            return company.ats_slug
+        derived = extract(url)
+        return derived or company.ats_slug
+
     def _company_for_url(self, company: Company, url: str) -> Company:
         if (company.careers_url or "").strip() == url:
             return company
@@ -173,7 +183,7 @@ class ScrapePipeline:
             scrape_method=company.scrape_method,
             audio_scope=company.audio_scope,
             ats_type=company.ats_type,
-            ats_slug=company.ats_slug,
+            ats_slug=self._slug_for_url(company, url),
         )
 
     async def _scrape_every(
@@ -236,6 +246,8 @@ class ScrapePipeline:
                 return result
             if result.rate_limited:
                 return self._rate_limited_result(company, company.ats_type, result)
+            if result.timed_out:
+                return self._timed_out_result(company, company.ats_type, result)
             stored_ats_failed = True
             ats_failures.append((company.ats_type, result.error or "unknown error"))
 
@@ -268,6 +280,8 @@ class ScrapePipeline:
                     return result
                 if result.rate_limited:
                     return self._rate_limited_result(company, ats.name, result)
+                if result.timed_out:
+                    return self._timed_out_result(company, ats.name, result)
                 # A dedicated scraper recognised this board and could not read it.
                 # Whatever the generic fallbacks return next is a first page at
                 # best, so it must not be trusted to retire the rest.
@@ -318,6 +332,21 @@ class ScrapePipeline:
             )
             last_error = f"{binding_errors}; careers page: {last_error}"
         return ScrapeResult(company_id=company.id, method="none", error=last_error)
+
+    def _timed_out_result(
+        self, company: Company, label: str, result: ScrapeResult
+    ) -> ScrapeResult:
+        logger.info(
+            "%s: %s timed out, skipping generic fallback and keeping existing rows",
+            company.name,
+            label,
+        )
+        return ScrapeResult(
+            company_id=company.id,
+            method="none",
+            error=f"{label} binding failed: {result.error}",
+            timed_out=True,
+        )
 
     def _rate_limited_result(
         self, company: Company, label: str, result: ScrapeResult

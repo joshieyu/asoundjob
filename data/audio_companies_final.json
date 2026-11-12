@@ -528,8 +528,8 @@
     "name": "Amplitude",
     "careers_url": "https://job-boards.greenhouse.io/amplitude",
     "category": "Streaming & Music Services",
-    "verified": true,
-    "source": "auto",
+    "verified": false,
+    "source": "manual",
     "scrape_method": "http"
   },
   {
@@ -566,11 +566,14 @@
   },
   {
     "name": "Analog Devices",
-    "careers_url": "https://analogdevices.wd1.myworkdayjobs.com/External",
+    "careers_url": "https://analogdevices.wd1.myworkdayjobs.com/External?q=audio",
     "category": "Consumer Electronics & Tech",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "playwright",
+    "extra_careers_urls": [
+      "https://analogdevices.wd1.myworkdayjobs.com/External?q=dsp"
+    ]
   },
   {
     "name": "Analog Obsession",
@@ -1426,10 +1429,10 @@
   },
   {
     "name": "Belden",
-    "careers_url": "https://careers.belden.com/search/?q=",
+    "careers_url": "https://careers.belden.com/search/?q=engineer",
     "category": "Audio Accessories & Cables",
     "verified": true,
-    "source": "auto",
+    "source": "manual",
     "scrape_method": "playwright"
   },
   {
@@ -2158,8 +2161,8 @@
     "name": "CD Baby",
     "careers_url": "https://job-boards.greenhouse.io/cdbabyjobs",
     "category": "Streaming & Music Services",
-    "verified": true,
-    "source": "auto",
+    "verified": false,
+    "source": "manual",
     "scrape_method": "http"
   },
   {
@@ -2916,11 +2919,16 @@
   },
   {
     "name": "Demant (Oticon/Bernafon)",
-    "careers_url": "https://careers.demant.com/search/",
+    "careers_url": "https://careers.demant.com/search/?q=engineer",
     "category": "Hearing Aid & Hearing Tech",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "playwright",
+    "extra_careers_urls": [
+      "https://careers.demant.com/search/?q=test",
+      "https://careers.demant.com/search/?q=dsp",
+      "https://careers.demant.com/search/?q=acoustic"
+    ]
   },
   {
     "name": "Denon",
@@ -8761,10 +8769,10 @@
   },
   {
     "name": "Samsung",
-    "careers_url": "https://sec.wd3.myworkdayjobs.com/Samsung_Careers",
+    "careers_url": "https://sec.wd3.myworkdayjobs.com/Samsung_Careers?q=audio",
     "category": "Consumer Electronics & Tech",
     "verified": true,
-    "source": "auto",
+    "source": "manual",
     "scrape_method": "http"
   },
   {
@@ -9305,13 +9313,13 @@
   },
   {
     "name": "Sony",
-    "careers_url": "https://sonyglobal.wd1.myworkdayjobs.com/en-US/SonyGlobalCareers",
+    "careers_url": "https://sonyglobal.wd1.myworkdayjobs.com/en-US/SonyGlobalCareers?q=audio",
     "category": "Consumer Electronics & Tech",
     "verified": true,
-    "source": "auto",
+    "source": "manual",
     "scrape_method": "http",
     "extra_careers_urls": [
-      "https://sonyglobal.wd1.myworkdayjobs.com/en-US/SonyJapanCareers"
+      "https://sonyglobal.wd1.myworkdayjobs.com/en-US/SonyJapanCareers?q=audio"
     ]
   },
   {
