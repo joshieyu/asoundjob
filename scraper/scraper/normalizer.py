@@ -827,12 +827,13 @@ CLINICAL_HEARING_TITLE = re.compile(
     r"\baudiologist\b|"
     r"\bdoctor of audiology\b|"
     r"\baudiology (?:extern|technician|assistant)\b|"
-    r"\bhearing (?:care|instrument|aid)s? (?:professional|specialist|practitioner|"
+    r"\bhearing (?:(?:care|instrument|aid)s? )?(?:professional|specialist|practitioner|"
     r"trainee|dispenser|consultant|provider|advisor|technician|audiologist)\b|"
     r"\bhearing wellness advisor\b|"
     r"\bclinician\b|"
     r"\bspeech (?:therapist|pathologist)\b|"
-    r"audioproth[ée]siste|audioprotesista|audiolog[íi]a|h[öo]rakustiker|audioloog",
+    r"audioproth[ée]siste|audioprotesista|audiolog[íi]a|audiologista|audionom|"
+    r"h[öo]r\w{0,12}akustiker|audioloog",
     re.IGNORECASE,
 )
 
@@ -861,7 +862,9 @@ CORPORATE_ROLE = re.compile(
     r"\b(accountant|accounts? payable|accounts? receivable|paralegal|attorney|"
     r"counsel|recruiter|human resources|hr generalist|people operations|payroll|"
     r"barista|warehouse|forklift|delivery driver|truck driver|driver|real estate|"
-    r"facilities|janitor|security guard|receptionist|data entry|call center|"
+    r"facilities|janitor|security guard|receptionist|data entry|call cent(?:er|re)|"
+    r"client service administrator|customer service (?:representative|administrator|agent)|"
+    r"administratif|administrativ[ao]|d[ée]veloppement des affaires|"
     r"insurance underwriter|tax|procurement|logistics|supply chain|help desk|"
     r"fp&a|financial analyst|finance analyst|revenue manager|revenue analyst|"
     r"revenue analytics|"
@@ -887,7 +890,7 @@ CORPORATE_ROLE = re.compile(
     r"ecommerce|merchandising|commercial finance|"
     r"communications lead|corporate communications|"
     r"infrastructure architect|sourcing manager|"
-    r"portfolio strategy|contact center|"
+    r"portfolio strategy|contact cent(?:er|re)|"
     r"customer enablement|strategic transformation|"
     r"vertical ai|alliances|"
     r"workforce management|pooling|"

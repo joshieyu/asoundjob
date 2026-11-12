@@ -414,6 +414,37 @@ class TestClinicalHearingTitles(unittest.TestCase):
         )
         self.assertTrue(related)
 
+    def test_non_english_dispensing_titles_are_not_audio(self) -> None:
+        for title in (
+            "Audiologista - Nível Nacional",
+            "Hörsystemakustiker St. Gallen 60-80%",
+            "Hörsystemakustiker & Area Manager Berner Oberland 100%",
+            "Legitimerad audionom (Nyköping)",
+            "Hearing Specialist Frederiksberg",
+        ):
+            _, related = score_relevance(title, None, ["audiology_hearing"], "native")
+            self.assertFalse(related, title)
+
+    def test_hearing_science_engineer_is_not_clinical(self) -> None:
+        _, related = score_relevance(
+            "Hearing Science Engineer", None, ["audiology_hearing"], "native"
+        )
+        self.assertTrue(related)
+
+
+class TestClinicFrontOfficeTitles(unittest.TestCase):
+    def test_clinic_admin_call_centre_and_french_sales_titles_are_not_audio(
+        self,
+    ) -> None:
+        for title in (
+            "Client Service Administrator - Vernon, BC. (Downtown)",
+            "Outbound Call Centre Representative - Remote Opportunity",
+            "Responsable du développement des affaires, Québec (bilingue français et anglais)",
+            "Assistant Administratif et Commercial / Coordinateur de Centre - Langon (33)",
+        ):
+            _, related = score_relevance(title, None, ["audiology_hearing"], "native")
+            self.assertFalse(related, title)
+
 
 if __name__ == "__main__":
     unittest.main()

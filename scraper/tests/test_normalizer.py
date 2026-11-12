@@ -708,7 +708,6 @@ class TestInternationalTitleVocabulary(unittest.TestCase):
         for title in (
             "Akustik-Ingenieur für EOL-Messtechnik",
             "Akustikingenieur",
-            "Hörsystemakustiker",
             "Ingénieur Acoustique R&D",
             "Ljudtekniker",
             "Altavoz Design Engineer",
