@@ -14,7 +14,10 @@ acoustics, transducers, test & measurement — but the board is the industry's
 job board, not an engineering-only one: live sound, sound design, game audio,
 music production, product, and sales/marketing/CS roles at audio companies all
 belong. This supersedes the narrower "the audience is audio engineers" framing
-in `HANDOFF.md`.
+in `HANDOFF.md`. Commercial roles appear when the job itself is about audio, and
+carry the "Sales, Marketing & Customer Success" specialty so seekers who want
+only technical work can filter them out (owner, 2026-11-12). Hearing-aid retail
+and clinical dispensing roles stay off.
 
 A seeker arrives because generic job boards fail them: audio roles are
 scattered across hundreds of company careers pages and, when they do appear on

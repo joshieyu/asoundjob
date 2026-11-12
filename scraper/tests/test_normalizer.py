@@ -237,7 +237,7 @@ class TestCategories(unittest.TestCase):
         )
         cats = classify_categories("Sales Development Representative", blurb)
         self.assertNotIn("audio_aiml", cats)
-        self.assertEqual(cats, [])
+        self.assertEqual(cats, ["sales_marketing_cs"])
 
     def test_anchor_requires_nearby_audio_context(self) -> None:
         cats = classify_categories(

@@ -557,6 +557,14 @@ CATEGORY_KEYWORDS: dict[str, dict[str, tuple[str, ...]]] = {
             "emerging creator",
             "editorial & curation",
             "director of sales",
+            "sales",
+            "marketing",
+            "business development",
+            "account manager",
+            "key account",
+            "growth manager",
+            "gtm",
+            "customer service",
         ),
         "weak": (),
     },
@@ -863,13 +871,13 @@ CORPORATE_ROLE = re.compile(
     r"counsel|recruiter|human resources|hr generalist|people operations|payroll|"
     r"barista|warehouse|forklift|delivery driver|truck driver|driver|real estate|"
     r"facilities|janitor|security guard|receptionist|data entry|call cent(?:er|re)|"
-    r"client service administrator|customer service (?:representative|administrator|agent)|"
-    r"administratif|administrativ[ao]|d[ée]veloppement des affaires|"
+    r"client service administrator|"
+    r"administratif|administrativ[ao]|"
     r"insurance underwriter|tax|procurement|logistics|supply chain|help desk|"
     r"fp&a|financial analyst|finance analyst|revenue manager|revenue analyst|"
     r"revenue analytics|"
     r"internal audit|legal counsel|legal innovation|"
-    r"office assistant|administrative|library|plumber|electrician|carpenter|"
+    r"office assistant|administrative|library|plumber|electrician|carpenter|accounting|"
     r"groundskeeper|custodian|housekeeper|mailroom|switchboard|"
     r"volleyball|athletic|coach|sports|intramural|"
     r"lecturer|instructor|teaching assistant|adjunct|professor of|"
@@ -894,13 +902,7 @@ CORPORATE_ROLE = re.compile(
     r"customer enablement|strategic transformation|"
     r"vertical ai|alliances|"
     r"workforce management|pooling|"
-    r"business development|"
-    r"account manager|account management|account executive|"
-    r"sales operations|sales enablement|sales manager|sales director|"
-    r"director of sales|vp,? of sales|head of sales|sales representative|"
-    r"enterprise sales|field sales|recruiting coordinator|"
-    r"marketing manager|marketing director|"
-    r"growth manager|digital marketing|"
+    r"sales operations|sales enablement|recruiting coordinator|"
     r"community manager|"
     r"social media|content manager|"
     r"creative operations|"
@@ -1044,6 +1046,9 @@ def extract_role_text(description: str | None) -> str:
     return role_text
 
 
+LABEL_ONLY_CATEGORIES = frozenset({"sales_marketing_cs"})
+
+
 def score_relevance(
     title: str,
     description: str | None,
@@ -1083,7 +1088,7 @@ def score_relevance(
     elif weak_mentions >= 3:
         score += 15
 
-    if job_categories:
+    if any(category not in LABEL_ONLY_CATEGORIES for category in job_categories):
         if audio_scope == "native":
             score += 35
         else:

@@ -19,8 +19,8 @@ As of the 2026-11-12 cycle plus that day's narrowing and re-scrapes:
 | companies in the seed / DB | 1,426 (757 verified, 58 `source: manual`, 15 `scrape_blocked`) |
 | scrape population (verified, unblocked, has URL) | a cycle scrapes ~718 after shared-URL dedup |
 | cycle | ~26–36 min on a good connection; ok 370 / failed 348 — ~50% failure is normal |
-| job rows / active / board-eligible | ~35,300 / ~10,800 / 1,080 |
-| **publicly listed** | **1,070** (10 hidden as stale: IK Multimedia 4, Otter.ai 3, XLN Audio 1, Fairphone 1, Valcom 1) |
+| job rows / active / board-eligible | ~35,300 / ~10,800 / 1,086 |
+| **publicly listed** | **1,079** (10 hidden as stale: IK Multimedia 4, Otter.ai 3, XLN Audio 1, Fairphone 1, Valcom 1) |
 | companies contributing to the board | 145; top: Shure 111, Apple 75, Cirrus Logic 71, Bose 61, Qualcomm 49, Amazon 41 |
 
 **Running locally:** the app's preview launcher cannot start the API — macOS
@@ -61,12 +61,11 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 3. **Launch scope** — `/resources` and `/resources/interview-prep` still render
    `Wip.svelte` (AGENTS.md originally planned to ship them that way).
 4. **How to merge** this branch into `main`.
-5. **Who the board is for.** `PRODUCT.md` (2026-09-11) says everyone working in
-   audio — "sales/marketing/CS roles at audio companies all belong" — and says it
-   supersedes "the audience is audio engineers". The owner's later calls went the
-   other way: all sales titles cut (2026-09-18), hearing-aid retail and clinical
-   roles cut (2026-09-20). The relevance model follows the later calls. One of the
-   two needs updating.
+5. ~~Who the board is for~~ — **decided 2026-11-12:** commercial roles (sales,
+   marketing, customer success) belong, but only when the job itself carries an
+   audio signal; they are tagged `sales_marketing_cs` so seekers can filter them.
+   This reverses the 2026-09-18 sales cut. Hearing-aid retail and clinical roles
+   stay cut. See §4.5.
 6. **Wordmark stroke weight** (10 vs 12) is undecided, and
    `assets/logo/kernels.py` is out of sync with the shipped `asj-edited.svg`.
 7. Whether to delete the stale files in §8.
@@ -279,14 +278,26 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   2026-11-12 added `audiologista`, `audionom`, `h[öo]r…akustiker` (Hörsystem-,
   Hörgeräteakustiker — the same dispensing trade; an older test that expected
   them to score as audio was reversed) and bare "Hearing Specialist".
-  `CORPORATE_ROLE` gained client-service administrator, call centre (British),
-  customer-service rep/agent, French `administratif` and `développement des
-  affaires`. On the live board that cost exactly one row (a Demant call-centre
-  job); it mainly stops clinic rows a full-board scrape would bring back.
+  `CORPORATE_ROLE` gained client-service administrator, call centre (British) and
+  French `administratif`; it mainly stops clinic rows a full-board scrape would
+  bring back.
 - `CORPORATE_ROLE` (−70) is gated on `not title_strong`, and `AUDIO_TITLE_STRONG`
-  matches `audiolog`, which is why it could not remove clinical roles. It now
-  includes sales titles (the owner chose to cut all of them). Extend it only after
-  measuring the live board; the bar is zero legitimate losses.
+  matches `audiolog`, which is why it could not remove clinical roles. It holds
+  back-office titles only (finance, HR, legal, IT, facilities, accounting, sales
+  ops). **Sales, account, business-development and marketing titles left it on
+  2026-11-12** (owner: commercial roles belong). Extend it only after measuring the
+  live board; the bar is zero legitimate losses.
+- **`sales_marketing_cs` is label-only** (`LABEL_ONLY_CATEGORIES`, 2026-11-12): it
+  is assigned from the title alone (any "sales", "marketing", account manager/
+  executive, business development, customer success/service, GTM, partnerships…)
+  so every commercial job can be filtered, but it adds nothing to the relevance
+  score. A commercial job reaches the board only on its own audio signal — title
+  or description, or another category. Measured: letting the tag score as well
+  would have grown the board 1,079 → 1,518 with ~520 commercial rows (Logitech
+  54, Twilio 36, Razer 30 including store associates); the owner chose this
+  selective version (~87 commercial rows). Generic account executives at voice-AI
+  companies (Decagon, Dialpad) stay off; L-Acoustics' and Cochlear's regional
+  sales managers are on.
 - `NEGATIVE_SIGNALS` (−45) barely fires; measured and settled, not worth tuning.
 - `classify_categories` cutoff is 5 and shared by every category — do not move it
   lightly (it is why ElevenLabs' research roles score 4 and miss). The
@@ -721,6 +732,13 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   `resolve_database_url`, so running from `scraper/` is fine).
 
 ## 9. Log (newest first, keep entries short)
+
+- **2026-11-12, commercial roles** — owner decided sales/marketing/CS roles
+  belong (§2 item 5): sales titles out of `CORPORATE_ROLE`, `sales_marketing_cs`
+  made label-only with a full title vocabulary, re-scored. Board 1,070 → 1,079
+  listed; 87 tagged commercial. 39 commercial rows with an audio signal came on;
+  32 left — customer-success and partnerships rows whose only support was the tag
+  (Epidemic Sound, Twilio, RingCentral CSMs) plus two Shure accounting interns.
 
 - **2026-11-12, job-type filter + Dirac** — untyped jobs listed after job-type
   matches (§5 Frontend); new Hailey HR parser; Dirac Research re-verified on it

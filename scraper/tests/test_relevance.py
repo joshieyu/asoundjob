@@ -2,7 +2,12 @@ from __future__ import annotations
 
 import unittest
 
-from scraper.normalizer import SCOPE_THRESHOLDS, category_to_scope, score_relevance
+from scraper.normalizer import (
+    SCOPE_THRESHOLDS,
+    category_to_scope,
+    classify_categories,
+    score_relevance,
+)
 
 
 class TestCategoryScope(unittest.TestCase):
@@ -200,33 +205,31 @@ class TestScoreRelevance(unittest.TestCase):
         )
         self.assertFalse(related)
 
-    def test_decagon_account_executive_is_not_audio_related(self) -> None:
-        """Decagon is a native-scope voice AI company that posts 13 rows to
-        the board. Nine of them are sales and recruiting titles with no
-        audio signal at all; Enterprise Account Executive is five of those
-        nine, and without this pattern each one clears the native threshold
-        on job-category and native-bonus points alone."""
-        score, related = score_relevance(
-            "Enterprise Account Executive",
-            "Own the full sales cycle from prospecting to close.",
-            ["voice_ai"],
-            "native",
-        )
-        self.assertFalse(related)
-        self.assertLess(score, SCOPE_THRESHOLDS["native"])
+    def test_generic_sales_titles_are_labelled_but_not_boarded(self) -> None:
+        for title, description in (
+            ("Enterprise Account Executive", "Own the full sales cycle from prospecting to close."),
+            (
+                "Director of Sales, Enterprise",
+                "Lead and scale our enterprise go-to-market sales team.",
+            ),
+            ("Customer Success Manager", "Own renewals and adoption for a book of accounts."),
+        ):
+            categories = classify_categories(title, description)
+            self.assertIn("sales_marketing_cs", categories, title)
+            score, related = score_relevance(title, description, categories, "native")
+            self.assertFalse(related, title)
+            self.assertLess(score, SCOPE_THRESHOLDS["native"], title)
 
-    def test_decagon_director_of_sales_is_not_audio_related(self) -> None:
-        """Decagon posts Director of Sales, Enterprise three times among its
-        nine sales and recruiting rows; nothing in the title or a generic
-        sales description mentions audio."""
-        score, related = score_relevance(
-            "Director of Sales, Enterprise",
-            "Lead and scale our enterprise go-to-market sales team.",
-            ["voice_ai"],
-            "native",
-        )
-        self.assertFalse(related)
-        self.assertLess(score, SCOPE_THRESHOLDS["native"])
+    def test_sales_titles_about_audio_reach_the_board(self) -> None:
+        for title in (
+            "Sales & Marketing Audio Lead for EMEA",
+            "Director of Sales - Home Audio",
+            "Hi-Tech/Pro Audio Sales Consultant",
+        ):
+            categories = classify_categories(title, None)
+            self.assertIn("sales_marketing_cs", categories, title)
+            _, related = score_relevance(title, None, categories, "native")
+            self.assertTrue(related, title)
 
     def test_decagon_recruiting_coordinator_is_not_audio_related(self) -> None:
         """The ninth of Decagon's nine non-audio rows, Go to Market
@@ -439,7 +442,6 @@ class TestClinicFrontOfficeTitles(unittest.TestCase):
         for title in (
             "Client Service Administrator - Vernon, BC. (Downtown)",
             "Outbound Call Centre Representative - Remote Opportunity",
-            "Responsable du développement des affaires, Québec (bilingue français et anglais)",
             "Assistant Administratif et Commercial / Coordinateur de Centre - Langon (33)",
         ):
             _, related = score_relevance(title, None, ["audiology_hearing"], "native")
