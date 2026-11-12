@@ -26,6 +26,11 @@ CORS_ORIGINS = [
 ]
 
 SUBMISSIONS_PER_IP_PER_DAY = int(os.environ.get("SUBMISSIONS_PER_IP_PER_DAY", "3"))
+TRUSTED_PROXIES = [
+    value.strip()
+    for value in os.environ.get("TRUSTED_PROXIES", "127.0.0.1,::1").split(",")
+    if value.strip()
+]
 COMMUNITY_JOB_TTL_DAYS = int(os.environ.get("COMMUNITY_JOB_TTL_DAYS", "30"))
 MAX_COMMUNITY_JOB_DAYS = int(os.environ.get("MAX_COMMUNITY_JOB_DAYS", "365"))
 

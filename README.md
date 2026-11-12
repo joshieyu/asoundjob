@@ -190,7 +190,14 @@ Everything has a working default; none of this is needed for local development.
 
 **API** — `ADMIN_USERNAME`, `ADMIN_PASSWORD`, `ADMIN_SECRET_KEY`,
 `TOKEN_EXPIRE_MINUTES` (720), `CORS_ORIGINS`, `SUBMISSIONS_PER_IP_PER_DAY` (3),
-`COMMUNITY_JOB_TTL_DAYS` (30), `STALE_AFTER_FAILURES` (3), `ASOUNDJOB_ENV`.
+`COMMUNITY_JOB_TTL_DAYS` (30), `STALE_AFTER_FAILURES` (3), `ASOUNDJOB_ENV`,
+`TRUSTED_PROXIES` (`127.0.0.1,::1`).
+
+Rate limits key on the visitor's IP. When a request arrives from an address in
+`TRUSTED_PROXIES` (IPs or CIDRs), the API takes the client from
+`X-Forwarded-For` instead, reading right to left and skipping trusted hops. Put
+nginx's address there — in Docker, the compose network's CIDR — and have nginx
+set `X-Forwarded-For`; otherwise every visitor shares one quota.
 
 Setting `ASOUNDJOB_ENV=production` makes the API refuse to start while
 `ADMIN_PASSWORD` or `ADMIN_SECRET_KEY` is unset, still the dev default, or
@@ -202,6 +209,10 @@ where admin edits land. This is a newer requirement than the rest of the deploy.
 **Web** — `PUBLIC_API_URL` and `API_URL` both default to `http://127.0.0.1:8000`
 (browser-side and server-side respectively), `SITE_URL` defaults to
 `http://localhost:5173`.
+
+The web app builds with `@sveltejs/adapter-node`: `npm --prefix web run build`,
+then `node web/build` serves it (`PORT`, default 3000; set `ORIGIN` to the public
+URL so form posts pass SvelteKit's CSRF check).
 
 ## Repository layout
 

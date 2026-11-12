@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
 from api.database import get_db
-from api.rate_limit import SubmissionRateLimiter
+from api.rate_limit import SubmissionRateLimiter, client_ip
 from api.routers.categories import load_categories
 from api.schemas import (
     FeedbackCreateResponse,
@@ -22,12 +22,8 @@ router = APIRouter(prefix="/api", tags=["feedback"])
 feedback_rate_limiter = SubmissionRateLimiter(max_per_day=20)
 
 
-def _client_ip(request: Request) -> str:
-    return request.client.host if request.client else "unknown"
-
-
 def _enforce_rate_limit(request: Request) -> None:
-    allowed, retry_after = feedback_rate_limiter.check(_client_ip(request))
+    allowed, retry_after = feedback_rate_limiter.check(client_ip(request))
     if not allowed:
         raise HTTPException(
             status_code=429,

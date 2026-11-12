@@ -14,7 +14,7 @@ from api.query import (
     page_envelope,
     paginate_params,
 )
-from api.rate_limit import SubmissionRateLimiter
+from api.rate_limit import SubmissionRateLimiter, client_ip
 from api.schemas import (
     BlockedCompaniesResponse,
     BlockedCompany,
@@ -227,8 +227,7 @@ def submit_company_suggestion(
     request: Request,
     db: Session = Depends(get_db),
 ):
-    client = request.client.host if request.client else "unknown"
-    allowed, retry_after = suggestion_rate_limiter.check(client)
+    allowed, retry_after = suggestion_rate_limiter.check(client_ip(request))
     if not allowed:
         raise HTTPException(
             status_code=429,

@@ -7,9 +7,10 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from api.config import SUBMISSIONS_PER_IP_PER_DAY
 from api.database import get_db
 from api.query import apply_job_filters, fetch_job_page, page_envelope, paginate_params
-from api.rate_limit import SubmissionRateLimiter
+from api.rate_limit import SubmissionRateLimiter, client_ip
 from api.schemas import (
     JobDetail,
     JobSubmissionRequest,
@@ -23,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/jobs", tags=["jobs"])
 
-rate_limiter = SubmissionRateLimiter()
+rate_limiter = SubmissionRateLimiter(max_per_day=SUBMISSIONS_PER_IP_PER_DAY)
 
 
 MAX_ID_FILTER = 200
@@ -106,8 +107,7 @@ def submit_job(
     payload: JobSubmissionRequest,
     db: Session = Depends(get_db),
 ):
-    client_ip = request.client.host if request.client else "unknown"
-    allowed, retry_after = rate_limiter.check(client_ip)
+    allowed, retry_after = rate_limiter.check(client_ip(request))
     if not allowed:
         raise HTTPException(
             status_code=429,
