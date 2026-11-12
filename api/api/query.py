@@ -25,8 +25,11 @@ def paginate_params(page: int, per_page: int) -> tuple[int, int]:
     return safe_page, safe_per
 
 
-def page_envelope(items: list, total: int, page: int, per_page: int) -> dict:
-    pages = (total + per_page - 1) // per_page if per_page else 0
+def page_envelope(
+    items: list, total: int, page: int, per_page: int, trailing: int = 0
+) -> dict:
+    listed = total + trailing
+    pages = (listed + per_page - 1) // per_page if per_page else 0
     return {
         "items": items,
         "total": total,
@@ -121,6 +124,7 @@ def apply_job_filters(
     search: Optional[str] = None,
     include_unrelated: bool = False,
     ids: Optional[list[int]] = None,
+    untyped_last: bool = False,
 ):
     stmt = stmt.where(Job.is_active.is_(True), listable_clause())
     if ids is not None:
@@ -132,7 +136,10 @@ def apply_job_filters(
         stmt = stmt.where(Job.seniority.in_(seniorities))
     job_types = _as_list(job_type)
     if job_types:
-        stmt = stmt.where(Job.job_type.in_(job_types))
+        if untyped_last:
+            stmt = stmt.where(or_(Job.job_type.in_(job_types), Job.job_type.is_(None)))
+        else:
+            stmt = stmt.where(Job.job_type.in_(job_types))
     if company_id is not None:
         stmt = stmt.where(Job.company_id == company_id)
     if company and company.strip():
@@ -184,6 +191,7 @@ def fetch_job_page(
     sort: str = "newest",
     country_first: Optional[str] = None,
     search: Optional[str] = None,
+    untyped_last: bool = False,
 ):
     order_by = list(SORT_OPTIONS.get(sort, SORT_OPTIONS["newest"]))
     if country_first:
@@ -191,6 +199,8 @@ def fetch_job_page(
     rank = search_rank(search)
     if rank is not None:
         order_by.insert(0, rank)
+    if untyped_last:
+        order_by.insert(0, case((Job.job_type.is_(None), 1), else_=0))
     total = session.execute(
         select(func.count()).select_from(base_stmt.subquery())
     ).scalar_one()
@@ -205,6 +215,16 @@ def fetch_job_page(
         .all()
     )
     return list(rows), int(total)
+
+
+def count_untyped(session: Session, base_stmt) -> int:
+    return int(
+        session.execute(
+            select(func.count()).select_from(
+                base_stmt.where(Job.job_type.is_(None)).subquery()
+            )
+        ).scalar_one()
+    )
 
 
 COMPANY_SORTS = ("name", "jobs", "board", "verified")

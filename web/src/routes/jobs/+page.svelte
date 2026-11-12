@@ -125,6 +125,13 @@
 		if (!params.country) return -1;
 		return data.jobs?.items.findIndex((job) => job.country === null) ?? -1;
 	});
+	const untypedStartIndex = $derived.by(() => {
+		if (selectedTypes.length === 0) return -1;
+		return data.jobs?.items.findIndex((job) => job.job_type === null) ?? -1;
+	});
+	const selectedTypesLabel = $derived(
+		new Intl.ListFormat('en', { type: 'disjunction' }).format(selectedTypes)
+	);
 	const selectedCountryName = $derived(
 		countryOptions.find((c) => c.code === params.country)?.name ?? params.country ?? ''
 	);
@@ -561,6 +568,15 @@
 		<div class="@container mt-4">
 			<div class="grid items-stretch gap-3 @3xl:grid-cols-2">
 			{#each jobs?.items ?? [] as job, i (job.id)}
+				{#if i === untypedStartIndex}
+					<div class="col-span-full mt-2 flex items-center gap-3">
+						<span class="h-px flex-1 bg-rule"></span>
+						<span class="axis-label">
+							Job type not listed — may still be {selectedTypesLabel}
+						</span>
+						<span class="h-px flex-1 bg-rule"></span>
+					</div>
+				{/if}
 				{#if i === unplacedStartIndex}
 					<div class="col-span-full mt-2 flex items-center gap-3">
 						<span class="h-px flex-1 bg-rule"></span>

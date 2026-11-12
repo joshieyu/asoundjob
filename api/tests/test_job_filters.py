@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import inspect
 import unittest
+from datetime import date
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -106,6 +107,55 @@ class TestMultiValueFilters(unittest.TestCase):
 
     def test_unknown_value_returns_nothing_rather_than_everything(self) -> None:
         self.assertEqual(call_list_jobs(self.session, seniority="archmage")["total"], 0)
+
+
+class TestUntypedJobsFollowTypedOnes(unittest.TestCase):
+    def setUp(self) -> None:
+        self.session = make_session()
+        plan = [
+            ("Typed Full-time A", "full-time", 1),
+            ("Untyped Newest", None, 30),
+            ("Typed Contract", "contract", 2),
+            ("Typed Full-time B", "full-time", 20),
+            ("Untyped Older", None, 10),
+        ]
+        for title, job_type, day in plan:
+            self.session.add(
+                Job(
+                    title=title,
+                    description="x",
+                    url=f"https://example.com/{title.lower().replace(' ', '-')}",
+                    job_type=job_type,
+                    posted_date=date(2026, 10, day),
+                    is_active=True,
+                    is_audio_related=True,
+                )
+            )
+        self.session.flush()
+
+    def tearDown(self) -> None:
+        self.session.close()
+
+    def test_untyped_jobs_come_after_matches_and_are_not_counted(self) -> None:
+        result = call_list_jobs(self.session, job_type="full-time")
+        self.assertEqual(
+            [item.title for item in result["items"]],
+            ["Typed Full-time B", "Typed Full-time A", "Untyped Newest", "Untyped Older"],
+        )
+        self.assertEqual(result["total"], 2)
+        self.assertEqual(result["pages"], 1)
+
+    def test_pages_cover_the_untyped_tail(self) -> None:
+        first = call_list_jobs(self.session, job_type="full-time", per_page=1, page=1)
+        last = call_list_jobs(self.session, job_type="full-time", per_page=1, page=4)
+        self.assertEqual(first["total"], 2)
+        self.assertEqual(first["pages"], 4)
+        self.assertEqual([item.title for item in last["items"]], ["Untyped Older"])
+
+    def test_no_job_type_filter_changes_nothing(self) -> None:
+        result = call_list_jobs(self.session)
+        self.assertEqual(result["total"], 5)
+        self.assertEqual(result["items"][0].title, "Untyped Newest")
 
 
 class TestCompanyNameFilter(unittest.TestCase):

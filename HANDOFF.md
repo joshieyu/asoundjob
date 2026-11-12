@@ -572,7 +572,10 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 ### Frontend
 - `/resources` and `/resources/interview-prep` are placeholders (AGENTS.md lists
   the eight interview-prep articles to seed).
-- Selecting a job type hides rows with no `job_type` (NULL fails `IN`).
+- Selecting a job type (2026-11-12, owner's call): jobs with no `job_type` (~60% of
+  the board) follow the matches under a "Job type not listed" divider and are not
+  counted in `total`; the API's `pages` covers both (`untyped_last` in
+  `api/api/query.py`, `page_envelope(trailing=)`). `/api/search` stays strict.
 - Theme toggle is binary with no "system" option; specialty chips are not links;
   pagination is a fixed ±2 window with no first/last.
 

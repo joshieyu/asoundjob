@@ -9,7 +9,13 @@ from sqlalchemy.orm import Session
 
 from api.config import SUBMISSIONS_PER_IP_PER_DAY
 from api.database import get_db
-from api.query import apply_job_filters, fetch_job_page, page_envelope, paginate_params
+from api.query import (
+    apply_job_filters,
+    count_untyped,
+    fetch_job_page,
+    page_envelope,
+    paginate_params,
+)
 from api.rate_limit import SubmissionRateLimiter, client_ip
 from api.schemas import (
     JobDetail,
@@ -69,11 +75,13 @@ def list_jobs(
     db: Session = Depends(get_db),
 ):
     safe_page, safe_per = paginate_params(page, per_page)
+    job_types = _parse_csv(job_type)
+    untyped_last = bool(job_types)
     stmt = apply_job_filters(
         select(Job),
         category=_parse_csv(category),
         seniority=_parse_csv(seniority),
-        job_type=_parse_csv(job_type),
+        job_type=job_types,
         salary_min=salary_min,
         salary_max=salary_max,
         company_id=company_id,
@@ -84,12 +92,25 @@ def list_jobs(
         search=search,
         include_unrelated=include_unrelated,
         ids=_parse_ids(ids),
+        untyped_last=untyped_last,
     )
-    jobs, total = fetch_job_page(
-        db, stmt, safe_page, safe_per, sort, country_first=country, search=search
+    jobs, listed = fetch_job_page(
+        db,
+        stmt,
+        safe_page,
+        safe_per,
+        sort,
+        country_first=country,
+        search=search,
+        untyped_last=untyped_last,
     )
+    untyped = count_untyped(db, stmt) if untyped_last else 0
     return page_envelope(
-        [JobSummary.model_validate(job) for job in jobs], total, safe_page, safe_per
+        [JobSummary.model_validate(job) for job in jobs],
+        listed - untyped,
+        safe_page,
+        safe_per,
+        trailing=untyped,
     )
 
 
