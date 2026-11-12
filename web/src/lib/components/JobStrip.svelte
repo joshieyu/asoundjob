@@ -19,7 +19,7 @@
 
 	const bookmarked = $derived(bookmarks.has(job.id));
 	const salary = $derived(formatSalary(job.salary_min, job.salary_max, job.salary_currency));
-	const seenAt = $derived(job.posted_date ?? job.scraped_at);
+	const seenAt = $derived(job.posted_date ?? job.created_at);
 	const specialties = $derived(
 		job.job_categories.map((c) => categoryNames.get(c) ?? c.replaceAll('_', ' '))
 	);

@@ -21,6 +21,7 @@ export interface Job {
 	job_categories: string[];
 	posted_date: string | null;
 	scraped_at: string;
+	created_at: string;
 	expires_date: string | null;
 	is_active: boolean;
 	source: string;

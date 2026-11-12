@@ -12,16 +12,16 @@ the careers pages of seeded companies, a relevance model decides which jobs reac
 the public board, and a SvelteKit site serves them. Branch
 `redesign-type-specimen`.
 
-As of the 2026-11-10 cycle (plus the owner's 2026-11-10 additions scraped after it):
+As of the 2026-11-12 cycle:
 
 | | |
 | --- | --- |
 | companies in the seed / DB | 1,424 (756 verified, 48 `source: manual`, 15 `scrape_blocked`) |
 | scrape population (verified, unblocked, has URL) | a cycle scrapes ~718 after shared-URL dedup |
 | cycle | ~26–36 min on a good connection; ok 370 / failed 348 — ~50% failure is normal |
-| job rows / active / board-eligible | ~34,600 / ~12,800 / 1,081 |
-| **publicly listed** | **1,071** (10 hidden as stale: IK Multimedia 4, Otter.ai 3, XLN Audio 1, Fairphone 1, Valcom 1) |
-| companies contributing to the board | 138; top: Shure 104, Apple 74, Cirrus Logic 71, Bose 55, Qualcomm 51, Amazon 42 |
+| job rows / active / board-eligible | ~35,200 / ~12,800 / 1,085 |
+| **publicly listed** | **1,075** (10 hidden as stale: IK Multimedia 4, Otter.ai 3, XLN Audio 1, Fairphone 1, Valcom 1) |
+| companies contributing to the board | 143; top: Shure 104, Apple 75, Cirrus Logic 71, Bose 61, Qualcomm 49, Amazon 41 |
 
 **Running locally:** the app's preview launcher cannot start the API — macOS
 blocks it from reading `venv/pyvenv.cfg` (`Operation not permitted`; the
@@ -323,8 +323,12 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   **Curling `/api/jobs?q=` proves nothing about the site** — it made this look
   broken twice.
 - **Date sorts use the date the card shows** (`SEEN_DATE` in `api/api/query.py`,
-  2026-11-11): `posted_date`, else the day the row was first scraped
-  (`scraped_at` is set on insert only). Before, undated rows (274 of 1,079 board
+  2026-11-11): `posted_date`, else the day the row was first seen
+  (`created_at`). **Not `scraped_at`** — it has `onupdate=func.now()`, so it moves
+  whenever any column of the row changes; the 11-11 version used it and 129
+  undated board rows sorted (and showed "seen") by their last change. Fixed
+  2026-11-12: the API now returns `created_at`, and the job strip, job page and
+  company page use it. Before, undated rows (274 of 1,079 board
   rows — Harman, Meta, Sivantos, Demant…) sorted after every dated row, so a job
   found today could sit below month-old postings while its card said "seen today".
 - **Search rules** (`search_terms` / `search_clause` / `search_rank` in
@@ -673,6 +677,16 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   `resolve_database_url`, so running from `scraper/` is fine).
 
 ## 9. Log (newest first, keep entries short)
+
+- **2026-11-12, cycle + first-seen date fix** — 723 companies, 375 ok, ~29 min
+  (13:15–13:44 UTC); deactivated 359, inserted 221, reactivated 144. No Eightfold
+  429s for the second cycle running (Microsoft 50 jobs, Qualcomm 274). R&S clean
+  via Playwright with `www.` links (76 jobs). Bose stayed on Workday (103 jobs).
+  The redirect fix (§4.3) caused no visible swap elsewhere. Only 429s: JLab and
+  Vintage King product pages (Shopify, non-job links). Found that `scraped_at`
+  moves on every row change, so the 11-11 date sort was wrong for 129 undated
+  rows; switched to `created_at` (§4.7). **Board-eligible 1,085, publicly listed
+  1,075** (same 10 hidden).
 
 - **2026-11-11, dead Rohde & Schwarz links** — owner found every R&S link 404ed:
   relative links were resolved against the pre-redirect host (§4.3). Fixed for

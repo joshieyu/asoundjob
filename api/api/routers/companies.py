@@ -191,7 +191,7 @@ def get_company(slug: str, db: Session = Depends(get_db)):
                 listable_clause(),
             )
             .options(selectinload(Job.company))
-            .order_by(Job.posted_date.desc().nullslast(), Job.scraped_at.desc())
+            .order_by(Job.posted_date.desc().nullslast(), Job.created_at.desc())
             .limit(100)
         )
         .scalars()

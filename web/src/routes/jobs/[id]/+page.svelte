@@ -65,7 +65,7 @@
 			</div>
 			<div>
 				<dt class="axis-label">Posted</dt>
-				<dd class="mt-0.5">{timeAgo(job.posted_date ?? job.scraped_at)}</dd>
+				<dd class="mt-0.5">{timeAgo(job.posted_date ?? job.created_at)}</dd>
 			</div>
 		</dl>
 

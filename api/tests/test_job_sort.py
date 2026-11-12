@@ -25,13 +25,15 @@ class TestNewestSortUsesSeenDate(unittest.TestCase):
             ("Posted yesterday", date(2026, 11, 10), datetime(2026, 11, 10, 12)),
             ("Undated, found in October", None, datetime(2026, 10, 15, 8)),
         ]
-        for title, posted, scraped in rows:
+        refreshed = datetime(2026, 11, 12, 6)
+        for title, posted, found in rows:
             self.session.add(
                 Job(
                     title=title,
                     url=f"https://example.com/{title.replace(' ', '-')}",
                     posted_date=posted,
-                    scraped_at=scraped,
+                    created_at=found,
+                    scraped_at=refreshed,
                     is_active=True,
                     is_audio_related=True,
                 )

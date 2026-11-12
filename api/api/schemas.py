@@ -38,6 +38,7 @@ class JobSummary(BaseModel):
     job_categories: list[str] = []
     posted_date: Optional[date] = None
     scraped_at: datetime
+    created_at: datetime
     expires_date: Optional[date] = None
     is_active: bool
     source: str
