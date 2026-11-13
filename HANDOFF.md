@@ -168,7 +168,12 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   the company fails that cycle, keeps its rows, and counts toward the 3-failure
   staleness bound. Before, a timeout fell back to malformed generic rows that
   reset the failure count and churned on every ATS success. Other ATS errors (404,
-  parse failure) still fall back, so a stale binding can be rescued.
+  parse failure) still fall back, so a stale binding can be rescued. "Timed out"
+  covers both the 90 s company budget and an HTTP read/connect timeout inside the
+  scraper (`base.is_timeout`, 2026-11-13; it walks the exception chain). A DNS
+  failure or refused connection is *not* a timeout — urllib3 v2 makes
+  `NewConnectionError` subclass `ConnectTimeoutError`, so match on `requests`'
+  own `Timeout`/urllib3 `ReadTimeoutError`, never urllib3's base `TimeoutError`.
 - **Extra careers URLs use their own ATS slug** (2026-11-12, `_slug_for_url`): an
   extra URL on a different board of the same ATS (Sony's `SonyJapanCareers`)
   used to inherit the stored binding and silently re-scrape the primary board.
@@ -732,6 +737,11 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   `resolve_database_url`, so running from `scraper/` is fine).
 
 ## 9. Log (newest first, keep entries short)
+
+- **2026-11-13, read timeouts skip the fallback** — Apple and Full Sail fell back
+  in the 11-13 cycle because a `requests` ReadTimeout from a single fetch was
+  treated as an ordinary error; it now counts as a timeout (§4.2). Acer's
+  SuccessFactors 404 still falls back by design.
 
 - **2026-11-13, cycle** — 724 companies, 371 ok, ~31 min; deactivated 267,
   inserted 235, reactivated 61, 7 deactivation skips. First cycle with ATS

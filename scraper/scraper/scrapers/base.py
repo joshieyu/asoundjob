@@ -1,10 +1,14 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import date
 from typing import TYPE_CHECKING, Optional
+
+import requests
+from urllib3.exceptions import ReadTimeoutError
 
 if TYPE_CHECKING:
     from scraper.config import Settings
@@ -48,6 +52,26 @@ class RateLimitedError(ScrapeError):
     pass
 
 
+TIMEOUT_ERRORS = (requests.Timeout, ReadTimeoutError, asyncio.TimeoutError)
+
+
+def is_timeout(exc: BaseException) -> bool:
+    seen: set[int] = set()
+    pending: list[BaseException] = [exc]
+    while pending:
+        current = pending.pop()
+        if id(current) in seen:
+            continue
+        seen.add(id(current))
+        if isinstance(current, TIMEOUT_ERRORS):
+            return True
+        pending.extend(arg for arg in current.args if isinstance(arg, BaseException))
+        for linked in (current.__cause__, current.__context__):
+            if linked is not None:
+                pending.append(linked)
+    return False
+
+
 class BaseScraper(ABC):
     """Base class for all scrapers.
 
@@ -84,6 +108,7 @@ class BaseScraper(ABC):
             )
             result.error = f"{type(exc).__name__}: {exc}"
             result.rate_limited = isinstance(exc, RateLimitedError)
+            result.timed_out = is_timeout(exc)
         result.html = self._last_html
         result.duration = round(time.monotonic() - started, 2)
         return result

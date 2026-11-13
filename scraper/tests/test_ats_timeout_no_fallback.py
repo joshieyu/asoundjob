@@ -4,6 +4,9 @@ import asyncio
 import unittest
 from dataclasses import replace
 
+import requests
+from urllib3.exceptions import NewConnectionError
+
 from scraper.config import load_settings
 from scraper.models import Company
 from scraper.scrapers.base import BaseScraper
@@ -34,6 +37,52 @@ class SlowScraper(BaseScraper):
         return []
 
 
+class ReadTimeoutScraper(BaseScraper):
+    name = "workday"
+
+    def can_handle(self, company) -> bool:
+        return True
+
+    async def fetch_jobs(self, company):
+        raise requests.exceptions.ReadTimeout("Read timed out. (read timeout=15.0)")
+
+
+class WrappedReadTimeoutScraper(BaseScraper):
+    name = "workday"
+
+    def can_handle(self, company) -> bool:
+        return True
+
+    async def fetch_jobs(self, company):
+        try:
+            raise requests.exceptions.ReadTimeout("Read timed out.")
+        except requests.exceptions.ReadTimeout as exc:
+            raise RuntimeError("listing fetch failed") from exc
+
+
+class NotFoundScraper(BaseScraper):
+    name = "workday"
+
+    def can_handle(self, company) -> bool:
+        return True
+
+    async def fetch_jobs(self, company):
+        raise requests.exceptions.HTTPError("404 Client Error: Not Found")
+
+
+class DnsFailureScraper(BaseScraper):
+    name = "workday"
+
+    def can_handle(self, company) -> bool:
+        return True
+
+    async def fetch_jobs(self, company):
+        try:
+            raise NewConnectionError(None, "Failed to resolve host")  # type: ignore[arg-type]
+        except NewConnectionError as exc:
+            raise requests.exceptions.ConnectionError(exc) from exc
+
+
 class RecordingFallback(BaseScraper):
     name = "generic"
 
@@ -51,7 +100,7 @@ async def _no_discovery(company, html, overwrite=False):
 
 
 class TestAtsTimeoutSkipsFallback(unittest.TestCase):
-    def run_pipeline(self, company: Company):
+    def run_pipeline(self, company: Company, scraper_class=SlowScraper):
         settings = replace(load_settings(), per_company_timeout=0.05)
 
         async def go():
@@ -61,7 +110,7 @@ class TestAtsTimeoutSkipsFallback(unittest.TestCase):
             pipeline.http = fallback  # type: ignore[assignment]
             pipeline._playwright_scraper = lambda: fallback  # type: ignore[method-assign]
             pipeline._stealth_scraper = lambda: fallback  # type: ignore[method-assign]
-            slow = SlowScraper(settings)
+            slow = scraper_class(settings)
             pipeline._ats_map["workday"] = slow
             pipeline.workday = slow  # type: ignore[assignment]
             result = await pipeline.scrape_company(company)
@@ -82,6 +131,34 @@ class TestAtsTimeoutSkipsFallback(unittest.TestCase):
         self.assertFalse(result.success)
         self.assertTrue(result.timed_out)
         self.assertEqual(fallback_calls, 0)
+
+    def test_stored_binding_read_timeout_fails_without_fallback(self) -> None:
+        result, fallback_calls = self.run_pipeline(make_company(), ReadTimeoutScraper)
+        self.assertFalse(result.success)
+        self.assertTrue(result.timed_out)
+        self.assertEqual(fallback_calls, 0)
+
+    def test_claimed_board_read_timeout_fails_without_fallback(self) -> None:
+        result, fallback_calls = self.run_pipeline(make_company(ats_type=""), ReadTimeoutScraper)
+        self.assertTrue(result.timed_out)
+        self.assertEqual(fallback_calls, 0)
+
+    def test_wrapped_read_timeout_fails_without_fallback(self) -> None:
+        result, fallback_calls = self.run_pipeline(make_company(), WrappedReadTimeoutScraper)
+        self.assertTrue(result.timed_out)
+        self.assertEqual(fallback_calls, 0)
+
+    def test_other_errors_still_fall_back_as_partial(self) -> None:
+        result, fallback_calls = self.run_pipeline(make_company(ats_type=""), NotFoundScraper)
+        self.assertTrue(result.success)
+        self.assertTrue(result.partial)
+        self.assertFalse(result.timed_out)
+        self.assertEqual(fallback_calls, 1)
+
+    def test_connection_failure_is_not_a_timeout(self) -> None:
+        result, fallback_calls = self.run_pipeline(make_company(ats_type=""), DnsFailureScraper)
+        self.assertFalse(result.timed_out)
+        self.assertEqual(fallback_calls, 1)
 
 
 if __name__ == "__main__":

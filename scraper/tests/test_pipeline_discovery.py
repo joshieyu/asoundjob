@@ -440,8 +440,7 @@ class TestFallbackAfterAtsClaimIsPartial(unittest.TestCase):
                 if stored_ats:
                     company.ats_type = "successfactors"
                     pipeline._ats_map["successfactors"] = failing  # type: ignore[index]
-                else:
-                    pipeline.successfactors = failing  # type: ignore[assignment]
+                pipeline.successfactors = failing  # type: ignore[assignment]
             return await pipeline.scrape_company(company)
 
         return asyncio.run(go())
