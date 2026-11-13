@@ -14,11 +14,16 @@ from sqlalchemy import func, select
 from scraper.company_loader import careers_urls_for, deactivate_expired_jobs
 from scraper.config import Settings, load_settings
 from scraper.database import dispose_engine, init_db, session_scope
-from scraper.deduplicator import ReconcileStats, reconcile_company_jobs
+from scraper.deduplicator import (
+    ReconcileStats,
+    identity_for_job,
+    identity_for_raw,
+    reconcile_company_jobs,
+)
 from scraper.models import Company, Job, ScrapeLog
 from scraper.normalizer import Normalizer
 from scraper.scrapers.ats_discovery import discover
-from scraper.scrapers.base import ScrapeResult
+from scraper.scrapers.base import RawJob, ScrapeResult
 from scraper.scrapers.pipeline import ScrapePipeline
 
 logger = logging.getLogger(__name__)
@@ -39,6 +44,7 @@ class CycleStats:
     deactivated: int = 0
     deactivations_skipped: int = 0
     expired: int = 0
+    salvaged: int = 0
     method_counts: dict = field(default_factory=dict)
 
     def summary(self) -> str:
@@ -51,7 +57,8 @@ class CycleStats:
             f"jobs_found={self.jobs_found} | "
             f"db: inserted={self.inserted} updated={self.updated} "
             f"reactivated={self.reactivated} deactivated={self.deactivated} "
-            f"deactivation_skips={self.deactivations_skipped} expired={self.expired}"
+            f"deactivation_skips={self.deactivations_skipped} expired={self.expired} "
+            f"cut_short={self.salvaged}"
             + (f" | via {methods}" if methods else "")
         )
 
@@ -90,6 +97,7 @@ def persist_result(
         managed = session.get(Company, company.id)
         if managed is None:
             return 0, None
+        keep_stored_descriptions(session, company.id, result.jobs)
         normalized_jobs = [
             normalizer.normalize(
                 raw,
@@ -113,13 +121,35 @@ def persist_result(
                 finished_at=finished_at,
                 status="success",
                 jobs_found=len(normalized_jobs),
-                error_message=None,
+                error_message=(result.error or "")[:500] or None,
                 scrape_method=result.method,
             )
         )
         managed.last_scraped_at = finished_at
         managed.consecutive_failures = 0
         return len(normalized_jobs), stats
+
+
+def keep_stored_descriptions(session, company_id: int, jobs: list[RawJob]) -> None:
+    missing = [job for job in jobs if not (job.description or "").strip()]
+    if not missing:
+        return
+    rows = session.execute(
+        select(Job).where(
+            Job.company_id == company_id,
+            Job.source == "scraper",
+            Job.description.is_not(None),
+        )
+    ).scalars()
+    stored = {
+        ident: row.description
+        for row in rows
+        if row.description and (ident := identity_for_job(row)) is not None
+    }
+    for job in missing:
+        description = stored.get(identity_for_raw(job))
+        if description:
+            job.description = description
 
 
 async def run_cycle(
@@ -170,6 +200,7 @@ async def run_cycle(
                 audio_scope=c.audio_scope,
                 ats_type=c.ats_type,
                 ats_slug=c.ats_slug,
+                priority=bool(c.priority),
             )
             for c in companies
         ]
@@ -177,6 +208,7 @@ async def run_cycle(
         detached = detached[:limit]
 
     scrape_list, skip_list = _dedupe_shared_urls(detached)
+    scrape_list.sort(key=lambda c: not c.priority)
     if skip_list:
         _deactivate_duplicate_jobs(skip_list)
         logger.info(
@@ -200,7 +232,9 @@ async def run_cycle(
     started = time.monotonic()
 
     try:
-        tasks = [_scrape_with_company(pipeline, c) for c in scrape_list]
+        tasks = [
+            asyncio.ensure_future(_scrape_with_company(pipeline, c)) for c in scrape_list
+        ]
         for fut in asyncio.as_completed(tasks):
             company, result = await fut
             completed += 1
@@ -217,6 +251,8 @@ async def run_cycle(
                 cycle.method_counts[result.method] = (
                     cycle.method_counts.get(result.method, 0) + 1
                 )
+                if result.salvaged:
+                    cycle.salvaged += 1
                 if detail is not None:
                     cycle.inserted += detail.inserted
                     cycle.updated += detail.updated

@@ -333,6 +333,7 @@ class TestLoaderManagedFieldsCoverage(unittest.TestCase):
             "extra_careers_urls",
             "open_application",
             "scrape_blocked",
+            "priority",
             "verified",
             "scrape_method",
             "ats_type",

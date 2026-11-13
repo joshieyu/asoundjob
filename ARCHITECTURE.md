@@ -131,6 +131,7 @@ CREATE TABLE companies (
                                            --   MAX_CAREERS_URLS including the primary. A URL
                                            --   that fails makes the scrape partial, which
                                            --   suppresses deactivation for the whole company.
+    priority BOOLEAN DEFAULT FALSE,        -- Owner-flagged board: scraped first, 2x time budget.
     open_application BOOLEAN DEFAULT FALSE,-- The company posts no roles but invites speculative
                                            --   applications in its own words. Set by hand after
                                            --   reading the page; a page saying it has no

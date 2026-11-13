@@ -90,7 +90,9 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   human hand-edits do.
 - **Diagnostic and proposal tools are strictly read-only** on the database and seed.
 - **Concurrency:** Playwright ≤5, HTTP ≤50; per-job enrichment is always
-  time-bounded against `per_company_timeout` (90s) or it cancels the company.
+  time-bounded against `per_company_timeout` (90s; 180s for `priority` boards) or
+  it cancels the company. **A paginated ATS scraper must build its result in a
+  `listing()` list** (`scrapers/base.py`) so a timeout keeps what it already read.
 - **Recall over precision** on relevance. **Country parsing inverts it:** ambiguity
   resolves to NULL, because a wrong country hides a job worse than a missing one.
 - Bare "acoustics" files to `audio_systems`. Bookmarks stay device-local
@@ -174,6 +176,29 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   failure or refused connection is *not* a timeout — urllib3 v2 makes
   `NewConnectionError` subclass `ConnectTimeoutError`, so match on `requests`'
   own `Timeout`/urllib3 `ReadTimeoutError`, never urllib3's base `TimeoutError`.
+- **A board cut short keeps what it read** (2026-11-13). Paginated ATS scrapers
+  (Apple, Workday, Eightfold, SuccessFactors, iCIMS, Jibe, Amazon, ADP, UltiPro,
+  SmartRecruiters, Hailey HR) collect jobs page by page into `listing()`. If the
+  company times out or a page fails after at least one page was read, the jobs
+  read so far are posted as a *partial success*: new jobs go up, nothing is
+  deactivated, the failure count resets, and `scrape_log.error_message` says
+  `listing cut short, kept N jobs read so far: …` (the cycle summary counts these
+  as `cut_short=`). A board that is cut short every cycle never retires its
+  closed jobs — check `cut_short` companies if a board's count only ever grows.
+  Apple and UltiPro list newest first, so a cut-short Apple listing
+  loses its oldest jobs, not its new ones. Every request through `fetch.py`, and
+  Workday's listing POST, is retried once on a timeout (`retry_on_timeout`).
+- **A job that comes back without a description keeps its stored one**
+  (`keep_stored_descriptions` in `main.py`, 2026-11-13). Before, a job past an
+  enrichment budget or cap was saved with no description and re-scored on its
+  title alone, which could drop a listed job off the board for a cycle.
+- **`priority` boards** (seed flag, admin "Priority" toggle, 2026-11-13): twice
+  the per-company budget (also scales the enrichment and multi-URL budgets) and
+  scraped first in the cycle. Set on Apple, Shure, Cirrus Logic, Bose, Qualcomm
+  and Amazon — the boards contributing 40+ listed jobs.
+- **A multi-URL company is partial if any URL was partial** (2026-11-13). Before,
+  a URL that fell back to a generic first-page read still counted as complete,
+  so a company whose every URL fell back could deactivate jobs it never saw.
 - **Extra careers URLs use their own ATS slug** (2026-11-12, `_slug_for_url`): an
   extra URL on a different board of the same ATS (Sony's `SonyJapanCareers`)
   used to inherit the stored binding and silently re-scrape the primary board.
@@ -489,7 +514,9 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   repeat offenders were narrowed with search terms so their boards finish in
   4–14 s (Demant, Analog Devices, Samsung, Belden; §7), and an ATS timeout no
   longer falls back (§4.2). Watch the next cycles for occasional timeouts at
-  Apple, HP, Logitech, Razer, Dolby: they now show as failures, not fallbacks.
+  Apple, HP, Logitech, Razer, Dolby: they now show as failures, not fallbacks,
+  unless at least one listing page was read — then they post what they read
+  (`cut_short`, §4.2).
   History: Every cycle 7–8 large ATS boards exceed the 90 s `per_company_timeout`
   and fall back to the generic scrapers with deactivation suppressed:
   - 2026-09-25: DLR Group (Greenhouse ReadTimeout), Belden and Demant
@@ -737,6 +764,14 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   `resolve_database_url`, so running from `scraper/` is fine).
 
 ## 9. Log (newest first, keep entries short)
+
+- **2026-11-13, keep what was read + priority boards** — a timeout or a failing
+  page no longer throws away the listing pages already read (§4.2); timeouts get
+  one retry; `priority` flag (2× budget, scraped first) on Apple, Shure, Cirrus
+  Logic, Bose, Qualcomm, Amazon; jobs without a fresh description keep their
+  stored one. Live Apple run on a very slow jobs.apple.com (dozens of 15 s read
+  timeouts): the `audio` search kept 234 of ~316 jobs at the 180 s budget, 317
+  jobs in all, 2 new — the old rule would have fallen back to ~7. Apple 76 listed.
 
 - **2026-11-13, read timeouts skip the fallback** — Apple and Full Sail fell back
   in the 11-13 cycle because a `requests` ReadTimeout from a single fetch was

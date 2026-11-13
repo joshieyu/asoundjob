@@ -9,7 +9,7 @@ from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from bs4 import BeautifulSoup
 
-from scraper.scrapers.base import BaseScraper, RawJob, ScrapeError
+from scraper.scrapers.base import BaseScraper, RawJob, ScrapeError, company_budget, listing
 from scraper.scrapers.fetch import fetch_html
 from scraper.scrapers.link_extraction import extract_jsonld_jobs
 
@@ -55,13 +55,13 @@ class IcimsScraper(BaseScraper):
         slug = company.ats_slug or self.extract_slug(company.careers_url or "")
         if not slug:
             raise ValueError(f"No icims slug in {company.careers_url}")
-        deadline = monotonic() + self.settings.per_company_timeout * ENRICHMENT_BUDGET_FRACTION
+        deadline = monotonic() + company_budget(self.settings, company) * ENRICHMENT_BUDGET_FRACTION
         jobs = await self._fetch_all(slug)
         await self._fetch_descriptions(jobs, deadline)
         return jobs
 
     async def _fetch_all(self, slug: str) -> list[RawJob]:
-        jobs: list[RawJob] = []
+        jobs = listing()
         seen_ids: set[str] = set()
         for page in range(MAX_PAGES):
             url = LIST_URL.format(slug=slug, page=page)

@@ -3,11 +3,13 @@ from __future__ import annotations
 import asyncio
 import logging
 from abc import ABC, abstractmethod
+from contextlib import contextmanager
+from contextvars import ContextVar
 from dataclasses import dataclass, field
 from datetime import date
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Iterator, Optional
 
-import requests
+import requests  # type: ignore[import-untyped]
 from urllib3.exceptions import ReadTimeoutError
 
 if TYPE_CHECKING:
@@ -42,6 +44,7 @@ class ScrapeResult:
     html: Optional[str] = None
     rate_limited: bool = False
     timed_out: bool = False
+    salvaged: bool = False
 
 
 class ScrapeError(Exception):
@@ -50,6 +53,66 @@ class ScrapeError(Exception):
 
 class RateLimitedError(ScrapeError):
     pass
+
+
+PRIORITY_BUDGET_MULTIPLIER = 2.0
+
+_LISTING: ContextVar[Optional[list[list[RawJob]]]] = ContextVar(
+    "listing_progress", default=None
+)
+
+
+def company_budget(settings: Settings, company: Company) -> float:
+    multiplier = PRIORITY_BUDGET_MULTIPLIER if company.priority else 1.0
+    return settings.per_company_timeout * multiplier
+
+
+def listing() -> list[RawJob]:
+    jobs: list[RawJob] = []
+    registry = _LISTING.get()
+    if registry is not None:
+        registry.append(jobs)
+    return jobs
+
+
+@contextmanager
+def track_listing() -> Iterator[list[list[RawJob]]]:
+    registry: list[list[RawJob]] = []
+    token = _LISTING.set(registry)
+    try:
+        yield registry
+    finally:
+        _LISTING.reset(token)
+
+
+def salvage(registry: Optional[list[list[RawJob]]]) -> list[RawJob]:
+    kept: dict[str, RawJob] = {}
+    for jobs in registry or []:
+        for job in list(jobs):
+            key = f"ext:{job.external_id}" if job.external_id else f"url:{job.url}"
+            kept.setdefault(key, job)
+    return list(kept.values())
+
+
+def salvaged_result(
+    company_id: int,
+    method: str,
+    jobs: list[RawJob],
+    error: str,
+    rate_limited: bool = False,
+    timed_out: bool = False,
+) -> ScrapeResult:
+    return ScrapeResult(
+        company_id=company_id,
+        success=True,
+        method=method,
+        jobs=jobs,
+        error=f"listing cut short, kept {len(jobs)} jobs read so far: {error}",
+        partial=True,
+        salvaged=True,
+        rate_limited=rate_limited,
+        timed_out=timed_out,
+    )
 
 
 TIMEOUT_ERRORS = (requests.Timeout, ReadTimeoutError, asyncio.TimeoutError)
@@ -109,6 +172,16 @@ class BaseScraper(ABC):
             result.error = f"{type(exc).__name__}: {exc}"
             result.rate_limited = isinstance(exc, RateLimitedError)
             result.timed_out = is_timeout(exc)
+            kept = salvage(_LISTING.get())
+            if kept:
+                result = salvaged_result(
+                    company.id,
+                    self.name,
+                    kept,
+                    result.error,
+                    rate_limited=result.rate_limited,
+                    timed_out=result.timed_out,
+                )
         result.html = self._last_html
         result.duration = round(time.monotonic() - started, 2)
         return result

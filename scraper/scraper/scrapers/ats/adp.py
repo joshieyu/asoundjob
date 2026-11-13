@@ -7,7 +7,7 @@ from urllib.parse import parse_qs, urlsplit
 
 from bs4 import BeautifulSoup
 
-from scraper.scrapers.base import BaseScraper, RawJob
+from scraper.scrapers.base import BaseScraper, RawJob, listing
 from scraper.scrapers.fetch import fetch_json, parse_date
 
 if TYPE_CHECKING:
@@ -63,7 +63,7 @@ class AdpScraper(BaseScraper):
         return jobs
 
     async def _fetch_all(self, cid: str) -> list[RawJob]:
-        jobs: list[RawJob] = []
+        jobs = listing()
         for page in range(MAX_PAGES):
             skip = page * PAGE_SIZE
             url = LIST_URL.format(cid=cid, top=PAGE_SIZE, skip=skip)

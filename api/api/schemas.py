@@ -284,6 +284,7 @@ class AdminCompanyUpdate(BaseModel):
     verified: Optional[bool] = None
     scrape_blocked: Optional[bool] = None
     open_application: Optional[bool] = None
+    priority: Optional[bool] = None
     scrape_method: Optional[str] = None
     audio_scope: Optional[str] = Field(default=None, pattern="^(native|partial|all)$")
     logo_url: Optional[str] = None

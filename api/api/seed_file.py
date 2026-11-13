@@ -76,6 +76,8 @@ def entry_from_company(company: Company) -> dict[str, Any]:
         entry["logo_url"] = company.logo_url
     if bool(company.scrape_blocked):
         entry["scrape_blocked"] = True
+    if bool(company.priority):
+        entry["priority"] = True
     if company.ats_type:
         entry["ats_type"] = company.ats_type
         if company.ats_slug:

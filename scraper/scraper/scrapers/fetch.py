@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import threading
 from datetime import date, datetime, timezone
-from typing import Any
+from typing import Any, Callable, TypeVar
 from urllib.parse import parse_qs, urlsplit
 
 import requests  # type: ignore[import-untyped]
@@ -28,6 +28,31 @@ def _get_session(settings: Settings) -> requests.Session:
     return session
 
 
+TIMEOUT_RETRIES = 1
+T = TypeVar("T")
+
+
+def retry_on_timeout(call: Callable[[], T]) -> T:
+    for attempt in range(TIMEOUT_RETRIES + 1):
+        try:
+            return call()
+        except requests.Timeout:
+            if attempt >= TIMEOUT_RETRIES:
+                raise
+    raise AssertionError("unreachable")
+
+
+def _send(
+    method: str, url: str, settings: Settings, timeout: float | None, **kwargs: Any
+) -> requests.Response:
+    session = _get_session(settings)
+    return retry_on_timeout(
+        lambda: session.request(
+            method, url, timeout=timeout or settings.request_timeout, **kwargs
+        )
+    )
+
+
 class FetchError(Exception):
     def __init__(self, message: str, status: int | None = None) -> None:
         super().__init__(message)
@@ -35,9 +60,7 @@ class FetchError(Exception):
 
 
 def fetch_json(url: str, settings: Settings, timeout: float | None = None) -> Any:
-    response = _get_session(settings).get(
-        url, timeout=timeout or settings.request_timeout
-    )
+    response = _send("GET", url, settings, timeout)
     if response.status_code != 200:
         raise FetchError(f"HTTP {response.status_code} for {url}", response.status_code)
     try:
@@ -49,9 +72,7 @@ def fetch_json(url: str, settings: Settings, timeout: float | None = None) -> An
 def post_json(
     url: str, payload: Any, settings: Settings, timeout: float | None = None
 ) -> Any:
-    response = _get_session(settings).post(
-        url, json=payload, timeout=timeout or settings.request_timeout
-    )
+    response = _send("POST", url, settings, timeout, json=payload)
     if response.status_code != 200:
         raise FetchError(f"HTTP {response.status_code} for {url}", response.status_code)
     try:
@@ -63,18 +84,14 @@ def post_json(
 def fetch_page(
     url: str, settings: Settings, timeout: float | None = None
 ) -> tuple[str, str]:
-    response = _get_session(settings).get(
-        url, timeout=timeout or settings.request_timeout
-    )
+    response = _send("GET", url, settings, timeout)
     if response.status_code != 200:
         raise FetchError(f"HTTP {response.status_code} for {url}", response.status_code)
     return response.text, str(response.url or url)
 
 
 def fetch_html(url: str, settings: Settings, timeout: float | None = None) -> str:
-    response = _get_session(settings).get(
-        url, timeout=timeout or settings.request_timeout
-    )
+    response = _send("GET", url, settings, timeout)
     if response.status_code != 200:
         raise FetchError(f"HTTP {response.status_code} for {url}", response.status_code)
     return response.text

@@ -6,7 +6,14 @@ from time import monotonic
 from typing import TYPE_CHECKING, Any
 from urllib.parse import parse_qs, quote, urlparse
 
-from scraper.scrapers.base import BaseScraper, RateLimitedError, RawJob, ScrapeError
+from scraper.scrapers.base import (
+    BaseScraper,
+    RateLimitedError,
+    RawJob,
+    ScrapeError,
+    company_budget,
+    listing,
+)
 from scraper.scrapers.fetch import FetchError, fetch_json, parse_date
 
 if TYPE_CHECKING:
@@ -91,7 +98,7 @@ class EightfoldScraper(BaseScraper):
         return URL_PATTERN.match(company.careers_url.strip()) is not None
 
     async def fetch_jobs(self, company: Company) -> list[RawJob]:
-        deadline = monotonic() + self.settings.per_company_timeout * ENRICHMENT_BUDGET_FRACTION
+        deadline = monotonic() + company_budget(self.settings, company) * ENRICHMENT_BUDGET_FRACTION
         careers_url = (company.careers_url or "").strip()
         parsed = urlparse(careers_url)
         host = parsed.netloc
@@ -101,6 +108,7 @@ class EightfoldScraper(BaseScraper):
         query = (parse_qs(parsed.query).get("query") or [""])[0]
 
         all_positions: list[Any] = []
+        collected = listing()
         start = 0
         for page_index in range(MAX_PAGES):
             url = (
@@ -121,6 +129,7 @@ class EightfoldScraper(BaseScraper):
             if not isinstance(page_positions, list) or not page_positions:
                 break
             all_positions.extend(page_positions)
+            collected.extend(parse_positions({"data": {"positions": page_positions}}, host))
             count = data.get("count") if isinstance(data, dict) else None
             start += len(page_positions)
             if isinstance(count, int) and len(all_positions) >= count:

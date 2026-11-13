@@ -9,7 +9,7 @@ from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup
 
-from scraper.scrapers.base import BaseScraper, RawJob, ScrapeError
+from scraper.scrapers.base import BaseScraper, RawJob, ScrapeError, company_budget, listing
 from scraper.scrapers.fetch import fetch_html
 
 if TYPE_CHECKING:
@@ -48,10 +48,11 @@ class HaileyHrScraper(BaseScraper):
         slug = company.ats_slug or self.extract_slug(company.careers_url or "")
         if not slug:
             raise ValueError(f"No haileyhr slug in {company.careers_url}")
-        deadline = monotonic() + self.settings.per_company_timeout * ENRICHMENT_BUDGET_FRACTION
+        deadline = monotonic() + company_budget(self.settings, company) * ENRICHMENT_BUDGET_FRACTION
         base = f"https://{slug}.careers.haileyhr.app/"
         html = await asyncio.to_thread(fetch_html, base, self.settings)
-        jobs = parse_listing(html, base)
+        jobs = listing()
+        jobs.extend(parse_listing(html, base))
         await self._fetch_descriptions(jobs, deadline)
         return jobs
 

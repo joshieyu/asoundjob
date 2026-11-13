@@ -5,7 +5,7 @@ import logging
 from typing import TYPE_CHECKING, Any
 from urllib.parse import parse_qs, urlencode, urlsplit
 
-from scraper.scrapers.base import BaseScraper, RawJob, ScrapeError
+from scraper.scrapers.base import BaseScraper, RawJob, ScrapeError, listing
 from scraper.scrapers.fetch import fetch_json, parse_date
 
 if TYPE_CHECKING:
@@ -40,7 +40,7 @@ class JibeScraper(BaseScraper):
         return await self._fetch_all(host, keywords)
 
     async def _fetch_all(self, host: str, keywords: str | None) -> list[RawJob]:
-        jobs: list[RawJob] = []
+        jobs = listing()
         total: int | None = None
         fetched = 0
         for page_index in range(MAX_PAGES):

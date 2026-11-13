@@ -10,6 +10,7 @@
 		extra_careers_urls: string[] | null;
 		open_application: boolean;
 		scrape_blocked: boolean;
+		priority: boolean;
 		verified: boolean;
 		source: string;
 		active_jobs_count: number;
@@ -121,7 +122,8 @@
 
 	const FLAG_LABELS = {
 		scrape_blocked: 'blocked from scraping',
-		open_application: 'open to speculative applications'
+		open_application: 'open to speculative applications',
+		priority: 'a priority board'
 	} as const;
 
 	async function toggleFlag(row: CompanyRow, flag: keyof typeof FLAG_LABELS) {
@@ -410,6 +412,14 @@
 									onclick={() => toggleFlag(row, 'open_application')}
 								>
 									Open app<span class="sr-only">: {row.open_application ? 'yes' : 'no'}</span>
+								</button>
+								<button
+									type="button"
+									class="btn btn-quiet px-2 py-1 {row.priority ? 'is-on' : ''}"
+									title="Scraped first in each cycle with twice the time budget"
+									onclick={() => toggleFlag(row, 'priority')}
+								>
+									Priority<span class="sr-only">: {row.priority ? 'yes' : 'no'}</span>
 								</button>
 							</span>
 						</td>

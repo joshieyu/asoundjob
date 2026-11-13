@@ -186,7 +186,8 @@ Everything has a working default; none of this is needed for local development.
 
 **Scraper** — `DATABASE_URL` (defaults to `sqlite:///asoundjob.db`), `DATA_DIR`,
 `SCRAPER_USER_AGENT`, `HTTP_CONCURRENCY` (50), `PLAYWRIGHT_CONCURRENCY` (5),
-`REQUEST_TIMEOUT` (15s), `PAGE_LOAD_TIMEOUT` (25s), `PER_COMPANY_TIMEOUT` (90s).
+`REQUEST_TIMEOUT` (15s, one retry on a timeout), `PAGE_LOAD_TIMEOUT` (25s),
+`PER_COMPANY_TIMEOUT` (90s; doubled for companies with `priority: true` in the seed).
 
 **API** — `ADMIN_USERNAME`, `ADMIN_PASSWORD`, `ADMIN_SECRET_KEY`,
 `TOKEN_EXPIRE_MINUTES` (720), `CORS_ORIGINS`, `SUBMISSIONS_PER_IP_PER_DAY` (3),

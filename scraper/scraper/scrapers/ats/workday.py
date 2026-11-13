@@ -6,8 +6,8 @@ import re
 from datetime import date, timedelta
 from typing import TYPE_CHECKING, Any
 
-from scraper.scrapers.base import BaseScraper, RawJob
-from scraper.scrapers.fetch import FetchError, extract_query
+from scraper.scrapers.base import BaseScraper, RawJob, listing
+from scraper.scrapers.fetch import FetchError, extract_query, retry_on_timeout
 
 if TYPE_CHECKING:
     from scraper.models import Company
@@ -80,7 +80,7 @@ class WorkdayScraper(BaseScraper):
     async def _fetch_all(
         self, base: str, tenant: str, site: str, query: str = ""
     ) -> list[RawJob]:
-        jobs: list[RawJob] = []
+        jobs = listing()
         offset = 0
         total: int | None = None
         for page_index in range(MAX_PAGES):
@@ -154,15 +154,17 @@ def _build_base(url: str, host: str) -> str:
 def _post_json(url: str, body: dict, settings) -> Any:
     import requests as req
 
-    response = req.post(
-        url,
-        json=body,
-        timeout=settings.request_timeout,
-        headers={
-            "User-Agent": settings.user_agent,
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-        },
+    response = retry_on_timeout(
+        lambda: req.post(
+            url,
+            json=body,
+            timeout=settings.request_timeout,
+            headers={
+                "User-Agent": settings.user_agent,
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+            },
+        )
     )
     if response.status_code != 200:
         raise FetchError(f"HTTP {response.status_code} for {url}")

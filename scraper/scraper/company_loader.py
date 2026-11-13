@@ -53,6 +53,7 @@ SEED_KEY_ORDER = (
     "website_url",
     "logo_url",
     "scrape_blocked",
+    "priority",
     "ats_type",
     "ats_slug",
     "description",
@@ -191,6 +192,7 @@ def load_companies(session: Session, companies: list[dict[str, Any]]) -> LoadSta
         )
         open_application = bool(entry.get("open_application", False))
         scrape_blocked = bool(entry.get("scrape_blocked", False))
+        priority = bool(entry.get("priority", False))
 
         has_website_url = "website_url" in entry
         website_url = clean_optional_str(entry.get("website_url")) if has_website_url else None
@@ -229,6 +231,7 @@ def load_companies(session: Session, companies: list[dict[str, Any]]) -> LoadSta
                 extra_careers_urls=extra_careers_urls,
                 open_application=open_application,
                 scrape_blocked=scrape_blocked,
+                priority=priority,
                 verified=verified,
                 source=source,
                 scrape_method=scrape_method,
@@ -262,6 +265,7 @@ def load_companies(session: Session, companies: list[dict[str, Any]]) -> LoadSta
                 or existing.extra_careers_urls != extra_careers_urls
                 or existing.open_application != open_application
                 or existing.scrape_blocked != scrape_blocked
+                or existing.priority != priority
                 or existing.verified != verified
                 or existing.source != source
                 or existing.scrape_method != scrape_method
@@ -282,6 +286,7 @@ def load_companies(session: Session, companies: list[dict[str, Any]]) -> LoadSta
                 existing.extra_careers_urls = extra_careers_urls
                 existing.open_application = open_application
                 existing.scrape_blocked = scrape_blocked
+                existing.priority = priority
                 existing.verified = verified
                 existing.source = source
                 existing.scrape_method = scrape_method

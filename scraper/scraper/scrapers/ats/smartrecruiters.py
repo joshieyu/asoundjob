@@ -5,7 +5,7 @@ import re
 from typing import TYPE_CHECKING, Any
 from urllib.parse import quote
 
-from scraper.scrapers.base import BaseScraper, RawJob
+from scraper.scrapers.base import BaseScraper, RawJob, listing
 from scraper.scrapers.fetch import extract_query, fetch_json, parse_date
 
 if TYPE_CHECKING:
@@ -54,7 +54,7 @@ class SmartRecruitersScraper(BaseScraper):
         return jobs
 
     async def _fetch_all(self, slug: str, query: str = "") -> list[RawJob]:
-        jobs: list[RawJob] = []
+        jobs = listing()
         offset = 0
         search = f"&q={quote(query)}" if query else ""
         while True:

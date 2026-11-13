@@ -33,7 +33,14 @@ from scraper.scrapers.ats.ultipro import UltiproScraper
 from scraper.scrapers.ats.workable import WorkableScraper
 from scraper.scrapers.ats.workday import WorkdayScraper
 from scraper.scrapers.ats_discovery import discover
-from scraper.scrapers.base import RawJob, ScrapeResult
+from scraper.scrapers.base import (
+    RawJob,
+    ScrapeResult,
+    company_budget,
+    salvage,
+    salvaged_result,
+    track_listing,
+)
 from scraper.scrapers.http_scraper import HttpScraper
 from scraper.scrapers.playwright_scraper import PlaywrightScraper
 
@@ -112,22 +119,38 @@ class ScrapePipeline:
         semaphore: asyncio.Semaphore,
         label: str,
     ) -> ScrapeResult:
+        budget = company_budget(self.settings, company)
         async with semaphore:
-            try:
-                result = await asyncio.wait_for(
-                    scraper.scrape(company), timeout=self.settings.per_company_timeout
-                )
-            except asyncio.TimeoutError:
-                result = ScrapeResult(
-                    company_id=company.id,
-                    method=label,
-                    error=f"timeout after {self.settings.per_company_timeout}s",
-                    timed_out=True,
-                )
-            except Exception as exc:
-                result = ScrapeResult(
-                    company_id=company.id, method=label, error=f"{type(exc).__name__}: {exc}"
-                )
+            with track_listing() as registry:
+                try:
+                    result = await asyncio.wait_for(scraper.scrape(company), timeout=budget)
+                except asyncio.TimeoutError:
+                    error = f"timeout after {budget:.0f}s"
+                    kept = salvage(registry)
+                    if kept:
+                        result = salvaged_result(
+                            company.id, label, kept, error, timed_out=True
+                        )
+                    else:
+                        result = ScrapeResult(
+                            company_id=company.id,
+                            method=label,
+                            error=error,
+                            timed_out=True,
+                        )
+                except Exception as exc:
+                    result = ScrapeResult(
+                        company_id=company.id,
+                        method=label,
+                        error=f"{type(exc).__name__}: {exc}",
+                    )
+        if result.salvaged:
+            logger.info(
+                "%s: %s %s; deactivation suppressed",
+                company.name,
+                label,
+                result.error,
+            )
         self.attempts.append((label, "ok" if result.success else f"fail ({result.error})"))
         return result
 
@@ -187,19 +210,22 @@ class ScrapePipeline:
             audio_scope=company.audio_scope,
             ats_type=company.ats_type,
             ats_slug=self._slug_for_url(company, url),
+            priority=bool(company.priority),
         )
 
     async def _scrape_every(
         self, company: Company, urls: list[str]
     ) -> ScrapeResult:
         seed_keys = seed_query_keys(urls)
-        budget = self.settings.per_company_timeout * MULTI_URL_BUDGET_UNITS
+        budget = company_budget(self.settings, company) * MULTI_URL_BUDGET_UNITS
         deadline = time.monotonic() + budget
         merged: dict[str, RawJob] = {}
         methods: list[str] = []
         errors: list[str] = []
         succeeded = 0
         all_trusted = True
+        complete = 0
+        salvaged = False
 
         for index, url in enumerate(urls):
             if index and time.monotonic() >= deadline:
@@ -211,17 +237,23 @@ class ScrapePipeline:
                 continue
             succeeded += 1
             methods.append(result.method)
+            salvaged = salvaged or result.salvaged
+            if result.partial:
+                if result.error:
+                    errors.append(f"{url}: {result.error}")
+            else:
+                complete += 1
             if not result.trust_empty:
                 all_trusted = False
             for raw in result.jobs:
                 merged.setdefault(merge_identity(raw, seed_keys), raw)
 
-        partial = succeeded < len(urls)
+        partial = complete < len(urls)
         if partial:
             logger.info(
-                "%s scraped %d of %d careers URLs, deactivation suppressed",
+                "%s scraped %d of %d careers URLs in full, deactivation suppressed",
                 company.name,
-                succeeded,
+                complete,
                 len(urls),
             )
         return ScrapeResult(
@@ -232,6 +264,7 @@ class ScrapePipeline:
             error="; ".join(errors)[:500] or None,
             trust_empty=all_trusted and not partial,
             partial=partial,
+            salvaged=salvaged,
         )
 
     async def _scrape_one(self, company: Company) -> ScrapeResult:
@@ -245,7 +278,7 @@ class ScrapePipeline:
                 scraper, company, self.http_semaphore, company.ats_type
             )
             if result.success:
-                result.trust_empty = True
+                result.trust_empty = not result.partial
                 return result
             if result.rate_limited:
                 return self._rate_limited_result(company, company.ats_type, result)
@@ -280,7 +313,7 @@ class ScrapePipeline:
             if ats.can_handle(company):
                 result = await self._attempt(ats, company, self.http_semaphore, ats.name)
                 if result.success:
-                    result.trust_empty = True
+                    result.trust_empty = not result.partial
                     return result
                 if result.rate_limited:
                     return self._rate_limited_result(company, ats.name, result)

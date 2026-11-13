@@ -450,7 +450,8 @@
     "extra_careers_urls": [
       "https://www.amazon.jobs/en/search?base_query=speech",
       "https://www.amazon.jobs/en/search?base_query=signal+processing"
-    ]
+    ],
+    "priority": true
   },
   {
     "name": "AMD",
@@ -690,7 +691,8 @@
     "extra_careers_urls": [
       "https://jobs.apple.com/en-us/search?search=speech",
       "https://jobs.apple.com/en-us/search?search=acoustic"
-    ]
+    ],
+    "priority": true
   },
   {
     "name": "Applied Acoustics Systems (AAS)",
@@ -1748,6 +1750,7 @@
     "verified": true,
     "source": "auto",
     "scrape_method": "playwright",
+    "priority": true,
     "ats_type": "workday",
     "ats_slug": "boseallaboutme.wd503/Bose_Careers"
   },
@@ -2309,7 +2312,8 @@
     "category": "Audio Semiconductors",
     "verified": true,
     "source": "auto",
-    "scrape_method": "http"
+    "scrape_method": "http",
+    "priority": true
   },
   {
     "name": "Cirrus Research",
@@ -8106,6 +8110,7 @@
     "extra_careers_urls": [
       "https://careers.qualcomm.com/careers?query=dsp"
     ],
+    "priority": true,
     "ats_type": "eightfold",
     "ats_slug": "qualcomm.com"
   },
@@ -8983,7 +8988,8 @@
     "category": "Headphones & Personal Audio",
     "verified": true,
     "source": "auto",
-    "scrape_method": "http"
+    "scrape_method": "http",
+    "priority": true
   },
   {
     "name": "Shutterstock Music",

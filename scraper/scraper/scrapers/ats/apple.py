@@ -9,7 +9,7 @@ from time import monotonic
 from typing import TYPE_CHECKING, Any
 from urllib.parse import parse_qsl, quote, urlsplit
 
-from scraper.scrapers.base import BaseScraper, RawJob
+from scraper.scrapers.base import BaseScraper, RawJob, company_budget, listing
 from scraper.scrapers.fetch import fetch_html, parse_date
 
 if TYPE_CHECKING:
@@ -71,6 +71,7 @@ class AppleScraper(BaseScraper):
         start = monotonic()
         term = self.search_term(company.careers_url)
         pairs: list[tuple[RawJob, str | None]] = []
+        collected = listing()
         for page in range(1, MAX_PAGES + 1):
             url = SEARCH_URL.format(term=quote(term, safe=""), page=page)
             html_text = await asyncio.to_thread(fetch_html, url, self.settings)
@@ -78,10 +79,11 @@ class AppleScraper(BaseScraper):
             if not page_pairs:
                 break
             pairs.extend(page_pairs)
+            collected.extend(job for job, _team in page_pairs)
             if len(page_pairs) < PAGE_SIZE:
                 break
 
-        deadline = start + self.settings.per_company_timeout * ENRICHMENT_BUDGET_FRACTION
+        deadline = start + company_budget(self.settings, company) * ENRICHMENT_BUDGET_FRACTION
         semaphore = asyncio.Semaphore(DETAIL_FETCH_CONCURRENCY)
         counts = {"enriched": 0, "budget_skipped": 0}
         await asyncio.gather(

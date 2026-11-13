@@ -6,7 +6,7 @@ from datetime import date, datetime
 from typing import TYPE_CHECKING, Any
 from urllib.parse import parse_qs, urlencode, urlparse
 
-from scraper.scrapers.base import BaseScraper, RawJob, ScrapeError
+from scraper.scrapers.base import BaseScraper, RawJob, ScrapeError, listing
 from scraper.scrapers.fetch import fetch_json
 
 if TYPE_CHECKING:
@@ -43,6 +43,7 @@ class AmazonScraper(BaseScraper):
 
     async def _fetch_all(self, query: str) -> list[Any]:
         jobs: list[Any] = []
+        collected = listing()
         hits: int | None = None
         offset = 0
         for page_index in range(MAX_PAGES):
@@ -56,6 +57,7 @@ class AmazonScraper(BaseScraper):
             if not isinstance(page, list) or not page:
                 break
             jobs.extend(page)
+            collected.extend(parse_jobs(page))
             page_hits = response.get("hits") if isinstance(response, dict) else None
             if hits is None and page_hits:
                 hits = page_hits

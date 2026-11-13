@@ -10,7 +10,7 @@ from urllib.parse import parse_qs, quote, urljoin, urlsplit
 
 from bs4 import BeautifulSoup
 
-from scraper.scrapers.base import BaseScraper, RawJob, ScrapeError
+from scraper.scrapers.base import BaseScraper, RawJob, ScrapeError, company_budget, listing
 from scraper.scrapers.fetch import fetch_html, parse_date
 
 if TYPE_CHECKING:
@@ -65,7 +65,7 @@ class SuccessFactorsScraper(BaseScraper):
         origin = f"{parsed.scheme}://{parsed.netloc}"
         query = (parse_qs(parsed.query).get("q") or [""])[0]
 
-        jobs: list[RawJob] = []
+        jobs = listing()
         seen_keys: set[str] = set()
         for page_index in range(MAX_PAGES):
             startrow = page_index * PAGE_SIZE
@@ -89,7 +89,7 @@ class SuccessFactorsScraper(BaseScraper):
             if len(page_jobs) < PAGE_SIZE:
                 break
 
-        deadline = start + self.settings.per_company_timeout * ENRICHMENT_BUDGET_FRACTION
+        deadline = start + company_budget(self.settings, company) * ENRICHMENT_BUDGET_FRACTION
         semaphore = asyncio.Semaphore(DETAIL_FETCH_CONCURRENCY)
         counts = {"enriched": 0, "budget_skipped": 0}
         fetch_list = jobs[:MAX_DETAIL_FETCHES]

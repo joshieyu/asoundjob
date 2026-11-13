@@ -5,7 +5,7 @@ import re
 from typing import TYPE_CHECKING, Any
 from urllib.parse import parse_qs, urlparse
 
-from scraper.scrapers.base import BaseScraper, RawJob, ScrapeError
+from scraper.scrapers.base import BaseScraper, RawJob, ScrapeError, listing
 from scraper.scrapers.fetch import parse_date, post_json
 
 if TYPE_CHECKING:
@@ -61,6 +61,7 @@ class UltiproScraper(BaseScraper):
 
         search_url = SEARCH_URL.format(host=host, tenant=tenant, board=board)
         all_opportunities: list[Any] = []
+        collected = listing()
         total_count: int | None = None
         for page_index in range(MAX_PAGES):
             payload = _build_payload(query, page_index * PAGE_SIZE)
@@ -81,6 +82,9 @@ class UltiproScraper(BaseScraper):
             if not isinstance(opportunities, list) or not opportunities:
                 break
             all_opportunities.extend(opportunities)
+            collected.extend(
+                parse_opportunities({"opportunities": opportunities}, host, tenant, board)
+            )
             count = response.get("totalCount") if isinstance(response, dict) else None
             if isinstance(count, int):
                 total_count = count
