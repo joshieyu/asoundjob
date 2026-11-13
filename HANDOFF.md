@@ -12,16 +12,16 @@ the careers pages of seeded companies, a relevance model decides which jobs reac
 the public board, and a SvelteKit site serves them. Branch
 `redesign-type-specimen`.
 
-As of the 2026-11-12 cycle plus that day's narrowing and re-scrapes:
+As of the 2026-11-13 cycle:
 
 | | |
 | --- | --- |
 | companies in the seed / DB | 1,426 (757 verified, 58 `source: manual`, 15 `scrape_blocked`) |
 | scrape population (verified, unblocked, has URL) | a cycle scrapes ~718 after shared-URL dedup |
-| cycle | ~26–36 min on a good connection; ok 370 / failed 348 — ~50% failure is normal |
-| job rows / active / board-eligible | ~35,300 / ~10,800 / 1,086 |
-| **publicly listed** | **1,079** (10 hidden as stale: IK Multimedia 4, Otter.ai 3, XLN Audio 1, Fairphone 1, Valcom 1) |
-| companies contributing to the board | 145; top: Shure 111, Apple 75, Cirrus Logic 71, Bose 61, Qualcomm 49, Amazon 41 |
+| cycle | ~26–36 min on a good connection; ok 371 / failed 353 — ~50% failure is normal |
+| job rows / active / board-eligible | ~35,500 / ~10,800 / 1,074 |
+| **publicly listed** | **1,066** (8 hidden as stale: IK Multimedia 4, Otter.ai 1, XLN Audio 1, Fairphone 1, Valcom 1) |
+| companies contributing to the board | 144; top: Shure 106, Apple 75, Cirrus Logic 70, Bose 63, Qualcomm 50, Amazon 44 |
 
 **Running locally:** the app's preview launcher cannot start the API — macOS
 blocks it from reading `venv/pyvenv.cfg` (`Operation not permitted`; the
@@ -732,6 +732,17 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   `resolve_database_url`, so running from `scraper/` is fine).
 
 ## 9. Log (newest first, keep entries short)
+
+- **2026-11-13, cycle** — 724 companies, 371 ok, ~31 min; deactivated 267,
+  inserted 235, reactivated 61, 7 deactivation skips. First cycle with ATS
+  timeouts skipping the generic fallback: Logitech, McGill, iHeartRadio, Nissan,
+  HP Inc., Twilio Voice, Microsoft and Apple timed out cleanly (no
+  partial/fallback rows). Still falling back: Apple and Full Sail on a `requests`
+  ReadTimeout (not an `asyncio` timeout) and Acer on a SuccessFactors 404. The
+  narrowed boards all succeeded (Analog Devices 102, Samsung 66, Demant 65,
+  Belden 52, Sony 32); Dirac 5 via haileyhr. Zero 429s. **Board-eligible
+  1,087 → 1,074, publicly listed 1,066** (83 tagged commercial). Demo servers
+  had died again and were restarted.
 
 - **2026-11-12, commercial roles** — owner decided sales/marketing/CS roles
   belong (§2 item 5): sales titles out of `CORPORATE_ROLE`, `sales_marketing_cs`
