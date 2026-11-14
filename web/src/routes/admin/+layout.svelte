@@ -39,6 +39,7 @@
 		['/admin', 'Dashboard'],
 		['/admin/submissions', 'Submissions'],
 		['/admin/feedback', 'Feedback'],
+		['/admin/jobs', 'Jobs'],
 		['/admin/scraper', 'Scraper'],
 		['/admin/companies', 'Companies'],
 		['/admin/health', 'Company health']

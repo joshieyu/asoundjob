@@ -30,13 +30,15 @@ fine. Start the API from a terminal as the README says.
 
 **All seed edits through 2026-11-10 are committed** (OpenAI, Meta, Rockford Fosgate rename, Cisco, Ramboll scoping, Sesame, Quippy, Laran, Stryker, Anaheim Ducks, Sonova repoint, Advanced Bionics unverified; §7).
 
-**Seven owner-pinned jobs live only in the DB** (`is_audio_related_override = True`):
+**Eight owner-pinned jobs live only in the DB** (`is_audio_related_override = True`):
 Muse Group CPO (36373), L-Acoustics Exec. Director of Product
 Management (12328), Splice Senior Brand Marketing Manager (37097), DistroKid Growth
 PM (834), ai-coustics Head of Marketing (36410), Anthropic AV Production Specialist
 (36483), all 2026-11-04; Sonova/Advanced Bionics Sr. Research Engineer, Valencia
 (39980, 2026-11-10 — cochlear-implant signal processing, scores 30). The owner
-wanted these listed; the scorer holds them back (15–35). There is no admin UI to pin a job on, and a fresh DB loses them.
+wanted these listed; the scorer holds them back (15–35). Plus Microsoft Principal Applied
+Scientist – ML & Deep Learning (40440, 2026-11-14, Teams audio ML, scores 20). Pin and unpin
+at `/admin/jobs` (search by title, company or a pasted job URL); a fresh DB loses them.
 | health grades (scraped, 2026-09-22) | healthy 96, idle 149, failing 348, furniture 46, silent 32, thin 61; unscraped 680 |
 
 **GN's careers site is offline until early November** (§5): GN Store Nord, Jabra
@@ -766,6 +768,12 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   `resolve_database_url`, so running from `scraper/` is fine).
 
 ## 9. Log (newest first, keep entries short)
+
+- **2026-11-14, admin job pinning** — new `/admin/jobs` page with
+  `GET /api/admin/jobs` (search incl. pasted URLs; `show=all|hidden|overridden`) and
+  `PUT /api/admin/jobs/{id}/audio` (`true` pin on, `false` hide, `null` back to score,
+  which re-scores the job). Pinned Microsoft 40440. A scoring rule for "asks for audio
+  experience" was dry-run (78 jobs would join, mostly right) and not yet adopted.
 
 - **2026-11-14, cycle** — 726 companies, 366 ok, ~29 min; inserted 144,
   reactivated 60, deactivated 168. First cycle with partial listings kept

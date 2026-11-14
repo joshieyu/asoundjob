@@ -423,6 +423,24 @@ class FeedbackCreateResponse(BaseModel):
     message: str
 
 
+class AdminJobRow(BaseModel):
+    id: int
+    title: str
+    company_name: Optional[str] = None
+    url: str
+    location: Optional[str] = None
+    source: str
+    is_active: bool
+    is_audio_related: bool
+    relevance_score: int
+    is_audio_related_override: Optional[bool] = None
+    on_board: bool
+
+
+class AdminJobAudioUpdate(BaseModel):
+    is_audio_related: Optional[bool] = None
+
+
 class AdminJobFeedback(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

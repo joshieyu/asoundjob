@@ -9,18 +9,20 @@ from datetime import date, datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import delete, func, select, update
+from sqlalchemy import delete, func, or_, select, update
 from sqlalchemy.orm import Session
 
 from api.auth import LoginRequest, TokenResponse, create_token, require_admin, verify_credentials
 from api.config import COMMUNITY_JOB_TTL_DAYS, MAX_COMMUNITY_JOB_DAYS, SCRAPER_DIR
 from api.database import get_db
-from api.query import page_envelope, paginate_params
+from api.query import listable_clause, page_envelope, paginate_params
 from api.schemas import (
     AdminCompanyCreate,
     AdminCompanySuggestion,
     AdminCompanyUpdate,
+    AdminJobAudioUpdate,
     AdminJobFeedback,
+    AdminJobRow,
     AdminSiteFeedback,
     AdminSubmission,
     ApproveRequest,
@@ -367,20 +369,24 @@ def rescore_company_jobs(db: Session, company: Company) -> None:
         .all()
     )
     for job in jobs:
-        raw = RawJob(
-            title=job.title,
-            url=job.url,
-            location=job.location,
-            description=job.description,
-            job_type=job.job_type,
-        )
-        normalized = scorer.normalize(
-            raw,
-            audio_scope=company.audio_scope or "native",
-            company_category=company.category,
-        )
-        job.relevance_score = normalized.relevance_score
-        job.is_audio_related = effective_is_audio(job, normalized.is_audio_related)
+        rescore_job(scorer, company, job)
+
+
+def rescore_job(scorer: Normalizer, company: Company, job: Job) -> None:
+    raw = RawJob(
+        title=job.title,
+        url=job.url,
+        location=job.location,
+        description=job.description,
+        job_type=job.job_type,
+    )
+    normalized = scorer.normalize(
+        raw,
+        audio_scope=company.audio_scope or "native",
+        company_category=company.category,
+    )
+    job.relevance_score = normalized.relevance_score
+    job.is_audio_related = effective_is_audio(job, normalized.is_audio_related)
 
 
 @router.get("/submissions")
@@ -682,6 +688,93 @@ def reject_company_suggestion(
     db.flush()
     logger.info("admin=%s rejected company suggestion %s", admin, suggestion_id)
     return {"status": "rejected"}
+
+
+def _job_search_terms(search: str) -> list[str]:
+    text = search.strip()
+    url = text.split("?", 1)[0].split("#", 1)[0].rstrip("/")
+    terms = {text, url}
+    tail = url.rsplit("/", 1)[-1]
+    if tail.isdigit() or len(tail) > 8:
+        terms.add(tail)
+    return [term for term in terms if term]
+
+
+def _admin_job_row(job: Job, company_name: Optional[str], listable: bool) -> AdminJobRow:
+    return AdminJobRow(
+        id=job.id,
+        title=job.title,
+        company_name=company_name,
+        url=job.url,
+        location=job.location,
+        source=job.source,
+        is_active=bool(job.is_active),
+        is_audio_related=bool(job.is_audio_related),
+        relevance_score=job.relevance_score or 0,
+        is_audio_related_override=job.is_audio_related_override,
+        on_board=bool(job.is_active and job.is_audio_related and listable),
+    )
+
+
+@router.get("/jobs")
+def admin_list_jobs(
+    search: Optional[str] = None,
+    show: str = Query("all", pattern="^(all|hidden|overridden)$"),
+    page: int = Query(1, ge=1),
+    per_page: int = Query(25, ge=1, le=100),
+    db: Session = Depends(get_db),
+    _: str = Depends(require_admin),
+):
+    safe_page, safe_per = paginate_params(page, per_page)
+    stmt = (
+        select(Job, Company.name, listable_clause().label("listable"))
+        .outerjoin(Company, Job.company_id == Company.id)
+        .order_by(Job.is_active.desc(), Job.relevance_score.desc(), Job.id.desc())
+    )
+    if show == "hidden":
+        stmt = stmt.where(Job.is_active.is_(True), Job.is_audio_related.is_(False))
+    elif show == "overridden":
+        stmt = stmt.where(Job.is_audio_related_override.is_not(None))
+    if search:
+        clauses = []
+        for term in _job_search_terms(search):
+            pattern = f"%{term}%"
+            clauses += [
+                Job.title.ilike(pattern),
+                Company.name.ilike(pattern),
+                Job.url.ilike(pattern),
+                Job.external_id == term,
+            ]
+        stmt = stmt.where(or_(*clauses))
+    total = db.execute(select(func.count()).select_from(stmt.subquery())).scalar_one()
+    rows = db.execute(stmt.offset((safe_page - 1) * safe_per).limit(safe_per)).all()
+    items = [_admin_job_row(job, name, bool(listable)) for job, name, listable in rows]
+    return page_envelope(items, int(total), safe_page, safe_per)
+
+
+@router.put("/jobs/{job_id}/audio", response_model=AdminJobRow)
+def admin_set_job_audio(
+    job_id: int,
+    payload: AdminJobAudioUpdate,
+    db: Session = Depends(get_db),
+    admin: str = Depends(require_admin),
+):
+    job = db.get(Job, job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Job not found")
+    job.is_audio_related_override = payload.is_audio_related
+    if payload.is_audio_related is not None:
+        job.is_audio_related = payload.is_audio_related
+    elif job.company is not None and job.source == "scraper":
+        rescore_job(Normalizer(load_settings()), job.company, job)
+    db.flush()
+    listable = db.execute(
+        select(listable_clause()).select_from(Job).where(Job.id == job.id)
+    ).scalar_one()
+    logger.info(
+        "admin=%s set job %s audio override to %s", admin, job_id, payload.is_audio_related
+    )
+    return _admin_job_row(job, job.company.name if job.company else None, bool(listable))
 
 
 @router.get("/job-feedback")
