@@ -448,5 +448,55 @@ class TestClinicFrontOfficeTitles(unittest.TestCase):
             self.assertFalse(related, title)
 
 
+class TestAudioRequirement(unittest.TestCase):
+    def role(self, requirement: str) -> str:
+        return (
+            "<b>Responsibilities</b><ul><li>Build ML pipelines for calls and meetings.</li></ul>"
+            f"<b>Qualifications</b><ul><li>{requirement}</li></ul>"
+        )
+
+    def test_asking_for_audio_experience_admits_a_neutral_title(self) -> None:
+        _, related = score_relevance(
+            "Principal Applied Scientist - ML & Deep Learning",
+            self.role("Domain specific experience in Audio Digital Signal Processing."),
+            [],
+            "partial",
+        )
+        self.assertTrue(related)
+
+    def test_years_of_pro_audio_count(self) -> None:
+        _, related = score_relevance(
+            "US Sales Manager, Texas",
+            self.role("5+ years of prior professional audio sales experience."),
+            [],
+            "partial",
+        )
+        self.assertTrue(related)
+
+    def test_audio_in_a_list_of_media_does_not_count(self) -> None:
+        _, related = score_relevance(
+            "Software Developer III, GenAI",
+            self.role("Experience with text, image, video, or audio models."),
+            [],
+            "partial",
+        )
+        self.assertFalse(related)
+
+    def test_rf_beamforming_does_not_count(self) -> None:
+        _, related = score_relevance(
+            "RF Systems Engineer",
+            self.role("Experience with phased array antenna architectures and beamforming."),
+            [],
+            "partial",
+        )
+        self.assertFalse(related)
+
+
+class TestAcousticalTitles(unittest.TestCase):
+    def test_acoustical_consultant_is_audio(self) -> None:
+        _, related = score_relevance("Consultant, Acoustical", None, [], "partial")
+        self.assertTrue(related)
+
+
 if __name__ == "__main__":
     unittest.main()

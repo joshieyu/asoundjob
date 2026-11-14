@@ -20,7 +20,7 @@ As of the 2026-11-14 cycle:
 | scrape population (verified, unblocked, has URL) | a cycle scrapes ~718 after shared-URL dedup |
 | cycle | ~26–36 min on a good connection; ok 366 / failed 360 — ~50% failure is normal |
 | job rows / active / board-eligible | ~35,800 / ~10,900 / 1,079 |
-| **publicly listed** | **1,070** (9 hidden as stale: IK Multimedia 4, Otter.ai, XLN Audio, Fairphone, Valcom, CereProc 1 each) |
+| **publicly listed** | **1,148** after the 11-14 audio-requirement re-score (+77; 9 hidden as stale: IK Multimedia 4, Otter.ai, XLN Audio, Fairphone, Valcom, CereProc 1 each) |
 | companies contributing to the board | 145; top: Shure 103, Apple 77, Cirrus Logic 68, Bose 62, Qualcomm 49, Amazon 43 |
 
 **Running locally:** the app's preview launcher cannot start the API — macOS
@@ -302,6 +302,17 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   `SCOPE_THRESHOLDS = {native: 45, partial: 50, all: 55}`, +15 when there is no
   title signal outside native scope. Native adds +10; categories add +35 native /
   +25 otherwise.
+- **`AUDIO_REQUIREMENT` (+45, 2026-11-14)**: the role text asks for audio
+  experience — "experience/knowledge/background… in/with/of" or "N+ years of"
+  followed within three plain words by an audio term (`AUDIO_DOMAIN`: audio,
+  acoustic*, microphone, loudspeaker, transducer, hearing aid, speech enhancement,
+  noise/echo cancellation). No commas or and/or in the gap, so media lists ("text,
+  image, video, or audio") do not count; RF `beamforming` and `speech recognition`
+  were dropped after Amazon's stock applied-scientist line and 5G jobs matched.
+  Measured: 77 jobs joined, none left; ~8 are borderline (Sony 3D designer, Treble
+  office coordinator, Penn State/UT part-time support) — hide them at `/admin/jobs`.
+  The same day `acoustic[s]?` became `acoustic(?:s|al)?` in the title and
+  description terms (Ramboll "Consultant, Acoustical" was hidden).
 - Short-circuits to `(0, False)` before scoring: `TALENT_POOL_TITLE` (talent pools,
   speculative applications — chosen over title-collapse dedup, which would have
   deleted 161 real jobs), and `is_clinical_hearing_title` (hearing-aid retail and
@@ -773,7 +784,7 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   `GET /api/admin/jobs` (search incl. pasted URLs; `show=all|hidden|overridden`) and
   `PUT /api/admin/jobs/{id}/audio` (`true` pin on, `false` hide, `null` back to score,
   which re-scores the job). Pinned Microsoft 40440. A scoring rule for "asks for audio
-  experience" was dry-run (78 jobs would join, mostly right) and not yet adopted.
+  experience" was adopted the same day (§4.5).
 
 - **2026-11-14, cycle** — 726 companies, 366 ok, ~29 min; inserted 144,
   reactivated 60, deactivated 168. First cycle with partial listings kept

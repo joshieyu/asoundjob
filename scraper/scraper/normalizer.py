@@ -763,7 +763,7 @@ REMOTE_PATTERNS = re.compile(
 )
 
 AUDIO_TITLE_STRONG = re.compile(
-    r"\b(audio|sound|acoustic[s]?|dsp|signal processing|transducer|loudspeaker|"
+    r"\b(audio|sound|acoustic(?:s|al)?|dsp|signal processing|transducer|loudspeaker|"
     r"microphone|hearing aid|audiolog\w*|audiologist|live sound|foh|"
     r"front of house|mixing|mastering|game audio|sound design|voice|speech|"
     r"sonar|a/v|audio-?visual)\b",
@@ -803,7 +803,7 @@ def _anchor_hit(text: str) -> bool:
 
 
 AUDIO_DESC_STRONG = re.compile(
-    r"\b(audio|acoustic[s]?|dsp|loudspeaker|microphone|transducer|"
+    r"\b(audio|acoustic(?:s|al)?|dsp|loudspeaker|microphone|transducer|"
     r"audiolog\w*|audiologist|hearing aid|hearing instrument|hearing science|"
     r"beamforming|noise cancellation|echo cancellation|active noise|"
     r"spatial audio|spatial sound|psychoacoustic|hrtf|audio signal|"
@@ -865,6 +865,22 @@ NEGATIVE_SIGNALS = re.compile(
 )
 
 NEGATIVE_SIGNAL_PENALTY = 45
+
+AUDIO_DOMAIN = (
+    r"(?:audio|acoustic\w*|psychoacoustic\w*|microphones?|loudspeakers?|transducers?|"
+    r"hearing aids?|speech enhancement|"
+    r"(?:active )?noise cancell?ation|echo cancell?ation)\b"
+)
+
+AUDIO_REQUIREMENT = re.compile(
+    r"\b(?:(?:experience|expertise|background|knowledge|proficiency|familiarity|"
+    r"understanding)\s+(?:in|with|of|on|working (?:in|with|on))\s+"
+    r"|\d+\+?\s*years?\s+(?:of\s+)?)"
+    r"(?:(?!and\b|or\b)[\w/&+-]+ ){0,3}?" + AUDIO_DOMAIN,
+    re.IGNORECASE,
+)
+
+AUDIO_REQUIREMENT_BONUS = 45
 
 CORPORATE_ROLE = re.compile(
     r"\b(accountant|accounts? payable|accounts? receivable|paralegal|attorney|"
@@ -1087,6 +1103,9 @@ def score_relevance(
         score += 20
     elif weak_mentions >= 3:
         score += 15
+
+    if AUDIO_REQUIREMENT.search(role_text):
+        score += AUDIO_REQUIREMENT_BONUS
 
     if any(category not in LABEL_ONLY_CATEGORIES for category in job_categories):
         if audio_scope == "native":
