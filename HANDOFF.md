@@ -718,6 +718,7 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 | HP IQ | Added 2026-11-12 (owner). HP's AI/Poly unit, separate from HP Inc.'s Eightfold site: its `hp-iq.com/join-us/<id>?board=hp` pages are the Greenhouse board `hp` (bound `greenhouse`/`hp`). 26 jobs, 3 board rows (Senior Acoustic Engineer, Audio Hardware Engineer, Senior Audio Software Development Engineer); the rest are agentic-AI and Poly firmware roles. |
 | **Knowles Corporation** | ADP **MyJobs**, which the `adp` parser (Workforce Now) does not speak. **Do not build a MyJobs parser:** Knowles yields 0 audio jobs even at native scope, and the only other MyJobs company is Switchcraft (whose URL is HEICO's). The API recipe is in the old log (`DO NOT REPEAT: Knowles`). It has no stored ATS binding; 404s against Workforce Now are discovery guesses. |
 | Laran | Added 2026-11-10 (owner). Custom page, http; titles carried "→ Los Angeles, ITAR-Eligible", stripped by `ARROW_SUFFIX_RE`. 3 jobs, all on the board (two founding roles at the 45 line). |
+| Lockheed Martin | Added 2026-11-14 (owner). Eightfold `lockheedmartin.eightfold.ai`, `ats_slug` `lockheedmartin.com` (the host's own domain is eightfold.ai), scoped like Northrop: `?query=acoustic` + `?query=sonar`. 67 jobs, 7 board rows (Sonar/Acoustic Engineer, Acoustics Mechanical lead, signal-processing roles). |
 | Meta | Repointed 2026-11-08 (owner-requested, `source: manual`): `metacareers.com/jobsearch/?q=audio` + extra `?q=sound`. The pager is JS buttons, so it was read one page deep for months (14 rows, 10 on the board, of 75 audio results). `PAGE_PARAM_HOSTS` in `pagination.py` now walks `?page=N` until a page brings no new jobs; titles come from the card `<h3>` (`INNER_HEADING_TITLE_HOSTS`). 103 rows, 21 on the board. "Project Manager, Organic Content Integrity Operations - Speech Problems" scores on and is not audio work. 400s on job links are bot defence, whitelisted in `check_links`. See the rate-limit trap in §6. |
 | OpenAI | Added 2026-11-08 at the owner's request ("Audio Engineer, Live Video"). Ashby `openai`, 816 jobs; `Consumer Electronics & Tech` for partial scope, like Anthropic. 2 board rows. |
 | Anthropic | Added 2026-11-04 at the owner's request for one AV Production Specialist role (pinned). Greenhouse, 682 jobs; category `Consumer Electronics & Tech` so scope is partial — native scope put 22 rows on the board including Customer Success Managers. 0 scored board rows; the AV Engineer roles score 60, under partial's 65. |
@@ -725,6 +726,7 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 | Holoplot | Added 2026-11-04. Personio `holoplot.jobs.personio.de`, generic http; Personio hosts read the title from the card's `<h3>` (`INNER_HEADING_TITLE_SUFFIXES`) — before that the title carried "Berlin Full-time Permanent employee". Personio also serves `/xml` if a dedicated parser is ever wanted. 7 of 8 on the board. |
 | JAM Industries | Added 2026-11-04 (Canadian distributor; owns Ashly Audio). Dayforce `jobs.dayforcehcm.com/en-US/jam/CANDIDATEPORTAL`, Playwright only (http finds no links). Partial scope; 2 board rows (Ashly DSP and Embedded engineers). |
 | Muse Group | Added 2026-11-04 (MuseScore, Audacity, Ultimate Guitar). `www.mu.se/positions`, http, 26 jobs; 1 scored board row (Full Stack Producer, Audio ML) plus the pinned CPO. |
+| Pocket | Added 2026-11-14 (owner). YC W26 AI voice recorder; Voice & Speech Technology. Careers page is its YC Work at a Startup board (`ycombinator.com/companies/pocket/jobs`), read by the generic http scraper: 15 jobs, 1 board row (Research Engineer – Voice Intelligence). Locations are not parsed off YC pages. |
 | Quippy | Added 2026-11-10 (owner). Ashby; 7 jobs, 1 board row (Realtime Voice Engineer). |
 | Rockford Fosgate | Was "Rockford Marine" until 2026-11-09 (renamed in seed and DB together, now manual). Careers page lists each job as a card linking a PDF; descriptions come from the PDFs. 5 of 9 on the board; Quality Engineer's PDF is a scan. |
 | Sesame | Added 2026-11-10 (owner). Ashby; 18 jobs, 3 board rows (Audio Systems, Speaker Systems, HW Test Automation at 45). |
@@ -764,6 +766,8 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   `resolve_database_url`, so running from `scraper/` is fine).
 
 ## 9. Log (newest first, keep entries short)
+
+- **2026-11-14, Lockheed Martin + Pocket** — added at the owner's request (§7); 8 board rows between them.
 
 - **2026-11-13, keep what was read + priority boards** — a timeout or a failing
   page no longer throws away the listing pages already read (§4.2); timeouts get

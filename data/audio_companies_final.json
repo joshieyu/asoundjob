@@ -5868,6 +5868,20 @@
     "scrape_method": "http"
   },
   {
+    "name": "Lockheed Martin",
+    "careers_url": "https://lockheedmartin.eightfold.ai/careers?query=acoustic",
+    "category": "Acoustic Consulting & Engineering",
+    "verified": true,
+    "source": "manual",
+    "scrape_method": "http",
+    "extra_careers_urls": [
+      "https://lockheedmartin.eightfold.ai/careers?query=sonar"
+    ],
+    "website_url": "https://www.lockheedmartin.com",
+    "ats_type": "eightfold",
+    "ats_slug": "lockheedmartin.com"
+  },
+  {
     "name": "Logitech",
     "careers_url": "https://logitech.wd5.myworkdayjobs.com/Logitech",
     "category": "Headphones & Personal Audio",
@@ -7748,6 +7762,16 @@
     "verified": false,
     "source": "auto",
     "scrape_method": "http"
+  },
+  {
+    "name": "Pocket",
+    "careers_url": "https://www.ycombinator.com/companies/pocket/jobs",
+    "category": "Voice & Speech Technology",
+    "verified": true,
+    "source": "manual",
+    "scrape_method": "http",
+    "website_url": "https://heypocket.com",
+    "description": "Pocket builds an AI voice recorder: a hardware device and app for capturing and taking notes on real-world conversations. A Y Combinator W26 company based in San Francisco."
   },
   {
     "name": "Pocket Casts",
