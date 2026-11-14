@@ -12,16 +12,16 @@ the careers pages of seeded companies, a relevance model decides which jobs reac
 the public board, and a SvelteKit site serves them. Branch
 `redesign-type-specimen`.
 
-As of the 2026-11-13 cycle:
+As of the 2026-11-14 cycle:
 
 | | |
 | --- | --- |
-| companies in the seed / DB | 1,426 (757 verified, 58 `source: manual`, 15 `scrape_blocked`) |
+| companies in the seed / DB | 1,428 (759 verified, 60 `source: manual`, 15 `scrape_blocked`) |
 | scrape population (verified, unblocked, has URL) | a cycle scrapes ~718 after shared-URL dedup |
-| cycle | ~26–36 min on a good connection; ok 371 / failed 353 — ~50% failure is normal |
-| job rows / active / board-eligible | ~35,500 / ~10,800 / 1,074 |
-| **publicly listed** | **1,066** (8 hidden as stale: IK Multimedia 4, Otter.ai 1, XLN Audio 1, Fairphone 1, Valcom 1) |
-| companies contributing to the board | 144; top: Shure 106, Apple 75, Cirrus Logic 70, Bose 63, Qualcomm 50, Amazon 44 |
+| cycle | ~26–36 min on a good connection; ok 366 / failed 360 — ~50% failure is normal |
+| job rows / active / board-eligible | ~35,800 / ~10,900 / 1,079 |
+| **publicly listed** | **1,070** (9 hidden as stale: IK Multimedia 4, Otter.ai, XLN Audio, Fairphone, Valcom, CereProc 1 each) |
+| companies contributing to the board | 145; top: Shure 103, Apple 77, Cirrus Logic 68, Bose 62, Qualcomm 49, Amazon 43 |
 
 **Running locally:** the app's preview launcher cannot start the API — macOS
 blocks it from reading `venv/pyvenv.cfg` (`Operation not permitted`; the
@@ -766,6 +766,20 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   `resolve_database_url`, so running from `scraper/` is fine).
 
 ## 9. Log (newest first, keep entries short)
+
+- **2026-11-14, cycle** — 726 companies, 366 ok, ~29 min; inserted 144,
+  reactivated 60, deactivated 168. First cycle with partial listings kept
+  (`cut_short=6`): Apple 235 jobs at its 180 s priority budget, Nissan 200,
+  McGill 180 (first full-ish read in weeks), Sonova 71, HP 20, Microsoft 10 —
+  all would have been failures before. **Workday had a service outage on the
+  wd1/wd5 hosts** during the run: the CXS API answered 200 with an HTML "Workday
+  is currently unavailable" page, so 16 Workday boards failed (Sonos, Sony,
+  Logitech, Adobe, Analog Devices, Cisco Webex, Stryker, Activision, Belkin,
+  iHeartRadio, …). Their fallbacks read the same page and found nothing — no rows
+  added or deactivated, existing jobs stay listed; wd3/wd12 tenants (Bose,
+  Samsung, Razer, Toyota, HBK) were fine. One more such cycle is harmless; three
+  in a row would hide them. Two 429s. **Board-eligible 1,083 → 1,079, publicly
+  listed 1,073 → 1,070.**
 
 - **2026-11-14, Lockheed Martin + Pocket** — added at the owner's request (§7); 8 board rows between them.
 
