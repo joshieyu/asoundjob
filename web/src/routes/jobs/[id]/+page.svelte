@@ -44,8 +44,8 @@
 			<h1 class="text-display leading-tight font-semibold tracking-tight text-balance">{job.title}</h1>
 			<p class="mt-2 text-meta font-semibold text-muted">
 				{#if job.company}{job.company.name}{/if}
-				{#if job.location}<span aria-hidden="true"> · </span>{job.location}{/if}
-				{#if job.remote}<span aria-hidden="true"> · </span><span class="text-ink">Remote OK</span>{/if}
+				{#if job.location}<span aria-hidden="true">{' · '}</span>{job.location}{/if}
+				{#if job.remote}<span aria-hidden="true">{' · '}</span><span class="text-ink">Remote OK</span>{/if}
 			</p>
 		</header>
 
