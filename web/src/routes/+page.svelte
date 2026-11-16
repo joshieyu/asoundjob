@@ -81,7 +81,7 @@
 					</li>
 				{/each}
 				<li>
-					<a href="/jobs" class="link">All specialties →</a>
+					<a href="/jobs" class="link">All specialties and roles →</a>
 				</li>
 			</ul>
 		</div>
