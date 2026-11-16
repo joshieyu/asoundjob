@@ -111,7 +111,19 @@
 				<dd class="coord font-bold">community submission</dd>
 			</div>
 		{/if}
+		{#if job.featured}
+			<div class="flex items-baseline gap-1.5">
+				<dt class="sr-only">Status</dt>
+				<dd class="coord font-bold text-accent">featured</dd>
+			</div>
+		{/if}
 	</dl>
+
+	{#if job.featured_note}
+		<p class="mt-3 border-l-2 border-accent pl-3 text-meta leading-relaxed whitespace-pre-line wrap-anywhere">
+			<span class="axis-label mr-1.5">note</span>{job.featured_note}
+		</p>
+	{/if}
 
 	<div class="mt-auto flex items-end gap-2 pt-3">
 		{#if specialties.length > 0}

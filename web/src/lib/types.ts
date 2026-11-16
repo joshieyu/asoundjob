@@ -27,6 +27,8 @@ export interface Job {
 	source: string;
 	description?: string | null;
 	company: CompanyBrief | null;
+	featured?: boolean;
+	featured_note?: string | null;
 }
 
 export interface Paginated<T> {

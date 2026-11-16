@@ -188,6 +188,10 @@ CREATE TABLE jobs (
                                            --   via scraper/overrides.py at all three write
                                            --   sites; a fourth site must be wired in or
                                            --   corrections silently revert.
+    featured_at   TIMESTAMPTZ,             -- When an admin (or an approved 'feature_request')
+    featured_until DATE,                   --   featured the job; it is featured while
+    featured_note TEXT,                    --   featured_until >= today. The note is public and
+                                           --   shown only while featured. Scrapes never touch these.
     country       TEXT,                    -- ISO alpha-2, parsed from location at normalize time.
                                            --   Ambiguity resolves to NULL, never to a guess: the
                                            --   board shows NULL rows under every country filter,

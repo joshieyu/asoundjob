@@ -88,6 +88,7 @@ def find_orphans(session: Session, seed_entries: list[dict[str, Any]]) -> list[O
             if job.categories_override is not None
             or job.is_audio_related_override is not None
             or job.is_active_override is not None
+            or job.featured_until is not None
         )
         if overridden_jobs:
             blockers.append(f"{overridden_jobs} job(s) with a human override set")

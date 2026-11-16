@@ -7,7 +7,8 @@
 	let { data } = $props();
 
 	const total = $derived(data.totalJobs);
-	const featured = $derived(data.featured?.items ?? []);
+	const featuredJobs = $derived(data.featuredJobs ?? []);
+	const fresh = $derived(data.fresh ?? []);
 	const categoryMeta = $derived(data.categories?.categories ?? []);
 	const openCategories = $derived(
 		[...categoryMeta]
@@ -96,9 +97,26 @@
 	{/if}
 </section>
 
-<section class="mt-20" aria-labelledby="featured-heading">
+{#if featuredJobs.length > 0}
+	<section class="mt-20" aria-labelledby="featured-heading">
+		<div class="flex items-end justify-between gap-4 border-b border-rule pb-3">
+			<h2 id="featured-heading" class="text-title font-semibold">Featured</h2>
+			<p class="coord text-muted">Picked by the Young Audio Professionals team</p>
+		</div>
+
+		<div class="@container mt-4">
+			<div class="grid items-stretch gap-3 @3xl:grid-cols-2">
+				{#each featuredJobs as job (job.id)}
+					<JobStrip {job} {categoryNames} {onReport} />
+				{/each}
+			</div>
+		</div>
+	</section>
+{/if}
+
+<section class="mt-20" aria-labelledby="fresh-heading">
 	<div class="flex items-end justify-between gap-4 border-b border-rule pb-3">
-		<h2 id="featured-heading" class="text-title font-semibold">Fresh on the board</h2>
+		<h2 id="fresh-heading" class="text-title font-semibold">Fresh on the board</h2>
 		<a href="/jobs" class="link text-meta font-semibold whitespace-nowrap">
 			Browse all {total.toLocaleString('en-US')}
 		</a>
@@ -106,7 +124,7 @@
 
 	<div class="@container mt-4">
 		<div class="grid items-stretch gap-3 @3xl:grid-cols-2">
-		{#each featured as job (job.id)}
+		{#each fresh as job (job.id)}
 			<JobStrip {job} {categoryNames} {onReport} />
 		{:else}
 			<p class="col-span-full py-10 text-meta text-muted" role={data.boardUnavailable ? 'alert' : undefined}>
@@ -117,42 +135,6 @@
 		{/each}
 		</div>
 	</div>
-</section>
-
-<section class="mt-20 grid gap-10 sm:grid-cols-3" aria-labelledby="why-heading">
-	<h2 id="why-heading" class="sr-only">Why ASoundJob</h2>
-	<div>
-		<h3 class="text-title font-semibold">Refreshed, not stale</h3>
-		<p class="mt-2 text-meta text-muted">
-			A scraper re-checks every verified company's careers page each night. When a
-			job disappears from the source, it disappears here.
-		</p>
-	</div>
-	<div>
-		<h3 class="text-title font-semibold">{categoryMeta.length} audio specialties</h3>
-		<p class="mt-2 text-meta text-muted">
-			We've got DSP, live sound, acoustics, transducers, game audio, and more. Filter by the work you
-			actually do. 
-		</p>
-	</div>
-	<div>
-		<h3 class="text-title font-semibold">Community reviewed</h3>
-		<p class="mt-2 text-meta text-muted">
-			Every community submission is approved by a human moderator before it goes
-			live, and expires after a month.
-		</p>
-	</div>
-</section>
-
-<section class="mt-20 flex flex-col items-start justify-between gap-6 border-t border-rule pt-10 sm:flex-row sm:items-center">
-	<div>
-		<h2 class="text-display font-light">Hiring in audio?</h2>
-		<p class="mt-2 max-w-lg text-meta text-muted">
-			Put your opening in front of the people who speak this language. Submissions
-			are free and reviewed by the Young Audio Professionals community within days.
-		</p>
-	</div>
-	<a href="/jobs/submit" class="btn btn-primary shrink-0">Submit a job</a>
 </section>
 
 {#if reportJob}

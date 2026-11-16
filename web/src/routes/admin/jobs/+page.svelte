@@ -13,14 +13,18 @@
 		relevance_score: number;
 		is_audio_related_override: boolean | null;
 		on_board: boolean;
+		featured: boolean;
+		featured_until: string | null;
+		featured_note: string | null;
 	}
 
-	type Show = 'all' | 'hidden' | 'overridden';
+	type Show = 'all' | 'hidden' | 'overridden' | 'featured';
 
 	const SHOW_LABELS: [Show, string][] = [
 		['all', 'All jobs'],
 		['hidden', 'Hidden as not audio'],
-		['overridden', 'Set by hand']
+		['overridden', 'Set by hand'],
+		['featured', 'Featured']
 	];
 
 	let rows = $state<JobRow[]>([]);
@@ -76,6 +80,39 @@
 		if (row.is_audio_related_override === true) return 'Audio, set by hand';
 		if (row.is_audio_related_override === false) return 'Not audio, set by hand';
 		return row.is_audio_related ? 'Audio, by score' : 'Not audio, by score';
+	}
+
+	let editingId = $state<number | null>(null);
+	let noteDraft = $state('');
+	let daysDraft = $state(30);
+
+	function startFeature(row: JobRow) {
+		editingId = row.id;
+		noteDraft = row.featured_note ?? '';
+		daysDraft = row.featured && row.featured_until
+			? Math.max(1, Math.ceil((Date.parse(row.featured_until) - Date.now()) / 86_400_000))
+			: 30;
+		message = '';
+	}
+
+	async function saveFeature(row: JobRow, featured: boolean) {
+		busyId = row.id;
+		message = '';
+		try {
+			const updated = await clientApi<JobRow>(`/api/admin/jobs/${row.id}/featured`, {
+				method: 'PUT',
+				body: featured ? { featured, days: daysDraft, note: noteDraft } : { featured }
+			});
+			rows = rows.map((r) => (r.id === row.id ? updated : r));
+			editingId = null;
+			message = featured
+				? `“${row.title}” is featured until ${updated.featured_until}.`
+				: `“${row.title}” is no longer featured.`;
+		} catch (err) {
+			message = err instanceof Error ? err.message : 'Update failed';
+		} finally {
+			busyId = null;
+		}
 	}
 
 	async function setAudio(row: JobRow, value: boolean | null) {
@@ -142,13 +179,14 @@
 	{:else}
 		<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 		<div class="mt-6 overflow-x-auto" tabindex="0" role="region" aria-label="Jobs, scrollable table">
-			<table class="w-full min-w-[56rem] text-left text-meta">
+			<table class="w-full min-w-[68rem] text-left text-meta">
 				<thead>
 					<tr class="border-b border-rule">
 						<th class="axis-label py-2 pr-4 font-normal">Job</th>
 						<th class="axis-label py-2 pr-4 font-normal">Score</th>
 						<th class="axis-label py-2 pr-4 font-normal">Decision</th>
 						<th class="axis-label py-2 pr-4 font-normal">Board</th>
+						<th class="axis-label py-2 pr-4 font-normal">Featured</th>
 						<th class="axis-label py-2 font-normal"><span class="sr-only">Actions</span></th>
 					</tr>
 				</thead>
@@ -175,8 +213,28 @@
 									<span class="text-muted">Hidden</span>
 								{/if}
 							</td>
+							<td class="py-3 pr-4">
+								{#if row.featured}
+									<span class="font-semibold text-accent">Until {row.featured_until}</span>
+									{#if row.featured_note}
+										<p class="mt-0.5 max-w-56 truncate text-muted" title={row.featured_note}>{row.featured_note}</p>
+									{/if}
+								{:else}
+									<span class="text-muted">—</span>
+								{/if}
+							</td>
 							<td class="py-3">
 								<div class="flex flex-wrap justify-end gap-2">
+									{#if row.is_active}
+										<button type="button" class="btn btn-quiet" disabled={busyId === row.id} onclick={() => startFeature(row)}>
+											{row.featured ? 'Edit feature' : 'Feature'}
+										</button>
+									{/if}
+									{#if row.featured}
+										<button type="button" class="btn btn-quiet" disabled={busyId === row.id} onclick={() => saveFeature(row, false)}>
+											Unfeature
+										</button>
+									{/if}
 									{#if row.is_audio_related_override !== true}
 										<button type="button" class="btn btn-primary" disabled={busyId === row.id} onclick={() => setAudio(row, true)}>
 											Show on board
@@ -195,6 +253,40 @@
 								</div>
 							</td>
 						</tr>
+						{#if editingId === row.id}
+							<tr class="border-b border-rule bg-ground-tint">
+								<td colspan="6" class="p-4">
+									<form
+										class="sticky left-4 flex w-[min(60rem,calc(100vw-5rem))] flex-col gap-3 sm:flex-row sm:items-end"
+										onsubmit={(e) => {
+											e.preventDefault();
+											saveFeature(row, true);
+										}}
+									>
+										<label class="block min-w-0 flex-1">
+											<span class="axis-label mb-1 block">Note shown on the listing (optional)</span>
+											<textarea
+												bind:value={noteDraft}
+												rows="2"
+												maxlength="1000"
+												class="field"
+												placeholder="e.g. Hiring manager: name@company.com — looking to fill ASAP"
+											></textarea>
+										</label>
+										<label class="block w-28 shrink-0">
+											<span class="axis-label mb-1 block">Days</span>
+											<input type="number" min="1" max="365" bind:value={daysDraft} class="field h-10" />
+										</label>
+										<div class="flex shrink-0 gap-2">
+											<button type="submit" class="btn btn-primary" disabled={busyId === row.id}>
+												{row.featured ? 'Save' : 'Feature'}
+											</button>
+											<button type="button" class="btn btn-quiet" onclick={() => (editingId = null)}>Cancel</button>
+										</div>
+									</form>
+								</td>
+							</tr>
+						{/if}
 					{/each}
 				</tbody>
 			</table>

@@ -43,6 +43,8 @@ class JobSummary(BaseModel):
     is_active: bool
     source: str
     company: Optional[CompanyBrief] = None
+    featured: bool = False
+    featured_note: Optional[str] = Field(default=None, validation_alias="live_featured_note")
 
 
 class JobDetail(JobSummary):
@@ -358,13 +360,17 @@ JOB_FEEDBACK_KINDS = (
     "broken_description",
     "broken_link",
     "no_longer_available",
+    "feature_request",
 )
 SITE_FEEDBACK_KINDS = ("company_suggestion", "general")
 
 
 class JobFeedbackRequest(BaseModel):
     kind: str = Field(
-        pattern="^(wrong_category|not_audio|broken_description|broken_link|no_longer_available)$"
+        pattern=(
+            "^(wrong_category|not_audio|broken_description|broken_link|"
+            "no_longer_available|feature_request)$"
+        )
     )
     suggested_categories: Optional[list[str]] = None
     comment: Optional[str] = Field(default=None, max_length=2000)
@@ -435,10 +441,19 @@ class AdminJobRow(BaseModel):
     relevance_score: int
     is_audio_related_override: Optional[bool] = None
     on_board: bool
+    featured: bool = False
+    featured_until: Optional[date] = None
+    featured_note: Optional[str] = None
 
 
 class AdminJobAudioUpdate(BaseModel):
     is_audio_related: Optional[bool] = None
+
+
+class AdminJobFeatureUpdate(BaseModel):
+    featured: bool
+    days: int = Field(default=30, ge=1, le=365)
+    note: Optional[str] = Field(default=None, max_length=1000)
 
 
 class AdminJobFeedback(BaseModel):

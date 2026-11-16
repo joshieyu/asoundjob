@@ -21,6 +21,7 @@ from api.schemas import (
     AdminCompanySuggestion,
     AdminCompanyUpdate,
     AdminJobAudioUpdate,
+    AdminJobFeatureUpdate,
     AdminJobFeedback,
     AdminJobRow,
     AdminSiteFeedback,
@@ -713,13 +714,32 @@ def _admin_job_row(job: Job, company_name: Optional[str], listable: bool) -> Adm
         relevance_score=job.relevance_score or 0,
         is_audio_related_override=job.is_audio_related_override,
         on_board=bool(job.is_active and job.is_audio_related and listable),
+        featured=job.featured,
+        featured_until=job.featured_until,
+        featured_note=job.featured_note,
     )
+
+
+FEATURE_DAYS = 30
+
+
+def feature_job(job: Job, days: int = FEATURE_DAYS, note: Optional[str] = None) -> None:
+    if not job.featured:
+        job.featured_at = datetime.now(timezone.utc)
+    job.featured_until = date.today() + timedelta(days=days)
+    job.featured_note = (note or "").strip() or None
+
+
+def unfeature_job(job: Job) -> None:
+    job.featured_at = None
+    job.featured_until = None
+    job.featured_note = None
 
 
 @router.get("/jobs")
 def admin_list_jobs(
     search: Optional[str] = None,
-    show: str = Query("all", pattern="^(all|hidden|overridden)$"),
+    show: str = Query("all", pattern="^(all|hidden|overridden|featured)$"),
     page: int = Query(1, ge=1),
     per_page: int = Query(25, ge=1, le=100),
     db: Session = Depends(get_db),
@@ -735,6 +755,8 @@ def admin_list_jobs(
         stmt = stmt.where(Job.is_active.is_(True), Job.is_audio_related.is_(False))
     elif show == "overridden":
         stmt = stmt.where(Job.is_audio_related_override.is_not(None))
+    elif show == "featured":
+        stmt = stmt.where(Job.featured_until >= date.today())
     if search:
         clauses = []
         for term in _job_search_terms(search):
@@ -774,6 +796,28 @@ def admin_set_job_audio(
     logger.info(
         "admin=%s set job %s audio override to %s", admin, job_id, payload.is_audio_related
     )
+    return _admin_job_row(job, job.company.name if job.company else None, bool(listable))
+
+
+@router.put("/jobs/{job_id}/featured", response_model=AdminJobRow)
+def admin_set_job_featured(
+    job_id: int,
+    payload: AdminJobFeatureUpdate,
+    db: Session = Depends(get_db),
+    admin: str = Depends(require_admin),
+):
+    job = db.get(Job, job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Job not found")
+    if payload.featured:
+        feature_job(job, payload.days, payload.note)
+    else:
+        unfeature_job(job)
+    db.flush()
+    listable = db.execute(
+        select(listable_clause()).select_from(Job).where(Job.id == job.id)
+    ).scalar_one()
+    logger.info("admin=%s set job %s featured=%s", admin, job_id, payload.featured)
     return _admin_job_row(job, job.company.name if job.company else None, bool(listable))
 
 
@@ -841,6 +885,10 @@ def approve_job_feedback(
             job.is_active_override = False
             job.is_active = False
         applied = "taken off the board"
+    elif feedback.kind == "feature_request":
+        if job is not None:
+            feature_job(job, note=job.featured_note)
+            applied = f"featured until {job.featured_until}"
     elif feedback.kind in ("broken_description", "broken_link"):
         applied = "marked handled, no job changes"
 

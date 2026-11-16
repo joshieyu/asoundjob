@@ -390,6 +390,16 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 
 ### 4.7 API and frontend
 
+- **Featured jobs** (2026-11-16): `jobs.featured_at/featured_until/featured_note`.
+  `GET /api/jobs/featured` (max 12, newest feature first, active + listable; audio
+  relevance is not required — the admin's pick wins). Admins feature from
+  `/admin/jobs` (days, default 30, and an optional public note — contact, urgency);
+  visitors use "Request a feature" on a job page, which files a `feature_request`
+  in the job-feedback queue; approving it features for 30 days with no note. The
+  homepage shows a Featured section above "Fresh on the board" only when something
+  is featured, and the fresh list excludes featured ids. Features lapse on their
+  own; `prune_orphans` will not delete a featured job.
+
 - `ASOUNDJOB_ENV=production` refuses to start while `ADMIN_PASSWORD` or
   `ADMIN_SECRET_KEY` is unset, the dev default, or under 12 / 32 characters.
 - Free-text search works: the jobs loader maps `q` to `search` via
@@ -781,6 +791,12 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   `resolve_database_url`, so running from `scraper/` is fine).
 
 ## 9. Log (newest first, keep entries short)
+
+- **2026-11-16, featured jobs + homepage trim** — featured jobs with an admin note
+  (§4.7), migration `e8b1f4c2a7d3` applied to the dev DB. Removed the homepage's
+  three-column "Refreshed / specialties / community" block and the "Hiring in
+  audio?" CTA (Submit a job stays in the header). Job cards gained a bottom-right
+  external-link icon; pagination is now 1 … n-1 n n+1 … last.
 
 - **2026-11-14, admin job pinning** — new `/admin/jobs` page with
   `GET /api/admin/jobs` (search incl. pasted URLs; `show=all|hidden|overridden`) and

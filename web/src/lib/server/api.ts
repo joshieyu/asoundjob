@@ -45,6 +45,10 @@ export function getJobs(query: Record<string, string>): Promise<Paginated<Job>> 
 	return api<Paginated<Job>>(`/api/jobs?${new URLSearchParams(query).toString()}`);
 }
 
+export function getFeaturedJobs(): Promise<Job[]> {
+	return api<Job[]>('/api/jobs/featured');
+}
+
 export function getJob(id: number): Promise<Job> {
 	return api<Job>(`/api/jobs/${id}`);
 }

@@ -52,7 +52,8 @@
 		not_audio: 'Not an audio job',
 		no_longer_available: 'No longer available',
 		broken_description: 'Description looks broken',
-		broken_link: 'Application link is broken'
+		broken_link: 'Application link is broken',
+		feature_request: 'Request to feature'
 	};
 
 	const SITE_KIND_LABELS: Record<string, string> = {

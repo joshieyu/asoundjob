@@ -15,6 +15,7 @@
 		kinds,
 		categories = [],
 		pagePath,
+		intro,
 		open = $bindable(false)
 	}: {
 		mode: 'job' | 'site';
@@ -23,6 +24,7 @@
 		kinds: FeedbackKindOption[];
 		categories?: { id: string; name: string }[];
 		pagePath?: string;
+		intro?: string;
 		open?: boolean;
 	} = $props();
 
@@ -148,6 +150,9 @@
 			</div>
 		{:else}
 			<form class="mt-4 space-y-4" onsubmit={onSubmit}>
+				{#if intro}
+					<p class="text-meta leading-relaxed text-muted">{intro}</p>
+				{/if}
 				{#if feedbackState.kind === 'error'}
 					<p
 						class="border border-ink bg-ground-tint p-3 text-meta font-semibold"

@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import logging
+from datetime import date
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy import func, select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from api.config import SUBMISSIONS_PER_IP_PER_DAY
 from api.database import get_db
@@ -13,6 +14,7 @@ from api.query import (
     apply_job_filters,
     count_untyped,
     fetch_job_page,
+    listable_clause,
     page_envelope,
     paginate_params,
 )
@@ -112,6 +114,29 @@ def list_jobs(
         safe_per,
         trailing=untyped,
     )
+
+
+MAX_FEATURED = 12
+
+
+@router.get("/featured", response_model=list[JobSummary])
+def list_featured_jobs(db: Session = Depends(get_db)):
+    jobs = (
+        db.execute(
+            select(Job)
+            .where(
+                Job.is_active.is_(True),
+                Job.featured_until >= date.today(),
+                listable_clause(),
+            )
+            .options(selectinload(Job.company))
+            .order_by(Job.featured_at.desc(), Job.id.desc())
+            .limit(MAX_FEATURED)
+        )
+        .scalars()
+        .all()
+    )
+    return [JobSummary.model_validate(job) for job in jobs]
 
 
 @router.get("/{job_id}", response_model=JobDetail)

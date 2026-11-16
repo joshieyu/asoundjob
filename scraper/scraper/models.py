@@ -87,6 +87,9 @@ class Job(Base):
     categories_override: Mapped[Optional[list[str]]] = mapped_column(JobCategories)
     is_audio_related_override: Mapped[Optional[bool]] = mapped_column(Boolean)
     is_active_override: Mapped[Optional[bool]] = mapped_column(Boolean)
+    featured_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    featured_until: Mapped[Optional[date]] = mapped_column(Date, index=True)
+    featured_note: Mapped[Optional[str]] = mapped_column(Text)
     posted_date: Mapped[Optional[date]] = mapped_column(Date)
     scraped_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
@@ -109,6 +112,14 @@ class Job(Base):
     @property
     def country_name(self) -> Optional[str]:
         return lookup_country_name(self.country)
+
+    @property
+    def featured(self) -> bool:
+        return self.featured_until is not None and self.featured_until >= date.today()
+
+    @property
+    def live_featured_note(self) -> Optional[str]:
+        return self.featured_note if self.featured else None
 
     def identity_key(self) -> tuple:
         return (self.company_id, self.external_id)

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { formatDate, formatSalary, timeAgo } from '$lib/format';
 	import { serializeJsonLd } from '$lib/jsonld';
-	import { JOB_FEEDBACK_KINDS } from '$lib/feedback';
+	import { FEATURE_REQUEST_KINDS, JOB_FEEDBACK_KINDS } from '$lib/feedback';
 	import FeedbackDialog from '$lib/components/FeedbackDialog.svelte';
 
 	let { data } = $props();
@@ -18,6 +18,7 @@
 	const categoryOptions = $derived((data.categories ?? []).map((c) => ({ id: c.id, name: c.name })));
 
 	let reportOpen = $state(false);
+	let featureOpen = $state(false);
 </script>
 
 <svelte:head>
@@ -68,6 +69,14 @@
 				<dd class="mt-0.5">{timeAgo(job.posted_date ?? job.created_at)}</dd>
 			</div>
 		</dl>
+
+		{#if job.featured_note}
+			<div class="border-b border-rule py-4">
+				<p class="border-l-2 border-accent pl-3 text-meta leading-relaxed whitespace-pre-line wrap-anywhere">
+					<span class="axis-label mb-1 block">Note from the YAP team</span>{job.featured_note}
+				</p>
+			</div>
+		{/if}
 
 		{#if job.job_categories.length > 0}
 			<ul class="flex flex-wrap gap-x-4 gap-y-2 border-b border-rule py-4" aria-label="Specialties">
@@ -134,6 +143,24 @@
 				</a>
 			</div>
 		{/if}
+		{#if job.featured}
+			<div class="p-4">
+				<p class="text-meta font-bold text-accent">Featured listing</p>
+				<p class="mt-2 text-meta text-muted">
+					The Young Audio Professionals team is highlighting this role on the front page.
+				</p>
+			</div>
+		{:else if job.is_active}
+			<div class="p-4">
+				<p class="text-meta font-bold">Know this role is special?</p>
+				<p class="mt-2 text-meta text-muted">
+					Hiring for it, or know it needs filling fast? Ask the team to feature it on the front page.
+				</p>
+				<button type="button" class="btn btn-quiet mt-3 w-full" onclick={() => (featureOpen = true)}>
+					Request a feature
+				</button>
+			</div>
+		{/if}
 		<div class="p-4">
 			<p class="text-meta font-bold">See a problem?</p>
 			<p class="mt-2 text-meta text-muted">
@@ -153,4 +180,13 @@
 	kinds={JOB_FEEDBACK_KINDS}
 	categories={categoryOptions}
 	bind:open={reportOpen}
+/>
+
+<FeedbackDialog
+	mode="job"
+	jobId={job.id}
+	jobTitle={job.title}
+	kinds={FEATURE_REQUEST_KINDS}
+	intro="Tell the team why this role deserves the front page. If you're the one hiring, add a contact and anything candidates should know — a short note can appear on the featured listing."
+	bind:open={featureOpen}
 />

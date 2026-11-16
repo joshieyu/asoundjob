@@ -5,7 +5,8 @@ export type JobFeedbackKind =
 	| 'not_audio'
 	| 'no_longer_available'
 	| 'broken_description'
-	| 'broken_link';
+	| 'broken_link'
+	| 'feature_request';
 export type SiteFeedbackKind = 'company_suggestion' | 'general';
 
 export interface FeedbackKindOption<T extends string = string> {
@@ -19,6 +20,10 @@ export const JOB_FEEDBACK_KINDS: FeedbackKindOption<JobFeedbackKind>[] = [
 	{ value: 'no_longer_available', label: 'No longer available' },
 	{ value: 'broken_description', label: 'Description looks broken' },
 	{ value: 'broken_link', label: 'Application link is broken' }
+];
+
+export const FEATURE_REQUEST_KINDS: FeedbackKindOption<JobFeedbackKind>[] = [
+	{ value: 'feature_request', label: 'Feature this job' }
 ];
 
 export const SITE_FEEDBACK_KINDS: FeedbackKindOption<SiteFeedbackKind>[] = [
