@@ -113,11 +113,23 @@
 		{/if}
 	</dl>
 
-	{#if specialties.length > 0}
-		<ul class="mt-auto flex flex-wrap gap-1.5 pt-3" aria-label="Specialties">
-			{#each specialties as name (name)}
-				<li class="coord border border-rule bg-ground-tint px-1.5 py-0.5 text-muted">{name}</li>
-			{/each}
-		</ul>
-	{/if}
+	<div class="mt-auto flex items-end gap-2 pt-3">
+		{#if specialties.length > 0}
+			<ul class="flex min-w-0 flex-1 flex-wrap gap-1.5" aria-label="Specialties">
+				{#each specialties as name (name)}
+					<li class="coord border border-rule bg-ground-tint px-1.5 py-0.5 text-muted">{name}</li>
+				{/each}
+			</ul>
+		{/if}
+		<a
+			href={job.url}
+			target="_blank"
+			rel="noopener noreferrer"
+			class="-mr-1 -mb-1 ml-auto flex h-8 w-8 shrink-0 items-center justify-center border border-transparent text-muted transition-colors hover:border-muted hover:text-ink"
+			aria-label={`Open the original listing for ${job.title}${job.company ? ` at ${job.company.name}` : ''} (new tab)`}
+			title="Open the original listing"
+		>
+			<svg width="13" height="13" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h7v7M13 3L6.5 9.5M11 11v2H3V5h2"/></svg>
+		</a>
+	</div>
 </article>
