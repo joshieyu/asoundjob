@@ -12,16 +12,16 @@ the careers pages of seeded companies, a relevance model decides which jobs reac
 the public board, and a SvelteKit site serves them. Branch
 `redesign-type-specimen`.
 
-As of the 2026-11-14 cycle:
+As of the 2026-11-16 cycle:
 
 | | |
 | --- | --- |
-| companies in the seed / DB | 1,428 (759 verified, 60 `source: manual`, 15 `scrape_blocked`) |
+| companies in the seed / DB | 1,441 (772 verified, 74 `source: manual`, 15 `scrape_blocked`) |
 | scrape population (verified, unblocked, has URL) | a cycle scrapes ~718 after shared-URL dedup |
-| cycle | ~26–36 min on a good connection; ok 366 / failed 360 — ~50% failure is normal |
-| job rows / active / board-eligible | ~35,800 / ~10,900 / 1,079 |
-| **publicly listed** | **1,148** after the 11-14 audio-requirement re-score (+77; 9 hidden as stale: IK Multimedia 4, Otter.ai, XLN Audio, Fairphone, Valcom, CereProc 1 each) |
-| companies contributing to the board | 145; top: Shure 103, Apple 77, Cirrus Logic 68, Bose 62, Qualcomm 49, Amazon 43 |
+| cycle | ~26–36 min on a good connection; ok 382 / failed 344 — ~50% failure is normal |
+| job rows / active / board-eligible | ~35,900 / ~11,000 / 1,160 |
+| **publicly listed** | **1,151** (9 hidden as stale: IK Multimedia 4, Otter.ai, XLN Audio, Fairphone, Valcom, CereProc 1 each) |
+| companies contributing to the board | 145; top: Shure 103, Apple 84, Cirrus Logic 68, Bose 65, Qualcomm 54, Amazon 50 |
 
 **Running locally:** the app's preview launcher cannot start the API — macOS
 blocks it from reading `venv/pyvenv.cfg` (`Operation not permitted`; the
@@ -788,6 +788,12 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   which re-scores the job). Pinned Microsoft 40440. A scoring rule for "asks for audio
   experience" was adopted the same day (§4.5).
 
+- **2026-11-16, cycle** — 726 companies, 382 ok, ~29 min; inserted 89, reactivated 44,
+  deactivated 199. Workday recovered from the 11-14 outage (38 boards ok via workday).
+  `cut_short=5`: Logitech 140, McGill 140, Nissan 160, Lockheed Martin 30, Acer 24;
+  Apple finished its full listing inside the 180 s priority budget (235 jobs). Afterwards
+  the 13 new companies (AIAIAI + the music-tech sheet batch, §7) were synced and scraped
+  one by one: 58 jobs, 4 board rows. Listed 1,148 → 1,151.
 - **2026-11-14, cycle** — 726 companies, 366 ok, ~29 min; inserted 144,
   reactivated 60, deactivated 168. First cycle with partial listings kept
   (`cut_short=6`): Apple 235 jobs at its 180 s priority budget, Nissan 200,
