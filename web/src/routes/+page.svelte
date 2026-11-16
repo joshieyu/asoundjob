@@ -16,8 +16,12 @@
 			.filter((c) => c.count > 0)
 			.sort((a, b) => b.count - a.count)
 	);
-	const visibleSpecialtyChips = $derived(openCategories.slice(0, 12));
-	const moreSpecialtyCount = $derived(Math.max(0, openCategories.length - 12));
+	const visibleSpecialties = $derived(openCategories.slice(0, 12));
+
+	function shortName(name: string): string {
+		const rest = name.replace(/^Audio /, '');
+		return rest !== name && rest.split(' ').length > 1 ? rest : name;
+	}
 
 	const categoryNames = $derived.by(() => {
 		const map = new Map<string, string>();
@@ -49,15 +53,11 @@
 <section class="mt-10 sm:mt-16" aria-labelledby="hero-heading">
 	<h1 id="hero-heading" class="sr-only">Audio industry jobs</h1>
 
-	<p class="specimen">{total.toLocaleString('en-US')}</p>
-	<p class="mt-3 text-display leading-tight font-light text-balance">
-		open audio roles, updated every night.
-	</p>
-	<p class="coord mt-4 text-muted">
-		{categoryMeta.length} specialties · verified companies only
+	<p class="text-[clamp(2.25rem,6vw,3.75rem)] leading-tight font-light tracking-tight text-balance">
+		<span class="tabular-nums">{total.toLocaleString('en-US')}</span> open audio roles
 	</p>
 
-	<form action="/jobs" method="get" role="search" class="mt-10 flex max-w-2xl flex-col gap-3 sm:flex-row">
+	<form action="/jobs" method="get" role="search" class="mt-8 flex max-w-2xl flex-col gap-3 sm:flex-row">
 		<label class="sr-only" for="q">Search jobs</label>
 		<input
 			id="q"
@@ -70,29 +70,20 @@
 	</form>
 
 	{#if openCategories.length > 0}
-		<div class="mt-12">
+		<div class="mt-10">
 			<h2 class="axis-label">Browse by specialty</h2>
-			<ul class="mt-4 grid gap-x-8 gap-y-2 sm:grid-cols-2 lg:grid-cols-3">
-				{#each visibleSpecialtyChips as cat (cat.id)}
+			<ul class="mt-3 flex max-w-4xl flex-wrap gap-x-6 gap-y-2 text-meta font-semibold">
+				{#each visibleSpecialties as cat (cat.id)}
 					<li>
-						<a
-							href="/jobs?category={cat.id}"
-							class="group flex items-baseline gap-3 py-1 hover:text-accent"
-						>
-							<span class="min-w-0 flex-1 truncate text-meta font-semibold group-hover:underline"
-								>{cat.name}</span
-							>
-							<span class="coord shrink-0 text-muted">{cat.count}</span>
+						<a href="/jobs?category={cat.id}" title={cat.name} class="hover:text-accent hover:underline">
+							{shortName(cat.name)}
 						</a>
 					</li>
 				{/each}
+				<li>
+					<a href="/jobs" class="link">All specialties →</a>
+				</li>
 			</ul>
-			<p class="mt-5 flex flex-wrap items-center gap-x-6 gap-y-2">
-				{#if moreSpecialtyCount > 0}
-					<a href="/jobs" class="link text-meta font-semibold">{moreSpecialtyCount} more specialties</a>
-				{/if}
-				<a href="/jobs" class="link text-meta font-semibold">All {total.toLocaleString('en-US')} roles</a>
-			</p>
 		</div>
 	{/if}
 </section>
