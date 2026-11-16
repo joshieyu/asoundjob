@@ -1,0 +1,17 @@
+[Unit]
+Description=ASoundJob website
+After=network.target asoundjob-api.service
+
+[Service]
+User=asoundjob
+Group=asoundjob
+WorkingDirectory=/srv/asoundjob/web
+EnvironmentFile=/etc/asoundjob/asoundjob.env
+ExecStart=/usr/bin/node build
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

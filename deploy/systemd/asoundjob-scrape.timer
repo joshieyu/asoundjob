@@ -1,0 +1,9 @@
+[Unit]
+Description=Nightly ASoundJob scrape
+
+[Timer]
+OnCalendar=*-*-* 03:00:00 America/New_York
+Persistent=true
+
+[Install]
+WantedBy=timers.target

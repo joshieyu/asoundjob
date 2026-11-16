@@ -65,3 +65,5 @@ open_application_proposals.md
 seed_export.json
 seed_export.md
 truncation_report.md
+
+.scrape.lock

@@ -1,0 +1,17 @@
+[Unit]
+Description=ASoundJob scrape cycle
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=asoundjob
+Group=asoundjob
+WorkingDirectory=/srv/asoundjob/scraper
+EnvironmentFile=/etc/asoundjob/asoundjob.env
+ExecStart=/srv/asoundjob/venv/bin/python -m scraper.main --once
+SuccessExitStatus=75
+TimeoutStartSec=3h
+Nice=5
+NoNewPrivileges=true
+PrivateTmp=true

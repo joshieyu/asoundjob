@@ -32,8 +32,6 @@
 			<h2 id="footer-site" class="text-meta font-bold">Site</h2>
 			<ul class="mt-3 space-y-2 text-meta">
 				<li><a class="text-muted hover:text-accent hover:underline" href="/companies">Company directory</a></li>
-				<li><a class="text-muted hover:text-accent hover:underline" href="/resources/interview-prep">Interview prep</a></li>
-				<li><a class="text-muted hover:text-accent hover:underline" href="/resources">Career resources</a></li>
 				<li><a class="text-muted hover:text-accent hover:underline" href="/about">About</a></li>
 			</ul>
 		</nav>

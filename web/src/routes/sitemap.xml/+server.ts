@@ -18,7 +18,6 @@ export const GET: RequestHandler = async () => {
 		'/jobs/submit',
 		'/companies',
 		'/companies/blocked',
-		'/resources',
 		'/about'
 	];
 

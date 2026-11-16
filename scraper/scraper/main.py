@@ -2,17 +2,21 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import fcntl
 import logging
 import sys
 import time
+from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Optional
 
 from sqlalchemy import func, select
 
 from scraper.company_loader import careers_urls_for, deactivate_expired_jobs
-from scraper.config import Settings, load_settings
+from scraper.config import REPO_ROOT, Settings, load_settings
 from scraper.database import dispose_engine, init_db, session_scope
 from scraper.deduplicator import (
     ReconcileStats,
@@ -358,7 +362,33 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
+SCRAPE_LOCK_PATH = REPO_ROOT / ".scrape.lock"
+ALREADY_RUNNING_EXIT_CODE = 75
+
+
+@contextmanager
+def scrape_lock(path: Path) -> Iterator[bool]:
+    handle = open(path, "w")
+    try:
+        try:
+            fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            yield False
+            return
+        yield True
+    finally:
+        handle.close()
+
+
 def main(argv: list[str] | None = None) -> int:
+    with scrape_lock(SCRAPE_LOCK_PATH) as acquired:
+        if not acquired:
+            print("Another scrape is already running; not starting a second one.", flush=True)
+            return ALREADY_RUNNING_EXIT_CODE
+        return _run(argv)
+
+
+def _run(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     logging.basicConfig(
         level=logging.DEBUG if args.verbose else logging.INFO,

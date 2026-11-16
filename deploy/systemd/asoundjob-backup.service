@@ -1,0 +1,8 @@
+[Unit]
+Description=ASoundJob database backup
+
+[Service]
+Type=oneshot
+User=asoundjob
+Group=asoundjob
+ExecStart=/srv/asoundjob/deploy/backup.sh

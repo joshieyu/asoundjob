@@ -56,12 +56,13 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 
 ## 2. Decisions waiting on the owner
 
-1. **SQLite or PostgreSQL in production.** Recommended SQLite for launch: one
-   machine, one nightly writer, ~20k rows, backup is a file copy, and it removes
-   the dialect bug in §5 entirely. AGENTS.md says PostgreSQL.
-2. **Domain** — `SITE_URL`, canonicals and the sitemap depend on it.
-3. **Launch scope** — `/resources` and `/resources/interview-prep` still render
-   `Wip.svelte` (AGENTS.md originally planned to ship them that way).
+1. ~~SQLite or PostgreSQL~~ — **decided 2026-11-16: SQLite** (WAL mode), on one
+   Hetzner server with systemd and Caddy, no Docker. See `DEPLOY.md`.
+2. ~~Domain~~ — **decided 2026-11-16: `asoundjob.com`**, `www` redirects to it.
+3. ~~Launch scope~~ — **decided 2026-11-16:** `/resources` and
+   `/resources/interview-prep` stay up but are dropped from the header, footer and
+   sitemap until they are written. Company edits live on the server; a daily timer
+   pushes `data/audio_companies_final.json` to `main`.
 4. **How to merge** this branch into `main`.
 5. ~~Who the board is for~~ — **decided 2026-11-12:** commercial roles (sales,
    marketing, customer success) belong, but only when the job itself carries an
@@ -449,9 +450,9 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 ## 5. Open work
 
 ### Before launch
-- Deploy artifacts: Dockerfile, compose, nginx, a nightly scrape job; the API
-  needs write access to `data/`; set `ASOUNDJOB_ENV=production`, real secrets, and
-  `STALE_AFTER_FAILURES` if not 3.
+- Done 2026-11-16: deploy artifacts are in `deploy/` (Caddyfile, systemd services
+  and timers for the API, website, nightly scrape, backups and the company-list
+  push, `update.sh`), with every step in `DEPLOY.md`. Not yet run on a real server.
 - Done 2026-11-12: the web app builds with `@sveltejs/adapter-node` 5.5.7 (6.x
   needs SvelteKit 3) — `node web/build`, set `ORIGIN`; and rate limits key on
   `client_ip()`, which trusts `X-Forwarded-For` only from `TRUSTED_PROXIES`
@@ -799,6 +800,13 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   `resolve_database_url`, so running from `scraper/` is fine).
 
 ## 9. Log (newest first, keep entries short)
+
+- **2026-11-16, deploy prep** — `deploy/` and `DEPLOY.md` (systemd + Caddy + SQLite,
+  no Docker). SQLite now runs in WAL mode with a 30 s busy timeout
+  (`scraper/database.py`), which fixes "database is locked" during scrapes. The
+  scraper takes `.scrape.lock` so two cycles never overlap (exit 75). `robots.txt`
+  is generated from `SITE_URL`; Resources and Interview prep are out of the nav
+  and sitemap.
 
 - **2026-11-16, crowd seed edits + scrape status** — company suggestions now take a
   careers URL, website and category (plus comment-only reports); the admin queue

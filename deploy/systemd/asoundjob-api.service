@@ -1,0 +1,17 @@
+[Unit]
+Description=ASoundJob API
+After=network.target
+
+[Service]
+User=asoundjob
+Group=asoundjob
+WorkingDirectory=/srv/asoundjob/api
+EnvironmentFile=/etc/asoundjob/asoundjob.env
+ExecStart=/srv/asoundjob/venv/bin/uvicorn api.main:app --host 127.0.0.1 --port 8000 --workers 1
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

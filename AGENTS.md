@@ -16,10 +16,13 @@ This file is the original build plan. For what is actually true now, read:
   before assuming anything here (the full chronological log is `git show 0286282:HANDOFF.md`)
 - `TRIAGE.md` — the ranked list of seeded careers URLs that need fixing
 
-As of 2026-09-22: Phases 1–3 below are built, with the resources hub and interview
-prep still the WIP placeholders the plan called for; **Phase 4 (deploy) has not started**
-— there is no Dockerfile, compose file or nginx config, and nothing has ever run
-on PostgreSQL.
+- `DEPLOY.md` — the production runbook
+
+As of 2026-11-16: Phases 1–3 below are built, with the resources hub and interview
+prep still WIP placeholders (hidden from navigation). **Phase 4 was replaced** by a
+plainer deploy — one Ubuntu server, systemd services and timers, Caddy for HTTPS,
+SQLite in WAL mode, no Docker, nginx or PostgreSQL. The files are in `deploy/` and
+the steps in `DEPLOY.md`. Nothing has ever run on PostgreSQL.
 
 ## Key Files
 - `ARCHITECTURE.md` — full architecture plan, database schema, API design, scraper design

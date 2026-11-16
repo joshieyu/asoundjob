@@ -1,0 +1,10 @@
+[Unit]
+Description=Push admin company edits to GitHub
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=asoundjob
+Group=asoundjob
+ExecStart=/srv/asoundjob/deploy/seed-push.sh

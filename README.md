@@ -11,6 +11,8 @@ The audience is audio engineers. DSP, audio systems, EE, embedded and acoustics
 roles are the priority, and most of the judgement calls in the relevance code
 resolve toward that.
 
+For production, see **`DEPLOY.md`**.
+
 ## First-time setup
 
 Needs Python 3.9 (the code and both `pyproject.toml` files target it; on macOS

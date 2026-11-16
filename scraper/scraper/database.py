@@ -4,12 +4,14 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from typing import Any
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from scraper.config import REPO_ROOT, load_settings
 from scraper.models import Base
+
+SQLITE_BUSY_TIMEOUT_SECONDS = 30.0
 
 _SYNC_ENGINE: Engine | None = None
 _SYNC_SESSION_FACTORY: sessionmaker[Session] | None = None
@@ -33,8 +35,20 @@ def get_engine() -> Engine:
         connect_args: dict[str, Any] = {}
         if url.startswith("sqlite"):
             connect_args["check_same_thread"] = False
+            connect_args["timeout"] = SQLITE_BUSY_TIMEOUT_SECONDS
         _SYNC_ENGINE = create_engine(url, connect_args=connect_args, future=True)
+        if url.startswith("sqlite") and ":memory:" not in url and url != "sqlite://":
+            event.listen(_SYNC_ENGINE, "connect", _use_wal)
     return _SYNC_ENGINE
+
+
+def _use_wal(dbapi_connection: Any, _record: Any) -> None:
+    cursor = dbapi_connection.cursor()
+    try:
+        cursor.execute("PRAGMA journal_mode=WAL")
+        cursor.execute(f"PRAGMA busy_timeout={int(SQLITE_BUSY_TIMEOUT_SECONDS * 1000)}")
+    finally:
+        cursor.close()
 
 
 def get_session_factory() -> sessionmaker[Session]:

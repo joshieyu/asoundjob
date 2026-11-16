@@ -1,0 +1,9 @@
+[Unit]
+Description=Daily push of admin company edits
+
+[Timer]
+OnCalendar=*-*-* 05:30:00 America/New_York
+Persistent=true
+
+[Install]
+WantedBy=timers.target
