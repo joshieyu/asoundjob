@@ -127,10 +127,6 @@
 		>
 			Apply at source<svg width="11" height="11" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h7v7M13 3L6.5 9.5M11 11v2H3V5h2"/></svg>
 		</a>
-		<p class="coord leading-relaxed text-muted">
-			This listing links directly to the employer's site. ASoundJob never takes a cut
-			or stands between you and the application.
-		</p>
 		{#if job.company}
 			<div class="p-4">
 				<p class="text-meta font-bold">About the company</p>
