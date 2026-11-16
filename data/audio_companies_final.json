@@ -304,6 +304,16 @@
     "scrape_method": "http"
   },
   {
+    "name": "AIAIAI Audio",
+    "careers_url": "https://join.com/companies/aiaiaidk",
+    "category": "Headphones & Personal Audio",
+    "verified": true,
+    "source": "manual",
+    "scrape_method": "http",
+    "website_url": "https://aiaiai.audio",
+    "description": "AIAIAI Audio is a Copenhagen headphone maker known for modular DJ and studio headphones, including the TMA-2 system and wireless studio models."
+  },
+  {
     "name": "Aiphone",
     "careers_url": "https://www.aiphone.com/careers/",
     "category": "Professional Audio & Live Sound",
