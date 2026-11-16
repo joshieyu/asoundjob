@@ -3,6 +3,7 @@ export interface CompanyBrief {
 	name: string;
 	slug: string;
 	logo_url: string | null;
+	website_url?: string | null;
 }
 
 export interface Job {

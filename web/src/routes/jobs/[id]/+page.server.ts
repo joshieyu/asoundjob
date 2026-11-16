@@ -2,38 +2,53 @@ import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 import { getJob, getCategories, SITE_URL } from '$lib/server/api';
 import { renderDescription } from '$lib/sanitize';
+import type { Job } from '$lib/types';
 
-export const load: PageServerLoad = async ({ params }) => {
-	const [job, categories] = await Promise.all([
-		getJob(Number(params.id)).catch(() => null),
-		getCategories().catch(() => ({ categories: [] }))
-	]);
-	if (!job) error(404, 'Job not found');
+const EMPLOYMENT_TYPES: Record<string, string> = {
+	'full-time': 'FULL_TIME',
+	'part-time': 'PART_TIME',
+	contract: 'CONTRACTOR',
+	temporary: 'TEMPORARY',
+	internship: 'INTERN',
+	volunteer: 'VOLUNTEER'
+};
 
-	const rawDescription = job.description ?? '';
-	const { html: description, plain: plainDescription } = renderDescription(rawDescription);
-
-	const jsonLd = {
+function jobPosting(job: Job, description: string) {
+	const company = job.company;
+	return {
 		'@context': 'https://schema.org',
 		'@type': 'JobPosting',
 		title: job.title,
-		description: description ?? `<p>${plainDescription}</p>`,
-		datePosted: job.posted_date ?? undefined,
-		employmentType: job.job_type?.toUpperCase().replace('-', '_') || undefined,
-		hiringOrganization: job.company
+		description,
+		identifier: { '@type': 'PropertyValue', name: 'ASoundJob', value: String(job.id) },
+		datePosted: job.posted_date ?? job.created_at.slice(0, 10),
+		validThrough: job.expires_date ?? undefined,
+		employmentType: (job.job_type && EMPLOYMENT_TYPES[job.job_type]) || undefined,
+		directApply: false,
+		hiringOrganization: company
 			? {
 					'@type': 'Organization',
-					name: job.company.name,
-					sameAs: `${SITE_URL}/companies/${job.company.slug}`
+					name: company.name,
+					sameAs: company.website_url ?? undefined,
+					logo: company.logo_url ?? undefined
 				}
 			: undefined,
+		jobLocation:
+			job.location || job.country
+				? {
+						'@type': 'Place',
+						address: {
+							'@type': 'PostalAddress',
+							addressLocality: job.location ?? undefined,
+							addressCountry: job.country ?? undefined
+						}
+					}
+				: undefined,
 		jobLocationType: job.remote ? 'TELECOMMUTE' : undefined,
-		jobLocation: job.location && !job.remote
-			? {
-					'@type': 'Place',
-					address: { '@type': 'PostalAddress', addressLocality: job.location }
-				}
-			: undefined,
+		applicantLocationRequirements:
+			job.remote && job.country
+				? { '@type': 'Country', name: job.country_name ?? job.country }
+				: undefined,
 		baseSalary:
 			job.salary_min || job.salary_max
 				? {
@@ -47,9 +62,22 @@ export const load: PageServerLoad = async ({ params }) => {
 						}
 					}
 				: undefined,
-		url: `${SITE_URL}/jobs/${job.id}`,
-		validThrough: job.expires_date ?? undefined
+		url: `${SITE_URL}/jobs/${job.id}`
 	};
+}
+
+export const load: PageServerLoad = async ({ params }) => {
+	const [job, categories] = await Promise.all([
+		getJob(Number(params.id)).catch(() => null),
+		getCategories().catch(() => ({ categories: [] }))
+	]);
+	if (!job) error(404, 'Job not found');
+
+	const rawDescription = job.description ?? '';
+	const { html: description, plain: plainDescription } = renderDescription(rawDescription);
+
+	const open = job.is_active;
+	const jsonLd = open ? jobPosting(job, description ?? `<p>${plainDescription}</p>`) : null;
 
 	return {
 		siteUrl: SITE_URL,
@@ -57,6 +85,7 @@ export const load: PageServerLoad = async ({ params }) => {
 		description,
 		plainDescription,
 		jsonLd,
+		indexable: open,
 		categories: categories.categories,
 		meta: {
 			title: `${job.title} at ${job.company?.name ?? 'Unknown company'} | ASoundJob`,

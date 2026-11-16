@@ -45,6 +45,11 @@ export const load: PageServerLoad = async ({ url }) => {
 
 	return {
 		siteUrl: SITE_URL,
+		meta: {
+			title: 'Company directory | ASoundJob',
+			description:
+				'Browse every audio company ASoundJob indexes — filter by specialty and see who has open roles on the board right now.'
+		},
 		companies,
 		boardUnavailable: companies === null,
 		categories,

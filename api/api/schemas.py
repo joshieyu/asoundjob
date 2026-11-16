@@ -25,6 +25,7 @@ class CompanyBrief(BaseModel):
     name: str
     slug: str
     logo_url: Optional[str] = None
+    website_url: Optional[str] = None
 
 
 class JobSummary(BaseModel):

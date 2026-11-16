@@ -66,6 +66,11 @@ export const load: PageServerLoad = async ({ url }) => {
 
 	return {
 		siteUrl: SITE_URL,
+		meta: {
+			title: 'Audio industry jobs | ASoundJob',
+			description:
+				'Browse audio industry jobs: DSP, live sound, acoustics, game audio and more. Filter by specialty, level, salary and remote.'
+		},
 		jobs,
 		boardUnavailable: jobs === null,
 		categories,

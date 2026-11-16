@@ -9,6 +9,11 @@ export const load: PageServerLoad = async () => {
 
 	return {
 		siteUrl: SITE_URL,
+		meta: {
+			title: 'About | ASoundJob',
+			description:
+				'ASoundJob is built by Young Audio Professionals — a peer community for people working in audio.'
+		},
 		categoryCount: categories?.categories.length ?? 0,
 		companyCount: companies?.total ?? 0
 	};

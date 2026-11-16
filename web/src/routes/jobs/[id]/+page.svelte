@@ -25,7 +25,12 @@
 	<title>{data.meta.title}</title>
 	<meta name="description" content={data.meta.description} />
 	<link rel="canonical" href="{data.siteUrl}/jobs/{job.id}" />
-	{@html `<script type="application/ld+json">${serializeJsonLd(data.jsonLd)}<\/script>`}
+	{#if !data.indexable}
+		<meta name="robots" content="noindex" />
+	{/if}
+	{#if data.jsonLd}
+		{@html `<script type="application/ld+json">${serializeJsonLd(data.jsonLd)}<\/script>`}
+	{/if}
 </svelte:head>
 
 <nav aria-label="Breadcrumb" class="mt-6 coord text-muted">
@@ -41,6 +46,13 @@
 <div class="mt-3 grid gap-6 lg:grid-cols-[1fr_18rem]">
 	<article class="min-w-0">
 		<header class="pb-6">
+			{#if !job.is_active}
+				<p class="mb-4 border-l-2 border-accent pl-3 text-meta" role="status">
+					<span class="font-semibold">This listing has closed.</span>
+					<span class="text-muted">It's no longer on the board; the original posting may be gone too.</span>
+					<a href="/jobs" class="link font-semibold">Browse open roles</a>
+				</p>
+			{/if}
 			<h1 class="text-display leading-tight font-semibold tracking-tight text-balance">{job.title}</h1>
 			<p class="mt-2 text-meta font-semibold text-muted">
 				{#if job.company}<a
