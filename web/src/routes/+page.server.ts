@@ -40,7 +40,7 @@ export const load: PageServerLoad = async () => {
 		categories,
 		totalJobs: totalResult?.total ?? 0,
 		meta: {
-			title: 'ASoundJob — Audio industry jobs, filtered by specialty',
+			title: 'ASoundJob | Audio Industry Jobs',
 			description:
 				'Job board for audio professionals: DSP, live sound, acoustics, game audio and more. Fresh listings scraped nightly from real audio companies.'
 		}
