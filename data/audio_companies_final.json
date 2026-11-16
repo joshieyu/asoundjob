@@ -4527,6 +4527,16 @@
     "scrape_method": "http"
   },
   {
+    "name": "Hark",
+    "careers_url": "https://job-boards.greenhouse.io/hark",
+    "category": "Consumer Electronics & Tech",
+    "verified": true,
+    "source": "manual",
+    "scrape_method": "http",
+    "ats_type": "greenhouse",
+    "ats_slug": "hark"
+  },
+  {
     "name": "Harley-Davidson",
     "careers_url": "https://workforcenow.adp.com/mascsr/default/mdf/recruitment/recruitment.html?cid=38c81de5-382a-459c-84b5-012cc108fdd5&ccId=19000101_000001&type=JS&lang=en_US",
     "category": "Automotive OEMs",
