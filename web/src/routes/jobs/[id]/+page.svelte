@@ -150,23 +150,14 @@
 					The Young Audio Professionals team is highlighting this role on the front page.
 				</p>
 			</div>
-		{:else if job.is_active}
-			<div class="p-4">
-				<p class="text-meta font-bold">Know this role is special?</p>
-				<p class="mt-2 text-meta text-muted">
-					Hiring for it, or know it needs filling fast? Ask the team to feature it on the front page.
-				</p>
-				<button type="button" class="btn btn-quiet mt-3 w-full" onclick={() => (featureOpen = true)}>
+		{/if}
+		<div class="space-y-3 p-4">
+			{#if !job.featured && job.is_active}
+				<button type="button" class="btn btn-quiet w-full" onclick={() => (featureOpen = true)}>
 					Request a feature
 				</button>
-			</div>
-		{/if}
-		<div class="p-4">
-			<p class="text-meta font-bold">See a problem?</p>
-			<p class="mt-2 text-meta text-muted">
-				Flag a category mistake, a broken link, or anything else off about this listing.
-			</p>
-			<button type="button" class="btn btn-quiet mt-3 w-full" onclick={() => (reportOpen = true)}>
+			{/if}
+			<button type="button" class="btn btn-quiet w-full" onclick={() => (reportOpen = true)}>
 				Report an issue
 			</button>
 		</div>
