@@ -43,10 +43,21 @@
 		<header class="pb-6">
 			<h1 class="text-display leading-tight font-semibold tracking-tight text-balance">{job.title}</h1>
 			<p class="mt-2 text-meta font-semibold text-muted">
-				{#if job.company}{job.company.name}{/if}
+				{#if job.company}<a
+						href="/companies/{job.company.slug}"
+						class="text-ink underline decoration-rule underline-offset-4 hover:text-accent hover:decoration-accent"
+					>{job.company.name}</a>{/if}
 				{#if job.location}<span aria-hidden="true">{' · '}</span>{job.location}{/if}
 				{#if job.remote}<span aria-hidden="true">{' · '}</span><span class="text-ink">Remote OK</span>{/if}
 			</p>
+			<a
+				href={job.url}
+				target="_blank"
+				rel="noopener noreferrer"
+				class="btn btn-primary mt-5 w-full !py-3 sm:w-auto sm:!px-8 lg:hidden"
+			>
+				Apply at source<svg width="11" height="11" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h7v7M13 3L6.5 9.5M11 11v2H3V5h2"/></svg>
+			</a>
 		</header>
 
 		<dl
@@ -127,36 +138,19 @@
 		>
 			Apply at source<svg width="11" height="11" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h7v7M13 3L6.5 9.5M11 11v2H3V5h2"/></svg>
 		</a>
-		{#if job.company}
-			<div class="p-4">
-				<p class="text-meta font-bold">About the company</p>
-				<p class="mt-2 text-title font-bold">{job.company.name}</p>
-				<a
-					href="/companies/{job.company.slug}"
-					class="mt-1 inline-block coord font-semibold text-accent hover:underline"
-				>
-					View company page →
-				</a>
-			</div>
-		{/if}
 		{#if job.featured}
-			<div class="p-4">
-				<p class="text-meta font-bold text-accent">Featured listing</p>
-				<p class="mt-2 text-meta text-muted">
-					The Young Audio Professionals team is highlighting this role on the front page.
-				</p>
-			</div>
-		{/if}
-		<div class="space-y-3 p-4">
-			{#if !job.featured && job.is_active}
-				<button type="button" class="btn btn-quiet w-full" onclick={() => (featureOpen = true)}>
-					Request a feature
-				</button>
-			{/if}
-			<button type="button" class="btn btn-quiet w-full" onclick={() => (reportOpen = true)}>
-				Report an issue
+			<p class="mt-1 border-l-2 border-accent pl-3 text-meta text-muted">
+				<span class="font-bold text-accent">Featured listing.</span>
+				The Young Audio Professionals team is highlighting this role on the front page.
+			</p>
+		{:else if job.is_active}
+			<button type="button" class="btn btn-quiet mt-1 w-full" onclick={() => (featureOpen = true)}>
+				Request a feature
 			</button>
-		</div>
+		{/if}
+		<button type="button" class="btn btn-quiet w-full" onclick={() => (reportOpen = true)}>
+			Report an issue
+		</button>
 	</aside>
 </div>
 
