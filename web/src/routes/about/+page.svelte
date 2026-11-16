@@ -67,6 +67,20 @@
 		</div>
 	</dl>
 
+	<p class="mt-12 max-w-[68ch] border-l-2 border-accent pl-4 text-body leading-relaxed">
+		<span class="font-semibold">Note:</span> This board is completely free for users, but we would
+		appreciate any small donations to cover server costs!
+		<span class="mt-2 block">
+			Venmo:
+			<a
+				href="https://venmo.com/u/JRYVNMO"
+				target="_blank"
+				rel="noopener noreferrer"
+				class="link font-semibold">@JRYVNMO</a
+			>
+		</span>
+	</p>
+
 	<section class="mt-20 border-t border-rule pt-10">
 		<h2 class="text-title font-medium tracking-tight">Join Young Audio Professionals</h2>
 		{#if discord}
