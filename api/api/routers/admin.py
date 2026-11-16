@@ -544,7 +544,18 @@ def approve_submission(
         db.add(job)
 
     db.flush()
-    job_id = duplicate.id if duplicate is not None else job.id
+    published = duplicate if duplicate is not None else job
+    job_id = published.id
+    wants_feature = submission.feature_requested
+    if payload is not None and payload.feature is not None:
+        wants_feature = payload.feature
+    featured: Optional[str] = None
+    if wants_feature:
+        days, note = feature_request_terms(
+            submission.feature_days, submission.feature_note, payload
+        )
+        feature_job(published, days, note)
+        featured = describe_feature(published)
     logger.info(
         "admin=%s approved submission %s as job %s, expires %s (%s, %d days)",
         admin,
@@ -560,6 +571,7 @@ def approve_submission(
         expires_date=expires_date,
         expires_days=expires_days,
         expires_source=expires_source,
+        featured=featured,
     )
 
 
@@ -829,17 +841,19 @@ def admin_set_job_featured(
 
 
 def feature_request_terms(
-    feedback: JobFeedback, payload: Optional[FeedbackApproveRequest]
+    requested_days: Optional[int],
+    requested_note: Optional[str],
+    payload: Optional[FeedbackApproveRequest | ApproveRequest],
 ) -> tuple[Optional[int], Optional[str]]:
     chosen = payload.model_fields_set if payload is not None else set()
     if payload is not None and chosen & {"feature_days", "feature_indefinite"}:
         days = None if payload.feature_indefinite else payload.feature_days or FEATURE_DAYS
     else:
-        days = feedback.feature_days
+        days = requested_days
     if payload is not None and "feature_note" in chosen:
         note = payload.feature_note
     else:
-        note = feedback.feature_note
+        note = requested_note
     return days, note
 
 
@@ -910,7 +924,9 @@ def approve_job_feedback(
         applied = "taken off the board"
     elif feedback.kind == "feature_request":
         if job is not None:
-            days, note = feature_request_terms(feedback, payload)
+            days, note = feature_request_terms(
+                feedback.feature_days, feedback.feature_note, payload
+            )
             feature_job(job, days, note)
             applied = describe_feature(job)
     elif feedback.kind in ("broken_description", "broken_link"):

@@ -253,8 +253,24 @@ class JobSubmissionRequest(BaseModel):
     experience_level: Optional[str] = Field(default=None, max_length=50)
     audio_domain: Optional[str] = Field(default=None, max_length=50)
     duration_days: Optional[int] = Field(default=None, ge=1, le=MAX_COMMUNITY_JOB_DAYS)
+    feature_requested: bool = False
+    feature_days: Optional[int] = Field(default=None, ge=1, le=365)
+    feature_indefinite: bool = False
+    feature_note: Optional[str] = Field(default=None, max_length=1000)
     submitter_name: Optional[str] = Field(default=None, max_length=200)
     submitter_email: Optional[str] = Field(default=None, max_length=320)
+
+    @model_validator(mode="after")
+    def feature_fields_only_when_requested(self) -> JobSubmissionRequest:
+        if not self.feature_requested:
+            self.feature_days = None
+            self.feature_indefinite = False
+            self.feature_note = None
+        elif self.feature_indefinite:
+            self.feature_days = None
+        elif self.feature_days is None:
+            self.feature_days = 30
+        return self
 
     @field_validator("submitter_email")
     @classmethod
@@ -317,6 +333,10 @@ class AdminCompanyCreate(AdminCompanyUpdate):
 
 class ApproveRequest(BaseModel):
     expires_days: Optional[int] = Field(default=None, ge=1, le=MAX_COMMUNITY_JOB_DAYS)
+    feature: Optional[bool] = None
+    feature_days: Optional[int] = Field(default=None, ge=1, le=365)
+    feature_indefinite: bool = False
+    feature_note: Optional[str] = Field(default=None, max_length=1000)
 
 
 class ApproveResponse(BaseModel):
@@ -325,6 +345,7 @@ class ApproveResponse(BaseModel):
     expires_date: date
     expires_days: int
     expires_source: str
+    featured: Optional[str] = None
 
 
 class RejectRequest(BaseModel):
@@ -347,6 +368,9 @@ class AdminSubmission(BaseModel):
     experience_level: Optional[str] = None
     audio_domain: Optional[str] = None
     requested_days: Optional[int] = None
+    feature_requested: bool = False
+    feature_days: Optional[int] = None
+    feature_note: Optional[str] = None
     status: str
     submitted_at: datetime
     reviewed_at: Optional[datetime] = None

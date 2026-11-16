@@ -20,7 +20,11 @@
 		audio_domain: '',
 		submitter_name: '',
 		submitter_email: '',
-		duration_days: undefined
+		duration_days: undefined,
+		feature_requested: false,
+		feature_days: 30,
+		feature_indefinite: false,
+		feature_note: ''
 	});
 
 	async function onSubmit(event: SubmitEvent) {
@@ -30,6 +34,13 @@
 			...form,
 			url: form.url.trim()
 		};
+		if (!form.feature_requested) {
+			delete cleaned.feature_days;
+			delete cleaned.feature_note;
+			cleaned.feature_indefinite = false;
+		} else if (form.feature_indefinite) {
+			delete cleaned.feature_days;
+		}
 		for (const key of Object.keys(cleaned) as (keyof JobSubmissionRequest)[]) {
 			if (typeof cleaned[key] === 'string' && (cleaned[key] as string).trim() === '') {
 				delete cleaned[key];
@@ -153,6 +164,51 @@
 				<input type="checkbox" bind:checked={form.remote} class="h-4 w-4 accent-accent" />
 				This role can be done remotely
 			</label>
+
+			<fieldset class="border-t border-rule pt-4">
+				<legend class="sr-only">Featuring</legend>
+				<label class="flex items-start gap-2 text-meta font-semibold">
+					<input type="checkbox" bind:checked={form.feature_requested} class="mt-0.5 h-4 w-4 accent-accent" />
+					<span>
+						Also request a feature on the front page
+						<span class="mt-0.5 block font-normal text-muted">
+							Featured roles sit above the fresh listings. The team decides, and may adjust the length or note.
+						</span>
+					</span>
+				</label>
+				{#if form.feature_requested}
+					<div class="mt-4 space-y-4 border-l-2 border-accent pl-4">
+						<div class="flex flex-wrap items-end gap-x-5 gap-y-3">
+							<label class="block">
+								<span class="axis-label mb-2 block">Feature for (days)</span>
+								<input
+									type="number"
+									min="1"
+									max="365"
+									bind:value={form.feature_days}
+									disabled={form.feature_indefinite}
+									required={!form.feature_indefinite}
+									class="field w-28"
+								/>
+							</label>
+							<label class="flex h-10 items-center gap-2 text-meta font-semibold">
+								<input type="checkbox" bind:checked={form.feature_indefinite} class="h-4 w-4 accent-accent" />
+								Until it's filled (no end date)
+							</label>
+						</div>
+						<label class="block">
+							<span class="axis-label mb-2 block">Note to show on the listing (optional)</span>
+							<textarea
+								rows="2"
+								maxlength="1000"
+								bind:value={form.feature_note}
+								class="field"
+								placeholder="e.g. Hiring ASAP — questions to jane@studio.com"
+							></textarea>
+						</label>
+					</div>
+				{/if}
+			</fieldset>
 
 			<fieldset class="border-t border-rule pt-4">
 				<legend class="axis-label">

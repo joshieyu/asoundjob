@@ -16,6 +16,16 @@
 		status: string;
 		submitted_at: string;
 		requested_days: number | null;
+		feature_requested: boolean;
+		feature_days: number | null;
+		feature_note: string | null;
+	}
+
+	interface FeatureTerms {
+		feature: boolean;
+		days: number;
+		indefinite: boolean;
+		note: string;
 	}
 
 	let submissions = $state<Submission[]>([]);
@@ -23,6 +33,7 @@
 	let message = $state('');
 	let busyId = $state<number | null>(null);
 	let overrideDays = $state<Record<number, number | undefined>>({});
+	let featureTerms = $state<Record<number, FeatureTerms>>({});
 
 	async function load() {
 		loading = true;
@@ -33,6 +44,12 @@
 			submissions = result.items;
 			for (const s of submissions) {
 				overrideDays[s.id] = s.requested_days ?? undefined;
+				featureTerms[s.id] = {
+					feature: s.feature_requested,
+					days: s.feature_days ?? 30,
+					indefinite: s.feature_requested && s.feature_days === null,
+					note: s.feature_note ?? ''
+				};
 			}
 		} catch (err) {
 			message = err instanceof Error ? err.message : 'Failed to load queue';
@@ -52,15 +69,22 @@
 			let body: Record<string, unknown> = {};
 			if (action === 'reject') {
 				body = { reason: 'Rejected from admin console' };
-			} else if (overrideDays[id] != null) {
-				body = { expires_days: overrideDays[id] };
+			} else {
+				if (overrideDays[id] != null) body.expires_days = overrideDays[id];
+				const terms = featureTerms[id];
+				body.feature = terms.feature;
+				if (terms.feature) {
+					body.feature_days = terms.indefinite ? null : terms.days;
+					body.feature_indefinite = terms.indefinite;
+					body.feature_note = terms.note.trim() || null;
+				}
 			}
-			await clientApi(`/api/admin/submissions/${id}/${action}`, {
-				method: 'POST',
-				body
-			});
+			const result = await clientApi<{ featured?: string | null }>(
+				`/api/admin/submissions/${id}/${action}`,
+				{ method: 'POST', body }
+			);
 			await load();
-			message = `Submission #${id} ${action}d.`;
+			message = `Submission #${id} ${action}d${result.featured ? ` — ${result.featured}` : ''}.`;
 		} catch (err) {
 			message = err instanceof Error ? err.message : 'Action failed';
 		} finally {
@@ -98,12 +122,50 @@
 						</a>
 					</div>
 					<p class="mt-3 line-clamp-3 max-w-3xl text-meta leading-relaxed text-muted">{s.description}</p>
+					{#if featureTerms[s.id]}
+						<div class="mt-4 max-w-3xl space-y-3 {featureTerms[s.id].feature ? 'border-l-2 border-accent pl-4' : ''}">
+							{#if s.feature_requested}
+								<p class="axis-label">
+									Feature requested: {s.feature_days === null ? 'until filled (no end date)' : `${s.feature_days} days`}
+									· edit before approving
+								</p>
+							{/if}
+							<label class="flex items-center gap-2 text-meta font-semibold">
+								<input type="checkbox" bind:checked={featureTerms[s.id].feature} class="h-4 w-4 accent-accent" />
+								Feature on approval
+							</label>
+							{#if featureTerms[s.id].feature}
+								<div class="flex flex-wrap items-center gap-x-5 gap-y-2">
+									<label class="flex items-center gap-2 text-meta font-semibold">
+										<input
+											type="number"
+											min="1"
+											max="365"
+											bind:value={featureTerms[s.id].days}
+											disabled={featureTerms[s.id].indefinite}
+											class="field h-9 w-20"
+											aria-label="Days to feature"
+										/>
+										days
+									</label>
+									<label class="flex items-center gap-2 text-meta font-semibold">
+										<input type="checkbox" bind:checked={featureTerms[s.id].indefinite} class="h-4 w-4 accent-accent" />
+										No end date
+									</label>
+								</div>
+								<label class="block">
+									<span class="axis-label mb-1 block">Note shown on the listing (optional)</span>
+									<textarea rows="2" maxlength="1000" bind:value={featureTerms[s.id].note} class="field"></textarea>
+								</label>
+							{/if}
+						</div>
+					{/if}
 					<div class="mt-5 flex flex-wrap items-center gap-3">
 						<button type="button" class="btn btn-primary" disabled={busyId === s.id} onclick={() => act(s.id, 'approve')}>
-							Approve and publish
+							{featureTerms[s.id]?.feature ? 'Approve, publish and feature' : 'Approve and publish'}
 						</button>
 						<label class="flex items-center gap-2 text-meta text-muted" for={`days-${s.id}`}>
-							Days
+							Listing days
 							<input
 								id={`days-${s.id}`}
 								type="number"

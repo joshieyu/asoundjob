@@ -12,4 +12,8 @@ export interface JobSubmissionRequest {
 	submitter_name?: string;
 	submitter_email?: string;
 	duration_days?: number;
+	feature_requested: boolean;
+	feature_days?: number;
+	feature_indefinite: boolean;
+	feature_note?: string;
 }

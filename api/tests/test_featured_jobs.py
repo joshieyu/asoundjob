@@ -11,8 +11,10 @@ from api.routers import admin as admin_router
 from api.routers import jobs as jobs_router
 from api.schemas import (
     AdminJobFeatureUpdate,
+    ApproveRequest,
     FeedbackApproveRequest,
     JobFeedbackRequest,
+    JobSubmissionRequest,
     JobSummary,
 )
 from scraper.models import Base, Company, Job, JobFeedback
@@ -227,6 +229,84 @@ class TestFeatureRequests(FeaturedJobsBase):
         self.assertIsNone(other.feature_note)
         with self.assertRaises(ValidationError):
             JobFeedbackRequest(kind="feature_request", feature_days=400)
+
+
+class FakeClient:
+    def __init__(self, host: str) -> None:
+        self.host = host
+
+
+class FakeRequest:
+    def __init__(self, host: str = "203.0.113.9") -> None:
+        self.client = FakeClient(host)
+
+
+class TestSubmissionFeatureRequests(FeaturedJobsBase):
+    def setUp(self) -> None:
+        super().setUp()
+        jobs_router.rate_limiter.reset()
+
+    def tearDown(self) -> None:
+        jobs_router.rate_limiter.reset()
+        super().tearDown()
+
+    def submit(self, **kwargs) -> int:
+        fields = {
+            "title": "Live Sound Engineer",
+            "company_name": "Acme Audio",
+            "url": "https://example.com/jobs/live",
+            "description": "Run front of house for a touring act, long enough to pass.",
+            **kwargs,
+        }
+        payload = JobSubmissionRequest(**fields)
+        return jobs_router.submit_job(FakeRequest(), payload, self.session).id
+
+    def approve(self, submission_id: int, payload=None):
+        return admin_router.approve_submission(submission_id, payload, self.session, "admin")
+
+    def test_plain_submission_is_not_featured(self) -> None:
+        result = self.approve(self.submit())
+        self.assertIsNone(result.featured)
+        self.assertEqual(self.featured_ids(), [])
+
+    def test_requested_feature_is_applied_on_approval(self) -> None:
+        result = self.approve(
+            self.submit(feature_requested=True, feature_days=14, feature_note=" Call Sam ")
+        )
+        job = self.session.get(Job, result.job_id)
+        assert job is not None
+        self.assertEqual(result.featured, f"featured until {job.featured_until}")
+        self.assertEqual(job.featured_until, date.today() + timedelta(days=14))
+        self.assertEqual(job.featured_note, "Call Sam")
+        self.assertEqual(self.featured_ids(), [job.id])
+
+    def test_admin_can_edit_or_decline_the_feature(self) -> None:
+        result = self.approve(
+            self.submit(feature_requested=True, feature_days=14),
+            ApproveRequest(feature_indefinite=True, feature_note="edited"),
+        )
+        job = self.session.get(Job, result.job_id)
+        assert job is not None
+        self.assertIsNone(job.featured_until)
+        self.assertEqual(job.featured_note, "edited")
+        declined = self.approve(
+            self.submit(feature_requested=True, url="https://example.com/jobs/other"),
+            ApproveRequest(feature=False),
+        )
+        self.assertIsNone(declined.featured)
+        self.assertEqual(self.featured_ids(), [job.id])
+
+    def test_feature_fields_are_dropped_unless_requested(self) -> None:
+        payload = JobSubmissionRequest(
+            title="T" * 5,
+            company_name="Acme",
+            url="https://example.com/x",
+            description="d" * 30,
+            feature_days=10,
+            feature_note="x",
+        )
+        self.assertIsNone(payload.feature_days)
+        self.assertIsNone(payload.feature_note)
 
 
 if __name__ == "__main__":

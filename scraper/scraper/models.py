@@ -12,6 +12,7 @@ from sqlalchemy import (
     Integer,
     Text,
     UniqueConstraint,
+    false,
     func,
 )
 from sqlalchemy.dialects.postgresql import ARRAY
@@ -169,6 +170,11 @@ class JobSubmission(Base):
     experience_level: Mapped[Optional[str]] = mapped_column(Text)
     audio_domain: Mapped[Optional[str]] = mapped_column(Text)
     requested_days: Mapped[Optional[int]] = mapped_column(Integer)
+    feature_requested: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default=false()
+    )
+    feature_days: Mapped[Optional[int]] = mapped_column(Integer)
+    feature_note: Mapped[Optional[str]] = mapped_column(Text)
     submitter_name: Mapped[Optional[str]] = mapped_column(Text)
     submitter_email: Mapped[Optional[str]] = mapped_column(Text)
     status: Mapped[str] = mapped_column(Text, default="pending", index=True)

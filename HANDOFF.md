@@ -399,7 +399,11 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   which files a `feature_request` in the job-feedback queue with their own length
   (days or until filled → `job_feedback.feature_days`, NULL = indefinite) and a
   suggested note (`feature_note`); `/admin/feedback` shows both as editable fields,
-  and approving applies the edited terms (migration `f2c6a9d1b384`). The
+  and approving applies the edited terms (migration `f2c6a9d1b384`). The submit-a-job
+  form has the same request (`job_submissions.feature_requested/feature_days/
+  feature_note`, migration `b5e3d8a1c602`); `/admin/submissions` shows a "Feature on
+  approval" toggle prefilled from it, and approving features the published job. A
+  feature on a community job still ends when the listing expires. The
   homepage shows a Featured section above "Fresh on the board" only when something
   is featured, and the fresh list excludes featured ids. Features lapse on their
   own; `prune_orphans` will not delete a featured job.
@@ -795,6 +799,10 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   `resolve_database_url`, so running from `scraper/` is fine).
 
 ## 9. Log (newest first, keep entries short)
+
+- **2026-11-16, feature requests on Submit a job** — submitters can ask for a feature
+  (days or until filled, plus a note); admins edit or decline it in the submission
+  queue. Migration `b5e3d8a1c602` applied to the dev DB.
 
 - **2026-11-16, feature-request terms** — requesters pick days or "until filled" and
   suggest a note; admins edit both before approving; admins can feature with no end
