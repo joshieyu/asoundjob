@@ -115,7 +115,9 @@ class Job(Base):
 
     @property
     def featured(self) -> bool:
-        return self.featured_until is not None and self.featured_until >= date.today()
+        if self.featured_at is None:
+            return False
+        return self.featured_until is None or self.featured_until >= date.today()
 
     @property
     def live_featured_note(self) -> Optional[str]:
@@ -192,6 +194,8 @@ class JobFeedback(Base):
     kind: Mapped[str] = mapped_column(Text, index=True)
     suggested_categories: Mapped[Optional[list[str]]] = mapped_column(JobCategories)
     comment: Mapped[Optional[str]] = mapped_column(Text)
+    feature_days: Mapped[Optional[int]] = mapped_column(Integer)
+    feature_note: Mapped[Optional[str]] = mapped_column(Text)
     submitter_email: Mapped[Optional[str]] = mapped_column(Text)
     status: Mapped[str] = mapped_column(Text, default="pending", index=True)
     submitted_at: Mapped[datetime] = mapped_column(

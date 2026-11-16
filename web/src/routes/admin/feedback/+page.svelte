@@ -9,12 +9,20 @@
 		kind: string;
 		suggested_categories: string[] | null;
 		comment: string | null;
+		feature_days: number | null;
+		feature_note: string | null;
 		submitter_email: string | null;
 		status: string;
 		submitted_at: string;
 		reviewed_at: string | null;
 		reviewed_by: string | null;
 		reject_reason: string | null;
+	}
+
+	interface FeatureTerms {
+		days: number;
+		indefinite: boolean;
+		note: string;
 	}
 
 	interface SiteFeedbackItem {
@@ -65,6 +73,7 @@
 	let jobLoading = $state(true);
 	let jobMessage = $state('');
 	let jobBusyId = $state<number | null>(null);
+	let featureTerms = $state<Record<number, FeatureTerms>>({});
 
 	let siteFeedback = $state<SiteFeedbackItem[]>([]);
 	let siteLoading = $state(true);
@@ -83,6 +92,14 @@
 				'/api/admin/job-feedback?status=pending&per_page=50'
 			);
 			jobFeedback = result.items;
+			featureTerms = Object.fromEntries(
+				result.items
+					.filter((f) => f.kind === 'feature_request')
+					.map((f) => [
+						f.id,
+						{ days: f.feature_days ?? 30, indefinite: f.feature_days === null, note: f.feature_note ?? '' }
+					])
+			);
 		} catch (err) {
 			jobMessage = err instanceof Error ? err.message : 'Failed to load queue';
 		} finally {
@@ -147,6 +164,16 @@
 		}
 	}
 
+	function approveBody(id: number): Record<string, unknown> {
+		const terms = featureTerms[id];
+		if (!terms) return {};
+		return {
+			feature_days: terms.indefinite ? null : terms.days,
+			feature_indefinite: terms.indefinite,
+			feature_note: terms.note.trim() || null
+		};
+	}
+
 	async function actJob(id: number, action: 'approve' | 'reject') {
 		jobBusyId = id;
 		jobMessage = '';
@@ -155,7 +182,7 @@
 				`/api/admin/job-feedback/${id}/${action}`,
 				{
 					method: 'POST',
-					body: action === 'reject' ? { reason: 'Rejected from admin console' } : {}
+					body: action === 'reject' ? { reason: 'Rejected from admin console' } : approveBody(id)
 				}
 			);
 			await loadJobFeedback();
@@ -235,6 +262,36 @@
 							{f.submitter_email}
 						</p>
 					{/if}
+					{#if featureTerms[f.id]}
+						<div class="mt-4 max-w-3xl space-y-3 border-l-2 border-accent pl-4">
+							<p class="axis-label">
+								Requested: {f.feature_days === null ? 'until filled (no end date)' : `${f.feature_days} days`}
+								· edit before approving
+							</p>
+							<div class="flex flex-wrap items-center gap-x-5 gap-y-2">
+								<label class="flex items-center gap-2 text-meta font-semibold">
+									<input
+										type="number"
+										min="1"
+										max="365"
+										bind:value={featureTerms[f.id].days}
+										disabled={featureTerms[f.id].indefinite}
+										class="field h-9 w-20"
+										aria-label="Days to feature"
+									/>
+									days
+								</label>
+								<label class="flex items-center gap-2 text-meta font-semibold">
+									<input type="checkbox" bind:checked={featureTerms[f.id].indefinite} class="h-4 w-4 accent-accent" />
+									No end date
+								</label>
+							</div>
+							<label class="block">
+								<span class="axis-label mb-1 block">Note shown on the listing (optional)</span>
+								<textarea rows="2" maxlength="1000" bind:value={featureTerms[f.id].note} class="field"></textarea>
+							</label>
+						</div>
+					{/if}
 					<div class="mt-5 flex flex-wrap gap-3">
 						<button
 							type="button"
@@ -242,7 +299,7 @@
 							disabled={jobBusyId === f.id}
 							onclick={() => actJob(f.id, 'approve')}
 						>
-							Approve and apply
+							{featureTerms[f.id] ? 'Approve and feature' : 'Approve and apply'}
 						</button>
 						<button
 							type="button"

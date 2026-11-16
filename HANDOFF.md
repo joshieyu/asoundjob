@@ -393,9 +393,13 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 - **Featured jobs** (2026-11-16): `jobs.featured_at/featured_until/featured_note`.
   `GET /api/jobs/featured` (max 12, newest feature first, active + listable; audio
   relevance is not required — the admin's pick wins). Admins feature from
-  `/admin/jobs` (days, default 30, and an optional public note — contact, urgency);
-  visitors use "Request a feature" on a job page, which files a `feature_request`
-  in the job-feedback queue; approving it features for 30 days with no note. The
+  `/admin/jobs` (days, default 30, or "No end date", plus an optional public note —
+  contact, urgency); `featured_until` NULL means indefinite. Unfeature there too
+  (Featured filter → Unfeature). Visitors use "Request a feature" on a job page,
+  which files a `feature_request` in the job-feedback queue with their own length
+  (days or until filled → `job_feedback.feature_days`, NULL = indefinite) and a
+  suggested note (`feature_note`); `/admin/feedback` shows both as editable fields,
+  and approving applies the edited terms (migration `f2c6a9d1b384`). The
   homepage shows a Featured section above "Fresh on the board" only when something
   is featured, and the fresh list excludes featured ids. Features lapse on their
   own; `prune_orphans` will not delete a featured job.
@@ -791,6 +795,10 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   `resolve_database_url`, so running from `scraper/` is fine).
 
 ## 9. Log (newest first, keep entries short)
+
+- **2026-11-16, feature-request terms** — requesters pick days or "until filled" and
+  suggest a note; admins edit both before approving; admins can feature with no end
+  date. Migration `f2c6a9d1b384` applied to the dev DB.
 
 - **2026-11-16, featured jobs + homepage trim** — featured jobs with an admin note
   (§4.7), migration `e8b1f4c2a7d3` applied to the dev DB. Removed the homepage's

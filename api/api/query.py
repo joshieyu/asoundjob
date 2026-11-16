@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from datetime import date
 from typing import Optional, Union
 
 from sqlalchemy import String, and_, case, func, or_, select
@@ -50,6 +51,13 @@ def _as_list(value: Union[str, list[str], None]) -> Optional[list[str]]:
     values = [value] if isinstance(value, str) else list(value)
     cleaned = [v.strip().lower() for v in values if v and v.strip()]
     return cleaned or None
+
+
+def featured_clause():
+    return and_(
+        Job.featured_at.is_not(None),
+        or_(Job.featured_until.is_(None), Job.featured_until >= date.today()),
+    )
 
 
 def listable_clause():

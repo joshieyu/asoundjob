@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-from datetime import date
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
@@ -13,6 +12,7 @@ from api.database import get_db
 from api.query import (
     apply_job_filters,
     count_untyped,
+    featured_clause,
     fetch_job_page,
     listable_clause,
     page_envelope,
@@ -126,7 +126,7 @@ def list_featured_jobs(db: Session = Depends(get_db)):
             select(Job)
             .where(
                 Job.is_active.is_(True),
-                Job.featured_until >= date.today(),
+                featured_clause(),
                 listable_clause(),
             )
             .options(selectinload(Job.company))

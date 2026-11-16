@@ -9,7 +9,12 @@ from sqlalchemy.orm import Session
 
 from api.routers import admin as admin_router
 from api.routers import jobs as jobs_router
-from api.schemas import AdminJobFeatureUpdate, JobFeedbackRequest, JobSummary
+from api.schemas import (
+    AdminJobFeatureUpdate,
+    FeedbackApproveRequest,
+    JobFeedbackRequest,
+    JobSummary,
+)
 from scraper.models import Base, Company, Job, JobFeedback
 
 
@@ -120,6 +125,22 @@ class TestFeaturing(FeaturedJobsBase):
         )
         self.assertEqual([row.id for row in result["items"]], [job.id])
 
+    def test_admin_can_feature_indefinitely(self) -> None:
+        job = self.make_job()
+        row = admin_router.admin_set_job_featured(
+            job.id,
+            AdminJobFeatureUpdate(featured=True, indefinite=True),
+            self.session,
+            "admin",
+        )
+        self.assertTrue(row.featured)
+        self.assertIsNone(row.featured_until)
+        self.assertEqual(self.featured_ids(), [job.id])
+        result = admin_router.admin_list_jobs(
+            search=None, show="featured", page=1, per_page=25, db=self.session, _="admin"
+        )
+        self.assertEqual([r.id for r in result["items"]], [job.id])
+
     def test_days_are_bounded(self) -> None:
         with self.assertRaises(ValidationError):
             AdminJobFeatureUpdate(featured=True, days=0)
@@ -131,15 +152,81 @@ class TestFeatureRequests(FeaturedJobsBase):
     def test_feature_request_is_an_accepted_kind(self) -> None:
         self.assertEqual(JobFeedbackRequest(kind="feature_request").kind, "feature_request")
 
-    def test_approving_a_request_features_the_job(self) -> None:
-        job = self.make_job()
-        feedback = JobFeedback(job_id=job.id, kind="feature_request", status="pending")
+    def request(self, job: Job, days=30, note=None) -> JobFeedback:
+        feedback = JobFeedback(
+            job_id=job.id,
+            kind="feature_request",
+            status="pending",
+            feature_days=days,
+            feature_note=note,
+        )
         self.session.add(feedback)
         self.session.flush()
+        return feedback
+
+    def test_approving_a_request_features_the_job(self) -> None:
+        job = self.make_job()
+        feedback = self.request(job, days=14, note="Contact: hiring@acme.audio")
         result = admin_router.approve_job_feedback(feedback.id, self.session, "admin")
         self.assertIn("featured until", result.applied)
+        self.assertEqual(job.featured_until, date.today() + timedelta(days=14))
+        self.assertEqual(job.featured_note, "Contact: hiring@acme.audio")
+        self.assertEqual(self.featured_ids(), [job.id])
+
+    def test_an_empty_approve_body_keeps_the_requested_terms(self) -> None:
+        job = self.make_job()
+        feedback = self.request(job, days=7, note="ASAP")
+        admin_router.approve_job_feedback(
+            feedback.id, self.session, "admin", FeedbackApproveRequest()
+        )
+        self.assertEqual(job.featured_until, date.today() + timedelta(days=7))
+        self.assertEqual(job.featured_note, "ASAP")
+
+    def test_admin_can_edit_terms_when_approving(self) -> None:
+        job = self.make_job()
+        feedback = self.request(job, days=7, note="original")
+        admin_router.approve_job_feedback(
+            feedback.id,
+            self.session,
+            "admin",
+            FeedbackApproveRequest(feature_days=45, feature_note="edited"),
+        )
+        self.assertEqual(job.featured_until, date.today() + timedelta(days=45))
+        self.assertEqual(job.featured_note, "edited")
+
+    def test_admin_can_clear_the_note_and_make_it_indefinite(self) -> None:
+        job = self.make_job()
+        feedback = self.request(job, days=7, note="original")
+        result = admin_router.approve_job_feedback(
+            feedback.id,
+            self.session,
+            "admin",
+            FeedbackApproveRequest(feature_indefinite=True, feature_note=None),
+        )
+        self.assertEqual(result.applied, "featured indefinitely")
+        self.assertIsNone(job.featured_until)
+        self.assertIsNone(job.featured_note)
         self.assertTrue(job.featured)
         self.assertEqual(self.featured_ids(), [job.id])
+
+    def test_requested_indefinite_feature(self) -> None:
+        job = self.make_job()
+        feedback = self.request(job, days=None)
+        admin_router.approve_job_feedback(feedback.id, self.session, "admin")
+        self.assertIsNone(job.featured_until)
+        self.assertTrue(job.featured)
+
+    def test_request_schema_defaults_and_cleans_feature_fields(self) -> None:
+        self.assertEqual(JobFeedbackRequest(kind="feature_request").feature_days, 30)
+        indefinite = JobFeedbackRequest(
+            kind="feature_request", feature_days=10, feature_indefinite=True
+        )
+        self.assertIsNone(indefinite.feature_days)
+        other = JobFeedbackRequest(kind="broken_link", feature_days=10, feature_note="x")
+        self.assertIsNone(other.feature_days)
+        self.assertIsNone(other.feature_note)
+        with self.assertRaises(ValidationError):
+            JobFeedbackRequest(kind="feature_request", feature_days=400)
 
 
 if __name__ == "__main__":

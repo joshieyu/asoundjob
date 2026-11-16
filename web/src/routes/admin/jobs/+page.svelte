@@ -85,6 +85,7 @@
 	let editingId = $state<number | null>(null);
 	let noteDraft = $state('');
 	let daysDraft = $state(30);
+	let indefiniteDraft = $state(false);
 
 	function startFeature(row: JobRow) {
 		editingId = row.id;
@@ -92,6 +93,7 @@
 		daysDraft = row.featured && row.featured_until
 			? Math.max(1, Math.ceil((Date.parse(row.featured_until) - Date.now()) / 86_400_000))
 			: 30;
+		indefiniteDraft = row.featured && row.featured_until === null;
 		message = '';
 	}
 
@@ -101,12 +103,14 @@
 		try {
 			const updated = await clientApi<JobRow>(`/api/admin/jobs/${row.id}/featured`, {
 				method: 'PUT',
-				body: featured ? { featured, days: daysDraft, note: noteDraft } : { featured }
+				body: featured
+					? { featured, days: daysDraft, indefinite: indefiniteDraft, note: noteDraft }
+					: { featured }
 			});
 			rows = rows.map((r) => (r.id === row.id ? updated : r));
 			editingId = null;
 			message = featured
-				? `“${row.title}” is featured until ${updated.featured_until}.`
+				? `“${row.title}” is featured ${updated.featured_until ? `until ${updated.featured_until}` : 'with no end date'}.`
 				: `“${row.title}” is no longer featured.`;
 		} catch (err) {
 			message = err instanceof Error ? err.message : 'Update failed';
@@ -215,7 +219,7 @@
 							</td>
 							<td class="py-3 pr-4">
 								{#if row.featured}
-									<span class="font-semibold text-accent">Until {row.featured_until}</span>
+									<span class="font-semibold text-accent">{row.featured_until ? `Until ${row.featured_until}` : 'No end date'}</span>
 									{#if row.featured_note}
 										<p class="mt-0.5 max-w-56 truncate text-muted" title={row.featured_note}>{row.featured_note}</p>
 									{/if}
@@ -273,9 +277,13 @@
 												placeholder="e.g. Hiring manager: name@company.com — looking to fill ASAP"
 											></textarea>
 										</label>
-										<label class="block w-28 shrink-0">
+										<label class="block w-24 shrink-0">
 											<span class="axis-label mb-1 block">Days</span>
-											<input type="number" min="1" max="365" bind:value={daysDraft} class="field h-10" />
+											<input type="number" min="1" max="365" bind:value={daysDraft} disabled={indefiniteDraft} class="field h-10" />
+										</label>
+										<label class="flex h-10 shrink-0 items-center gap-2 text-meta font-semibold">
+											<input type="checkbox" bind:checked={indefiniteDraft} class="h-4 w-4 accent-accent" />
+											No end date
 										</label>
 										<div class="flex shrink-0 gap-2">
 											<button type="submit" class="btn btn-primary" disabled={busyId === row.id}>

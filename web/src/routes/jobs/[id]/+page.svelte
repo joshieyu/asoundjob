@@ -187,6 +187,6 @@
 	jobId={job.id}
 	jobTitle={job.title}
 	kinds={FEATURE_REQUEST_KINDS}
-	intro="Tell the team why this role deserves the front page. If you're the one hiring, add a contact and anything candidates should know — a short note can appear on the featured listing."
+	intro="Ask the team to put this role on the front page. Pick how long, and if you're the one hiring, add a note candidates should see — the team reviews every request and may edit it."
 	bind:open={featureOpen}
 />

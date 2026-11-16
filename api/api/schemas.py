@@ -374,7 +374,22 @@ class JobFeedbackRequest(BaseModel):
     )
     suggested_categories: Optional[list[str]] = None
     comment: Optional[str] = Field(default=None, max_length=2000)
+    feature_days: Optional[int] = Field(default=None, ge=1, le=365)
+    feature_indefinite: bool = False
+    feature_note: Optional[str] = Field(default=None, max_length=1000)
     submitter_email: Optional[str] = Field(default=None, max_length=320)
+
+    @model_validator(mode="after")
+    def feature_fields_only_for_requests(self) -> JobFeedbackRequest:
+        if self.kind != "feature_request":
+            self.feature_days = None
+            self.feature_indefinite = False
+            self.feature_note = None
+        elif self.feature_indefinite:
+            self.feature_days = None
+        elif self.feature_days is None:
+            self.feature_days = 30
+        return self
 
     @field_validator("submitter_email")
     @classmethod
@@ -453,7 +468,14 @@ class AdminJobAudioUpdate(BaseModel):
 class AdminJobFeatureUpdate(BaseModel):
     featured: bool
     days: int = Field(default=30, ge=1, le=365)
+    indefinite: bool = False
     note: Optional[str] = Field(default=None, max_length=1000)
+
+
+class FeedbackApproveRequest(BaseModel):
+    feature_days: Optional[int] = Field(default=None, ge=1, le=365)
+    feature_indefinite: bool = False
+    feature_note: Optional[str] = Field(default=None, max_length=1000)
 
 
 class AdminJobFeedback(BaseModel):
@@ -466,6 +488,8 @@ class AdminJobFeedback(BaseModel):
     kind: str
     suggested_categories: Optional[list[str]] = None
     comment: Optional[str] = None
+    feature_days: Optional[int] = None
+    feature_note: Optional[str] = None
     submitter_email: Optional[str] = None
     status: str
     submitted_at: datetime

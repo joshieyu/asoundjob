@@ -35,6 +35,9 @@
 	let email = $state('');
 	let companyName = $state('');
 	let companyUrl = $state('');
+	let featureDays = $state(30);
+	let featureIndefinite = $state(false);
+	let featureNote = $state('');
 	let feedbackState = $state<FeedbackState>({ kind: 'idle' });
 
 	$effect(() => {
@@ -46,6 +49,9 @@
 			email = '';
 			companyName = '';
 			companyUrl = '';
+			featureDays = 30;
+			featureIndefinite = false;
+			featureNote = '';
 			feedbackState = { kind: 'idle' };
 			dialogEl.showModal();
 		} else if (!open && dialogEl.open) {
@@ -73,8 +79,13 @@
 		mode === 'job' && selectedKind === 'wrong_category' && categories.length > 0
 	);
 
+	const isFeatureRequest = $derived(mode === 'job' && selectedKind === 'feature_request');
+
 	const canSubmit = $derived.by(() => {
 		if (feedbackState.kind === 'submitting') return false;
+		if (isFeatureRequest && !featureIndefinite) {
+			return Number.isInteger(featureDays) && featureDays >= 1 && featureDays <= 365;
+		}
 		if (mode === 'job') {
 			if (selectedKind === 'wrong_category') {
 				return selectedCategories.length > 0 || comment.trim().length > 0;
@@ -98,6 +109,13 @@
 						? selectedCategories
 						: null,
 				comment: comment.trim() || null,
+				...(isFeatureRequest
+					? {
+							feature_days: featureIndefinite ? null : featureDays,
+							feature_indefinite: featureIndefinite,
+							feature_note: featureNote.trim() || null
+						}
+					: {}),
 				submitter_email: email.trim() || null
 			});
 		} else {
@@ -241,9 +259,45 @@
 					</label>
 				{/if}
 
+				{#if isFeatureRequest}
+					<fieldset>
+						<legend class="axis-label mb-2 block">How long should it be featured?</legend>
+						<div class="flex flex-wrap items-center gap-x-5 gap-y-2">
+							<label class="flex items-center gap-2 text-meta font-semibold">
+								<input
+									type="number"
+									min="1"
+									max="365"
+									bind:value={featureDays}
+									disabled={featureIndefinite}
+									class="field h-9 w-20"
+									aria-label="Number of days"
+								/>
+								days
+							</label>
+							<label class="flex items-center gap-2 text-meta font-semibold">
+								<input type="checkbox" bind:checked={featureIndefinite} class="h-4 w-4 accent-accent" />
+								Until it's filled (no end date)
+							</label>
+						</div>
+					</fieldset>
+					<label class="block">
+						<span class="axis-label mb-2 block">Note to show on the listing (optional)</span>
+						<textarea
+							rows="2"
+							maxlength="1000"
+							bind:value={featureNote}
+							class="field"
+							placeholder="e.g. Hiring manager: name@company.com — looking to fill ASAP"
+						></textarea>
+					</label>
+				{/if}
+
 				<label class="block">
 					<span class="axis-label mb-2 block">
-						Comment {mode === 'site' && selectedKind === 'general' ? '*' : '(optional)'}
+						{isFeatureRequest
+							? 'Why feature it? (optional, only the team sees this)'
+							: `Comment ${mode === 'site' && selectedKind === 'general' ? '*' : '(optional)'}`}
 					</span>
 					<textarea
 						rows="4"

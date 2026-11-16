@@ -6,16 +6,16 @@ import subprocess
 import sys
 import threading
 from datetime import date, datetime, timedelta, timezone
-from typing import Optional
+from typing import Annotated, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Body, Depends, HTTPException, Query
 from sqlalchemy import delete, func, or_, select, update
 from sqlalchemy.orm import Session
 
 from api.auth import LoginRequest, TokenResponse, create_token, require_admin, verify_credentials
 from api.config import COMMUNITY_JOB_TTL_DAYS, MAX_COMMUNITY_JOB_DAYS, SCRAPER_DIR
 from api.database import get_db
-from api.query import listable_clause, page_envelope, paginate_params
+from api.query import featured_clause, listable_clause, page_envelope, paginate_params
 from api.schemas import (
     AdminCompanyCreate,
     AdminCompanySuggestion,
@@ -31,6 +31,7 @@ from api.schemas import (
     CompanyHealthResponse,
     CompanyHealthRow,
     CompanyHealthSummary,
+    FeedbackApproveRequest,
     FeedbackApproveResponse,
     RejectRequest,
     ScrapeLogEntry,
@@ -723,11 +724,17 @@ def _admin_job_row(job: Job, company_name: Optional[str], listable: bool) -> Adm
 FEATURE_DAYS = 30
 
 
-def feature_job(job: Job, days: int = FEATURE_DAYS, note: Optional[str] = None) -> None:
+def feature_job(job: Job, days: Optional[int] = FEATURE_DAYS, note: Optional[str] = None) -> None:
     if not job.featured:
         job.featured_at = datetime.now(timezone.utc)
-    job.featured_until = date.today() + timedelta(days=days)
+    job.featured_until = None if days is None else date.today() + timedelta(days=days)
     job.featured_note = (note or "").strip() or None
+
+
+def describe_feature(job: Job) -> str:
+    if job.featured_until is None:
+        return "featured indefinitely"
+    return f"featured until {job.featured_until}"
 
 
 def unfeature_job(job: Job) -> None:
@@ -756,7 +763,7 @@ def admin_list_jobs(
     elif show == "overridden":
         stmt = stmt.where(Job.is_audio_related_override.is_not(None))
     elif show == "featured":
-        stmt = stmt.where(Job.featured_until >= date.today())
+        stmt = stmt.where(featured_clause())
     if search:
         clauses = []
         for term in _job_search_terms(search):
@@ -810,7 +817,7 @@ def admin_set_job_featured(
     if job is None:
         raise HTTPException(status_code=404, detail="Job not found")
     if payload.featured:
-        feature_job(job, payload.days, payload.note)
+        feature_job(job, None if payload.indefinite else payload.days, payload.note)
     else:
         unfeature_job(job)
     db.flush()
@@ -819,6 +826,21 @@ def admin_set_job_featured(
     ).scalar_one()
     logger.info("admin=%s set job %s featured=%s", admin, job_id, payload.featured)
     return _admin_job_row(job, job.company.name if job.company else None, bool(listable))
+
+
+def feature_request_terms(
+    feedback: JobFeedback, payload: Optional[FeedbackApproveRequest]
+) -> tuple[Optional[int], Optional[str]]:
+    chosen = payload.model_fields_set if payload is not None else set()
+    if payload is not None and chosen & {"feature_days", "feature_indefinite"}:
+        days = None if payload.feature_indefinite else payload.feature_days or FEATURE_DAYS
+    else:
+        days = feedback.feature_days
+    if payload is not None and "feature_note" in chosen:
+        note = payload.feature_note
+    else:
+        note = feedback.feature_note
+    return days, note
 
 
 @router.get("/job-feedback")
@@ -859,6 +881,7 @@ def approve_job_feedback(
     feedback_id: int,
     db: Session = Depends(get_db),
     admin: str = Depends(require_admin),
+    payload: Annotated[Optional[FeedbackApproveRequest], Body()] = None,
 ):
     feedback = db.get(JobFeedback, feedback_id)
     if feedback is None:
@@ -887,8 +910,9 @@ def approve_job_feedback(
         applied = "taken off the board"
     elif feedback.kind == "feature_request":
         if job is not None:
-            feature_job(job, note=job.featured_note)
-            applied = f"featured until {job.featured_until}"
+            days, note = feature_request_terms(feedback, payload)
+            feature_job(job, days, note)
+            applied = describe_feature(job)
     elif feedback.kind in ("broken_description", "broken_link"):
         applied = "marked handled, no job changes"
 

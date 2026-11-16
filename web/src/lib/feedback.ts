@@ -35,6 +35,9 @@ export interface JobFeedbackRequest {
 	kind: JobFeedbackKind;
 	suggested_categories?: string[] | null;
 	comment?: string | null;
+	feature_days?: number | null;
+	feature_indefinite?: boolean;
+	feature_note?: string | null;
 	submitter_email?: string | null;
 }
 

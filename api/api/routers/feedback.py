@@ -59,6 +59,8 @@ def submit_job_feedback(
         kind=payload.kind,
         suggested_categories=payload.suggested_categories,
         comment=payload.comment,
+        feature_days=payload.feature_days,
+        feature_note=(payload.feature_note or "").strip() or None,
         submitter_email=payload.submitter_email,
         status="pending",
     )
