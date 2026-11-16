@@ -79,6 +79,9 @@ export async function submitJobFeedback(
 }
 
 export interface CompanySuggestionRequest {
+	careers_url?: string | null;
+	website_url?: string | null;
+	category?: string | null;
 	description?: string | null;
 	links?: { label: string; url: string }[] | null;
 	headquarters?: string | null;

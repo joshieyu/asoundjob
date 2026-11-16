@@ -1,6 +1,7 @@
 <script lang="ts">
 	import JobStrip from '$lib/components/JobStrip.svelte';
 	import CompanySuggestionDialog from '$lib/components/CompanySuggestionDialog.svelte';
+	import ScrapeStatus from '$lib/components/ScrapeStatus.svelte';
 
 	let { data } = $props();
 
@@ -21,8 +22,16 @@
 	</h1>
 	<p class="mt-2 text-meta font-semibold text-muted">
 		{company.category}
-		<span aria-hidden="true"> · </span>
+		<span aria-hidden="true">{' · '}</span>
 		{company.board_jobs_count} {company.board_jobs_count === 1 ? 'open role' : 'open roles'}
+	</p>
+	<p class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+		<ScrapeStatus {company} />
+		{#if company.scrape_status !== 'tracked'}
+			<button type="button" class="link text-meta font-semibold" onclick={() => (suggestOpen = true)}>
+				{company.scrape_status === 'failing' ? 'Know the right careers page?' : 'Know where they post jobs?'}
+			</button>
+		{/if}
 	</p>
 	{#if company.headquarters || company.founded}
 		<p class="mt-1 coord text-muted">
@@ -102,4 +111,10 @@
 	{/if}
 </div>
 
-<CompanySuggestionDialog slug={company.slug} companyName={company.name} bind:open={suggestOpen} />
+<CompanySuggestionDialog
+	slug={company.slug}
+	companyName={company.name}
+	current={{ careers_url: company.careers_url, website_url: company.website_url, category: company.category }}
+	categoryNames={data.categoryNames}
+	bind:open={suggestOpen}
+/>

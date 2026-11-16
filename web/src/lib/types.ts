@@ -101,6 +101,9 @@ export interface CompanyRecord {
 	community_links: CompanyLink[] | null;
 	active_jobs_count: number;
 	board_jobs_count: number;
+	scrape_status: 'tracked' | 'failing' | 'untracked';
+	last_scraped_at: string | null;
+	consecutive_failures: number;
 }
 
 export interface CompanyLink {

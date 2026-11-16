@@ -240,8 +240,19 @@ def submit_company_suggestion(
     if company is None:
         raise HTTPException(status_code=404, detail="Company not found")
 
+    category = (payload.category or "").strip() or None
+    if category is not None:
+        known = db.execute(
+            select(Company.category).where(Company.category == category).limit(1)
+        ).scalar_one_or_none()
+        if known is None:
+            raise HTTPException(status_code=422, detail="Unknown category")
+
     suggestion = CompanySuggestion(
         company_id=company.id,
+        careers_url=payload.careers_url,
+        website_url=payload.website_url,
+        category=category,
         description=(payload.description or "").strip() or None,
         links=[link.model_dump() for link in payload.links] if payload.links else None,
         headquarters=(payload.headquarters or "").strip() or None,

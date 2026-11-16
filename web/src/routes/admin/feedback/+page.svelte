@@ -45,6 +45,12 @@
 		company_id: number;
 		company_name: string | null;
 		company_slug: string | null;
+		careers_url: string | null;
+		website_url: string | null;
+		category: string | null;
+		current_careers_url: string | null;
+		current_website_url: string | null;
+		current_category: string | null;
 		description: string | null;
 		links: { label: string; url: string }[] | null;
 		headquarters: string | null;
@@ -417,6 +423,34 @@
 							</a>
 						{/if}
 					</div>
+					{#if s.careers_url || s.website_url || s.category}
+						<dl class="mt-3 max-w-3xl space-y-2 border-l-2 border-accent pl-4 text-meta">
+							{#each [
+								{ label: 'Careers page', from: s.current_careers_url, to: s.careers_url, url: true },
+								{ label: 'Website', from: s.current_website_url, to: s.website_url, url: true },
+								{ label: 'Category', from: s.current_category, to: s.category, url: false }
+							].filter((row) => row.to) as row (row.label)}
+								<div class="min-w-0">
+									<dt class="axis-label">{row.label}</dt>
+									<dd class="coord min-w-0 wrap-anywhere">
+										<span class="text-muted line-through">{row.from ?? 'none'}</span>
+										<span aria-hidden="true"> → </span>
+										{#if row.url}
+											<a href={row.to} target="_blank" rel="noopener noreferrer" class="link">{row.to}</a>
+										{:else}
+											<span class="font-semibold">{row.to}</span>
+										{/if}
+									</dd>
+								</div>
+							{/each}
+							{#if s.careers_url}
+								<p class="text-coord text-muted">
+									Approving clears the stored job-board binding so the next scrape re-detects it.
+									Open the link first, then scrape the company to confirm.
+								</p>
+							{/if}
+						</dl>
+					{/if}
 					{#if s.description}
 						<p class="mt-3 max-w-3xl text-meta leading-relaxed text-muted">{s.description}</p>
 					{/if}

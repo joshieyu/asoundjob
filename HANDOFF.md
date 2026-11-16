@@ -800,6 +800,16 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 
 ## 9. Log (newest first, keep entries short)
 
+- **2026-11-16, crowd seed edits + scrape status** — company suggestions now take a
+  careers URL, website and category (plus comment-only reports); the admin queue
+  shows current → suggested, and approving writes the seed (via `sync_company`) and
+  clears `ats_type`/`ats_slug` when the careers URL changes, so the next scrape
+  re-detects the board. Directory cards gained a suggest-edit pencil. Public company
+  responses carry `scrape_status` (`tracked` = verified, has a careers URL, last
+  scrape clean; `failing` = recent failures; `untracked` = everything else) shown on
+  company pages and cards. Migration `c8a4e2f7b915` applied to the dev DB. Counts
+  today: 387 tracked, 162 failing, 892 untracked.
+
 - **2026-11-16, feature requests on Submit a job** — submitters can ask for a feature
   (days or until filled, plus a note); admins edit or decline it in the submission
   queue. Migration `b5e3d8a1c602` applied to the dev DB.

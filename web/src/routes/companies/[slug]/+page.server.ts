@@ -1,6 +1,6 @@
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import { getCompany, SITE_URL, ApiError } from '$lib/server/api';
+import { getCompany, getCompanyCategories, SITE_URL, ApiError } from '$lib/server/api';
 
 export const load: PageServerLoad = async ({ params }) => {
 	let company;
@@ -11,9 +11,12 @@ export const load: PageServerLoad = async ({ params }) => {
 		throw err;
 	}
 
+	const categories = await getCompanyCategories().catch(() => null);
+
 	return {
 		siteUrl: SITE_URL,
 		company,
+		categoryNames: (categories?.categories ?? []).map((c) => c.name),
 		meta: {
 			title: `${company.name} | ASoundJob`,
 			description: (

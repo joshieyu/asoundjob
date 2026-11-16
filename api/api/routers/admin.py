@@ -609,7 +609,7 @@ def admin_list_company_suggestions(
 ):
     safe_page, safe_per = paginate_params(page, per_page)
     stmt = (
-        select(CompanySuggestion, Company.name, Company.slug)
+        select(CompanySuggestion, Company)
         .join(Company, CompanySuggestion.company_id == Company.id)
         .order_by(CompanySuggestion.submitted_at.desc())
     )
@@ -618,13 +618,16 @@ def admin_list_company_suggestions(
     total = db.execute(select(func.count()).select_from(stmt.subquery())).scalar_one()
     rows = db.execute(stmt.offset((safe_page - 1) * safe_per).limit(safe_per)).all()
     items = []
-    for suggestion, company_name, company_slug in rows:
+    for suggestion, company in rows:
         data = {
             column.name: getattr(suggestion, column.name)
             for column in CompanySuggestion.__table__.columns
         }
-        data["company_name"] = company_name
-        data["company_slug"] = company_slug
+        data["company_name"] = company.name
+        data["company_slug"] = company.slug
+        data["current_careers_url"] = company.careers_url
+        data["current_website_url"] = company.website_url
+        data["current_category"] = company.category
         items.append(AdminCompanySuggestion.model_validate(data))
     return page_envelope(items, int(total), safe_page, safe_per)
 
@@ -649,6 +652,17 @@ def approve_company_suggestion(
     company = db.get(Company, suggestion.company_id)
     applied: list[str] = []
     if company is not None:
+        if suggestion.careers_url and suggestion.careers_url != company.careers_url:
+            company.careers_url = suggestion.careers_url
+            company.ats_type = None
+            company.ats_slug = None
+            applied.append("careers page (job-board binding cleared, re-detected next scrape)")
+        if suggestion.website_url and suggestion.website_url != company.website_url:
+            company.website_url = suggestion.website_url
+            applied.append("website")
+        if suggestion.category and suggestion.category != company.category:
+            company.category = suggestion.category
+            applied.append("category")
         if suggestion.description:
             company.description = suggestion.description
             applied.append("description")
@@ -667,6 +681,8 @@ def approve_company_suggestion(
             applied.append("founded")
         if company.source != "manual":
             company.source = "manual"
+        db.flush()
+        _sync_seed(sync_company, company, company.name)
 
     now = datetime.now(timezone.utc)
     suggestion.status = "approved"

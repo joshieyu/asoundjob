@@ -133,6 +133,9 @@ class CompanySuggestion(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     company_id: Mapped[int] = mapped_column(ForeignKey("companies.id"), index=True)
+    careers_url: Mapped[Optional[str]] = mapped_column(Text)
+    website_url: Mapped[Optional[str]] = mapped_column(Text)
+    category: Mapped[Optional[str]] = mapped_column(Text)
     description: Mapped[Optional[str]] = mapped_column(Text)
     links: Mapped[Optional[list[dict]]] = mapped_column(LinkList)
     headquarters: Mapped[Optional[str]] = mapped_column(Text)

@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import Pagination from '$lib/components/Pagination.svelte';
+	import ScrapeStatus from '$lib/components/ScrapeStatus.svelte';
+	import CompanySuggestionDialog from '$lib/components/CompanySuggestionDialog.svelte';
 	import type { Paginated, CompanyRecord } from '$lib/types';
 
 	let { data } = $props();
@@ -9,6 +11,15 @@
 	const params = $derived(data.params as Record<string, string>);
 
 	const categoryOptions = $derived(data.categories?.categories ?? []);
+	const categoryNames = $derived(categoryOptions.map((c) => c.name));
+
+	let suggestCompany = $state<CompanyRecord | null>(null);
+	let suggestOpen = $state(false);
+
+	function openSuggest(company: CompanyRecord) {
+		suggestCompany = company;
+		suggestOpen = true;
+	}
 
 	const SORTS: [string, string][] = [
 		['board-desc', 'Most roles'],
@@ -202,6 +213,10 @@
 							{boardLabel(company.board_jobs_count)}
 						</p>
 
+						<div class="mt-2">
+							<ScrapeStatus {company} compact />
+						</div>
+
 						<div class="mt-auto flex items-center gap-2 pt-3">
 							{#if company.board_jobs_count > 0}
 								<a href="/companies/{company.slug}" class="btn btn-quiet !py-1 text-coord">
@@ -217,6 +232,15 @@
 									Careers site
 								</a>
 							{/if}
+							<button
+								type="button"
+								class="-mr-1 -mb-1 ml-auto flex h-8 w-8 shrink-0 items-center justify-center border border-transparent text-muted transition-colors hover:border-muted hover:text-ink"
+								aria-label={`Suggest an edit for ${company.name}`}
+								title="Suggest an edit (careers page, website, category…)"
+								onclick={() => openSuggest(company)}
+							>
+								<svg width="13" height="13" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M10.5 2.5l3 3L6 13H3v-3l7.5-7.5Z"/></svg>
+							</button>
 						</div>
 					</article>
 				{:else}
@@ -246,3 +270,17 @@
 		{/if}
 	</section>
 </div>
+
+{#if suggestCompany}
+	<CompanySuggestionDialog
+		slug={suggestCompany.slug}
+		companyName={suggestCompany.name}
+		current={{
+			careers_url: suggestCompany.careers_url,
+			website_url: suggestCompany.website_url,
+			category: suggestCompany.category
+		}}
+		{categoryNames}
+		bind:open={suggestOpen}
+	/>
+{/if}

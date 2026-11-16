@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import unittest
+from datetime import datetime, timezone
 
 from fastapi import HTTPException
 from pydantic import ValidationError
@@ -9,7 +10,7 @@ from sqlalchemy.orm import Session
 
 from api.routers import admin as admin_router
 from api.routers import companies as companies_router
-from api.schemas import CompanySuggestionRequest, RejectRequest
+from api.schemas import CompanyResponse, CompanySuggestionRequest, RejectRequest
 from scraper.models import Base, Company, CompanySuggestion, Job
 
 
@@ -144,7 +145,59 @@ class TestCompanySuggestions(DirectoryCase):
 
     def test_an_empty_suggestion_is_rejected(self) -> None:
         with self.assertRaises(ValidationError):
-            CompanySuggestionRequest(comment="nice company")
+            CompanySuggestionRequest(comment="   ")
+
+    def test_a_comment_alone_is_accepted(self) -> None:
+        payload = CompanySuggestionRequest(comment="This company closed in 2025.")
+        self.assertEqual(payload.comment, "This company closed in 2025.")
+
+    def test_a_careers_url_must_be_http(self) -> None:
+        with self.assertRaises(ValidationError):
+            CompanySuggestionRequest(careers_url="ftp://example.com/jobs")
+
+    def test_an_unknown_category_is_refused(self) -> None:
+        self.add_company("Acme Audio", "acme-audio", "Audio Software")
+        payload = CompanySuggestionRequest(category="Made Up Category")
+        with self.assertRaises(HTTPException) as caught:
+            companies_router.submit_company_suggestion(
+                "acme-audio", payload, FakeRequest(), self.session
+            )
+        self.assertEqual(caught.exception.status_code, 422)
+
+    def test_approving_seed_fields_updates_the_company(self) -> None:
+        company = self.add_company("Acme Audio", "acme-audio", "Audio Software")
+        self.add_company("Other", "other", "Pro Audio")
+        company.careers_url = "https://boards.greenhouse.io/acme"
+        company.ats_type = "greenhouse"
+        company.ats_slug = "acme"
+        self.session.flush()
+        suggestion = self._submit(
+            company,
+            careers_url="https://jobs.lever.co/acme",
+            website_url="https://acme.audio",
+            category="Pro Audio",
+        )
+        result = admin_router.approve_company_suggestion(suggestion.id, self.session, "admin")
+        self.session.refresh(company)
+        self.assertEqual(company.careers_url, "https://jobs.lever.co/acme")
+        self.assertIsNone(company.ats_type)
+        self.assertIsNone(company.ats_slug)
+        self.assertEqual(company.website_url, "https://acme.audio")
+        self.assertEqual(company.category, "Pro Audio")
+        self.assertEqual(company.source, "manual")
+        self.assertIn("careers page", result.applied)
+
+    def test_admin_list_shows_current_values_beside_suggested(self) -> None:
+        company = self.add_company("Acme Audio", "acme-audio", "Audio Software")
+        company.careers_url = "https://old.example.com/jobs"
+        self.session.flush()
+        self._submit(company, careers_url="https://new.example.com/jobs")
+        result = admin_router.admin_list_company_suggestions(
+            status="pending", page=1, per_page=25, db=self.session, _="admin"
+        )
+        row = result["items"][0]
+        self.assertEqual(row.careers_url, "https://new.example.com/jobs")
+        self.assertEqual(row.current_careers_url, "https://old.example.com/jobs")
 
     def test_a_link_must_be_http(self) -> None:
         with self.assertRaises(ValidationError):
@@ -232,6 +285,36 @@ class TestCompanySuggestions(DirectoryCase):
         with self.assertRaises(HTTPException) as caught:
             admin_router.approve_company_suggestion(suggestion.id, self.session, "admin")
         self.assertEqual(caught.exception.status_code, 409)
+
+
+class TestScrapeStatus(unittest.TestCase):
+    def status(self, **fields) -> str:
+        base = {
+            "id": 1,
+            "name": "Acme",
+            "slug": "acme",
+            "category": "Audio Software",
+            "careers_url": "https://acme.audio/jobs",
+            "verified": True,
+            "source": "auto",
+            "created_at": datetime.now(timezone.utc),
+            "last_scraped_at": datetime.now(timezone.utc),
+            **fields,
+        }
+        return CompanyResponse.model_validate(base).scrape_status
+
+    def test_a_recent_clean_scrape_is_tracked(self) -> None:
+        self.assertEqual(self.status(), "tracked")
+
+    def test_recent_failures_are_failing(self) -> None:
+        self.assertEqual(self.status(consecutive_failures=2), "failing")
+
+    def test_unverified_blocked_or_never_scraped_is_untracked(self) -> None:
+        self.assertEqual(self.status(verified=False), "untracked")
+        self.assertEqual(self.status(scrape_blocked=True), "untracked")
+        self.assertEqual(self.status(open_application=True), "untracked")
+        self.assertEqual(self.status(careers_url=None), "untracked")
+        self.assertEqual(self.status(last_scraped_at=None), "untracked")
 
 
 if __name__ == "__main__":

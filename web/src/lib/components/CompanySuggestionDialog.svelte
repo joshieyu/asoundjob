@@ -4,14 +4,21 @@
 	let {
 		slug,
 		companyName,
+		current = { careers_url: null, website_url: null, category: '' },
+		categoryNames = [],
 		open = $bindable(false)
 	}: {
 		slug: string;
 		companyName: string;
+		current?: { careers_url: string | null; website_url: string | null; category: string };
+		categoryNames?: string[];
 		open?: boolean;
 	} = $props();
 
 	let dialogEl: HTMLDialogElement | undefined = $state();
+	let careersUrl = $state('');
+	let websiteUrl = $state('');
+	let category = $state('');
 	let description = $state('');
 	let headquarters = $state('');
 	let founded: number | undefined = $state(undefined);
@@ -23,6 +30,9 @@
 	$effect(() => {
 		if (!dialogEl) return;
 		if (open && !dialogEl.open) {
+			careersUrl = '';
+			websiteUrl = '';
+			category = '';
 			description = '';
 			headquarters = '';
 			founded = undefined;
@@ -59,6 +69,10 @@
 	const canSubmit = $derived.by(() => {
 		if (feedbackState.kind === 'submitting') return false;
 		return (
+			careersUrl.trim().length > 0 ||
+			websiteUrl.trim().length > 0 ||
+			category.length > 0 ||
+			comment.trim().length > 0 ||
 			description.trim().length > 0 ||
 			headquarters.trim().length > 0 ||
 			founded !== undefined ||
@@ -71,6 +85,9 @@
 		if (!canSubmit) return;
 		feedbackState = { kind: 'submitting' };
 		feedbackState = await submitCompanySuggestion(slug, {
+			careers_url: careersUrl.trim() || null,
+			website_url: websiteUrl.trim() || null,
+			category: category || null,
 			description: description.trim() || null,
 			links:
 				completeLinks.length > 0
@@ -128,6 +145,51 @@
 					<p class="border border-ink bg-ground-tint p-3 text-meta font-semibold" role="alert">
 						{feedbackState.message}
 					</p>
+				{/if}
+
+				<p class="text-meta text-muted">
+					Fill in only what's wrong or missing. A moderator checks every suggestion.
+				</p>
+
+				<label class="block">
+					<span class="axis-label mb-2 block">Careers page</span>
+					<input
+						type="url"
+						maxlength="1000"
+						bind:value={careersUrl}
+						class="field coord"
+						placeholder="https://…"
+					/>
+					<span class="mt-1 block text-coord text-muted wrap-anywhere">
+						The page that lists their open roles; this is what we scrape.
+						{current.careers_url ? `Now: ${current.careers_url}` : 'None on file yet.'}
+					</span>
+				</label>
+
+				<label class="block">
+					<span class="axis-label mb-2 block">Website</span>
+					<input
+						type="url"
+						maxlength="1000"
+						bind:value={websiteUrl}
+						class="field coord"
+						placeholder="https://…"
+					/>
+					{#if current.website_url}
+						<span class="mt-1 block text-coord text-muted wrap-anywhere">Now: {current.website_url}</span>
+					{/if}
+				</label>
+
+				{#if categoryNames.length > 0}
+					<label class="block">
+						<span class="axis-label mb-2 block">Category</span>
+						<select bind:value={category} class="field">
+							<option value="">Keep “{current.category}”</option>
+							{#each categoryNames.filter((name) => name !== current.category) as name (name)}
+								<option value={name}>{name}</option>
+							{/each}
+						</select>
+					</label>
 				{/if}
 
 				<label class="block">
@@ -200,13 +262,13 @@
 				</fieldset>
 
 				<label class="block">
-					<span class="axis-label mb-2 block">Comment (optional)</span>
+					<span class="axis-label mb-2 block">Comment</span>
 					<textarea
 						rows="3"
 						maxlength="2000"
 						bind:value={comment}
 						class="field"
-						placeholder="Anything else we should know?"
+						placeholder="Closed down, renamed, not an audio company, anything else…"
 					></textarea>
 				</label>
 

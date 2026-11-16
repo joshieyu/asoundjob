@@ -1,10 +1,17 @@
 from __future__ import annotations
 
 import re
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    computed_field,
+    field_validator,
+    model_validator,
+)
 
 from api.config import MAX_COMMUNITY_JOB_DAYS
 
@@ -121,6 +128,32 @@ class CompanyResponse(BaseModel):
     community_links: Optional[list[CompanyLink]] = None
     active_jobs_count: int = 0
     board_jobs_count: int = 0
+    scrape_blocked: bool = False
+    open_application: bool = False
+    consecutive_failures: int = 0
+    last_scraped_at: Optional[datetime] = None
+
+    @field_validator("last_scraped_at")
+    @classmethod
+    def last_scraped_at_is_utc(cls, value: Optional[datetime]) -> Optional[datetime]:
+        if value is not None and value.tzinfo is None:
+            return value.replace(tzinfo=timezone.utc)
+        return value
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def scrape_status(self) -> str:
+        if (
+            not self.verified
+            or self.scrape_blocked
+            or self.open_application
+            or not self.careers_url
+            or self.last_scraped_at is None
+        ):
+            return "untracked"
+        if self.consecutive_failures > 0:
+            return "failing"
+        return "tracked"
 
 
 class CompanyCategoryInfo(BaseModel):
@@ -135,6 +168,9 @@ class CompanyCategoriesResponse(BaseModel):
 
 
 class CompanySuggestionRequest(BaseModel):
+    careers_url: Optional[str] = Field(default=None, max_length=1000)
+    website_url: Optional[str] = Field(default=None, max_length=1000)
+    category: Optional[str] = Field(default=None, max_length=100)
     description: Optional[str] = Field(default=None, max_length=2000)
     links: Optional[list[CompanyLink]] = Field(default=None, max_length=10)
     headquarters: Optional[str] = Field(default=None, max_length=200)
@@ -149,14 +185,31 @@ class CompanySuggestionRequest(BaseModel):
             raise ValueError("invalid email address")
         return value
 
+    @field_validator("careers_url", "website_url")
+    @classmethod
+    def urls_must_be_http(cls, value: Optional[str]) -> Optional[str]:
+        if value is None or not value.strip():
+            return None
+        if not re.match(r"^https?://", value.strip()):
+            raise ValueError("url must start with http:// or https://")
+        return value.strip()
+
     @model_validator(mode="after")
     def must_suggest_something(self) -> CompanySuggestionRequest:
         has_description = bool(self.description and self.description.strip())
-        has_links = bool(self.links)
-        if not (has_description or has_links or self.headquarters or self.founded):
-            raise ValueError(
-                "a suggestion needs a description, a link, a headquarters or a founded year"
-            )
+        has_category = bool(self.category and self.category.strip())
+        has_comment = bool(self.comment and self.comment.strip())
+        if not (
+            self.careers_url
+            or self.website_url
+            or has_category
+            or has_description
+            or self.links
+            or self.headquarters
+            or self.founded
+            or has_comment
+        ):
+            raise ValueError("a suggestion needs at least one change or a comment")
         return self
 
 
@@ -167,6 +220,12 @@ class AdminCompanySuggestion(BaseModel):
     company_id: int
     company_name: Optional[str] = None
     company_slug: Optional[str] = None
+    careers_url: Optional[str] = None
+    website_url: Optional[str] = None
+    category: Optional[str] = None
+    current_careers_url: Optional[str] = None
+    current_website_url: Optional[str] = None
+    current_category: Optional[str] = None
     description: Optional[str] = None
     links: Optional[list[CompanyLink]] = None
     headquarters: Optional[str] = None
