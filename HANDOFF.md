@@ -452,7 +452,7 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 ### Before launch
 - Done 2026-11-16: deploy artifacts are in `deploy/` (Caddyfile, systemd services
   and timers for the API, website, nightly scrape, backups and the company-list
-  push, `update.sh`), with every step in `DEPLOY.md`. Not yet run on a real server.
+  push, `update.sh`), with every step in `DEPLOY.md`. Live since 2026-11-16.
 - Done 2026-11-12: the web app builds with `@sveltejs/adapter-node` 5.5.7 (6.x
   needs SvelteKit 3) — `node web/build`, set `ORIGIN`; and rate limits key on
   `client_ip()`, which trusts `X-Forwarded-For` only from `TRUSTED_PROXIES`
@@ -800,6 +800,15 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   `resolve_database_url`, so running from `scraper/` is fine).
 
 ## 9. Log (newest first, keep entries short)
+
+- **2026-11-16, launched at https://asoundjob.com** — Hetzner Cloud, Helsinki, 4 GB
+  x86, Ubuntu 24.04, set up exactly per `DEPLOY.md` (no deviations needed). The dev
+  database was copied up (1,441 companies), so production starts with the same
+  featured job, pins and history. The nightly scrape runs at 03:00 New York time;
+  test scrapes over a job-board API (Cirrus Logic) and the headless browser (Sandy
+  Brown Associates) both succeeded from the server. **From now on the live
+  database is the real one**; the local `asoundjob.db` is a stale copy for
+  development, and production changes ship with `deploy/update.sh`.
 
 - **2026-11-16, deploy prep** — `deploy/` and `DEPLOY.md` (systemd + Caddy + SQLite,
   no Docker). SQLite now runs in WAL mode with a 30 s busy timeout
