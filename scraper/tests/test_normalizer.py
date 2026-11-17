@@ -309,6 +309,38 @@ class TestCategories(unittest.TestCase):
         self.assertEqual(cats, ["transducers"])
 
 
+class TestGameStudioAudioRoles(unittest.TestCase):
+    GAMING = "Gaming, VR & Immersive Audio"
+
+    def test_sound_designer_at_a_game_studio_is_game_audio(self) -> None:
+        cats = classify_categories("Lead Sound Designer", None, self.GAMING)
+        self.assertIn("game_audio_interactive", cats)
+        self.assertIn("sound_design", cats)
+
+    def test_audio_programmer_keeps_software_and_gains_game_audio(self) -> None:
+        cats = classify_categories("Senior Software Engineer, Audio Engine", None, self.GAMING)
+        self.assertIn("game_audio_interactive", cats)
+        self.assertIn("audio_software", cats)
+        self.assertLessEqual(len(cats), 3)
+
+    def test_dialogue_role_with_no_keyword_category_is_game_audio(self) -> None:
+        self.assertEqual(
+            classify_categories("Dialogue Intern", None, self.GAMING), ["game_audio_interactive"]
+        )
+
+    def test_non_audio_role_at_a_game_studio_is_untouched(self) -> None:
+        self.assertNotIn(
+            "game_audio_interactive",
+            classify_categories("Environment Artist", None, self.GAMING),
+        )
+
+    def test_sound_designer_elsewhere_is_not_game_audio(self) -> None:
+        self.assertNotIn(
+            "game_audio_interactive",
+            classify_categories("Lead Sound Designer", None, "Recording Studios & Post Houses"),
+        )
+
+
 class TestCompanyCategoryFallback(unittest.TestCase):
     def test_firmware_engineer_at_pro_audio_company(self) -> None:
         cats = classify_categories(

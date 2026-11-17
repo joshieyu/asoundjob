@@ -1518,9 +1518,23 @@ def classify_categories(
     )
     top = ranked[:3]
     result = sorted(category_id for category_id, _ in top)
+    if is_game_studio_audio_role(title, company_category) and GAME_AUDIO not in result:
+        return sorted([category_id for category_id, _ in ranked[:2]] + [GAME_AUDIO])
     if result:
         return result
     return _company_fallback_categories(title, company_category)
+
+
+GAME_AUDIO = "game_audio_interactive"
+GAME_STUDIO_CATEGORIES = frozenset({"Gaming, VR & Immersive Audio"})
+GAME_AUDIO_TITLE = re.compile(
+    r"\b(?:audio|sound|music|composer|foley|dialogue|voice[- ]?over|wwise|fmod)\b",
+    re.IGNORECASE,
+)
+
+
+def is_game_studio_audio_role(title: str, company_category: str | None) -> bool:
+    return company_category in GAME_STUDIO_CATEGORIES and bool(GAME_AUDIO_TITLE.search(title))
 
 
 SOFTWARE_TITLE_RE = re.compile(
