@@ -537,6 +537,39 @@ class TestRemote(unittest.TestCase):
             detect_remote("New York, NY", "Engineer", "This role is fully remote.")
         )
 
+    def test_description_role_statements(self) -> None:
+        for text in (
+            "<p>This role is remote, reporting to our Niles, IL HQ office.</p>",
+            "This is a remote position, with candidates located near Seattle.",
+            "Location: Remote, United States",
+            "FLSA Classification: Exempt Location: Dublin, OH or Remote",
+            "US-remote field-based role with travel up to 60%",
+            "This position is open to remote-based work.",
+        ):
+            with self.subTest(text=text):
+                self.assertTrue(detect_remote("Somewhere", "Engineer", text))
+
+    def test_description_mentions_that_are_not_the_role(self) -> None:
+        for text in (
+            "This position requires on-site presence five (5) days per week. "
+            "Remote or hybrid arrangements are not available for this role.",
+            "Please note: This is not a remote role. This is a hybrid position.",
+            "We offer internships with a variety of work arrangements from "
+            "onsite interns to fully remote in US.",
+            "Provide remote technical support to factory engineers overseas.",
+            "You will remotely support customers across ANZ.",
+            "Audio for broadcasts at various Apple facilities and remote locations.",
+            "Office-based, with flexibility to work from home.",
+            "Hybrid (3 days onsite, 2 days remote).",
+        ):
+            with self.subTest(text=text):
+                self.assertFalse(detect_remote("Somewhere", "Engineer", text))
+
+    def test_remote_as_a_noun_in_a_title_is_not_remote(self) -> None:
+        self.assertFalse(
+            detect_remote("Redmond", "Software Engineer - Remote Desktop Protocol", None)
+        )
+
 
 class TestNormalizerPipeline(unittest.TestCase):
     def test_normalize_full(self) -> None:

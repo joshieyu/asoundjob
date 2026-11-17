@@ -762,6 +762,26 @@ REMOTE_PATTERNS = re.compile(
     re.IGNORECASE,
 )
 
+REMOTE_NOUN = re.compile(
+    r"\bremote[- ](?:desktop|control|sensing|monitoring|pilot|support|access)\b",
+    re.IGNORECASE,
+)
+
+REMOTE_ROLE_DESCRIPTION = re.compile(
+    r"\b(?:fully|100%|us|u\.s\.)[- ]?remote\b"
+    r"|\bremote[- ](?:role|position|job|opportunity|based|first)\b"
+    r"|\bremote (?:within|anywhere|in the us|in the u\.s)"
+    r"|\b(?:location|based|work location)\s*:\s*remote\b"
+    r"|\bor remote\b"
+    r"|\bremote\s*(?:,|[-\u2013\u2014])\s*(?:united|us\b|usa\b)"
+    r"|\b(?:role|position|job) (?:is|can be|will be) (?:a )?(?:fully )?remote\b"
+    r"|\bopen to remote\b"
+    r"|\btelecommut",
+    re.IGNORECASE,
+)
+
+REMOTE_NEGATION = re.compile(r"\b(?:not|no|never|variety)\b", re.IGNORECASE)
+
 AUDIO_TITLE_STRONG = re.compile(
     r"\b(audio|sound|acoustic(?:s|al)?|dsp|signal processing|transducer|loudspeaker|"
     r"microphone|hearing aid|audiolog\w*|audiologist|live sound|foh|"
@@ -1635,11 +1655,19 @@ def detect_remote(
     location: str | None, title: str, description: str | None
 ) -> bool:
     for candidate in (location, title):
-        if candidate and REMOTE_PATTERNS.search(candidate):
+        if candidate and REMOTE_PATTERNS.search(REMOTE_NOUN.sub(" ", candidate)):
             return True
     if description:
-        head = description[:1500].lower()
-        if REMOTE_PATTERNS.search(head):
+        return describes_remote_role(description[:3000])
+    return False
+
+
+def describes_remote_role(description: str) -> bool:
+    text = re.sub(r"\s+", " ", re.sub(r"<[^>]+>|&nbsp;", " ", description))
+    for match in REMOTE_ROLE_DESCRIPTION.finditer(text):
+        sentence_start = max(text.rfind(". ", 0, match.start()), 0)
+        sentence = text[sentence_start:match.end() + 60]
+        if not REMOTE_NEGATION.search(sentence):
             return True
     return False
 
