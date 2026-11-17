@@ -1930,7 +1930,9 @@
     "category": "Gaming, VR & Immersive Audio",
     "verified": true,
     "source": "manual",
-    "scrape_method": "http"
+    "scrape_method": "http",
+    "ats_type": "greenhouse",
+    "ats_slug": "bungie"
   },
   {
     "name": "Burl Audio",
