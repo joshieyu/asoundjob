@@ -561,6 +561,7 @@ class TestRemote(unittest.TestCase):
             "Audio for broadcasts at various Apple facilities and remote locations.",
             "Office-based, with flexibility to work from home.",
             "Hybrid (3 days onsite, 2 days remote).",
+            "Attend and approve final mastering QCs (on site or remote).",
         ):
             with self.subTest(text=text):
                 self.assertFalse(detect_remote("Somewhere", "Engineer", text))

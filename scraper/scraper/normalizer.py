@@ -772,7 +772,7 @@ REMOTE_ROLE_DESCRIPTION = re.compile(
     r"|\bremote[- ](?:role|position|job|opportunity|based|first)\b"
     r"|\bremote (?:within|anywhere|in the us|in the u\.s)"
     r"|\b(?:location|based|work location)\s*:\s*remote\b"
-    r"|\bor remote\b"
+    r"|(?<!site )(?<!person )\bor remote\b"
     r"|\bremote\s*(?:,|[-\u2013\u2014])\s*(?:united|us\b|usa\b)"
     r"|\b(?:role|position|job) (?:is|can be|will be) (?:a )?(?:fully )?remote\b"
     r"|\bopen to remote\b"
