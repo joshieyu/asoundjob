@@ -343,6 +343,35 @@ class TestTalentPoolTitles(unittest.TestCase):
         self.assertTrue(related)
 
 
+class TestShiftWorkDspTitles(unittest.TestCase):
+    WAREHOUSE = "The Turret Driver loads freight. Ensure all DSP production lines are set up."
+
+    def test_warehouse_dsp_shift_titles_are_not_audio(self) -> None:
+        for title in (
+            "DSP Team Lead (1st Shift)",
+            "Turret Driver/Dock Operator - DSP (1st Shift)",
+        ):
+            self.assertEqual(
+                score_relevance(title, self.WAREHOUSE, ["dsp_embedded"], "partial"), (0, False)
+            )
+
+    def test_audio_titles_on_a_shift_still_score(self) -> None:
+        score, related = score_relevance(
+            "Audio DSP Test Technician (2nd Shift)",
+            "Test audio DSP boards and loudspeaker drivers.",
+            ["dsp_embedded"],
+            "native",
+        )
+        self.assertTrue(related)
+        self.assertGreater(score, 0)
+
+    def test_dsp_title_without_a_shift_is_unchanged(self) -> None:
+        _, related = score_relevance(
+            "Senior DSP Engineer", "Design audio DSP algorithms.", ["dsp_embedded"], "native"
+        )
+        self.assertTrue(related)
+
+
 class TestClinicalHearingTitles(unittest.TestCase):
     def test_beltone_hearing_care_professional_is_dispensing_not_audio(self) -> None:
         """Beltone posts this exact title 31 times on the board; it is

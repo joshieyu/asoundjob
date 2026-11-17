@@ -802,6 +802,14 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 
 ## 9. Log (newest first, keep entries short)
 
+- **2026-11-17, scope fixes for big generalist companies** — Logitech, Razer, Rohde & Schwarz,
+  Northrop Grumman and Lockheed Martin set to `partial` (now manual) through `admin_update_company`.
+  Under `native` every generic engineering job got the +10 native bonus and landed on exactly 45,
+  the cutoff: board went 29→4, 13→3, 6→1, 19→7, 9→8. Hearing-aid makers (Sivantos etc.) stay
+  `native` on purpose: their hardware roles build hearing aids. New `is_shift_work_dsp_title` drops
+  Bosch's West Memphis warehouse "DSP (1st Shift)" jobs, where DSP is a department. To find more
+  of these, rank `native` companies by active jobs and preview them as `partial` before switching.
+
 - **2026-11-16, Stantec scrape fixed** — had failed 33 cycles on its marketing careers page. New
   `jobsyn` parser for DirectEmployers .jobs sites (see §7 Stantec). Brings in the Acoustics Intern
   (Summer 2027) the owner found, plus the acoustical consultant, designer and noise analyst roles.

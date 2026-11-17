@@ -858,6 +858,28 @@ def is_clinical_hearing_title(title: str) -> bool:
         title
     )
 
+SHIFT_WORK_TITLE = re.compile(
+    r"\b(?:1st|2nd|3rd|first|second|third|night|weekend)\s+shift\b", re.IGNORECASE
+)
+
+DSP_WORD = re.compile(r"\bdsp\b", re.IGNORECASE)
+
+
+def is_shift_work_dsp_title(title: str) -> bool:
+    if not SHIFT_WORK_TITLE.search(title) or not DSP_WORD.search(title):
+        return False
+    rest = DSP_WORD.sub(" ", title)
+    return not any(
+        pattern.search(rest)
+        for pattern in (
+            AUDIO_TITLE_STRONG,
+            AUDIO_TITLE_STRONG_INTL,
+            AUDIO_TITLE_WEAK,
+            AUDIO_TITLE_WEAK_INTL,
+        )
+    )
+
+
 NEGATIVE_SIGNALS = re.compile(
     r"(architect of record|interior design|building design|k-12 education|"
     r"higher education studio|entertainment release|linear channel)",
@@ -1075,6 +1097,9 @@ def score_relevance(
         return 0, False
 
     if is_clinical_hearing_title(title):
+        return 0, False
+
+    if is_shift_work_dsp_title(title):
         return 0, False
 
     score = 0
