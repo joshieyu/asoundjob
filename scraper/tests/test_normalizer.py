@@ -341,6 +341,34 @@ class TestGameStudioAudioRoles(unittest.TestCase):
         )
 
 
+class TestLiveVenueAudioRoles(unittest.TestCase):
+    VENUE_DESCRIPTION = (
+        "<p>Live Nation Concerts promotes shows worldwide.</p>"
+        "<p>Responsible for ensuring the success of show and event productions. "
+        "Oversee and operate systems pertaining to audio throughout the entire venue.</p>"
+        "<p>3 years minimum Tour and Stage Production experience. "
+        "Experience in pro audio systems, stage lighting and basic video systems.</p>"
+        "<p>EQUAL EMPLOYMENT OPPORTUNITY We aspire to build teams that reflect the fans we serve. "
+        + "We consider applicants consistent with the requirements of the local ordinances. " * 3
+        + "</p>"
+    )
+
+    def test_venue_audio_engineer_is_live_sound(self) -> None:
+        self.assertIn(
+            "live_sound_events",
+            classify_categories("Audio Engineer- Gramercy", self.VENUE_DESCRIPTION),
+        )
+
+    def test_role_text_skips_markers_inside_the_eeo_statement(self) -> None:
+        role = extract_role_text(self.VENUE_DESCRIPTION)
+        self.assertIn("Stage Production", role)
+        self.assertTrue(role.startswith("Responsible for ensuring"))
+
+    def test_house_and_head_audio_titles(self) -> None:
+        self.assertIn("live_sound_events", classify_categories("House Audio Engineer - A1", None))
+        self.assertIn("live_sound_events", classify_categories("Head Audio - IATSE 471", None))
+
+
 class TestCompanyCategoryFallback(unittest.TestCase):
     def test_firmware_engineer_at_pro_audio_company(self) -> None:
         cats = classify_categories(

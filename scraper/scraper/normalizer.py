@@ -458,11 +458,24 @@ CATEGORY_KEYWORDS: dict[str, dict[str, tuple[str, ...]]] = {
             "broadcast audio",
             "live audio engineer",
             "stage audio",
+            "house audio",
+            "head audio",
+            "front-of-house",
+            "foh",
+            "stage production",
+            "show production",
+            "live event",
+            "monitor mix",
+            "festival",
+            "load-in",
         ),
         "weak": (
             "rigging",
             "event av",
             "touring",
+            "venue",
+            "concert",
+            "stage",
         ),
     },
     "nvh": {
@@ -1022,9 +1035,12 @@ ROLE_START_MARKERS: tuple[str, ...] = (
     "duties",
 )
 
+EEO_STATEMENT = "equal employment opportunit"
+
 TRAILING_BOILERPLATE_MARKERS: tuple[str, ...] = (
     "equal opportunity employer",
     "we are an equal",
+    EEO_STATEMENT,
     "eeo",
     "benefits include",
     "our benefits",
@@ -1058,20 +1074,24 @@ def clean_description(raw: str | None) -> Optional[str]:
     return text or None
 
 
-def _strip_trailing_boilerplate(text: str) -> str:
-    length = len(text)
-    if length == 0:
-        return text
-    zone_start = int(length * 0.6)
+def _role_markers_end(lowered: str) -> int:
+    eeo = lowered.find(EEO_STATEMENT, int(len(lowered) * 0.3))
+    return eeo if eeo != -1 else len(lowered)
+
+
+def _boilerplate_start(text: str) -> int:
+    zone_start = int(len(text) * 0.6)
     lowered = text.lower()
-    cut_at: Optional[int] = None
+    cut_at = len(text)
     for marker in TRAILING_BOILERPLATE_MARKERS:
         idx = lowered.find(marker, zone_start)
-        if idx != -1 and (cut_at is None or idx < cut_at):
+        if idx != -1 and idx < cut_at:
             cut_at = idx
-    if cut_at is not None:
-        return text[:cut_at].rstrip()
-    return text
+    return cut_at
+
+
+def _strip_trailing_boilerplate(text: str) -> str:
+    return text[:_boilerplate_start(text)].rstrip()
 
 
 def extract_role_text(description: str | None) -> str:
@@ -1082,9 +1102,10 @@ def extract_role_text(description: str | None) -> str:
     normalized = cleaned.replace("’", "'").replace("‘", "'")
     lowered = normalized.lower()
 
+    body_end = min(_boilerplate_start(cleaned), _role_markers_end(lowered))
     marker_idx: Optional[int] = None
     for marker in ROLE_START_MARKERS:
-        pos = lowered.find(marker)
+        pos = lowered.find(marker, 0, body_end)
         if pos != -1 and (marker_idx is None or pos < marker_idx):
             marker_idx = pos
 
