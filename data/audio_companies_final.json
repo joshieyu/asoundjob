@@ -204,8 +204,10 @@
     "careers_url": "https://xboxgaming.wd1.myworkdayjobs.com/External",
     "category": "Gaming, VR & Immersive Audio",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "http"
+    "source": "manual",
+    "scrape_method": "http",
+    "ats_type": "workday",
+    "ats_slug": "xboxgaming.wd1/External"
   },
   {
     "name": "Actran (MSC Software)",
@@ -3124,7 +3126,7 @@
     "careers_url": "https://www.disneycareers.com/en/search-jobs/audio/",
     "category": "Recording Studios & Post Houses",
     "verified": true,
-    "source": "auto",
+    "source": "manual",
     "scrape_method": "http",
     "extra_careers_urls": [
       "https://www.disneycareers.com/en/search-jobs/sound/",
@@ -5894,7 +5896,7 @@
     "careers_url": "https://jobs.ashbyhq.com/liquid-ai",
     "category": "AI/ML Audio",
     "verified": true,
-    "source": "auto",
+    "source": "manual",
     "scrape_method": "http"
   },
   {
@@ -7738,7 +7740,7 @@
     "careers_url": "https://psu.wd1.myworkdayjobs.com/PSU_Staff?q=signal+processing",
     "category": "Acoustic Consulting & Engineering",
     "verified": true,
-    "source": "auto",
+    "source": "manual",
     "scrape_method": "http",
     "extra_careers_urls": [
       "https://psu.wd1.myworkdayjobs.com/PSU_Staff?q=audio",
@@ -10740,7 +10742,7 @@
     "careers_url": "https://jobs.twilio.com/careers?start=0&pid=1099555572151&sort_by=timestamp",
     "category": "Voice & Speech Technology",
     "verified": true,
-    "source": "auto",
+    "source": "manual",
     "scrape_method": "playwright",
     "ats_type": "eightfold",
     "ats_slug": "twilio.com"
@@ -10929,7 +10931,7 @@
     "careers_url": "https://utaustin.wd1.myworkdayjobs.com/UTstaff?q=acoustics",
     "category": "Acoustic Consulting & Engineering",
     "verified": true,
-    "source": "auto",
+    "source": "manual",
     "scrape_method": "http",
     "extra_careers_urls": [
       "https://utaustin.wd1.myworkdayjobs.com/UTstaff?q=sonar",
