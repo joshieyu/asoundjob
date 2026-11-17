@@ -163,8 +163,8 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 - **`ats_type` is a routing cache, not the mechanism** — every parser also matches
   on URL shape.
 - ATS parsers (`scrapers/ats/`): adp (Workforce Now only), amazon, apple, ashby,
-  bamboohr, eightfold, gibson, greenhouse, haileyhr, icims, jibe, jobsyn, lever,
-  pinpoint, recruitee, sigma, smartrecruiters, successfactors, ultipro, workable, workday.
+  awsm (WP Job Openings), bamboohr, eightfold, gibson, greenhouse, haileyhr, icims, jibe,
+  jobsyn, lever, pinpoint, recruitee, sigma, smartrecruiters, successfactors, ultipro, workable, workday.
 - ATS results are `trust_empty` (empty means no jobs); generic results never are.
   If a dedicated parser claimed a board and failed, the fallback result is
   `partial` so it cannot deactivate what it did not see.
@@ -749,6 +749,7 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 | Harman | Several `extra_careers_urls` queries; no Avature parser needed. |
 | HP IQ | Added 2026-11-12 (owner). HP's AI/Poly unit, separate from HP Inc.'s Eightfold site: its `hp-iq.com/join-us/<id>?board=hp` pages are the Greenhouse board `hp` (bound `greenhouse`/`hp`). 26 jobs, 3 board rows (Senior Acoustic Engineer, Audio Hardware Engineer, Senior Audio Software Development Engineer); the rest are agentic-AI and Poly firmware roles. |
 | **Knowles Corporation** | ADP **MyJobs**, which the `adp` parser (Workforce Now) does not speak. **Do not build a MyJobs parser:** Knowles yields 0 audio jobs even at native scope, and the only other MyJobs company is Switchcraft (whose URL is HEICO's). The API recipe is in the old log (`DO NOT REPEAT: Knowles`). It has no stored ATS binding; 404s against Workforce Now are discovery guesses. |
+| IAG (International Audio Group) | Added 2026-11-17 (owner). Parent of Wharfedale, Quad, Audiolab, Mission, Leak, Castle, Luxman and Wharfedale Pro; every brand posts on `iaggroup.com/jobs/` (WordPress "WP Job Openings" plugin). `scrapers/ats/awsm.py` reads `/wp-json/wp/v2/awsm_job_openings`; location and employment type come from `class_list` slugs (`location-*`, `employment-type-*`). The brands' `/jobs/current-vacancies/` URL was an empty page, so Audiolab, Quad Electronics and Wharfedale are now `verified: false`. |
 | Laran | Added 2026-11-10 (owner). Custom page, http; titles carried "→ Los Angeles, ITAR-Eligible", stripped by `ARROW_SUFFIX_RE`. 3 jobs, all on the board (two founding roles at the 45 line). |
 | Lockheed Martin | Added 2026-11-14 (owner). Eightfold `lockheedmartin.eightfold.ai`, `ats_slug` `lockheedmartin.com` (the host's own domain is eightfold.ai), scoped like Northrop: `?query=acoustic` + `?query=sonar`. 67 jobs, 7 board rows (Sonar/Acoustic Engineer, Acoustics Mechanical lead, signal-processing roles). |
 | Meta | Repointed 2026-11-08 (owner-requested, `source: manual`): `metacareers.com/jobsearch/?q=audio` + extra `?q=sound`. The pager is JS buttons, so it was read one page deep for months (14 rows, 10 on the board, of 75 audio results). `PAGE_PARAM_HOSTS` in `pagination.py` now walks `?page=N` until a page brings no new jobs; titles come from the card `<h3>` (`INNER_HEADING_TITLE_HOSTS`). 103 rows, 21 on the board. "Project Manager, Organic Content Integrity Operations - Speech Problems" scores on and is not audio work. 400s on job links are bot defence, whitelisted in `check_links`. See the rate-limit trap in §6. |
@@ -785,6 +786,7 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 | Waymo | Search param is `query`; alphabetical pagination needs several narrow queries. |
 | Wienburg | Added 2026-11-12 (owner). Düsseldorf real-time audio for defence/security, "redefining hearing in critical scenarios" — Hearing Aid & Hearing Tech (owner's call; was Headphones); one-page jobs list at `wienburg.io/jobs/`. Its "View posting" button carries screen-reader text ": Founding Engineer", which was the longest link text and won the title until `CTA_PREFIX_RE` (§4.2). The "Download PDF · 3 pages" link is stored but scores 0. |
 | Zoom | `careers.zoom.us/jobs/search` dead since 2026-09-29; its 60 jobs were deactivated by a navigation-only scrape (§5). Needs a new URL. |
+| Zoom | Repointed 2026-11-17 (owner) from `careers.zoom.us/jobs/search` (found 2 stray rows) to Workday `zoom.wd5.myworkdayjobs.com/Zoom`, unfiltered (70 jobs, all get descriptions). Scope `partial`: `native` let an AI Deployment Strategist through at 45. |
 
 ## 8. Stale files in the repo
 
@@ -801,6 +803,9 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   `resolve_database_url`, so running from `scraper/` is fine).
 
 ## 9. Log (newest first, keep entries short)
+
+- **2026-11-17, Zoom and IAG** — Zoom repointed to its Workday board (see §7). IAG added as the
+  parent for its brands with a new `awsm` parser; Audiolab, Quad and Wharfedale unverified.
 
 - **2026-11-17, scope fixes for big generalist companies** — Logitech, Razer, Rohde & Schwarz,
   Northrop Grumman and Lockheed Martin set to `partial` (now manual) through `admin_update_company`.

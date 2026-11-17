@@ -1057,9 +1057,9 @@
     "name": "Audiolab",
     "careers_url": "https://iaggroup.com/jobs/current-vacancies/",
     "category": "Hi-Fi & Consumer Speakers",
-    "verified": true,
+    "verified": false,
     "open_application": true,
-    "source": "auto",
+    "source": "manual",
     "scrape_method": "playwright"
   },
   {
@@ -4947,6 +4947,17 @@
     "scrape_method": "http"
   },
   {
+    "name": "IAG (International Audio Group)",
+    "careers_url": "https://iaggroup.com/jobs/",
+    "category": "Hi-Fi & Consumer Speakers",
+    "verified": true,
+    "source": "manual",
+    "scrape_method": "http",
+    "website_url": "https://iaggroup.com/",
+    "ats_type": "awsm",
+    "description": "Parent of Wharfedale, Quad, Audiolab, Mission, Leak, Castle, Luxman and Wharfedale Pro. Every brand's jobs are posted here."
+  },
+  {
     "name": "iBasso Audio",
     "careers_url": "https://www.ibasso.com/pages/careers",
     "category": "Headphones & Personal Audio",
@@ -8214,8 +8225,8 @@
     "name": "Quad Electronics",
     "careers_url": "https://iaggroup.com/jobs/current-vacancies/",
     "category": "Hi-Fi & Consumer Speakers",
-    "verified": true,
-    "source": "auto",
+    "verified": false,
+    "source": "manual",
     "scrape_method": "playwright"
   },
   {
@@ -11463,8 +11474,8 @@
     "name": "Wharfedale",
     "careers_url": "https://iaggroup.com/jobs/current-vacancies/",
     "category": "Hi-Fi & Consumer Speakers",
-    "verified": true,
-    "source": "auto",
+    "verified": false,
+    "source": "manual",
     "scrape_method": "playwright"
   },
   {

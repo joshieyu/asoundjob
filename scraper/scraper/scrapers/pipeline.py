@@ -16,6 +16,7 @@ from scraper.scrapers.ats.adp import AdpScraper
 from scraper.scrapers.ats.amazon import AmazonScraper
 from scraper.scrapers.ats.apple import AppleScraper
 from scraper.scrapers.ats.ashby import AshbyScraper
+from scraper.scrapers.ats.awsm import AwsmScraper
 from scraper.scrapers.ats.bamboohr import BambooHRScraper
 from scraper.scrapers.ats.eightfold import EightfoldScraper
 from scraper.scrapers.ats.gibson import GibsonScraper
@@ -78,6 +79,7 @@ class ScrapePipeline:
         self.gibson = GibsonScraper(settings)
         self.jibe = JibeScraper(settings)
         self.jobsyn = JobsynScraper(settings)
+        self.awsm = AwsmScraper(settings)
         self.http = HttpScraper(settings)
         self.playwright: PlaywrightScraper | None = None
         self.stealth: PlaywrightScraper | None = None
@@ -103,6 +105,7 @@ class ScrapePipeline:
             "gibson": self.gibson,
             "jibe": self.jibe,
             "jobsyn": self.jobsyn,
+            "awsm": self.awsm,
         }
 
     def _playwright_scraper(self) -> PlaywrightScraper:
@@ -312,6 +315,7 @@ class ScrapePipeline:
             self.gibson,
             self.jibe,
             self.jobsyn,
+            self.awsm,
         )
         for ats in ats_scrapers:
             if ats.can_handle(company):
