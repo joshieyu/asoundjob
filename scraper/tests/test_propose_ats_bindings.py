@@ -39,6 +39,7 @@ KNOWN_ATS_TYPES = frozenset(
         "sigma",
         "gibson",
         "jibe",
+        "jobsyn",
     }
 )
 

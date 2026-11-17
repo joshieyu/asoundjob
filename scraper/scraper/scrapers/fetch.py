@@ -59,8 +59,13 @@ class FetchError(Exception):
         self.status = status
 
 
-def fetch_json(url: str, settings: Settings, timeout: float | None = None) -> Any:
-    response = _send("GET", url, settings, timeout)
+def fetch_json(
+    url: str,
+    settings: Settings,
+    timeout: float | None = None,
+    headers: dict[str, str] | None = None,
+) -> Any:
+    response = _send("GET", url, settings, timeout, headers=headers)
     if response.status_code != 200:
         raise FetchError(f"HTTP {response.status_code} for {url}", response.status_code)
     try:

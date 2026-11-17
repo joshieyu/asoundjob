@@ -9820,11 +9820,12 @@
   },
   {
     "name": "Stantec",
-    "careers_url": "https://www.stantec.com/en/careers",
+    "careers_url": "https://stantec.jobs/jobs/?q=acoustic&q=acoustical&q=audiovisual",
     "category": "Acoustic Consulting & Engineering",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "http",
+    "ats_type": "jobsyn"
   },
   {
     "name": "Stanton",

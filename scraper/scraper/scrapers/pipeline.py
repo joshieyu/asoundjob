@@ -23,6 +23,7 @@ from scraper.scrapers.ats.greenhouse import GreenhouseScraper
 from scraper.scrapers.ats.haileyhr import HaileyHrScraper
 from scraper.scrapers.ats.icims import IcimsScraper
 from scraper.scrapers.ats.jibe import JibeScraper
+from scraper.scrapers.ats.jobsyn import JobsynScraper
 from scraper.scrapers.ats.lever import LeverScraper
 from scraper.scrapers.ats.pinpoint import PinpointScraper
 from scraper.scrapers.ats.recruitee import RecruiteeScraper
@@ -76,6 +77,7 @@ class ScrapePipeline:
         self.sigma = SigmaScraper(settings)
         self.gibson = GibsonScraper(settings)
         self.jibe = JibeScraper(settings)
+        self.jobsyn = JobsynScraper(settings)
         self.http = HttpScraper(settings)
         self.playwright: PlaywrightScraper | None = None
         self.stealth: PlaywrightScraper | None = None
@@ -100,6 +102,7 @@ class ScrapePipeline:
             "sigma": self.sigma,
             "gibson": self.gibson,
             "jibe": self.jibe,
+            "jobsyn": self.jobsyn,
         }
 
     def _playwright_scraper(self) -> PlaywrightScraper:
@@ -308,6 +311,7 @@ class ScrapePipeline:
             self.sigma,
             self.gibson,
             self.jibe,
+            self.jobsyn,
         )
         for ats in ats_scrapers:
             if ats.can_handle(company):

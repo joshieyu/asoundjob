@@ -163,8 +163,8 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 - **`ats_type` is a routing cache, not the mechanism** — every parser also matches
   on URL shape.
 - ATS parsers (`scrapers/ats/`): adp (Workforce Now only), amazon, apple, ashby,
-  bamboohr, eightfold, gibson, greenhouse, haileyhr, icims, jibe, lever, pinpoint,
-  recruitee, sigma, smartrecruiters, successfactors, ultipro, workable, workday.
+  bamboohr, eightfold, gibson, greenhouse, haileyhr, icims, jibe, jobsyn, lever,
+  pinpoint, recruitee, sigma, smartrecruiters, successfactors, ultipro, workable, workday.
 - ATS results are `trust_empty` (empty means no jobs); generic results never are.
   If a dedicated parser claimed a board and failed, the fallback result is
   `partial` so it cannot deactivate what it did not see.
@@ -765,6 +765,7 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 | Rockford Fosgate | Was "Rockford Marine" until 2026-11-09 (renamed in seed and DB together, now manual). Careers page lists each job as a card linking a PDF; descriptions come from the PDFs. 5 of 9 on the board; Quality Engineer's PDF is a scan. |
 | Sesame | Added 2026-11-10 (owner). Ashby; 18 jobs, 3 board rows (Audio Systems, Speaker Systems, HW Test Automation at 45). |
 | Sonova (Phonak/Unitron) | Repointed 2026-11-10 to SuccessFactors `jobs.sonova.com/search/?q=engineer` plus `q=audio`, `q=acoustic`. Unscoped it has 384 jobs, but only 150 get descriptions (`MAX_DETAIL_FETCHES`), so the rest score on title alone. Scoped: 116 jobs, all described, 32 board rows; clinical audiologist listings mostly drop out. |
+| Stantec | Fixed 2026-11-16 (owner). Jobs live on `stantec.jobs`, a DirectEmployers .jobs site whose listings come from `prod-search-api.jobsyn.org/api/v1/google-talent/search` (needs an `x-origin: stantec.jobs` header). `scrapers/ats/jobsyn.py`, allowlist `JOBSYN_HOSTS`, runs every `q=` in the careers URL (`acoustic`, `acoustical`, `audiovisual`: ~150 listings vs 7,219 unfiltered) and merges per-location listings into one job per `reqid`. Scope set to `partial` in the DB (row is manual): `native` let ICT consultant and scheduler roles through at score 45. 5 board rows; "AV Designer" does not pass. |
 | Stryker | Added 2026-11-10 (owner). Workday `StrykerCareers?q=acoustic` (`Stryker_Careers` 404s); 2 jobs, both on the board. Partial scope. |
 | Syntiant | Added 2026-11-04. Workable `syntiant`, `Audio Semiconductors`; 8 of 12 on the board. |
 | Splice | Repointed 2026-11-04 from `splice.com/careers` (22 consecutive failures) to `job-boards.greenhouse.io/splice`; 6 jobs, none scored on, Senior Brand Marketing Manager pinned. |
@@ -800,6 +801,10 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   `resolve_database_url`, so running from `scraper/` is fine).
 
 ## 9. Log (newest first, keep entries short)
+
+- **2026-11-16, Stantec scrape fixed** — had failed 33 cycles on its marketing careers page. New
+  `jobsyn` parser for DirectEmployers .jobs sites (see §7 Stantec). Brings in the Acoustics Intern
+  (Summer 2027) the owner found, plus the acoustical consultant, designer and noise analyst roles.
 
 - **2026-11-16, launched at https://asoundjob.com** — Hetzner Cloud, Helsinki, 4 GB
   x86, Ubuntu 24.04, set up exactly per `DEPLOY.md` (no deviations needed). The dev
