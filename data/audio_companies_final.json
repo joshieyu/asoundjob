@@ -5946,8 +5946,10 @@
     "careers_url": "https://logitech.wd5.myworkdayjobs.com/Logitech",
     "category": "Headphones & Personal Audio",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "http"
+    "source": "manual",
+    "scrape_method": "http",
+    "ats_type": "workday",
+    "ats_slug": "logitech.wd5/Logitech"
   },
   {
     "name": "Loopcloud",
@@ -7275,7 +7277,7 @@
     "careers_url": "https://ngc.eightfold.ai/careers?query=acoustic",
     "category": "Acoustic Consulting & Engineering",
     "verified": true,
-    "source": "auto",
+    "source": "manual",
     "scrape_method": "http",
     "extra_careers_urls": [
       "https://ngc.eightfold.ai/careers?query=noise",
@@ -8365,8 +8367,10 @@
     "careers_url": "https://razer.wd3.myworkdayjobs.com/Careers",
     "category": "Headphones & Personal Audio",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "http"
+    "source": "manual",
+    "scrape_method": "http",
+    "ats_type": "workday",
+    "ats_slug": "razer.wd3/Careers"
   },
   {
     "name": "RBH Sound",
@@ -8734,7 +8738,7 @@
     "careers_url": "https://jobs.rohde-schwarz.com/en_US/careers",
     "category": "Professional Audio & Live Sound",
     "verified": true,
-    "source": "auto",
+    "source": "manual",
     "scrape_method": "http"
   },
   {
