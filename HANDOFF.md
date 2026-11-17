@@ -804,6 +804,15 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 
 ## 9. Log (newest first, keep entries short)
 
+- **2026-11-17, game studios and SoundLister finds** — The Gaming category was mostly dead links
+  (Larian pointed at a board-game merch page). Repointed to their ATS boards: Epic, Riot, Roblox,
+  Discord, Insomniac, Naughty Dog, Ubisoft, CD Projekt Red, Larian, Bungie, Rockstar, and
+  NBCUniversal Audio (SmartRecruiters `?q=audio`). Added 2K, Krafton, Remedy, Supercell,
+  thatgamecompany, Mob Entertainment, Housemarque, Sphere Entertainment, Live Nation (Workday
+  `?q=audio`, venue sound engineers) and Vox Media. Big studios set to `partial`. Not done: EA,
+  Blizzard, Gearbox (no readable board found), SiriusXM (moved off iCIMS), Soundtoys (job pages have
+  no job-shaped URLs).
+
 - **2026-11-17, specialty landing pages** — `/jobs/<slug>` for each of the 21 categories
   (`web/src/lib/specialties.ts`: slug, heading, lead; route matcher `src/params/specialty.ts`), for
   searches like "game audio jobs". The board moved to `lib/components/JobBoard.svelte` and its loader

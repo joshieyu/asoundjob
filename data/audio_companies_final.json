@@ -16,6 +16,15 @@
     "scrape_method": "http"
   },
   {
+    "name": "2K",
+    "careers_url": "https://boards.greenhouse.io/2k",
+    "category": "Gaming, VR & Immersive Audio",
+    "verified": true,
+    "source": "manual",
+    "scrape_method": "http",
+    "website_url": "https://2k.com/"
+  },
+  {
     "name": "64 Audio",
     "careers_url": "https://recruiting.paylocity.com/recruiting/jobs/All/adf346f4-cc11-4b73-9fff-4856b2f9ebdc/64-Audio",
     "category": "Headphones & Personal Audio",
@@ -1917,11 +1926,11 @@
   },
   {
     "name": "Bungie",
-    "careers_url": "https://careers.bungie.com/",
+    "careers_url": "https://boards.greenhouse.io/bungie",
     "category": "Gaming, VR & Immersive Audio",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "http"
   },
   {
     "name": "Burl Audio",
@@ -2192,11 +2201,11 @@
   },
   {
     "name": "CD Projekt Red",
-    "careers_url": "https://www.cdprojekt.com/en/careers/",
+    "careers_url": "https://jobs.smartrecruiters.com/CDPROJEKTRED",
     "category": "Gaming, VR & Immersive Audio",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "http"
   },
   {
     "name": "Celemony (Melodyne)",
@@ -3115,10 +3124,10 @@
   },
   {
     "name": "Discord",
-    "careers_url": "https://careers.discord.com",
+    "careers_url": "https://boards.greenhouse.io/discord",
     "category": "Gaming, VR & Immersive Audio",
-    "verified": false,
-    "source": "auto",
+    "verified": true,
+    "source": "manual",
     "scrape_method": "http"
   },
   {
@@ -3629,11 +3638,11 @@
   },
   {
     "name": "Epic Games",
-    "careers_url": "https://www.epicgames.com/site/careers",
+    "careers_url": "https://boards.greenhouse.io/epicgames",
     "category": "Gaming, VR & Immersive Audio",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "http"
   },
   {
     "name": "Epidemic Sound",
@@ -4847,6 +4856,15 @@
     "scrape_method": "http"
   },
   {
+    "name": "Housemarque",
+    "careers_url": "https://boards.greenhouse.io/housemarque",
+    "category": "Gaming, VR & Immersive Audio",
+    "verified": true,
+    "source": "manual",
+    "scrape_method": "http",
+    "website_url": "https://housemarque.com/"
+  },
+  {
     "name": "HoYoverse",
     "careers_url": "https://jobs.ashbyhq.com/hoyoverse",
     "category": "Gaming, VR & Immersive Audio",
@@ -5114,10 +5132,10 @@
   },
   {
     "name": "Insomniac Games",
-    "careers_url": "https://www.insomniacgames.com/careers",
+    "careers_url": "https://boards.greenhouse.io/insomniac",
     "category": "Gaming, VR & Immersive Audio",
-    "verified": false,
-    "source": "auto",
+    "verified": true,
+    "source": "manual",
     "scrape_method": "http"
   },
   {
@@ -5578,6 +5596,15 @@
     "scrape_method": "playwright"
   },
   {
+    "name": "Krafton",
+    "careers_url": "https://boards.greenhouse.io/krafton",
+    "category": "Gaming, VR & Immersive Audio",
+    "verified": true,
+    "source": "manual",
+    "scrape_method": "http",
+    "website_url": "https://www.krafton.com/"
+  },
+  {
     "name": "Krell Industries",
     "careers_url": "https://www.krellonline.com/careers",
     "category": "Hi-Fi & Consumer Speakers",
@@ -5707,10 +5734,10 @@
   },
   {
     "name": "Larian Studios",
-    "careers_url": "https://eu.merch.larian.com/products/divinity-original-sin-the-boardgame",
+    "careers_url": "https://jobs.lever.co/larian",
     "category": "Gaming, VR & Immersive Audio",
     "verified": true,
-    "source": "auto",
+    "source": "manual",
     "scrape_method": "http"
   },
   {
@@ -5907,6 +5934,15 @@
     "open_application": true,
     "source": "auto",
     "scrape_method": "http"
+  },
+  {
+    "name": "Live Nation",
+    "careers_url": "https://livenation.wd503.myworkdayjobs.com/LNExternalSite?q=audio",
+    "category": "Professional Audio & Live Sound",
+    "verified": true,
+    "source": "manual",
+    "scrape_method": "http",
+    "website_url": "https://www.livenation.com/"
   },
   {
     "name": "LiveOne",
@@ -6610,6 +6646,15 @@
     "scrape_method": "http"
   },
   {
+    "name": "Mob Entertainment",
+    "careers_url": "https://boards.greenhouse.io/mobentertainment",
+    "category": "Gaming, VR & Immersive Audio",
+    "verified": true,
+    "source": "manual",
+    "scrape_method": "http",
+    "website_url": "https://mobentertainment.com/"
+  },
+  {
     "name": "Modal Electronics",
     "careers_url": "https://modalelectronics.com",
     "category": "Electronic Musical Instruments",
@@ -7042,10 +7087,10 @@
   },
   {
     "name": "Naughty Dog",
-    "careers_url": "https://careers.naughtydog.com",
+    "careers_url": "https://boards.greenhouse.io/naughtydog",
     "category": "Gaming, VR & Immersive Audio",
-    "verified": false,
-    "source": "auto",
+    "verified": true,
+    "source": "manual",
     "scrape_method": "http"
   },
   {
@@ -7058,11 +7103,11 @@
   },
   {
     "name": "NBCUniversal Audio",
-    "careers_url": "https://www.nbcuniversal.com/careers",
+    "careers_url": "https://jobs.smartrecruiters.com/NBCUniversal3?q=audio",
     "category": "Recording Studios & Post Houses",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "http"
   },
   {
     "name": "NCSoft",
@@ -8483,6 +8528,15 @@
     "scrape_method": "playwright"
   },
   {
+    "name": "Remedy Entertainment",
+    "careers_url": "https://boards.greenhouse.io/remedy",
+    "category": "Gaming, VR & Immersive Audio",
+    "verified": true,
+    "source": "manual",
+    "scrape_method": "http",
+    "website_url": "https://www.remedygames.com/"
+  },
+  {
     "name": "Renault",
     "careers_url": "https://www.renaultgroup.com/en/careers/",
     "category": "Automotive OEMs",
@@ -8644,10 +8698,10 @@
   },
   {
     "name": "Riot Games",
-    "careers_url": "https://careers.riotgames.com",
+    "careers_url": "https://boards.greenhouse.io/riotgames",
     "category": "Gaming, VR & Immersive Audio",
-    "verified": false,
-    "source": "auto",
+    "verified": true,
+    "source": "manual",
     "scrape_method": "http"
   },
   {
@@ -8700,10 +8754,10 @@
   },
   {
     "name": "Roblox",
-    "careers_url": "https://careers.roblox.com/",
+    "careers_url": "https://boards.greenhouse.io/roblox",
     "category": "Gaming, VR & Immersive Audio",
-    "verified": false,
-    "source": "auto",
+    "verified": true,
+    "source": "manual",
     "scrape_method": "http"
   },
   {
@@ -8724,11 +8778,11 @@
   },
   {
     "name": "Rockstar Games",
-    "careers_url": "https://www.rockstargames.com/careers",
+    "careers_url": "https://boards.greenhouse.io/rockstargames",
     "category": "Gaming, VR & Immersive Audio",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "http"
   },
   {
     "name": "Rode Microphones",
@@ -9754,6 +9808,15 @@
     "scrape_method": "http"
   },
   {
+    "name": "Sphere Entertainment",
+    "careers_url": "https://boards.greenhouse.io/sphereentertainment",
+    "category": "Professional Audio & Live Sound",
+    "verified": true,
+    "source": "manual",
+    "scrape_method": "http",
+    "website_url": "https://www.sphereentertainmentco.com/"
+  },
+  {
     "name": "Spitch",
     "careers_url": "https://spitch.ai/de/",
     "category": "Voice & Speech Technology",
@@ -10027,6 +10090,15 @@
     "verified": false,
     "source": "auto",
     "scrape_method": "http"
+  },
+  {
+    "name": "Supercell",
+    "careers_url": "https://jobs.ashbyhq.com/supercell",
+    "category": "Gaming, VR & Immersive Audio",
+    "verified": true,
+    "source": "manual",
+    "scrape_method": "http",
+    "website_url": "https://supercell.com/"
   },
   {
     "name": "Supro",
@@ -10376,6 +10448,15 @@
     "verified": false,
     "source": "auto",
     "scrape_method": "http"
+  },
+  {
+    "name": "thatgamecompany",
+    "careers_url": "https://jobs.ashbyhq.com/thatgamecompany",
+    "category": "Gaming, VR & Immersive Audio",
+    "verified": true,
+    "source": "manual",
+    "scrape_method": "http",
+    "website_url": "https://thatgamecompany.com/"
   },
   {
     "name": "The Music Bed",
@@ -10806,11 +10887,11 @@
   },
   {
     "name": "Ubisoft",
-    "careers_url": "https://www.ubisoft.com/en-us/company/404",
+    "careers_url": "https://jobs.smartrecruiters.com/Ubisoft2",
     "category": "Gaming, VR & Immersive Audio",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "http"
   },
   {
     "name": "UC Berkeley CNMAT",
@@ -11266,6 +11347,15 @@
     "verified": false,
     "source": "auto",
     "scrape_method": "http"
+  },
+  {
+    "name": "Vox Media",
+    "careers_url": "https://boards.greenhouse.io/voxmedia",
+    "category": "Streaming & Music Services",
+    "verified": true,
+    "source": "manual",
+    "scrape_method": "http",
+    "website_url": "https://corp.voxmedia.com/"
   },
   {
     "name": "Voxengo",
