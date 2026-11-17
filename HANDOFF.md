@@ -804,6 +804,14 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 
 ## 9. Log (newest first, keep entries short)
 
+- **2026-11-17, remote flag and more scope fixes** — `detect_remote` flagged any job whose
+  description said "remote" anywhere (remote support, "not a remote role", Shure's internship
+  boilerplate), and the job page put that in Google's JobPosting data as TELECOMMUTE. The
+  description now counts only role statements (`describes_remote_role`), skipping sentences with
+  not/no/never/variety. Existing jobs fixed by a one-off pass: board remote 114 → 53. Known miss:
+  Muse Group pages that say only a bare "Remote". Also set to `partial`: Activision Blizzard,
+  Disney, Twilio Voice, Penn State, UT Austin, Liquid AI.
+
 - **2026-11-17, Zoom and IAG** — Zoom repointed to its Workday board (see §7). IAG added as the
   parent for its brands with a new `awsm` parser; Audiolab, Quad and Wharfedale unverified.
 
