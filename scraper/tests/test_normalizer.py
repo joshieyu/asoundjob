@@ -364,6 +364,12 @@ class TestLiveVenueAudioRoles(unittest.TestCase):
         self.assertIn("Stage Production", role)
         self.assertTrue(role.startswith("Responsible for ensuring"))
 
+    def test_venue_words_need_an_audio_title(self) -> None:
+        self.assertNotIn(
+            "live_sound_events",
+            classify_categories("Stagehand- Archer Music Hall", self.VENUE_DESCRIPTION),
+        )
+
     def test_house_and_head_audio_titles(self) -> None:
         self.assertIn("live_sound_events", classify_categories("House Audio Engineer - A1", None))
         self.assertIn("live_sound_events", classify_categories("Head Audio - IATSE 471", None))

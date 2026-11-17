@@ -462,20 +462,12 @@ CATEGORY_KEYWORDS: dict[str, dict[str, tuple[str, ...]]] = {
             "head audio",
             "front-of-house",
             "foh",
-            "stage production",
-            "show production",
-            "live event",
             "monitor mix",
-            "festival",
-            "load-in",
         ),
         "weak": (
             "rigging",
             "event av",
             "touring",
-            "venue",
-            "concert",
-            "stage",
         ),
     },
     "nvh": {
@@ -1267,6 +1259,12 @@ def _compile_category_patterns() -> dict[str, dict[str, Optional[re.Pattern[str]
 
 CATEGORY_PATTERNS = _compile_category_patterns()
 
+LIVE_SOUND = "live_sound_events"
+LIVE_VENUE_PATTERN = _keyword_pattern(
+    ("stage production", "show production", "load-in", "venue", "concert", "stage")
+)
+VENUE_AUDIO_TITLE = re.compile(r"\b(?:audio|sound)\b", re.IGNORECASE)
+
 CATEGORY_DOMINANCE: dict[str, tuple[str, ...]] = {
     "audio_software": (
         "music_production_recording",
@@ -1498,6 +1496,8 @@ def _score_category(
 
     if not title_only:
         strong_hits = _distinct_keyword_hits(role_lower, strong_pattern, anchored)
+        if category_id == LIVE_SOUND and VENUE_AUDIO_TITLE.search(title_lower):
+            strong_hits |= _distinct_keyword_hits(role_lower, LIVE_VENUE_PATTERN, False)
         if strong_hits:
             score += min(3 + (len(strong_hits) - 1), 5)
 

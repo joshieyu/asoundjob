@@ -805,12 +805,16 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 ## 9. Log (newest first, keep entries short)
 
 - **2026-11-17, live venue audio roles** — Live Nation's "Audio Engineer"/"Audio Tech" jobs had no
-  Live Sound category. Two causes: the keyword list lacked venue vocabulary (added "stage
-  production", "house audio", "head audio", "foh", "venue", "concert" and others), and
+  Live Sound category. Two causes: the keyword list lacked venue vocabulary, and
   `extract_role_text` started at "requirements" inside the EEO paragraph, so it read only legal
   text. Role markers after an "Equal Employment Opportunity" statement (past 30% of the text) are
   now ignored. A line-start-heading rule was tried and rejected: it changed ~40 unrelated jobs for
-  the worse. Board effect: 27 jobs gain Live Sound, none lose a category.
+  the worse. Added "house audio", "head audio", "foh", "front-of-house", "monitor mix" as strong
+  keywords; venue words ("venue", "concert", "stage", "stage production", "load-in") count only
+  when the title says audio or sound (`LIVE_VENUE_PATTERN`), because unrestricted they made
+  stagehands, Niantic "Live Events" marketers and a Full Sail faculty post audio-related. Board
+  effect: 22 jobs gain Live Sound, none lose one. Reading real role text also made 3 jobs
+  audio-related (Audible content acquisition 13806, Live Nation stagehands 42282/42288).
 
 - **2026-11-17, game studios and SoundLister finds** — The Gaming category was mostly dead links
   (Larian pointed at a board-game merch page). Repointed to their ATS boards: Epic, Riot, Roblox,
