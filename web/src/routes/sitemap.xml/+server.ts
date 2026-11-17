@@ -1,6 +1,7 @@
 import type { RequestHandler } from './$types';
 import { SITE_URL, api } from '$lib/server/api';
-import type { Job, Paginated } from '$lib/types';
+import type { CategoryInfo, Job, Paginated } from '$lib/types';
+import { SPECIALTY_BY_ID } from '$lib/specialties';
 
 interface CompanySlug {
 	slug: string;
@@ -20,6 +21,21 @@ export const GET: RequestHandler = async () => {
 		'/companies/blocked',
 		'/about'
 	];
+
+	const specialtyEntries: string[] = [];
+	try {
+		const { categories } = await api<{ categories: CategoryInfo[] }>('/api/categories');
+		for (const category of categories) {
+			const specialty = SPECIALTY_BY_ID.get(category.id);
+			if (specialty && category.job_count > 0) {
+				specialtyEntries.push(
+					`\t<url><loc>${SITE_URL}/jobs/${specialty.slug}</loc><priority>0.7</priority></url>`
+				);
+			}
+		}
+	} catch (err) {
+		console.warn('sitemap: specialty URLs omitted —', err);
+	}
 
 	const jobEntries: string[] = [];
 	try {
@@ -61,6 +77,7 @@ export const GET: RequestHandler = async () => {
 			(route) =>
 				`\t<url><loc>${SITE_URL}${route || '/'}</loc><priority>${route === '' ? '1.0' : '0.6'}</priority></url>`
 		),
+		...specialtyEntries,
 		...jobEntries,
 		...companyEntries
 	].join('\n');

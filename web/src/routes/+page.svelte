@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { specialtyPath } from '$lib/specialties';
 	import JobStrip from '$lib/components/JobStrip.svelte';
 	import FeedbackDialog from '$lib/components/FeedbackDialog.svelte';
 	import { JOB_FEEDBACK_KINDS } from '$lib/feedback';
@@ -75,7 +76,7 @@
 			<ul class="mt-3 flex max-w-4xl flex-wrap gap-x-6 gap-y-2 text-meta font-semibold">
 				{#each visibleSpecialties as cat (cat.id)}
 					<li>
-						<a href="/jobs?category={cat.id}" title={cat.name} class="hover:text-accent hover:underline">
+						<a href={specialtyPath(cat.id)} title={cat.name} class="hover:text-accent hover:underline">
 							{shortName(cat.name)}
 						</a>
 					</li>

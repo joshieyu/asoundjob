@@ -804,6 +804,14 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 
 ## 9. Log (newest first, keep entries short)
 
+- **2026-11-17, specialty landing pages** — `/jobs/<slug>` for each of the 21 categories
+  (`web/src/lib/specialties.ts`: slug, heading, lead; route matcher `src/params/specialty.ts`), for
+  searches like "game audio jobs". The board moved to `lib/components/JobBoard.svelte` and its loader
+  to `lib/server/board.ts`; both routes render it. Filter changes leave for `/jobs?category=…`
+  (canonical `/jobs`), so combinations are never indexed. Pages with categories in the sitemap;
+  homepage, job pages and the board link to them; empty ones are `noindex`. A new category in
+  `audio_job_categories.json` needs an entry in `specialties.ts` (a test enforces it).
+
 - **2026-11-17, remote flag and more scope fixes** — `detect_remote` flagged any job whose
   description said "remote" anywhere (remote support, "not a remote role", Shure's internship
   boilerplate), and the job page put that in Google's JobPosting data as TELECOMMUTE. The

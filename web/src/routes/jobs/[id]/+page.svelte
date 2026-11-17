@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { specialtyPath } from '$lib/specialties';
 	import { formatDate, formatSalary, timeAgo } from '$lib/format';
 	import { serializeJsonLd } from '$lib/jsonld';
 	import { FEATURE_REQUEST_KINDS, JOB_FEEDBACK_KINDS } from '$lib/feedback';
@@ -106,7 +107,7 @@
 				{#each job.job_categories as cat (cat)}
 					<li>
 						<a
-							href="/jobs?category={cat}"
+							href={specialtyPath(cat)}
 							class="coord text-muted underline decoration-rule underline-offset-4 hover:text-accent hover:decoration-accent"
 						>
 							{categoryNames.get(cat) ?? cat.replaceAll('_', ' ')}
