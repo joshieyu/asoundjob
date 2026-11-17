@@ -11762,11 +11762,11 @@
   },
   {
     "name": "Zoom",
-    "careers_url": "https://careers.zoom.us/jobs/search",
+    "careers_url": "https://zoom.wd5.myworkdayjobs.com/Zoom",
     "category": "Voice & Speech Technology",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "http"
   },
   {
     "name": "ZTE",
