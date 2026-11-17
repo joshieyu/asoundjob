@@ -812,6 +812,8 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   `?q=audio`, venue sound engineers) and Vox Media. Big studios set to `partial`. Not done: EA,
   Blizzard, Gearbox (no readable board found), SiriusXM (moved off iCIMS), Soundtoys (job pages have
   no job-shaped URLs).
+  Audio-titled roles at Gaming-category companies now also get `game_audio_interactive`
+  (`is_game_studio_audio_role`); /jobs/game-audio went 4 → 25.
 
 - **2026-11-17, specialty landing pages** — `/jobs/<slug>` for each of the 21 categories
   (`web/src/lib/specialties.ts`: slug, heading, lead; route matcher `src/params/specialty.ts`), for
