@@ -14,7 +14,7 @@ from api.routers.search import search_jobs
 from scraper.models import Base, Company, Job
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-JOBS_LOADER = REPO_ROOT / "web" / "src" / "routes" / "jobs" / "+page.server.ts"
+JOBS_LOADER = REPO_ROOT / "web" / "src" / "lib" / "server" / "board.ts"
 
 LOADER_EXTRA_PARAMS = ("page", "per_page")
 

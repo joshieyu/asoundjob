@@ -146,6 +146,7 @@ CATEGORY_KEYWORDS: dict[str, dict[str, tuple[str, ...]]] = {
             "audio flinger",
             "audio driver",
             "audio & music apps",
+            "bluetooth audio",
         ),
         "weak": (
             "audio pipeline",
@@ -187,8 +188,6 @@ CATEGORY_KEYWORDS: dict[str, dict[str, tuple[str, ...]]] = {
             "acoustic systems",
             "system-level audio",
             "audio integration",
-            "av engineer",
-            "audio video engineer",
             "acoustics engineer",
             "acoustic engineering",
             "acoustics engineering",
@@ -205,12 +204,12 @@ CATEGORY_KEYWORDS: dict[str, dict[str, tuple[str, ...]]] = {
         ),
         "weak": (
             "systems engineering",
-            "audio engineer",
             "connected audio",
             "audio device",
             "audio technology",
             "audio product",
             "audio video",
+            "audio engineer",
         ),
     },
     "test_measurement_qa": {
@@ -254,6 +253,8 @@ CATEGORY_KEYWORDS: dict[str, dict[str, tuple[str, ...]]] = {
             "measurement microphone",
             "head and torso simulator",
             "head-and-torso simulator",
+            "acoustic instrumentation",
+            "audio instrumentation",
         ),
         "weak": (
             "test engineer",
@@ -329,6 +330,8 @@ CATEGORY_KEYWORDS: dict[str, dict[str, tuple[str, ...]]] = {
             "audio tuning algorithm",
             "dynamics processing",
             "loudspeaker protection",
+            "signal processing engineer",
+            "acoustic signal processing",
         ),
         "weak": (
             "embedded system",
@@ -378,6 +381,13 @@ CATEGORY_KEYWORDS: dict[str, dict[str, tuple[str, ...]]] = {
             "conversational speech",
             "computer vision & audio",
             "voice os",
+            "audio generation",
+            "music generation",
+            "ai music",
+            "multimodal ai",
+            "audio-visual ai",
+            "speech scientist",
+            "speech understanding",
         ),
         "weak": (
             "machine learning",
@@ -406,6 +416,10 @@ CATEGORY_KEYWORDS: dict[str, dict[str, tuple[str, ...]]] = {
             "speech, vision and audio",
         ),
         "weak": (
+            "research intern",
+            "phd intern",
+            "phd research intern",
+            "research scientist intern",
             "research engineer",
             "research scientist",
             "member of technical staff",
@@ -432,10 +446,30 @@ CATEGORY_KEYWORDS: dict[str, dict[str, tuple[str, ...]]] = {
             "beat making",
             "track mixing",
             "audio producer",
+            "audio post",
+            "audio post-production",
+            "post-production audio",
+            "post production audio",
+            "protools",
+            "mastering",
+            "location sound",
+            "sound recordist",
+            "dialogue editing",
+            "audio/video producer",
+            "audio production",
+            "recording studio",
+            "sound & voice",
+            "podcast producer",
+            "podcast production",
+            "podcast editor",
         ),
         "weak": (
             "music production",
             "studio session",
+            "mixing",
+            "post-production",
+            "post production",
+            "broadcast",
         ),
     },
     "live_sound_events": {
@@ -447,7 +481,6 @@ CATEGORY_KEYWORDS: dict[str, dict[str, tuple[str, ...]]] = {
             "monitor mixer",
             "a/v technician",
             "av technician",
-            "audio visual",
             "concert audio",
             "touring audio",
             "system tech",
@@ -463,11 +496,44 @@ CATEGORY_KEYWORDS: dict[str, dict[str, tuple[str, ...]]] = {
             "front-of-house",
             "foh",
             "monitor mix",
+            "live audio",
+            "mixing console",
         ),
         "weak": (
             "rigging",
             "event av",
             "touring",
+        ),
+    },
+    "av_systems_integration": {
+        "strong": (
+            "audiovisual",
+            "audio visual",
+            "av systems",
+            "av system",
+            "av engineer",
+            "av/it",
+            "av design",
+            "av integration",
+            "av integrator",
+            "av technician",
+            "av production",
+            "audio video engineer",
+            "audio safety",
+            "public address",
+            "voice alarm",
+            "sound mechanic",
+            "sound reinforcement system",
+            "control system programmer",
+            "crestron",
+            "q-sys",
+            "dante",
+        ),
+        "weak": (
+            "conferencing",
+            "videoconferencing",
+            "meeting room",
+            "system integration",
         ),
     },
     "nvh": {
@@ -496,6 +562,8 @@ CATEGORY_KEYWORDS: dict[str, dict[str, tuple[str, ...]]] = {
             "spatial sound",
             "auditory perception",
             "sound perception",
+            "hearing scientist",
+            "hearing science",
         ),
         "weak": (
             "auditory",
@@ -537,6 +605,7 @@ CATEGORY_KEYWORDS: dict[str, dict[str, tuple[str, ...]]] = {
             "sound effects",
             "soundscapes",
             "sound design engineer",
+            "audio design",
         ),
         "weak": (
             "sonic",
@@ -591,6 +660,7 @@ CATEGORY_KEYWORDS: dict[str, dict[str, tuple[str, ...]]] = {
             "hearing loss",
             "hearing evaluation",
             "hearing clinic",
+            "audiological",
         ),
         "weak": (
             "patient care coordinator",
@@ -623,6 +693,9 @@ CATEGORY_KEYWORDS: dict[str, dict[str, tuple[str, ...]]] = {
             "npi engineer, audio",
             "audio npi",
             "audio new product introduction",
+            "industrial design",
+            "tool engineering",
+            "shell designer",
         ),
         "weak": (
             "product design engineer",
@@ -651,6 +724,15 @@ CATEGORY_KEYWORDS: dict[str, dict[str, tuple[str, ...]]] = {
             "acoustic consultancy",
             "acoustic design consultant",
             "noise and vibration consultant",
+            "acoustics consultant",
+            "consultant, acoustics",
+            "consultant, acoustical",
+            "consultant, acoustic",
+            "acoustic analyst",
+            "environmental noise",
+            "noise mitigation",
+            "acoustical specification",
+            "noise and vibration assessment",
         ),
         "weak": (
             "acoustic consulting",
@@ -1117,7 +1199,7 @@ def extract_role_text(description: str | None) -> str:
     return role_text
 
 
-LABEL_ONLY_CATEGORIES = frozenset({"sales_marketing_cs"})
+LABEL_ONLY_CATEGORIES = frozenset({"sales_marketing_cs", "business_operations"})
 
 
 def score_relevance(
@@ -1261,7 +1343,17 @@ CATEGORY_PATTERNS = _compile_category_patterns()
 
 LIVE_SOUND = "live_sound_events"
 LIVE_VENUE_PATTERN = _keyword_pattern(
-    ("stage production", "show production", "load-in", "venue", "concert", "stage")
+    (
+        "stage production",
+        "show production",
+        "load-in",
+        "venue",
+        "concert",
+        "stage",
+        "theater",
+        "theatre",
+        "live events",
+    )
 )
 VENUE_AUDIO_TITLE = re.compile(r"\b(?:audio|sound)\b", re.IGNORECASE)
 
@@ -1541,9 +1633,79 @@ def classify_categories(
     result = sorted(category_id for category_id, _ in top)
     if is_game_studio_audio_role(title, company_category) and GAME_AUDIO not in result:
         return sorted([category_id for category_id, _ in ranked[:2]] + [GAME_AUDIO])
+    if (
+        AUDIO_SYSTEMS in result
+        and STAGE_STUDIO_CATEGORIES & set(result)
+        and not _has_strong_title_hit(AUDIO_SYSTEMS, title_lower)
+    ):
+        result = sorted([c for c in ranked_ids(ranked) if c != AUDIO_SYSTEMS][:3])
+    if is_consultancy_acoustics_role(title, company_category, result) and AV_SYSTEMS not in result:
+        kept = [c for c in result if c not in CONSULTANCY_DISPLACED]
+        return sorted(set(kept[:2]) | {ACOUSTICS_CONSULTING})
     if result:
         return result
-    return _company_fallback_categories(title, company_category)
+    fallback = _company_fallback_categories(title, company_category)
+    if fallback:
+        return fallback
+    if TECHNICAL_TITLE.search(title):
+        return []
+    if BUSINESS_TITLE.search(title) or CORPORATE_ROLE.search(title):
+        return [BUSINESS_OPERATIONS]
+    return []
+
+
+ACOUSTICS_CONSULTING = "acoustics_consulting"
+AUDIO_SYSTEMS = "audio_systems"
+AV_SYSTEMS = "av_systems_integration"
+BUSINESS_OPERATIONS = "business_operations"
+CONSULTANCY_CATEGORIES = frozenset({"Acoustic Consulting & Engineering"})
+CONSULTANCY_DISPLACED = frozenset({"audio_systems", "transducers"})
+CONSULTANCY_ENGINEER = re.compile(r"\b(?:engineer|signal processing|sonar)", re.IGNORECASE)
+CONSULTANCY_ACOUSTIC_WORD = re.compile(r"\bacoustic\w*", re.IGNORECASE)
+CONSULTANCY_ACOUSTICS_TITLE = re.compile(r"\b(?:consult\w*|acoustical)\b", re.IGNORECASE)
+STAGE_STUDIO_CATEGORIES = frozenset(
+    {"music_production_recording", "live_sound_events", "sound_design", "av_systems_integration"}
+)
+TECHNICAL_TITLE = re.compile(
+    r"\b(?:engineer\w*|engineering|software|developer|development|scientist|research\w*|"
+    r"phd|doktorand\w*|akusti\w*|acousti\w*|firmware|hardware|electronics?|"
+    r"programmer|architect|machine learning|ml|ai|dsp|signal)\b",
+    re.IGNORECASE,
+)
+BUSINESS_TITLE = re.compile(
+    r"\b(?:chief (?:financial|operating|executive|people)|cfo|coo|ceo|finance|financial|"
+    r"controller|bookkeep\w*|treasury|erp|it business|business applications?|"
+    r"talent|people partner|hr|executive assistant|assistant to|coordinator|"
+    r"sustainability|maintenance|change management|instructional design|operations|"
+    r"transport|customs|commodity|value engineering|industriali[sz]ation|knowledge manager|"
+    r"voice of (?:the )?consumer|property|product manag\w*|produktmanag\w*|"
+    r"program manag\w*|project manag\w*|market development|strategy|"
+    r"packer|assembler|production worker|operator|buyer|planner|purchas\w*|"
+    r"royalt\w*|rights|licensing|copywriter|content (?:associate|designer|strateg\w*)|"
+    r"data (?:analyst|engineer|scientist)|analytics|business intelligence|"
+    r"ux|ui|user experience|designer|producer|director|manager|lead|head of|vp|"
+    r"vice president|president|intern|internship|praktikum|stagiaire|co-?op)\b",
+    re.IGNORECASE,
+)
+
+
+def _has_strong_title_hit(category_id: str, title_lower: str) -> bool:
+    pattern = CATEGORY_PATTERNS[category_id]["strong"]
+    return bool(pattern is not None and pattern.search(title_lower))
+
+
+def ranked_ids(ranked: list[tuple[str, int]]) -> list[str]:
+    return [category_id for category_id, _ in ranked]
+
+
+def is_consultancy_acoustics_role(
+    title: str, company_category: str | None, found: list[str]
+) -> bool:
+    if company_category not in CONSULTANCY_CATEGORIES:
+        return False
+    if CONSULTANCY_ACOUSTIC_WORD.search(title) and not CONSULTANCY_ENGINEER.search(title):
+        return True
+    return bool(found) and bool(CONSULTANCY_ACOUSTICS_TITLE.search(title))
 
 
 GAME_AUDIO = "game_audio_interactive"

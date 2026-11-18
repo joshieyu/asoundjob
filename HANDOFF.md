@@ -804,6 +804,21 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 
 ## 9. Log (newest first, keep entries short)
 
+- **2026-11-18, categorization audit** — Hand-labelled 211 board jobs into
+  `scraper/tests/fixtures/category_golden.json` (acceptable categories per job). Score with
+  `python -m scraper.category_eval [--misses]`; `tests/test_category_golden.py` fails if hit rate
+  drops below 85%, all-right below 80% or label precision below 95%. Before → after: hit 67.8% →
+  86.3%, all right 63.0% → 82.5%, precision 92.5% → 96.1%. Changes: two new categories,
+  `av_systems_integration` (AV design, integration, control programming, PA/voice alarm) and
+  `business_operations` (label-only; a fallback for business titles with no other category and no
+  engineering word in the title); titles at "Acoustic Consulting & Engineering" companies go to
+  acoustics_consulting instead of audio_systems (consult/acoustical titles, or acoustic titles
+  without "engineer"); a title-only "audio engineer" no longer keeps audio_systems when a studio,
+  stage or AV category also fits; music production gained post-production vocabulary. Board:
+  uncategorized 322 → 192, acoustics 21 → 50, music production 4 → 19, audio systems 155 → 112.
+  Keyword changes risk pulling non-audio jobs onto the board (a new category lifts relevance), so
+  diff `is_audio_related` across a prod snapshot before deploying, as was done here.
+
 - **2026-11-17, live venue audio roles** — Live Nation's "Audio Engineer"/"Audio Tech" jobs had no
   Live Sound category. Two causes: the keyword list lacked venue vocabulary, and
   `extract_role_text` started at "requirements" inside the EEO paragraph, so it read only legal

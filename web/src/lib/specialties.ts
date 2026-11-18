@@ -131,6 +131,18 @@ export const SPECIALTIES: Specialty[] = [
 		slug: 'audio-sales-marketing',
 		heading: 'Audio sales and marketing jobs',
 		lead: 'Commercial roles at audio companies: sales and applications engineering, business development, account management, product marketing and customer success for audio products.'
+	},
+	{
+		id: 'av_systems_integration',
+		slug: 'av-systems',
+		heading: 'AV systems design and integration jobs',
+		lead: 'Roles designing, installing, programming and supporting audiovisual systems in buildings and venues: AV consultants and designers, integrators, control system programmers, meeting-room AV and public address systems.'
+	},
+	{
+		id: 'business_operations',
+		slug: 'business-operations',
+		heading: 'Business and operations jobs at audio companies',
+		lead: 'Roles at audio companies outside engineering and sales: finance, people and HR, operations, supply chain, IT, product and program management, design and general internships.'
 	}
 ];
 

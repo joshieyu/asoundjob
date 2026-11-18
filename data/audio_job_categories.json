@@ -104,6 +104,16 @@
       "id": "acoustics_consulting",
       "name": "Architectural & Environmental Acoustics",
       "description": "Building and room acoustics, noise control, and environmental acoustic consultancy. Includes sound isolation, reverberation control, environmental noise assessment, and acoustic consulting for architecture, construction, and infrastructure projects. Distinct from transducer engineering (device-level) and audio systems (product-level)."
+    },
+    {
+      "id": "av_systems_integration",
+      "name": "AV Systems Design & Integration",
+      "description": "Designing, installing, programming and supporting audiovisual systems in buildings and venues: AV consultants and designers, integrators, control system programmers, conferencing and meeting-room AV, public address and voice alarm systems."
+    },
+    {
+      "id": "business_operations",
+      "name": "Business & Operations",
+      "description": "Roles at audio companies outside engineering and sales: finance, people and HR, operations, supply chain, IT, product and program management, design, and general internships."
     }
   ],
   "schema_usage_example": {

@@ -469,7 +469,7 @@ class TestCompanyCategoryFallback(unittest.TestCase):
     def test_corporate_role_at_semiconductor_company_does_not_fall_back(self) -> None:
         self.assertEqual(
             classify_categories("Financial Analyst", None, "Audio Semiconductors"),
-            [],
+            ["business_operations"],
         )
 
 
