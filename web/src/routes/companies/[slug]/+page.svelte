@@ -6,6 +6,7 @@
 	let { data } = $props();
 
 	const company = $derived(data.company);
+	const jobCategoryNames = $derived(new Map(data.jobCategoryNames));
 
 	let suggestOpen = $state(false);
 </script>
@@ -100,7 +101,7 @@
 	{#if company.jobs.length > 0}
 		<div class="grid gap-4 sm:grid-cols-2">
 			{#each company.jobs as job (job.id)}
-				<JobStrip {job} />
+				<JobStrip {job} categoryNames={jobCategoryNames} />
 			{/each}
 		</div>
 	{:else}

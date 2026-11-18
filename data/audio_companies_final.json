@@ -10839,14 +10839,6 @@
     "scrape_method": "http"
   },
   {
-    "name": "Two Big Ears",
-    "careers_url": "https://www.metacareers.com/",
-    "category": "Gaming, VR & Immersive Audio",
-    "verified": true,
-    "source": "auto",
-    "scrape_method": "http"
-  },
-  {
     "name": "Two Notes Audio",
     "careers_url": "http://twonotes.com/",
     "category": "Professional Audio & Live Sound",
