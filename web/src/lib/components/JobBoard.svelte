@@ -8,7 +8,6 @@
 	import { bookmarks, hydrateBookmarks } from '$lib/bookmarks.svelte';
 	import type { Paginated, Job } from '$lib/types';
 	import type { BoardData } from '$lib/server/board';
-	import { SPECIALTIES, specialtyPath } from '$lib/specialties';
 
 	let { data }: { data: BoardData } = $props();
 
@@ -23,13 +22,6 @@
 		if (specialty) next.set('category', params.category ?? specialty.id);
 		return next;
 	});
-
-	const specialtyCounts = $derived(
-		new Map((data.categories?.categories ?? []).map((c) => [c.id, c.job_count]))
-	);
-	const specialtyLinks = $derived(
-		SPECIALTIES.filter((s) => s.id !== specialty?.id && (specialtyCounts.get(s.id) ?? 0) > 0)
-	);
 
 	const headTitle = $derived(
 		specialty ? `${specialty.heading} | ASoundJob` : 'Audio industry jobs | ASoundJob'
@@ -588,10 +580,6 @@
 						<button type="submit" class="btn btn-quiet">Go</button>
 					</noscript>
 				</form>
-
-				<a href="/jobs/submit" class="link text-meta font-semibold">
-					Know a missing role? Submit it
-				</a>
 			</div>
 		</div>
 
@@ -759,24 +747,6 @@
 				</Accordion>
 			{/if}
 		</div>
-
-		{#if specialtyLinks.length > 0}
-			<nav class="mt-12 border-t border-rule pt-6" aria-labelledby="specialty-pages-heading">
-				<h2 id="specialty-pages-heading" class="axis-label">
-					{specialty ? 'Other specialties' : 'Jobs by specialty'}
-				</h2>
-				<ul class="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-meta">
-					{#each specialtyLinks as s (s.id)}
-						<li>
-							<a href={specialtyPath(s.id)} class="hover:text-accent hover:underline">
-								{s.heading}
-							</a>
-							<span class="coord text-muted">{specialtyCounts.get(s.id)}</span>
-						</li>
-					{/each}
-				</ul>
-			</nav>
-		{/if}
 	</section>
 </div>
 
