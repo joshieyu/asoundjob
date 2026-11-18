@@ -804,6 +804,13 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 
 ## 9. Log (newest first, keep entries short)
 
+- **2026-11-18, Meta failing only in the nightly run** — Meta scraped fine by hand but failed
+  both 08:00 timer runs ("page loaded but no job links found"). Under nightly load the
+  `networkidle` wait times out, and the `domcontentloaded` fallback read the page after 500 ms,
+  before the JS job list rendered. The fallback now calls `settle_links`, which waits until the
+  link count holds steady for 3 s (capped at the page timeout). Reproduce the fallback path with
+  `PAGE_LOAD_TIMEOUT=3 python -m scraper.check_url <url>`; before the fix Meta gave 14 of 75.
+
 - **2026-11-18, categorization audit** — Hand-labelled 211 board jobs into
   `scraper/tests/fixtures/category_golden.json` (acceptable categories per job). Score with
   `python -m scraper.category_eval [--misses]`; `tests/test_category_golden.py` fails if hit rate

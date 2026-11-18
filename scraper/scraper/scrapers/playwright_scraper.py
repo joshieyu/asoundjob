@@ -72,6 +72,7 @@ class PlaywrightScraper(BaseScraper):
                 response = await page.goto(
                     url, wait_until="domcontentloaded", timeout=timeout_ms
                 )
+                await settle_links(page, timeout_ms)
             self._record_status(url, response)
             await page.wait_for_timeout(500)
             final_url = getattr(page, "url", None)
@@ -129,3 +130,27 @@ class PlaywrightScraper(BaseScraper):
             except Exception:
                 pass
             self._playwright = None
+
+
+LINK_SETTLE_POLL_MS = 1000
+LINK_SETTLE_STABLE_POLLS = 3
+
+
+async def settle_links(page: Any, timeout_ms: int) -> None:
+    remaining = timeout_ms
+    last_count = -1
+    stable = 0
+    while remaining > 0:
+        try:
+            count = await page.evaluate("document.links.length")
+        except Exception:
+            return
+        if count == last_count and count > 0:
+            stable += 1
+            if stable >= LINK_SETTLE_STABLE_POLLS:
+                return
+        else:
+            stable = 0
+            last_count = count
+        await page.wait_for_timeout(LINK_SETTLE_POLL_MS)
+        remaining -= LINK_SETTLE_POLL_MS
