@@ -8716,11 +8716,15 @@
   },
   {
     "name": "Rivian",
-    "careers_url": "https://rivian.com/careers-home/",
+    "careers_url": "https://careers.rivian.com/jobs?keywords=audio",
     "category": "Automotive OEMs",
     "verified": true,
     "source": "manual",
-    "scrape_method": "http"
+    "scrape_method": "http",
+    "ats_type": "jibe",
+    "extra_careers_urls": [
+      "https://careers.rivian.com/jobs?keywords=acoustic"
+    ]
   },
   {
     "name": "RMBAV",

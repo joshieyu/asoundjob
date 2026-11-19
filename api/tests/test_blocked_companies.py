@@ -74,6 +74,13 @@ class TestBlockedCompanies(unittest.TestCase):
         self.assertEqual(result.total, 0)
         self.assertEqual(result.companies, [])
 
+    def test_company_with_only_community_job_is_still_returned(self) -> None:
+        c = company("Tesla", "tesla", scrape_blocked=True)
+        self._add(c)
+        self._add(self._job(c.id, source="community"))
+        result = list_blocked_companies(db=self.session)
+        self.assertEqual([c.name for c in result.companies], ["Tesla"])
+
     def test_company_with_only_inactive_job_is_still_returned(self) -> None:
         c = company("Celestion", "celestion", scrape_blocked=True)
         self._add(c)

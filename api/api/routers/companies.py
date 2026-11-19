@@ -158,6 +158,7 @@ def list_blocked_companies(db: Session = Depends(get_db)):
             Job.company_id == Company.id,
             Job.is_active.is_(True),
             Job.is_audio_related.is_(True),
+            Job.source != "community",
             listable_clause(),
         )
         .exists()
