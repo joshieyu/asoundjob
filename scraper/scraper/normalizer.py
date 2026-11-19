@@ -910,7 +910,7 @@ def _anchor_hit(text: str) -> bool:
 
 
 AUDIO_DESC_STRONG = re.compile(
-    r"\b(audio|acoustic(?:s|al)?|dsp|loudspeaker|microphone|transducer|"
+    r"\b(audio|acoustic(?:s|al)?|dsp|loudspeakers?|microphones?|transducers?|"
     r"audiolog\w*|audiologist|hearing aid|hearing instrument|hearing science|"
     r"beamforming|noise cancellation|echo cancellation|active noise|"
     r"spatial audio|spatial sound|psychoacoustic|hrtf|audio signal|"
@@ -924,7 +924,7 @@ AUDIO_DESC_STRONG = re.compile(
 AUDIO_DESC_WEAK = re.compile(
     r"\b(sound|voice|speech|hearing|listening|music\w*|recording studio|"
     r"studio monitor|studio engineer|mixing studio|mastering studio|"
-    r"mixing|mastering|daw|noisy|noise|vibration|nvh|speaker)\b",
+    r"mixing|mastering|daw|noisy|noise|vibration|nvh|speakers?)\b",
     re.IGNORECASE,
 )
 
@@ -1010,6 +1010,13 @@ AUDIO_REQUIREMENT = re.compile(
 )
 
 AUDIO_REQUIREMENT_BONUS = 45
+
+INFOTAINMENT_TITLE = re.compile(r"\binfotainment\b", re.IGNORECASE)
+
+NON_AUDIO_ACOUSTIC = re.compile(
+    r"\b(?:scanning\s+)?acoustic\s+microscop\w*|\bc-?sam\b",
+    re.IGNORECASE,
+)
 
 CORPORATE_ROLE = re.compile(
     r"\b(accountant|accounts? payable|accounts? receivable|paralegal|attorney|"
@@ -1222,8 +1229,13 @@ def score_relevance(
     title_strong = bool(
         AUDIO_TITLE_STRONG.search(title) or AUDIO_TITLE_STRONG_INTL.search(title)
     )
+    audio_category = any(
+        category not in LABEL_ONLY_CATEGORIES for category in job_categories
+    )
     title_weak = bool(
-        AUDIO_TITLE_WEAK.search(title) or AUDIO_TITLE_WEAK_INTL.search(title)
+        AUDIO_TITLE_WEAK.search(title)
+        or AUDIO_TITLE_WEAK_INTL.search(title)
+        or (audio_category and INFOTAINMENT_TITLE.search(title))
     )
 
     if title_strong:
@@ -1232,7 +1244,7 @@ def score_relevance(
         score += 30
 
     cleaned_description = clean_description(description) or ""
-    role_text = extract_role_text(description)
+    role_text = NON_AUDIO_ACOUSTIC.sub(" ", extract_role_text(description))
     role_lower = role_text.lower()[:8000]
 
     strong_mentions = len(AUDIO_DESC_STRONG.findall(role_lower))
@@ -1247,7 +1259,7 @@ def score_relevance(
     if AUDIO_REQUIREMENT.search(role_text):
         score += AUDIO_REQUIREMENT_BONUS
 
-    if any(category not in LABEL_ONLY_CATEGORIES for category in job_categories):
+    if audio_category:
         if audio_scope == "native":
             score += 35
         else:

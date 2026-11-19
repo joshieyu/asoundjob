@@ -856,3 +856,36 @@ class TestInternationalTitleVocabulary(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestAutomotiveInfotainmentRelevance(unittest.TestCase):
+    SPEAKER_ROLE = (
+        "Responsibilities: lead the mechanical development of our infotainment modules. "
+        "The infotainment system includes displays, microphones, speakers and amplifier "
+        "modules. Experience designing components that include speakers, microphones "
+        "and amplifiers. Solve acoustic sealing and audio integration challenges. "
+    ) * 2
+
+    def test_infotainment_speaker_role_is_on_the_board(self) -> None:
+        title = "Sr. Mechanical Design Engineer, Infotainment"
+        categories = classify_categories(title, self.SPEAKER_ROLE, "Automotive OEMs")
+        self.assertTrue(score_relevance(title, self.SPEAKER_ROLE, categories, "partial")[1])
+
+    def test_infotainment_title_alone_is_not_enough(self) -> None:
+        description = (
+            "Responsibilities: build Android apps for the head unit covering navigation, "
+            "audio, video, connectivity and vehicle settings. "
+        ) * 3
+        title = "Infotainment Application Developer"
+        categories = classify_categories(title, description, "Automotive OEMs")
+        self.assertFalse(score_relevance(title, description, categories, "partial")[1])
+
+    def test_acoustic_microscopy_is_not_audio(self) -> None:
+        description = (
+            "Responsibilities: perform failure analysis on returned electronic modules "
+            "using X-ray, cross-sectioning and SEM. Experience with scanning acoustic "
+            "microscopy (C-SAM) for detection of delamination and voiding. "
+        ) * 2
+        title = "Early Career - Electrical Engineering Failure Analysis Engineer"
+        categories = classify_categories(title, description, "Automotive OEMs")
+        self.assertFalse(score_relevance(title, description, categories, "partial")[1])
