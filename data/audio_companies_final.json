@@ -3409,7 +3409,7 @@
     "careers_url": "https://jobs.ebayinc.com/us/en",
     "category": "Audio Retailers & Distributors",
     "verified": true,
-    "source": "auto",
+    "source": "manual",
     "scrape_method": "playwright"
   },
   {
