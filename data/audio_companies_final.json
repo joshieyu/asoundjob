@@ -342,10 +342,11 @@
   },
   {
     "name": "AIVA",
-    "careers_url": "https://www.aiva.ai/",
+    "careers_url": "https://www.aiva.ai/jobs",
     "category": "AI/ML Audio",
     "verified": true,
-    "source": "auto",
+    "open_application": true,
+    "source": "manual",
     "scrape_method": "playwright"
   },
   {
