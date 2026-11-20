@@ -4264,6 +4264,16 @@
     "scrape_method": "playwright"
   },
   {
+    "name": "Gentex Corporation",
+    "careers_url": "https://recruiting.paylocity.com/Recruiting/Jobs/All/302a0fa8-9c10-4c4f-bc49-27fd3045595d/Gentex-Corp",
+    "category": "Headphones & Personal Audio",
+    "verified": true,
+    "source": "manual",
+    "scrape_method": "http",
+    "website_url": "https://www.gentexcorp.com/",
+    "ats_type": "paylocity"
+  },
+  {
     "name": "German Physiks",
     "careers_url": "https://www.german-physiks.com/en/careers",
     "category": "Hi-Fi & Consumer Speakers",
@@ -4595,6 +4605,20 @@
     "verified": false,
     "source": "auto",
     "scrape_method": "http"
+  },
+  {
+    "name": "HDR",
+    "careers_url": "https://hdr.taleo.net/careersection/ex/jobsearch.ftl?keyword=acoustics",
+    "category": "Acoustic Consulting & Engineering",
+    "verified": true,
+    "source": "manual",
+    "scrape_method": "http",
+    "extra_careers_urls": [
+      "https://hdr.taleo.net/careersection/ex/jobsearch.ftl?keyword=noise",
+      "https://hdr.taleo.net/careersection/ex/jobsearch.ftl?keyword=audio"
+    ],
+    "website_url": "https://www.hdrinc.com/",
+    "ats_type": "taleo"
   },
   {
     "name": "HEAD acoustics",
@@ -5843,6 +5867,20 @@
     "scrape_method": "http"
   },
   {
+    "name": "Leonardo DRS",
+    "careers_url": "https://careers.leonardodrs.com/search/?q=acoustic",
+    "category": "Acoustic Consulting & Engineering",
+    "verified": true,
+    "source": "manual",
+    "scrape_method": "http",
+    "extra_careers_urls": [
+      "https://careers.leonardodrs.com/search/?q=sonar",
+      "https://careers.leonardodrs.com/search/?q=audio"
+    ],
+    "website_url": "https://www.leonardodrs.com/",
+    "ats_type": "successfactors"
+  },
+  {
     "name": "LePou Plugins",
     "careers_url": "https://www.lepouplugins.blogspot.com/careers",
     "category": "Audio Plugins & Virtual Instruments",
@@ -6432,6 +6470,17 @@
     "verified": false,
     "source": "auto",
     "scrape_method": "http"
+  },
+  {
+    "name": "ME Engineers",
+    "careers_url": "https://meengineers.bamboohr.com/careers",
+    "category": "Acoustic Consulting & Engineering",
+    "verified": true,
+    "source": "manual",
+    "scrape_method": "http",
+    "website_url": "https://www.meengineers.com/",
+    "ats_type": "bamboohr",
+    "ats_slug": "meengineers"
   },
   {
     "name": "MED-EL",
@@ -8962,6 +9011,19 @@
     "verified": true,
     "source": "auto",
     "scrape_method": "playwright"
+  },
+  {
+    "name": "Salas O'Brien",
+    "careers_url": "https://recruiting2.ultipro.com/SAL1016SALO/JobBoard/3347ce03-ba60-4bdc-8af2-26369c80b18f/?q=acoustic",
+    "category": "Acoustic Consulting & Engineering",
+    "verified": true,
+    "source": "manual",
+    "scrape_method": "http",
+    "extra_careers_urls": [
+      "https://recruiting2.ultipro.com/SAL1016SALO/JobBoard/3347ce03-ba60-4bdc-8af2-26369c80b18f/?q=audio"
+    ],
+    "website_url": "https://www.salasobrien.com/",
+    "ats_type": "ultipro"
   },
   {
     "name": "Salter (Acoustics)",

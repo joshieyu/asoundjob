@@ -26,11 +26,13 @@ from scraper.scrapers.ats.icims import IcimsScraper
 from scraper.scrapers.ats.jibe import JibeScraper
 from scraper.scrapers.ats.jobsyn import JobsynScraper
 from scraper.scrapers.ats.lever import LeverScraper
+from scraper.scrapers.ats.paylocity import PaylocityScraper
 from scraper.scrapers.ats.pinpoint import PinpointScraper
 from scraper.scrapers.ats.recruitee import RecruiteeScraper
 from scraper.scrapers.ats.sigma import SigmaScraper
 from scraper.scrapers.ats.smartrecruiters import SmartRecruitersScraper
 from scraper.scrapers.ats.successfactors import SuccessFactorsScraper
+from scraper.scrapers.ats.taleo import TaleoScraper
 from scraper.scrapers.ats.ultipro import UltiproScraper
 from scraper.scrapers.ats.workable import WorkableScraper
 from scraper.scrapers.ats.workday import WorkdayScraper
@@ -69,6 +71,8 @@ class ScrapePipeline:
         self.apple = AppleScraper(settings)
         self.eightfold = EightfoldScraper(settings)
         self.pinpoint = PinpointScraper(settings)
+        self.paylocity = PaylocityScraper(settings)
+        self.taleo = TaleoScraper(settings)
         self.haileyhr = HaileyHrScraper(settings)
         self.icims = IcimsScraper(settings)
         self.adp = AdpScraper(settings)
@@ -95,6 +99,8 @@ class ScrapePipeline:
             "apple": self.apple,
             "eightfold": self.eightfold,
             "pinpoint": self.pinpoint,
+            "paylocity": self.paylocity,
+            "taleo": self.taleo,
             "haileyhr": self.haileyhr,
             "icims": self.icims,
             "adp": self.adp,
@@ -303,6 +309,8 @@ class ScrapePipeline:
             self.bamboohr,
             self.workday,
             self.pinpoint,
+            self.paylocity,
+            self.taleo,
             self.haileyhr,
             self.icims,
             self.adp,

@@ -889,3 +889,19 @@ class TestAutomotiveInfotainmentRelevance(unittest.TestCase):
         title = "Early Career - Electrical Engineering Failure Analysis Engineer"
         categories = classify_categories(title, description, "Automotive OEMs")
         self.assertFalse(score_relevance(title, description, categories, "partial")[1])
+
+
+class TestAvConsultingTitles(unittest.TestCase):
+    def test_av_titles_land_in_av_systems(self) -> None:
+        for title in (
+            "AV Consultant",
+            "AV Field Engineer",
+            "Senior AV/Technology Consultant",
+            "Audio-Visual Technology Design Intern",
+            "Engineer - Audio Video - Denver",
+        ):
+            with self.subTest(title=title):
+                categories = classify_categories(
+                    title, None, "Acoustic Consulting & Engineering"
+                )
+                self.assertIn("av_systems_integration", categories)
