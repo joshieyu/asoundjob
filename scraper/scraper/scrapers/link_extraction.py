@@ -1108,6 +1108,12 @@ ACCORDION_MAX_LINK_TEXT_RATIO = 0.30
 
 ACCORDION_MIN_PANEL_CHARS = 400
 
+ACCORDION_ITEM_CLASS = re.compile(r"^accordion-item$")
+
+ACCORDION_HEADER_CLASS = re.compile(r"^accordion-(?:header|button|title)$")
+
+ACCORDION_BODY_CLASS = re.compile(r"^accordion-(?:body|content|collapse)$")
+
 SAME_PAGE_SLUG_RE = re.compile(r"[^a-z0-9]{1,40}")
 
 
@@ -1242,6 +1248,53 @@ def extract_accordion_jobs(html: str, base_url: str) -> list[RawJob]:
                 description=panel_text or None,
                 job_type=job_type,
                 external_id=same_page_external_id(title, taken_external_ids),
+            )
+        )
+
+    for item in soup.find_all(True, class_=ACCORDION_ITEM_CLASS):
+        header = item.find(True, class_=ACCORDION_HEADER_CLASS)
+        panel = item.find(True, class_=ACCORDION_BODY_CLASS)
+        if header is None or panel is None:
+            continue
+        if any(
+            isinstance(parent, Tag) and parent.name in ACCORDION_NAV_ANCESTOR_TAGS
+            for parent in item.parents
+        ):
+            continue
+
+        panel_text = panel.get_text(" ", strip=True)
+        if len(panel_text) < ACCORDION_MIN_PANEL_CHARS:
+            continue
+
+        raw_title = _clean_text(header.get_text(" ", strip=True))
+        title, job_type = _clean_job_title_and_type(raw_title)
+        if len(title) < MIN_TITLE_LEN or len(title) > MAX_TITLE_LEN:
+            continue
+        if title.lower() in NON_JOB_TEXT or is_furniture_title(title):
+            continue
+        if title.rstrip().endswith(QUESTION_MARK) or not has_role_noun(title):
+            continue
+
+        link_chars = sum(
+            len(link.get_text(" ", strip=True)) for link in panel.find_all("a")
+        )
+        if link_chars / max(len(panel_text), 1) >= ACCORDION_MAX_LINK_TEXT_RATIO:
+            continue
+
+        external_id = same_page_external_id(title, taken_external_ids)
+        ident = _clean_text(item.get("id")).lstrip("#") or external_id.split(":", 1)[1]
+        url = f"{base_without_fragment}#{ident}"
+        if url in seen_urls:
+            continue
+        seen_urls.add(url)
+
+        jobs.append(
+            RawJob(
+                title=title,
+                url=url,
+                description=panel_text or None,
+                job_type=job_type,
+                external_id=external_id,
             )
         )
 

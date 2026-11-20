@@ -1410,3 +1410,42 @@ class TestHeadingTitledDownloadLinks(unittest.TestCase):
     def test_contact_link_under_a_plain_heading_is_skipped(self) -> None:
         html = self.page("Support", "/contact", "Contact")
         self.assertEqual(extract_job_links(html, self.BASE), [])
+
+
+CLASS_ACCORDION_BODY = (
+    "Base salary $85,000 to $115,000. You will implement sound design content in audio "
+    "middleware and game engines, build audio systems, and mix our games. We are looking "
+    "for someone with Wwise or FMOD experience, scripting in C# or Lua, and a strong ear. "
+    "This is a full-time salaried position at our studio with some hybrid flexibility, "
+    "unlimited paid time off, a 401(k) with company match, and medical, dental and vision."
+)
+
+
+def _class_accordion_html(title: str, body: str) -> str:
+    return (
+        '<html><body><div class="accordion">'
+        '<div class="accordion-item active" id="role-1">'
+        f'<div class="accordion-button"><div class="accordion-header">{title}</div></div>'
+        f'<div class="accordion-collapse"><div class="accordion-body"><p>{body}</p>'
+        '<a href="https://forms.example/apply">Apply</a></div></div>'
+        "</div></div></body></html>"
+    )
+
+
+class TestClassAccordionExtraction(unittest.TestCase):
+    def test_class_accordion_role_yields_job(self) -> None:
+        html = _class_accordion_html("Technical Sound Designer", CLASS_ACCORDION_BODY)
+        jobs = extract_accordion_jobs(html, "https://studio.example/jobs/")
+        self.assertEqual([j.title for j in jobs], ["Technical Sound Designer"])
+        self.assertEqual(jobs[0].url, "https://studio.example/jobs/#role-1")
+        self.assertIn("Wwise", jobs[0].description or "")
+
+    def test_faq_accordion_yields_nothing(self) -> None:
+        for title in ("How do I apply?", "Benefits and perks"):
+            with self.subTest(title=title):
+                html = _class_accordion_html(title, CLASS_ACCORDION_BODY)
+                self.assertEqual(extract_accordion_jobs(html, "https://studio.example/jobs/"), [])
+
+    def test_short_class_accordion_panel_yields_nothing(self) -> None:
+        html = _class_accordion_html("Sound Designer", "Coming soon.")
+        self.assertEqual(extract_accordion_jobs(html, "https://studio.example/jobs/"), [])

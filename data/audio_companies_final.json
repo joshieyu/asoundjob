@@ -4712,6 +4712,15 @@
     "scrape_method": "playwright"
   },
   {
+    "name": "Hexany Audio",
+    "careers_url": "https://hexanyaudio.com/jobs/",
+    "category": "Gaming, VR & Immersive Audio",
+    "verified": true,
+    "source": "manual",
+    "scrape_method": "http",
+    "website_url": "https://hexanyaudio.com/"
+  },
+  {
     "name": "HGC Engineering",
     "careers_url": "https://acoustical-consultants.com/careers/",
     "category": "Acoustic Consulting & Engineering",
