@@ -26,6 +26,8 @@ NON_JOB_URL = re.compile(
     re.IGNORECASE,
 )
 
+CONTACT_PATH_RE = re.compile(r"/contact(?:[-_]us)?$")
+
 SOCIAL_DOMAIN = re.compile(
     r"(linkedin\.com|facebook\.com/(share|sharer)|twitter\.com/(intent|share)|"
     r"x\.com/intent|instagram\.com|youtube\.com|wa\.me|whatsapp\.com|t\.me/|"
@@ -34,6 +36,9 @@ SOCIAL_DOMAIN = re.compile(
 )
 
 NON_JOB_TEXT = {
+    "download",
+    "download pdf",
+    "download job description",
     "learn more",
     "read more",
     "read more here",
@@ -1036,7 +1041,13 @@ def extract_job_links(html: str, base_url: str) -> list[RawJob]:
             continue
 
         same_host = bool(base_netloc) and parsed.netloc.lower() == base_netloc
-        structural_job_hint = came_from_structure and base_has_job_hint and same_host
+        needs_role_noun = not same_host or bool(CONTACT_PATH_RE.search(path))
+        structural_job_hint = (
+            came_from_structure
+            and base_has_job_hint
+            and (same_host or path.endswith(".pdf"))
+            and (has_role_noun(candidate_title) or not needs_role_noun)
+        )
         same_page_anchor = bool(
             parsed.fragment
             and same_host

@@ -4142,10 +4142,10 @@
   },
   {
     "name": "Funktion-One",
-    "careers_url": "https://funktion-one.com/about/",
+    "careers_url": "https://funktion-one.com/careers-at-funktion-one/",
     "category": "DJ Equipment",
     "verified": true,
-    "source": "auto",
+    "source": "manual",
     "scrape_method": "http"
   },
   {

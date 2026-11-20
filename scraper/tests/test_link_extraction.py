@@ -1383,3 +1383,30 @@ class TestInnerHeadingTitleHosts(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestHeadingTitledDownloadLinks(unittest.TestCase):
+    BASE = "https://speakers.example/careers-at-speakers/"
+
+    def page(self, heading: str, href: str, text: str = "Download") -> str:
+        return (
+            "<html><body><main><section><div><h2>Current Positions</h2></div>"
+            f"<div><h3>{heading}</h3><p>Join our team and build loudspeakers.</p>"
+            f'<div><a href="{href}">{text}</a></div></div></section></main></body></html>'
+        )
+
+    def test_offsite_pdf_takes_the_heading_as_title(self) -> None:
+        html = self.page(
+            "Research and Development Engineer",
+            "https://cdn.files.example/speakers/RD-Engineer-JD.pdf",
+        )
+        jobs = extract_job_links(html, self.BASE)
+        self.assertEqual([j.title for j in jobs], ["Research and Development Engineer"])
+
+    def test_offsite_pdf_without_a_role_heading_is_skipped(self) -> None:
+        html = self.page("Our brochure", "https://cdn.files.example/speakers/brochure.pdf")
+        self.assertEqual(extract_job_links(html, self.BASE), [])
+
+    def test_contact_link_under_a_plain_heading_is_skipped(self) -> None:
+        html = self.page("Support", "/contact", "Contact")
+        self.assertEqual(extract_job_links(html, self.BASE), [])
