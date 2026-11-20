@@ -1023,9 +1023,50 @@ AUDIO_REQUIREMENT_BONUS = 45
 INFOTAINMENT_TITLE = re.compile(r"\binfotainment\b", re.IGNORECASE)
 
 NON_AUDIO_ACOUSTIC = re.compile(
-    r"\b(?:scanning\s+)?acoustic\s+microscop\w*|\bc-?sam\b",
+    r"\b(?:scanning\s+)?acoustic\s+microscop\w*|\bc-?sam\b|"
+    r"\b(?:video\s*/\s*audio|audio\s*/\s*video|audio and video|video and audio)"
+    r"\s+conferenc\w*",
     re.IGNORECASE,
 )
+
+NON_AUDIO_TITLE_PHRASES = re.compile(
+    r"\bvoice of (?:the )?customers?\b|"
+    r"\bmusic (?:hall|box|center|centre|factory)\b|"
+    r"\b(?:house|hall) of (?:music|blues)\b",
+    re.IGNORECASE,
+)
+
+NON_AUDIO_DSP_CONTEXT = re.compile(
+    r"\b(?:lidar|radar|rf|imaging|image|camera|vision|video|optical|wireless|"
+    r"baseband|modem|5g|lte|motor|power)\b",
+    re.IGNORECASE,
+)
+
+TITLE_DSP = re.compile(r"\bdsp\b", re.IGNORECASE)
+
+TITLE_AUDIO_WORD = re.compile(
+    r"\b(?:audio|sound|acoustic\w*|speech|voice|music\w*)\b", re.IGNORECASE
+)
+
+COMPANY_NAME_SPLIT = re.compile(r"[()/]")
+
+
+def relevance_title(title: str) -> str:
+    cleaned = NON_AUDIO_TITLE_PHRASES.sub(" ", title)
+    if NON_AUDIO_DSP_CONTEXT.search(cleaned) and not TITLE_AUDIO_WORD.search(cleaned):
+        cleaned = TITLE_DSP.sub(" ", cleaned)
+    return cleaned
+
+
+def strip_company_name(text: str, company_name: str | None) -> str:
+    if not company_name:
+        return text
+    for part in COMPANY_NAME_SPLIT.split(company_name):
+        name = part.strip()
+        if len(name) < 3 or not AUDIO_DESC_STRONG.search(name):
+            continue
+        text = re.sub(re.escape(name), " ", text, flags=re.IGNORECASE)
+    return text
 
 CORPORATE_ROLE = re.compile(
     r"\b(accountant|accounts? payable|accounts? receivable|paralegal|attorney|"
@@ -1128,6 +1169,9 @@ ROLE_START_MARKERS: tuple[str, ...] = (
 EEO_STATEMENT = "equal employment opportunit"
 
 TRAILING_BOILERPLATE_MARKERS: tuple[str, ...] = (
+    "who we are",
+    "about us",
+    "about the company",
     "equal opportunity employer",
     "we are an equal",
     EEO_STATEMENT,
@@ -1217,12 +1261,32 @@ def extract_role_text(description: str | None) -> str:
 
 LABEL_ONLY_CATEGORIES = frozenset({"sales_marketing_cs", "business_operations"})
 
+COMPANY_DOMAIN_CATEGORY: dict[str, str] = {
+    "Automotive OEMs": "automotive_audio",
+    "Car Audio": "automotive_audio",
+    "Electronic Musical Instruments": "music_technology",
+    "DJ Equipment": "music_technology",
+    "Audio Plugins & Virtual Instruments": "music_technology",
+    "DAW & Music Production Software": "music_technology",
+    "Audio Interfaces & Converters": "music_technology",
+}
+
+
+def with_company_domain(categories: list[str], company_category: str | None) -> list[str]:
+    domain = COMPANY_DOMAIN_CATEGORY.get(company_category or "")
+    if domain is None or domain in categories:
+        return categories
+    if categories and set(categories) <= LABEL_ONLY_CATEGORIES:
+        return categories
+    return sorted(set(categories) | {domain})
+
 
 def score_relevance(
     title: str,
     description: str | None,
     job_categories: list[str],
     audio_scope: str = "native",
+    company_name: str | None = None,
 ) -> tuple[int, bool]:
     if TALENT_POOL_TITLE.search(title):
         return 0, False
@@ -1234,6 +1298,7 @@ def score_relevance(
         return 0, False
 
     score = 0
+    title = relevance_title(title)
 
     title_strong = bool(
         AUDIO_TITLE_STRONG.search(title) or AUDIO_TITLE_STRONG_INTL.search(title)
@@ -1253,7 +1318,9 @@ def score_relevance(
         score += 30
 
     cleaned_description = clean_description(description) or ""
-    role_text = NON_AUDIO_ACOUSTIC.sub(" ", extract_role_text(description))
+    role_text = NON_AUDIO_ACOUSTIC.sub(
+        " ", strip_company_name(extract_role_text(description), company_name)
+    )
     role_lower = role_text.lower()[:8000]
 
     strong_mentions = len(AUDIO_DESC_STRONG.findall(role_lower))
@@ -1918,6 +1985,7 @@ class Normalizer:
         raw: RawJob,
         audio_scope: str = "native",
         company_category: str | None = None,
+        company_name: str | None = None,
     ) -> NormalizedJob:
         salary_text = " ".join(
             part for part in (raw.title, raw.description) if part
@@ -1931,8 +1999,11 @@ class Normalizer:
             categories = [c for c in categories if c in self.valid_ids]
 
         relevance_score, is_audio_related = score_relevance(
-            title, raw.description, categories, audio_scope
+            title, raw.description, categories, audio_scope, company_name
         )
+        categories = with_company_domain(categories, company_category)
+        if self.valid_ids is not None:
+            categories = [c for c in categories if c in self.valid_ids]
 
         job_type = normalize_job_type(raw.job_type)
         if job_type is None:

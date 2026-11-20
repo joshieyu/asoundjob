@@ -386,6 +386,7 @@ def rescore_job(scorer: Normalizer, company: Company, job: Job) -> None:
         raw,
         audio_scope=company.audio_scope or "native",
         company_category=company.category,
+        company_name=company.name,
     )
     job.relevance_score = normalized.relevance_score
     job.is_audio_related = effective_is_audio(job, normalized.is_audio_related)

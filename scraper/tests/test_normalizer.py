@@ -4,7 +4,9 @@ import unittest
 from pathlib import Path
 
 from scraper.normalizer import (
+    AUDIO_TITLE_STRONG,
     AUDIO_TITLE_STRONG_INTL,
+    AUDIO_TITLE_WEAK,
     CATEGORY_KEYWORDS,
     NormalizedJob,
     Normalizer,
@@ -17,8 +19,11 @@ from scraper.normalizer import (
     load_valid_category_ids,
     normalize_job_type,
     parse_salary,
+    relevance_title,
     score_relevance,
+    strip_company_name,
     strip_gender_markers,
+    with_company_domain,
 )
 from scraper.scrapers.base import RawJob
 
@@ -905,3 +910,69 @@ class TestAvConsultingTitles(unittest.TestCase):
                     title, None, "Acoustic Consulting & Engineering"
                 )
                 self.assertIn("av_systems_integration", categories)
+
+
+class TestCompanyDomainCategories(unittest.TestCase):
+    def test_car_company_roles_gain_automotive_audio(self) -> None:
+        self.assertEqual(
+            with_company_domain(["audio_dsp_embedded"], "Automotive OEMs"),
+            ["audio_dsp_embedded", "automotive_audio"],
+        )
+        self.assertEqual(with_company_domain(["nvh"], "Car Audio"), ["automotive_audio", "nvh"])
+
+    def test_music_companies_gain_music_technology(self) -> None:
+        for company_category in (
+            "Electronic Musical Instruments",
+            "Audio Interfaces & Converters",
+            "DAW & Music Production Software",
+        ):
+            with self.subTest(company_category=company_category):
+                self.assertIn(
+                    "music_technology", with_company_domain([], company_category)
+                )
+
+    def test_business_roles_are_left_alone(self) -> None:
+        self.assertEqual(
+            with_company_domain(["business_operations"], "Electronic Musical Instruments"),
+            ["business_operations"],
+        )
+
+    def test_other_companies_are_unchanged(self) -> None:
+        self.assertEqual(
+            with_company_domain(["audio_software"], "Consumer Electronics & Tech"),
+            ["audio_software"],
+        )
+
+    def test_company_tag_does_not_lift_relevance(self) -> None:
+        title = "Software Developer"
+        description = "Responsibilities: build backend services for dealer tools. " * 6
+        categories = classify_categories(title, description, "Automotive OEMs")
+        self.assertFalse(score_relevance(title, description, categories, "partial")[1])
+
+
+class TestRelevanceFalsePositives(unittest.TestCase):
+    def test_non_audio_title_phrases(self) -> None:
+        for title in (
+            "Senior Staff DSP Engineer, LiDAR",
+            "Intern, Aftersales Customer Relations & Voice of Customer",
+            "Lighting Tech-Satellite Music Hall",
+        ):
+            with self.subTest(title=title):
+                cleaned = relevance_title(title)
+                self.assertFalse(AUDIO_TITLE_STRONG.search(cleaned))
+                self.assertFalse(AUDIO_TITLE_WEAK.search(cleaned))
+
+    def test_audio_titles_keep_their_signal(self) -> None:
+        for title in ("Audio Tech- Satellite Music Hall", "Audio DSP & Tuning Engineer"):
+            with self.subTest(title=title):
+                self.assertTrue(AUDIO_TITLE_STRONG.search(relevance_title(title)))
+
+    def test_company_name_is_not_an_audio_mention(self) -> None:
+        text = "Join L-Acoustics as our internal communications lead at L-Acoustics."
+        self.assertNotIn("acoustics", strip_company_name(text, "L-Acoustics").lower())
+        self.assertIn("audio", strip_company_name("Design audio products.", "Bose"))
+
+    def test_trailing_who_we_are_section_is_dropped(self) -> None:
+        role = "Responsibilities: maintain laptops and the help desk queue. " * 12
+        about = "Who we are: the most trusted audio brand, we make microphones and audio systems."
+        self.assertNotIn("microphones", extract_role_text(role + "\n\n" + about))

@@ -804,6 +804,19 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 
 ## 9. Log (newest first, keep entries short)
 
+- **2026-11-20, company-type tags and relevance false positives** — Jobs at car companies
+  (Automotive OEMs, Car Audio) now always carry `automotive_audio`, and jobs at music-tech
+  companies (instruments, DJ, plugins, DAWs, audio interfaces) carry `music_technology`, via
+  `with_company_domain`. The tag is added after scoring so it never lifts a job onto the board,
+  and business/sales-only roles are skipped. Relevance now ignores the company's own name
+  ("L-Acoustics" is not an audio mention), cuts trailing "Who we are"/"About us" sections, and
+  drops "Voice of Customer", venue names like "Music Hall", and DSP next to LiDAR/radar/RF/video
+  in titles. Effect on the live board: 41 jobs off (mostly Shure IT, L-Acoustics corporate,
+  Live Nation lighting), none added, 52 tags added. New Taleo and Paylocity scrapers; HDR,
+  Salas O'Brien, ME Engineers, Gentex, Leonardo DRS, RWDI, Hexany Audio added. Gentex,
+  Leonardo DRS and ME Engineers were set to `partial` scope in the database (whole-board
+  scrapes); that lives in the DB, not the seed.
+
 - **2026-11-18, Meta failing only in the nightly run** — Meta scraped fine by hand but failed
   both 08:00 timer runs ("page loaded but no job links found"). Under nightly load the
   `networkidle` wait times out, and the `domcontentloaded` fallback read the page after 500 ms,

@@ -107,6 +107,7 @@ def persist_result(
                 raw,
                 audio_scope=managed.audio_scope or "native",
                 company_category=managed.category,
+                company_name=managed.name,
             )
             for raw in result.jobs
         ]

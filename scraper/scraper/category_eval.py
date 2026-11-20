@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from scraper.normalizer import classify_categories
+from scraper.normalizer import classify_categories, with_company_domain
 
 GOLDEN_PATH = Path(__file__).resolve().parents[1] / "tests" / "fixtures" / "category_golden.json"
 
@@ -50,8 +50,11 @@ def evaluate(cases: list[dict[str, Any]]) -> EvalResult:
     result = EvalResult()
     for case in cases:
         predicted = set(
-            classify_categories(
-                case["title"], case.get("description"), case.get("company_category")
+            with_company_domain(
+                classify_categories(
+                    case["title"], case.get("description"), case.get("company_category")
+                ),
+                case.get("company_category"),
             )
         )
         acceptable = set(case["acceptable"])

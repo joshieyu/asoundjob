@@ -151,7 +151,10 @@ async def check_url(url: str, name: Optional[str], category_override: Optional[s
     normalizer = Normalizer(settings)
     jobs = [
         normalizer.normalize(
-            raw, audio_scope=company.audio_scope, company_category=company.category
+            raw,
+            audio_scope=company.audio_scope,
+            company_category=company.category,
+            company_name=company.name,
         )
         for raw in result.jobs
     ]
