@@ -10327,6 +10327,16 @@
     "scrape_method": "http"
   },
   {
+    "name": "TAIT",
+    "careers_url": "https://careers.taittowers.com/search/jobs?q=audio",
+    "category": "Professional Audio & Live Sound",
+    "verified": true,
+    "source": "manual",
+    "scrape_method": "playwright",
+    "website_url": "https://taittowers.com/",
+    "scrape_blocked": true
+  },
+  {
     "name": "Take-Two Interactive",
     "careers_url": "https://careers.take2games.com/jobs",
     "category": "Gaming, VR & Immersive Audio",
