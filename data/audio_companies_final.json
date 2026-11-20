@@ -8937,6 +8937,17 @@
     "scrape_method": "playwright"
   },
   {
+    "name": "RWDI",
+    "careers_url": "https://rwdi.pinpointhq.com/",
+    "category": "Acoustic Consulting & Engineering",
+    "verified": true,
+    "source": "manual",
+    "scrape_method": "http",
+    "website_url": "https://rwdi.com/",
+    "ats_type": "pinpoint",
+    "ats_slug": "rwdi"
+  },
+  {
     "name": "SAE Institute",
     "careers_url": "https://jobs.sae.edu/",
     "category": "Music Education Technology",
