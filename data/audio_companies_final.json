@@ -463,6 +463,15 @@
     "scrape_method": "playwright"
   },
   {
+    "name": "Alvine",
+    "careers_url": "https://alvine.hire.trakstar.com/",
+    "category": "Acoustic Consulting & Engineering",
+    "verified": true,
+    "source": "manual",
+    "scrape_method": "http",
+    "website_url": "https://www.alvine.com/"
+  },
+  {
     "name": "Amazon",
     "careers_url": "https://www.amazon.jobs/en/search?base_query=audio",
     "category": "Consumer Electronics & Tech",
@@ -1623,6 +1632,19 @@
     "scrape_method": "playwright"
   },
   {
+    "name": "Black & Veatch",
+    "careers_url": "https://careers.bv.com/search/?q=acoustics",
+    "category": "Acoustic Consulting & Engineering",
+    "verified": true,
+    "source": "manual",
+    "scrape_method": "http",
+    "extra_careers_urls": [
+      "https://careers.bv.com/search/?q=noise"
+    ],
+    "website_url": "https://www.bv.com/",
+    "ats_type": "successfactors"
+  },
+  {
     "name": "Black Rooster Audio",
     "careers_url": "https://jobs.blackroosteraudio.com:443/login_up.php",
     "category": "Audio Plugins & Virtual Instruments",
@@ -2439,11 +2461,17 @@
   },
   {
     "name": "CNH Industrial",
-    "careers_url": "https://join.cnh.com/",
+    "careers_url": "https://join.cnh.com/search/?q=NVH",
     "category": "Automotive OEMs",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "http",
+    "extra_careers_urls": [
+      "https://join.cnh.com/search/?q=acoustic",
+      "https://join.cnh.com/search/?q=audio"
+    ],
+    "ats_type": "successfactors",
+    "website_url": "https://www.cnh.com/"
   },
   {
     "name": "Cochlear",
@@ -5520,6 +5548,16 @@
     "scrape_method": "http"
   },
   {
+    "name": "Kimley-Horn",
+    "careers_url": "https://careers.kimley-horn.com/jobs?keywords=acoustics",
+    "category": "Acoustic Consulting & Engineering",
+    "verified": true,
+    "source": "manual",
+    "scrape_method": "http",
+    "website_url": "https://www.kimley-horn.com/",
+    "ats_type": "jibe"
+  },
+  {
     "name": "Kinetics Noise Control",
     "careers_url": "https://kineticsnoise.com/resources/careers",
     "category": "Acoustic Consulting & Engineering",
@@ -7179,6 +7217,14 @@
     "scrape_method": "http"
   },
   {
+    "name": "NDM Hospitality Services",
+    "careers_url": "https://ndmhospitality.applicantpro.com/jobs/",
+    "category": "Professional Audio & Live Sound",
+    "verified": true,
+    "source": "manual",
+    "scrape_method": "playwright"
+  },
+  {
     "name": "NDSE Audio",
     "careers_url": "https://www.ndseaudio.com/careers",
     "category": "Audio Plugins & Virtual Instruments",
@@ -7983,6 +8029,15 @@
     "verified": false,
     "source": "auto",
     "scrape_method": "http"
+  },
+  {
+    "name": "PMY Group",
+    "careers_url": "https://pmygroup.com/careers/",
+    "category": "Professional Audio & Live Sound",
+    "verified": true,
+    "source": "manual",
+    "scrape_method": "http",
+    "website_url": "https://pmygroup.com/"
   },
   {
     "name": "Pocket",
@@ -9962,6 +10017,19 @@
     "scrape_method": "http"
   },
   {
+    "name": "SSR",
+    "careers_url": "https://pickleball2995.rec.pro.ukg.net/SMI1011SSRI/JobBoard/6c2be1d2-d622-4447-ad94-13b6b3d9d57a/?q=acoustic",
+    "category": "Acoustic Consulting & Engineering",
+    "verified": true,
+    "source": "manual",
+    "scrape_method": "http",
+    "extra_careers_urls": [
+      "https://pickleball2995.rec.pro.ukg.net/SMI1011SSRI/JobBoard/6c2be1d2-d622-4447-ad94-13b6b3d9d57a/?q=audio"
+    ],
+    "website_url": "https://www.ssr-inc.com/",
+    "ats_type": "ultipro"
+  },
+  {
     "name": "Stability AI Audio",
     "careers_url": "https://stability.ai/careers",
     "category": "AI/ML Audio",
@@ -10639,6 +10707,18 @@
     "scrape_method": "playwright"
   },
   {
+    "name": "thyssenkrupp",
+    "careers_url": "https://jobs.thyssenkrupp.com/en?search=acoustic",
+    "category": "Automotive OEMs",
+    "verified": true,
+    "source": "manual",
+    "scrape_method": "playwright",
+    "extra_careers_urls": [
+      "https://jobs.thyssenkrupp.com/en?search=NVH"
+    ],
+    "website_url": "https://www.thyssenkrupp.com/"
+  },
+  {
     "name": "Tidal",
     "careers_url": "https://block.xyz/careers/jobs?businessUnits%5B%5D=tidal",
     "category": "Streaming & Music Services",
@@ -11097,6 +11177,18 @@
     "verified": true,
     "source": "auto",
     "scrape_method": "http"
+  },
+  {
+    "name": "University of Oregon",
+    "careers_url": "https://careers.pageuppeople.com/726/cw/en-us/search/?search-keyword=acoustic",
+    "category": "Acoustic Consulting & Engineering",
+    "verified": true,
+    "source": "manual",
+    "scrape_method": "http",
+    "extra_careers_urls": [
+      "https://careers.pageuppeople.com/726/cw/en-us/search/?search-keyword=audio"
+    ],
+    "website_url": "https://www.uoregon.edu/"
   },
   {
     "name": "University of Texas at Austin",

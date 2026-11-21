@@ -804,6 +804,17 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 
 ## 9. Log (newest first, keep entries short)
 
+- **2026-11-21, nine engineering and AV employers** — SuccessFactors sites built on the newer
+  React career-site template (no `jobTitle-link` anchors; the page loads
+  `reactWidgetLoader.js`) are now read from `POST /services/recruiting/v1/jobs`. That fixed
+  CNH, which had failed since September; it is now keyword-scoped (NVH, acoustic, audio).
+  Detail pages there carry several `itemprop="description"` nodes, and the longest one is used.
+  UltiPro now accepts the new `*.rec.pro.ukg.net` hosts. Added Kimley-Horn (Jibe), thyssenkrupp
+  (playwright, `?search=`), SSR (UKG), Black & Veatch, Alvine (Trakstar), University of Oregon
+  (PageUp), PMY Group (its own careers page; the Gusto board is behind Cloudflare) and NDM
+  Hospitality (ApplicantPro, playwright). Kimley-Horn and NDM were set to `partial` in the DB:
+  Kimley-Horn's keyword search returns about 290 mostly land-development jobs.
+
 - **2026-11-20, company-type tags and relevance false positives** — Jobs at car companies
   (Automotive OEMs, Car Audio) now always carry `automotive_audio`, and jobs at music-tech
   companies (instruments, DJ, plugins, DAWs, audio interfaces) carry `music_technology`, via

@@ -78,6 +78,13 @@ class TestCanHandle(unittest.TestCase):
     def test_ultipro_url_is_handled(self) -> None:
         self.assertTrue(self.scraper.can_handle(make_company(CAREERS_URL)))
 
+    def test_ukg_pro_recruiting_host_is_handled(self) -> None:
+        url = (
+            "https://pickleball2995.rec.pro.ukg.net/SMI1011SSRI/JobBoard/"
+            "6c2be1d2-d622-4447-ad94-13b6b3d9d57a/?q=acoustic"
+        )
+        self.assertTrue(self.scraper.can_handle(make_company(url)))
+
     def test_ats_type_with_unrelated_url_is_handled(self) -> None:
         company = make_company("https://example.com/careers", ats_type="ultipro")
         self.assertTrue(self.scraper.can_handle(company))

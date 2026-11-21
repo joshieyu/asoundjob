@@ -13,6 +13,7 @@ from scraper.scrapers.ats.successfactors import (
     apply_detail,
     extract_detail,
     extract_external_id,
+    parse_api_jobs,
     parse_listing_page,
 )
 from scraper.scrapers.base import ScrapeError
@@ -461,3 +462,66 @@ class TestFetchJobsEnrichment(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+API_SEARCH_PAGE = (
+    '<html><head><script src="/platform/js/widgets/reactWidgetLoader.js"></script>'
+    "</head><body>successfactors</body></html>"
+)
+
+API_PAYLOAD = {
+    "jobSearchResult": [
+        {
+            "response": {
+                "id": "6130",
+                "unifiedStandardTitle": "NVH Test Engineer",
+                "unifiedUrlTitle": "NVH-Test-Engineer",
+                "supportedLocales": ["en_US"],
+                "jobLocationShort": ["Racine, WI, USA, "],
+                "unifiedStandardStart": "11/9/26",
+            }
+        },
+        {"response": {"id": "", "unifiedStandardTitle": "No id"}},
+    ],
+    "totalJobs": 1,
+}
+
+
+class TestRecruitingApiFallback(unittest.TestCase):
+    def setUp(self) -> None:
+        from scraper.config import load_settings
+
+        self.scraper = SuccessFactorsScraper(load_settings())
+
+    def test_parse_api_jobs_builds_job_urls(self) -> None:
+        jobs = parse_api_jobs(API_PAYLOAD, "https://join.cnh.com") or []
+        self.assertEqual(len(jobs), 1)
+        self.assertEqual(jobs[0].url, "https://join.cnh.com/job/NVH-Test-Engineer/6130-en_US/")
+        self.assertEqual(jobs[0].external_id, "6130")
+        self.assertEqual(jobs[0].location, "Racine, WI, USA")
+        self.assertEqual(jobs[0].posted_date, date(2026, 11, 9))
+
+    def test_parse_api_jobs_rejects_unexpected_payload(self) -> None:
+        self.assertIsNone(parse_api_jobs({"error": "x"}, "https://join.cnh.com"))
+
+    def test_widget_page_without_links_uses_the_api(self) -> None:
+        company = make_company("https://join.cnh.com/search/?q=NVH")
+        bodies: list[dict] = []
+
+        def fake_post(url: str, payload: dict, settings: object) -> dict:
+            bodies.append(payload)
+            return API_PAYLOAD
+
+        with patch(
+            "scraper.scrapers.ats.successfactors.fetch_html", return_value=API_SEARCH_PAGE
+        ), patch("scraper.scrapers.ats.successfactors.post_json", side_effect=fake_post):
+            jobs = asyncio.run(self.scraper.fetch_jobs(company))
+        self.assertEqual([j.title for j in jobs], ["NVH Test Engineer"])
+        self.assertEqual(bodies[0]["keywords"], "NVH")
+
+    def test_longest_description_node_wins(self) -> None:
+        page = (
+            '<span itemprop="description"> </span>'
+            '<span itemprop="description"><p>Run NVH tests on tractors.</p></span>'
+        )
+        self.assertIn("NVH tests", extract_detail(page)["description"])

@@ -11,7 +11,7 @@ from urllib.parse import parse_qs, quote, urljoin, urlsplit
 from bs4 import BeautifulSoup
 
 from scraper.scrapers.base import BaseScraper, RawJob, ScrapeError, company_budget, listing
-from scraper.scrapers.fetch import fetch_html, parse_date
+from scraper.scrapers.fetch import FetchError, fetch_html, parse_date, post_json
 
 if TYPE_CHECKING:
     from scraper.models import Company
@@ -32,6 +32,8 @@ JAVA_DATE_RE = re.compile(
 )
 
 SEARCH_URL = "{origin}/search/?q={query}&startrow={startrow}"
+API_URL = "{origin}/services/recruiting/v1/jobs"
+API_PAGE_MARKER = "reactwidgetloader"
 
 PAGE_SIZE = 10
 MAX_PAGES = 40
@@ -75,6 +77,11 @@ class SuccessFactorsScraper(BaseScraper):
             html_text = await asyncio.to_thread(fetch_html, url, self.settings)
             page_jobs = parse_listing_page(html_text, origin)
             if not page_jobs:
+                if page_index == 0 and API_PAGE_MARKER in html_text.lower():
+                    api_jobs = await asyncio.to_thread(self._fetch_api, origin, query)
+                    if api_jobs is not None:
+                        jobs.extend(api_jobs)
+                        break
                 if page_index == 0 and not _has_successfactors_marker(html_text):
                     raise ScrapeError(
                         f"{origin} does not look like a SuccessFactors career site"
@@ -105,6 +112,39 @@ class SuccessFactorsScraper(BaseScraper):
                 counts["enriched"],
                 len(fetch_list),
             )
+        return jobs
+
+    def _fetch_api(self, origin: str, query: str) -> list[RawJob] | None:
+        url = API_URL.format(origin=origin)
+        jobs: list[RawJob] = []
+        seen: set[str] = set()
+        for page_number in range(MAX_PAGES):
+            body = {
+                "locale": "en_US",
+                "pageNumber": page_number,
+                "sortBy": "",
+                "keywords": query,
+                "location": "",
+                "facetFilters": {},
+                "brand": "",
+                "skills": [],
+                "categoryId": 0,
+                "alertId": "",
+                "rcmCandidateId": "",
+            }
+            try:
+                payload = post_json(url, body, self.settings)
+            except FetchError:
+                return None if page_number == 0 else jobs
+            page_jobs = parse_api_jobs(payload, origin)
+            if page_jobs is None:
+                return None if page_number == 0 else jobs
+            new_jobs = [j for j in page_jobs if (j.external_id or j.url) not in seen]
+            seen.update(j.external_id or j.url for j in new_jobs)
+            jobs.extend(new_jobs)
+            total = payload.get("totalJobs") if isinstance(payload, dict) else None
+            if not new_jobs or not isinstance(total, int) or len(jobs) >= total:
+                break
         return jobs
 
     async def _enrich_job(
@@ -160,6 +200,52 @@ def parse_listing_page(html_text: str, origin: str) -> list[RawJob]:
     return jobs
 
 
+def parse_api_jobs(payload: Any, origin: str) -> list[RawJob] | None:
+    rows = payload.get("jobSearchResult") if isinstance(payload, dict) else None
+    if not isinstance(rows, list):
+        return None
+    jobs: list[RawJob] = []
+    for row in rows:
+        response = row.get("response") if isinstance(row, dict) else None
+        if not isinstance(response, dict):
+            continue
+        job_id = str(response.get("id") or "").strip()
+        title = str(
+            response.get("unifiedStandardTitle") or response.get("title") or ""
+        ).strip()
+        url_title = str(
+            response.get("unifiedUrlTitle") or response.get("urlTitle") or ""
+        ).strip()
+        if not job_id or not title or not url_title:
+            continue
+        locales = response.get("supportedLocales")
+        locale = str(locales[0]) if isinstance(locales, list) and locales else "en_US"
+        jobs.append(
+            RawJob(
+                title=title,
+                url=f"{origin}/job/{quote(url_title)}/{job_id}-{locale}/",
+                external_id=job_id,
+                location=_api_location(response.get("jobLocationShort")),
+                posted_date=_api_date(response.get("unifiedStandardStart")),
+            )
+        )
+    return jobs
+
+
+def _api_location(value: Any) -> str | None:
+    values = value if isinstance(value, list) else [value]
+    names = [str(v).strip().strip(",").strip() for v in values if v]
+    names = [n for n in names if n]
+    return "; ".join(names) or None
+
+
+def _api_date(value: Any) -> date | None:
+    try:
+        return datetime.strptime(str(value).strip(), "%m/%d/%y").date()
+    except ValueError:
+        return None
+
+
 def extract_external_id(href: str) -> str | None:
     path = urlsplit(href).path
     match = EXTERNAL_ID_RE.search(path)
@@ -170,7 +256,10 @@ def extract_detail(html_text: str) -> dict[str, Any]:
     soup = BeautifulSoup(html_text, "html.parser")
     detail: dict[str, Any] = {}
 
-    description_node = soup.find(itemprop="description")
+    description_nodes = soup.find_all(itemprop="description")
+    description_node = max(
+        description_nodes, key=lambda node: len(node.get_text(strip=True)), default=None
+    )
     if description_node is not None:
         body = description_node.find(class_="jobdescription") or description_node
         content = body.decode_contents().strip()

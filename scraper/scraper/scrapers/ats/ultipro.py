@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from scraper.models import Company
 
 URL_PATTERN = re.compile(
-    r"^https?://(?P<host>recruiting\d{0,2}\.ultipro\.com)/"
+    r"^https?://(?P<host>recruiting\d{0,2}\.ultipro\.com|[a-z0-9-]{1,63}\.rec\.pro\.ukg\.net)/"
     r"(?P<tenant>[A-Za-z0-9]{1,64})/JobBoard/"
     r"(?P<board>[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})",
     re.IGNORECASE,
