@@ -1377,6 +1377,8 @@ class TestInnerHeadingTitleHosts(unittest.TestCase):
     def test_host_matching(self) -> None:
         self.assertTrue(prefers_inner_heading_title("join.com"))
         self.assertTrue(prefers_inner_heading_title("holoplot.jobs.personio.de"))
+        self.assertTrue(prefers_inner_heading_title("alvine.hire.trakstar.com"))
+        self.assertTrue(prefers_inner_heading_title("www.pmygroup.com"))
         self.assertFalse(prefers_inner_heading_title("join.com.attacker.net"))
         self.assertFalse(prefers_inner_heading_title("jobs.personio.de.evil.net"))
 
