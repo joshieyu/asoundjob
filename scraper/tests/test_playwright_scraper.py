@@ -8,8 +8,12 @@ from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 
 from scraper.config import load_settings
 from scraper.models import Company
-from scraper.scrapers.base import ScrapeError
-from scraper.scrapers.playwright_scraper import PlaywrightScraper
+from scraper.scrapers.base import RawJob, ScrapeError
+from scraper.scrapers.playwright_scraper import (
+    PlaywrightScraper,
+    apply_jsonld_detail,
+    uses_jsonld_details,
+)
 
 CAREERS_URL = "https://example.com/careers"
 
@@ -229,3 +233,34 @@ class TestPlaywrightPaginationErrors(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+DETAIL_PAGE = (
+    '<script type="application/ld+json">{"@context": "https://schema.org", '
+    '"@type": "JobPosting", "title": "NVH Engineer", '
+    '"description": "<p>Run noise and vibration tests on damper rigs.</p>", '
+    '"datePosted": "2026-11-12", "jobLocation": {"@type": "Place", "address": '
+    '{"@type": "PostalAddress", "addressLocality": "Sibiu", "addressCountry": "RO"}}}'
+    "</script>"
+)
+
+
+class TestJsonLdDetails(unittest.TestCase):
+    def test_only_listed_hosts_fetch_details(self) -> None:
+        self.assertTrue(uses_jsonld_details("https://jobs.thyssenkrupp.com/en?search=NVH"))
+        self.assertFalse(uses_jsonld_details("https://jobs.thyssenkrupp.com.evil.net/"))
+        self.assertFalse(uses_jsonld_details("https://careers.example.com/"))
+
+    def test_detail_fills_description_and_keeps_listing_fields(self) -> None:
+        job = RawJob(
+            title="NVH Engineer", url="https://jobs.thyssenkrupp.com/en/job/x/1", location="Sibiu"
+        )
+        apply_jsonld_detail(job, DETAIL_PAGE)
+        self.assertIn("damper rigs", job.description or "")
+        self.assertEqual(job.location, "Sibiu")
+        self.assertIsNotNone(job.posted_date)
+
+    def test_page_without_job_posting_leaves_job_alone(self) -> None:
+        job = RawJob(title="NVH Engineer", url="https://jobs.thyssenkrupp.com/en/job/x/1")
+        apply_jsonld_detail(job, "<html></html>")
+        self.assertIsNone(job.description)

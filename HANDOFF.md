@@ -814,6 +814,14 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   (PageUp), PMY Group (its own careers page; the Gusto board is behind Cloudflare) and NDM
   Hospitality (ApplicantPro, playwright). Kimley-Horn and NDM were set to `partial` in the DB:
   Kimley-Horn's keyword search returns about 290 mostly land-development jobs.
+  thyssenkrupp was then moved from Automotive OEMs to Acoustic Consulting & Engineering
+  (it is a conglomerate; a car category would tag a Marine Systems sonar job automotive) and
+  kept `partial` in the DB. Its search is client-rendered, so it stays on playwright, but its
+  job pages carry JSON-LD: `JSONLD_DETAIL_HOSTS` in `playwright_scraper.py` fetches those over
+  HTTP for descriptions. Tried and rejected: requiring `ROLE_START_MARKERS` at line start (a
+  mid-sentence "Preferred qualifications" cuts the thyssenkrupp Acoustic Engineer's role text
+  to its tail) moved 20 jobs on and 12 off, mostly Amazon Music/Deepgram marketing on, and
+  dropped golden precision 96.2% to 95.7%.
 
 - **2026-11-20, company-type tags and relevance false positives** — Jobs at car companies
   (Automotive OEMs, Car Audio) now always carry `automotive_audio`, and jobs at music-tech
