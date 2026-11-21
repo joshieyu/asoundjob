@@ -822,6 +822,12 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   mid-sentence "Preferred qualifications" cuts the thyssenkrupp Acoustic Engineer's role text
   to its tail) moved 20 jobs on and 12 off, mostly Amazon Music/Deepgram marketing on, and
   dropped golden precision 96.2% to 95.7%.
+  On the first scrape, `_try_discovery` found a Workday link on thyssenkrupp's search page,
+  verified it and stored `workday/thyssenkruppmaterialsna.wd12/1`. That is the steel
+  distribution board, which ignores the search, so the next cycle replaced the 3 NVH jobs with
+  198 warehouse jobs (none listed). Discovery now skips any careers URL with a query string,
+  since a found board would drop the scoping. Checked every scoped company's stored binding;
+  thyssenkrupp was the only mismatch, and its binding was cleared in the DB.
 
 - **2026-11-20, company-type tags and relevance false positives** — Jobs at car companies
   (Automotive OEMs, Car Audio) now always carry `automotive_audio`, and jobs at music-tech

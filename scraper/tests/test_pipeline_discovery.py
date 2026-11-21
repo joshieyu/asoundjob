@@ -248,6 +248,29 @@ class TestDiscoveryVerification(unittest.TestCase):
         )
         self.assertEqual(persisted, [])
 
+    def test_search_scoped_careers_url_is_never_rebound(self) -> None:
+        persisted: list = []
+
+        async def go():
+            pipeline = ScrapePipeline(load_settings())
+            pipeline._persist_ats_discovery = (  # type: ignore[method-assign]
+                lambda company_id, ats_type, ats_slug, overwrite=False: persisted.append(
+                    (ats_type, ats_slug)
+                )
+            )
+            pipeline._board_claimed_elsewhere = (  # type: ignore[method-assign]
+                lambda company_id, ats_type, ats_slug: False
+            )
+            pipeline._ats_map["greenhouse"] = YieldingScraper(  # type: ignore[index]
+                load_settings(), [object()]
+            )
+            company = make_company()
+            company.careers_url = "https://acmeaudio.example/jobs?search=acoustic"
+            await pipeline._try_discovery(company, GREENHOUSE_PAGE)
+
+        asyncio.run(go())
+        self.assertEqual(persisted, [])
+
     def test_unregistered_ats_type_is_not_persisted(self) -> None:
         html = '<html><body><a href="https://acme.breezy.hr/">Jobs</a></body></html>'
         persisted = self._run(html, "breezy")

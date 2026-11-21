@@ -4,6 +4,7 @@ import asyncio
 import logging
 import time
 from typing import Optional
+from urllib.parse import urlsplit
 
 from sqlalchemy import select, update
 
@@ -416,6 +417,8 @@ class ScrapePipeline:
         self, company: Company, html: str | None, overwrite: bool = False
     ) -> None:
         if not html:
+            return
+        if urlsplit(company.careers_url or "").query:
             return
         findings = discover(html, company.careers_url or "")
         if not findings:
