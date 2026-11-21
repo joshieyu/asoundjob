@@ -9412,14 +9412,6 @@
     "scrape_method": "http"
   },
   {
-    "name": "Sivantos Group",
-    "careers_url": "https://careers.wsa.com/jobs",
-    "category": "Hearing Aid & Hearing Tech",
-    "verified": true,
-    "source": "auto",
-    "scrape_method": "http"
-  },
-  {
     "name": "Skar Audio",
     "careers_url": "https://www.skaraudio.com/jobs",
     "category": "Car Audio",
@@ -11847,11 +11839,12 @@
   },
   {
     "name": "WS Audiology (Signia/Widex)",
-    "careers_url": "https://www.wsa.com/",
+    "careers_url": "https://careers.wsa.com/jobs",
     "category": "Hearing Aid & Hearing Tech",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "http"
+    "source": "manual",
+    "scrape_method": "http",
+    "website_url": "https://www.wsa.com/"
   },
   {
     "name": "WSDG (Walters-Storyk Design Group)",
