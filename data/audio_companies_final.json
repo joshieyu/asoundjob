@@ -9742,6 +9742,17 @@
     "scrape_method": "http"
   },
   {
+    "name": "SOUNDBOKS",
+    "careers_url": "https://careers.soundboks.com/",
+    "category": "Hi-Fi & Consumer Speakers",
+    "verified": true,
+    "source": "manual",
+    "scrape_method": "http",
+    "website_url": "https://soundboks.com/",
+    "ats_type": "recruitee",
+    "ats_slug": "soundboks"
+  },
+  {
     "name": "SoundCam",
     "careers_url": "https://www.soundcam.com/en/careers",
     "category": "Audio Testing & Measurement",
