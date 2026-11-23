@@ -804,6 +804,17 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 
 ## 9. Log (newest first, keep entries short)
 
+- **2026-11-23, Songtradr, RS&H, Finders Seekers** — Songtradr repointed to its BambooHR
+  board (`songtradr`); the old `songtradr.com/careers` page has no job links. Bandcamp still
+  points at that page and has failed 54 cycles. RS&H added (iCIMS, 266 jobs, mostly
+  architecture; its Noise Specialist is the one board row). Finders Seekers added as a
+  recruiting agency (Teamtailor career site, generic http, agency scope): it posted
+  Songtradr's Senior ML Engineer, Audio/Music Processing. `acoustics_consulting` gained
+  "noise specialist", "traffic noise", "highway noise" (strong) and "noise studies" (weak):
+  no board flips, one tag added, golden unchanged. Rex.zone was not added: its "Audio
+  Engineer Jobs Los Angeles" page is a templated AI data-labeling recruiting page, not an
+  opening.
+
 - **2026-11-21, nine engineering and AV employers** — SuccessFactors sites built on the newer
   React career-site template (no `jobTitle-link` anchors; the page loads
   `reactWidgetLoader.js`) are now read from `POST /services/recruiting/v1/jobs`. That fixed

@@ -3918,6 +3918,15 @@
     "scrape_method": "http"
   },
   {
+    "name": "Finders Seekers",
+    "careers_url": "https://techjobs.findersseekers.io/jobs",
+    "category": "Staffing & Recruiting Agencies",
+    "verified": true,
+    "source": "manual",
+    "scrape_method": "http",
+    "website_url": "https://www.findersseekers.io/"
+  },
+  {
     "name": "Firaxis Games",
     "careers_url": "https://firaxis.com/careers/",
     "category": "Gaming, VR & Immersive Audio",
@@ -9017,6 +9026,17 @@
     "scrape_method": "http"
   },
   {
+    "name": "RS&H",
+    "careers_url": "https://careers-rsandh.icims.com/jobs",
+    "category": "Acoustic Consulting & Engineering",
+    "verified": true,
+    "source": "manual",
+    "scrape_method": "http",
+    "website_url": "https://www.rsandh.com/",
+    "ats_type": "icims",
+    "ats_slug": "careers-rsandh"
+  },
+  {
     "name": "Ruark Audio",
     "careers_url": "https://www.ruarkaudio.co.uk/careers",
     "category": "Hi-Fi & Consumer Speakers",
@@ -9582,11 +9602,14 @@
   },
   {
     "name": "Songtradr",
-    "careers_url": "https://www.songtradr.com/careers",
+    "careers_url": "https://songtradr.bamboohr.com/careers",
     "category": "Streaming & Music Services",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "http",
+    "ats_type": "bamboohr",
+    "ats_slug": "songtradr",
+    "website_url": "https://www.songtradr.com/"
   },
   {
     "name": "Sonible",

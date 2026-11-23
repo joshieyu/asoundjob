@@ -896,6 +896,18 @@ class TestAutomotiveInfotainmentRelevance(unittest.TestCase):
         self.assertFalse(score_relevance(title, description, categories, "partial")[1])
 
 
+class TestTransportationNoiseRoles(unittest.TestCase):
+    def test_noise_specialist_is_acoustics_consulting(self) -> None:
+        description = (
+            "We provide noise and vibration analyses for transportation projects. "
+            "Lead noise studies and prepare highway traffic noise analyses for DOT clients. "
+        ) * 4
+        categories = classify_categories(
+            "Noise Specialist", description, "Acoustic Consulting & Engineering"
+        )
+        self.assertIn("acoustics_consulting", categories)
+
+
 class TestAvConsultingTitles(unittest.TestCase):
     def test_av_titles_land_in_av_systems(self) -> None:
         for title in (
