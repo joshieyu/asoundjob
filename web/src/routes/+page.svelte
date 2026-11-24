@@ -127,6 +127,12 @@
 		{/each}
 		</div>
 	</div>
+
+	{#if fresh.length > 0}
+		<div class="mt-10 flex justify-center">
+			<a href="/jobs" class="btn btn-primary">Browse all {total.toLocaleString('en-US')} jobs</a>
+		</div>
+	{/if}
 </section>
 
 {#if reportJob}
