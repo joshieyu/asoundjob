@@ -821,6 +821,12 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   Slate Digital's Personio board is empty, which a generic scrape reports as a failure; a
   Personio XML parser would make it trusted, but only three companies use Personio.
   Nothing's Greenhouse EU embed points at a board that 404s; DSP Concepts' too.
+  Verified on prod the same day: 43 of the 45 repointed companies scrape successfully (part 1
+  and 2), adding 50 board rows (Electro-Voice 12, TI 11, HDR 8 once its third URL ran, CEVA 4,
+  Cundall 3, Cadence 2, Kirkegaard 2, and singles). Still failing: Slate Digital (empty
+  Personio) and Valcom (its Paycom board renders 10 jobs in local Playwright but not on the
+  server). Of ~75 notable unverified companies checked as seeded, none had a working URL
+  that is not already covered by a parent (Wharfedale's job is on IAG's board).
 
 - **2026-11-24, scrape audit, part 1** — Of 1,472 companies, 345 verified ones had failed 3+
   cycles (269 "no job links", 39 HTTP 403, 24 HTTP 404). Probed every failing or unverified
