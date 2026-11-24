@@ -806,6 +806,22 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 
 ## 9. Log (newest first, keep entries short)
 
+- **2026-11-24, scrape audit, part 2** — `diagnose_failures` over all 377 failing companies:
+  75 unknown, 52 JSON endpoints (almost all site chrome, not jobs), 46 storefronts, 36 dead
+  URLs, 33 careers hosted elsewhere, 31 on an ATS we lacked or had not bound, 29 careers
+  landing pages, 17 JS-rendered, 16 that say they have no openings, 13 bot-blocked.
+  Repointed: Electro-Voice (its URL was a car dealer; now Keenfinity's SmartRecruiters board,
+  `?q=audio`, 12 board rows), Cadence (Workday `?q=audio`, 2 Tensilica DSP rows at partial
+  scope), CEVA (regional career pages, 3 audio DSP rows), Audiokinetic (Greenhouse
+  `audiokinetic-en`), Resident Advisor (Workable), Deezer (`/en/jobs`), McIntosh Automotive
+  (Bose's McIntosh board, 1 row), Paradox Interactive, Antares (BambooHR, empty), Valcom
+  (Paycom), DEWESoft. Unverified: EPOS (jobs are on Demant's board), Bandcamp (Songtradr's),
+  Plantronics (HP), Middle Atlantic (Legrand AV's), Peavey (careers page redirects to
+  Contact Us), Stem (homepage; Lever board gone), Radial Engineering (a product page).
+  Slate Digital's Personio board is empty, which a generic scrape reports as a failure; a
+  Personio XML parser would make it trusted, but only three companies use Personio.
+  Nothing's Greenhouse EU embed points at a board that 404s; DSP Concepts' too.
+
 - **2026-11-24, scrape audit, part 1** — Of 1,472 companies, 345 verified ones had failed 3+
   cycles (269 "no job links", 39 HTTP 403, 24 HTTP 404). Probed every failing or unverified
   company against nine ATS APIs by name and scanned their pages for ATS links; most name

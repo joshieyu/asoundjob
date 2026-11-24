@@ -658,11 +658,11 @@
   },
   {
     "name": "Antares Audio Technologies",
-    "careers_url": "https://www.antarestech.com/careers",
+    "careers_url": "https://antarestech.bamboohr.com/careers",
     "category": "DAW & Music Production Software",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "http"
   },
   {
     "name": "Antelope Audio",
@@ -1069,11 +1069,13 @@
   },
   {
     "name": "Audiokinetic (Wwise)",
-    "careers_url": "https://www.audiokinetic.com/en/about/careers/",
+    "careers_url": "https://job-boards.greenhouse.io/audiokinetic-en",
     "category": "Audio Middleware & SDK",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "http",
+    "ats_type": "greenhouse",
+    "ats_slug": "audiokinetic-en"
   },
   {
     "name": "Audiolab",
@@ -1317,8 +1319,8 @@
     "name": "Bandcamp",
     "careers_url": "https://www.songtradr.com/careers",
     "category": "Streaming & Music Services",
-    "verified": true,
-    "source": "auto",
+    "verified": false,
+    "source": "manual",
     "scrape_method": "playwright"
   },
   {
@@ -2028,11 +2030,11 @@
   },
   {
     "name": "Cadence Design Systems",
-    "careers_url": "https://www.cadence.com/en_US/home/errors/accessdenied.html",
+    "careers_url": "https://cadence.wd1.myworkdayjobs.com/External_Careers?q=audio",
     "category": "Consumer Electronics & Tech",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "http"
   },
   {
     "name": "CAE Software Systems",
@@ -2286,11 +2288,17 @@
   },
   {
     "name": "CEVA",
-    "careers_url": "https://www.ceva-ip.com/",
+    "careers_url": "https://www.ceva-ip.com/career/location/israel/",
     "category": "Consumer Electronics & Tech",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "http",
+    "extra_careers_urls": [
+      "https://www.ceva-ip.com/career/location/america/",
+      "https://www.ceva-ip.com/career/location/europe/",
+      "https://www.ceva-ip.com/career/location/france/",
+      "https://www.ceva-ip.com/career/location/apac/"
+    ]
   },
   {
     "name": "CH Precision",
@@ -2954,10 +2962,10 @@
   },
   {
     "name": "Deezer",
-    "careers_url": "https://www.deezer-investors.com/",
+    "careers_url": "https://www.deezer.com/en/jobs",
     "category": "Streaming & Music Services",
     "verified": true,
-    "source": "auto",
+    "source": "manual",
     "scrape_method": "http"
   },
   {
@@ -3065,11 +3073,11 @@
   },
   {
     "name": "DEWESoft",
-    "careers_url": "https://dewesoft.com/careers",
+    "careers_url": "https://dewesoft.com/careers/opportunities",
     "category": "Audio Testing & Measurement",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "http"
   },
   {
     "name": "DeWolfe Music",
@@ -3540,11 +3548,13 @@
   },
   {
     "name": "Electro-Voice",
-    "careers_url": "https://ev.com:443/new-cars",
+    "careers_url": "https://jobs.smartrecruiters.com/Keenfinity?q=audio",
     "category": "Professional Audio & Live Sound",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "http"
+    "source": "manual",
+    "scrape_method": "http",
+    "ats_type": "smartrecruiters",
+    "ats_slug": "keenfinity"
   },
   {
     "name": "Electrocompaniet",
@@ -3698,8 +3708,8 @@
     "name": "EPOS",
     "careers_url": "https://www.eposaudio.com/en/us/about-epos/careers",
     "category": "Headphones & Personal Audio",
-    "verified": true,
-    "source": "auto",
+    "verified": false,
+    "source": "manual",
     "scrape_method": "playwright"
   },
   {
@@ -6539,11 +6549,11 @@
   },
   {
     "name": "McIntosh Automotive",
-    "careers_url": "https://www.mcintoshlabs.com/home/about/employment",
+    "careers_url": "https://careers.bose.com/us/en/mcintosh",
     "category": "Car Audio",
     "verified": true,
     "source": "manual",
-    "scrape_method": "http"
+    "scrape_method": "playwright"
   },
   {
     "name": "McKay Conant Hoover",
@@ -6728,8 +6738,8 @@
     "name": "Middle Atlantic",
     "careers_url": "https://www.legrandav.com/products/middle_atlantic_products",
     "category": "Audio Accessories & Cables",
-    "verified": true,
-    "source": "auto",
+    "verified": false,
+    "source": "manual",
     "scrape_method": "http"
   },
   {
@@ -7868,11 +7878,11 @@
   },
   {
     "name": "Paradox Interactive",
-    "careers_url": "https://www.paradoxinteractive.com/career",
+    "careers_url": "https://career.paradoxplaza.com/",
     "category": "Gaming, VR & Immersive Audio",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "http"
   },
   {
     "name": "Paramount Post",
@@ -7910,8 +7920,8 @@
     "name": "Peavey Electronics",
     "careers_url": "https://peavey.com/careers/",
     "category": "Professional Audio & Live Sound",
-    "verified": true,
-    "source": "auto",
+    "verified": false,
+    "source": "manual",
     "scrape_method": "playwright",
     "scrape_blocked": true
   },
@@ -8054,8 +8064,8 @@
     "name": "Plantronics",
     "careers_url": "https://www.hp.com/us-en/poly.html",
     "category": "Headphones & Personal Audio",
-    "verified": true,
-    "source": "auto",
+    "verified": false,
+    "source": "manual",
     "scrape_method": "http"
   },
   {
@@ -8526,8 +8536,8 @@
     "name": "Radial Engineering",
     "careers_url": "https://www.radialeng.com/keyboard",
     "category": "Audio Accessories & Cables",
-    "verified": true,
-    "source": "auto",
+    "verified": false,
+    "source": "manual",
     "scrape_method": "http"
   },
   {
@@ -8754,11 +8764,13 @@
   },
   {
     "name": "Resident Advisor",
-    "careers_url": "https://ra.co/about/jobs",
+    "careers_url": "https://apply.workable.com/resident-advisor/",
     "category": "Streaming & Music Services",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "http",
+    "ats_type": "workable",
+    "ats_slug": "resident-advisor"
   },
   {
     "name": "Resolution Games",
@@ -10202,8 +10214,8 @@
     "name": "Stem",
     "careers_url": "https://stem.is/",
     "category": "Streaming & Music Services",
-    "verified": true,
-    "source": "auto",
+    "verified": false,
+    "source": "manual",
     "scrape_method": "playwright"
   },
   {
@@ -11337,10 +11349,10 @@
   },
   {
     "name": "Valcom",
-    "careers_url": "https://www.valcom.com/who-we-are/come-work-with-us/",
+    "careers_url": "https://www.paycomonline.net/v4/ats/web.php/jobs?clientkey=A026938E76FFE6716E20BF17FF3CDEBB",
     "category": "Professional Audio & Live Sound",
     "verified": true,
-    "source": "auto",
+    "source": "manual",
     "scrape_method": "playwright"
   },
   {
