@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import re
 from typing import TYPE_CHECKING
+from urllib.parse import parse_qs, urlsplit
 
 from scraper.scrapers.base import BaseScraper, RawJob
 from scraper.scrapers.fetch import fetch_json, parse_date
@@ -17,6 +18,8 @@ URL_PATTERN = re.compile(
 )
 
 API_URL = "https://boards-api.greenhouse.io/v1/boards/{slug}/jobs?content=true"
+
+GH_JID_JOB_PAGES = {"careers.nintendo.com": "https://careers.nintendo.com/jobs/{job_id}/"}
 
 
 class GreenhouseScraper(BaseScraper):
@@ -46,7 +49,7 @@ def parse_board(data: dict) -> list[RawJob]:
     jobs: list[RawJob] = []
     for item in data.get("jobs", []):
         title = (item.get("title") or "").strip()
-        url = item.get("absolute_url") or ""
+        url = job_page_url(item.get("absolute_url") or "")
         if not title or not url:
             continue
         location_obj = item.get("location") or {}
@@ -65,6 +68,15 @@ def parse_board(data: dict) -> list[RawJob]:
             )
         )
     return jobs
+
+
+def job_page_url(url: str) -> str:
+    parts = urlsplit(url)
+    template = GH_JID_JOB_PAGES.get(parts.netloc.lower())
+    job_id = (parse_qs(parts.query).get("gh_jid") or [""])[0]
+    if template and job_id.isdigit():
+        return template.format(job_id=job_id)
+    return url
 
 
 def decode_content(content: str | None) -> str | None:

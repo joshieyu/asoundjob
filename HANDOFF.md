@@ -810,6 +810,8 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   Greenhouse board `nintendo` (76 jobs); bound to it. 4 board rows: two NTD audio software
   roles, the Retro Studios Audio & Localization Producer, and Retro's "Technology Engineer"
   (engine generalist; scores on "audio" in a list of engine areas, borderline).
+  Greenhouse's `absolute_url` (`careers.nintendo.com/?gh_jid=…`) opens the careers home page,
+  not the job, so `GH_JID_JOB_PAGES` in `greenhouse.py` rewrites it to `/jobs/{id}/`.
 
 - **2026-11-24, Oracle Recruiting Cloud, INL, Langan** — New `oracle` scraper for Oracle
   HCM Candidate Experience sites (`*.fa.*.oraclecloud.com/hcmUI/CandidateExperience/.../sites/

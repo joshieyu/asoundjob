@@ -3,7 +3,12 @@ from __future__ import annotations
 import unittest
 from datetime import date
 
-from scraper.scrapers.ats.greenhouse import GreenhouseScraper, decode_content, parse_board
+from scraper.scrapers.ats.greenhouse import (
+    GreenhouseScraper,
+    decode_content,
+    job_page_url,
+    parse_board,
+)
 from scraper.scrapers.base import ScrapeResult
 
 
@@ -94,6 +99,18 @@ class TestGreenhouseParser(unittest.TestCase):
         encoded = base64.b64encode("<p>Hello</p>".encode()).decode()
         self.assertEqual(decode_content(encoded), "<p>Hello</p>")
         self.assertIsNone(decode_content(None))
+
+
+class TestJobPageUrl(unittest.TestCase):
+    def test_nintendo_gh_jid_links_go_to_the_job_page(self) -> None:
+        self.assertEqual(
+            job_page_url("https://careers.nintendo.com/?gh_jid=4396630009"),
+            "https://careers.nintendo.com/jobs/4396630009/",
+        )
+
+    def test_other_hosts_keep_their_link(self) -> None:
+        url = "https://www.example.com/careers?gh_jid=123"
+        self.assertEqual(job_page_url(url), url)
 
 
 class TestScrapeResult(unittest.TestCase):
