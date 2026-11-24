@@ -16,6 +16,11 @@ URL_PATTERN = re.compile(
     r"/hcmUI/CandidateExperience/(?P<lang>[a-z]{2}(?:-[A-Za-z]{2})?)/sites/(?P<site>[A-Za-z0-9_-]+)",
     re.IGNORECASE,
 )
+CUSTOM_HOST_PATTERN = re.compile(
+    r"^https://(?P<host>[a-z0-9-]{1,63}(?:\.[a-z0-9-]{1,63}){1,6})"
+    r"/hcmUI/CandidateExperience/(?P<lang>[a-z]{2}(?:-[A-Za-z]{2})?)/sites/(?P<site>[A-Za-z0-9_-]+)",
+    re.IGNORECASE,
+)
 
 API_ROOT = "https://{host}/hcmRestApi/resources/latest"
 LIST_PATH = (
@@ -53,6 +58,8 @@ class OracleScraper(BaseScraper):
     async def fetch_jobs(self, company: Company) -> list[RawJob]:
         careers_url = (company.careers_url or "").strip()
         match = URL_PATTERN.match(careers_url)
+        if not match and company.ats_type == "oracle":
+            match = CUSTOM_HOST_PATTERN.match(careers_url)
         if not match:
             raise ScrapeError(f"No oracle candidate experience site in {company.careers_url}")
         host = match.group("host").lower()

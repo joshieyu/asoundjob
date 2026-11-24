@@ -347,7 +347,8 @@
     "verified": true,
     "open_application": true,
     "source": "manual",
-    "scrape_method": "playwright"
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "Akai Professional",
@@ -375,11 +376,12 @@
   },
   {
     "name": "Alcons Audio",
-    "careers_url": "https://www.alconsaudio.com/careers",
+    "careers_url": "https://www.alconsaudio.com/jobs/",
     "category": "Professional Audio & Live Sound",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "Alesis",
@@ -800,8 +802,9 @@
     "careers_url": "https://ashly.com/careers/",
     "category": "Professional Audio & Live Sound",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "AskVideo",
@@ -888,8 +891,9 @@
     "careers_url": "https://www.auddia.com/careers",
     "category": "AI/ML Audio",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "Audentity Records",
@@ -1016,8 +1020,9 @@
     "careers_url": "https://www.audio-technica.com/en-us/careers",
     "category": "Headphones & Personal Audio",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "Audioboom",
@@ -1091,8 +1096,9 @@
     "careers_url": "https://audiomack.com/careers",
     "category": "DAW & Music Production Software",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "Audiomodern",
@@ -1133,8 +1139,9 @@
     "category": "AI/ML Audio",
     "verified": true,
     "open_application": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "AudioStack",
@@ -1189,8 +1196,9 @@
     "careers_url": "https://audius.co/careers",
     "category": "DAW & Music Production Software",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "Audix",
@@ -1270,8 +1278,9 @@
     "careers_url": "https://www.bcspeakers.com/en/work-with-us",
     "category": "Transducer & Driver Manufacturers",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "B&H Photo Video",
@@ -1380,8 +1389,9 @@
     "careers_url": "https://bastl-instruments.com/careers",
     "category": "Electronic Musical Instruments",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "http"
+    "source": "manual",
+    "scrape_method": "http",
+    "scrape_blocked": true
   },
   {
     "name": "Bax-shop",
@@ -1551,8 +1561,9 @@
     "careers_url": "https://www.bestservice.com/careers",
     "category": "Audio Plugins & Virtual Instruments",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "Bethesda",
@@ -1633,8 +1644,9 @@
     "careers_url": "https://www.bitwig.com/about/careers/",
     "category": "DAW & Music Production Software",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "Black & Veatch",
@@ -2113,8 +2125,9 @@
     "careers_url": "https://www.canton.de/unternehmen/karriere/",
     "category": "Hi-Fi & Consumer Speakers",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "Capcom",
@@ -2122,8 +2135,9 @@
     "category": "Gaming, VR & Immersive Audio",
     "verified": true,
     "open_application": true,
-    "source": "auto",
-    "scrape_method": "http"
+    "source": "manual",
+    "scrape_method": "http",
+    "scrape_blocked": true
   },
   {
     "name": "Cape Acoustics",
@@ -2427,8 +2441,9 @@
     "careers_url": "https://www.clearaudio.de/karriere/",
     "category": "Hi-Fi & Consumer Speakers",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "ClearOne",
@@ -2709,8 +2724,9 @@
     "careers_url": "https://www.crystalinstruments.com/careers",
     "category": "Audio Testing & Measurement",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "Cundall",
@@ -2738,7 +2754,8 @@
     "source": "manual",
     "scrape_method": "http",
     "website_url": "https://cyanite.ai",
-    "description": "Cyanite is a German AI company that auto-tags music and powers similarity search across music catalogs."
+    "description": "Cyanite is a German AI company that auto-tags music and powers similarity search across music catalogs.",
+    "scrape_blocked": true
   },
   {
     "name": "CyberData",
@@ -2787,8 +2804,9 @@
     "careers_url": "https://jobs.dalet.com/",
     "category": "Professional Audio & Live Sound",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "DALI Speakers",
@@ -2812,8 +2830,9 @@
     "careers_url": "https://dandagostino.com/resources/careers",
     "category": "Hi-Fi & Consumer Speakers",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "Dangerous Music (converters)",
@@ -2836,8 +2855,9 @@
     "careers_url": "https://www.dasaudio.com/trabaja-con-nosotros/",
     "category": "Professional Audio & Live Sound",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "http"
+    "source": "manual",
+    "scrape_method": "http",
+    "scrape_blocked": true
   },
   {
     "name": "data physics",
@@ -2989,8 +3009,9 @@
     "careers_url": "https://deitymic.com/careers/",
     "category": "Professional Audio & Live Sound",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "Delart",
@@ -3381,8 +3402,9 @@
     "careers_url": "https://www.earmaster.com/company/work-at-earmaster.html",
     "category": "Music Education Technology",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "EarQ",
@@ -3863,8 +3885,9 @@
     "category": "Gaming, VR & Immersive Audio",
     "verified": true,
     "open_application": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "Faust (GRAME)",
@@ -4263,8 +4286,9 @@
     "careers_url": "https://gatorco.com/careers/",
     "category": "Audio Accessories & Cables",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "Gearbox Software",
@@ -4526,8 +4550,9 @@
     "careers_url": "https://gravityaudio.net/careers",
     "category": "Audio Plugins & Virtual Instruments",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "Gravity Stands",
@@ -4574,8 +4599,9 @@
     "careers_url": "https://www.guitarcenter.com/careers",
     "category": "Audio Retailers & Distributors",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "http"
+    "source": "manual",
+    "scrape_method": "http",
+    "scrape_blocked": true
   },
   {
     "name": "Guitar Tricks",
@@ -4789,11 +4815,12 @@
   },
   {
     "name": "Hertz Car Audio",
-    "careers_url": "https://www.hertzaudiovideo.com/en/careers",
+    "careers_url": "https://elettromedia.com/en/careers/",
     "category": "Car Audio",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "Hexany Audio",
@@ -5444,8 +5471,8 @@
     "name": "JL Audio",
     "careers_url": "https://www.jlaudio.com/careers",
     "category": "Car Audio",
-    "verified": true,
-    "source": "auto",
+    "verified": false,
+    "source": "manual",
     "scrape_method": "http"
   },
   {
@@ -5493,8 +5520,9 @@
     "careers_url": "https://www.jvckenwood.com/jp/recruit/career/",
     "category": "Car Audio",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "K&M (König & Meyer)",
@@ -5549,8 +5577,9 @@
     "careers_url": "https://www.kemper-amps.com/jobs",
     "category": "Professional Audio & Live Sound",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "Kenwood",
@@ -5706,16 +5735,18 @@
     "careers_url": "https://career.korg.com/",
     "category": "Electronic Musical Instruments",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "KPM Music",
     "careers_url": "https://jobs.kpmmusic.com/en/",
     "category": "Recording Studios & Post Houses",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "Krafton",
@@ -5843,8 +5874,9 @@
     "careers_url": "https://www.landr.com/careers",
     "category": "AI/ML Audio",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "Langan",
@@ -5878,8 +5910,9 @@
     "careers_url": "https://www.last.fm/about/jobs",
     "category": "Streaming & Music Services",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "Lauten Audio",
@@ -6041,8 +6074,9 @@
     "careers_url": "https://libsyn.com/careers/",
     "category": "Streaming & Music Services",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "Lindemann Audio",
@@ -6057,8 +6091,9 @@
     "careers_url": "https://yamahaguitargroup.com/company/#careers",
     "category": "Professional Audio & Live Sound",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "Line Magnetic",
@@ -6190,7 +6225,8 @@
     "source": "manual",
     "scrape_method": "http",
     "website_url": "https://www.loudly.com",
-    "description": "Loudly is a Berlin AI music generation platform and royalty-free music library."
+    "description": "Loudly is a Berlin AI music generation platform and royalty-free music library.",
+    "scrape_blocked": true
   },
   {
     "name": "Lovo AI",
@@ -6512,8 +6548,9 @@
     "careers_url": "https://www.mbl.de/en/jobs",
     "category": "Hi-Fi & Consumer Speakers",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "McCauley Sound",
@@ -6611,8 +6648,9 @@
     "careers_url": "https://www.meldaproduction.com/about/jobs",
     "category": "Audio Plugins & Virtual Instruments",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "Melon (Kakao)",
@@ -6643,8 +6681,9 @@
     "careers_url": "https://www.meridian-audio.com/the-future-of-sound/work-with-meridian/",
     "category": "Car Audio",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "MESA/Boogie",
@@ -6879,8 +6918,9 @@
     "careers_url": "http://www.molamola.be/en/careers",
     "category": "Hi-Fi & Consumer Speakers",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "Monitor Audio",
@@ -7103,8 +7143,9 @@
     "careers_url": "https://www.musicnotes.com/careers",
     "category": "Music Education Technology",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "http"
+    "source": "manual",
+    "scrape_method": "http",
+    "scrape_blocked": true
   },
   {
     "name": "Musixmatch",
@@ -7177,8 +7218,9 @@
     "careers_url": "https://careers.nagra.com/",
     "category": "Professional Audio & Live Sound",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "Naim Audio",
@@ -7244,8 +7286,9 @@
     "careers_url": "https://natus.com/careers/",
     "category": "Hearing Aid & Hearing Tech",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "Naughty Dog",
@@ -7343,7 +7386,6 @@
     "verified": true,
     "source": "manual",
     "scrape_method": "http",
-    "scrape_blocked": true,
     "ats_type": "teamtailor"
   },
   {
@@ -7391,8 +7433,9 @@
     "careers_url": "https://www.nhthifi.com/pages/careers",
     "category": "Hi-Fi & Consumer Speakers",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "Niantic",
@@ -7848,8 +7891,9 @@
     "careers_url": "https://careers.siriusxm.com/careers/",
     "category": "Streaming & Music Services",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "Pandorabots",
@@ -7922,8 +7966,7 @@
     "category": "Professional Audio & Live Sound",
     "verified": false,
     "source": "manual",
-    "scrape_method": "playwright",
-    "scrape_blocked": true
+    "scrape_method": "playwright"
   },
   {
     "name": "Peerless-AV",
@@ -8315,8 +8358,9 @@
     "careers_url": "https://jobs.projectsam.com/",
     "category": "Audio Plugins & Virtual Instruments",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "ProLine Stands",
@@ -8435,8 +8479,9 @@
     "careers_url": "https://www.qobuz.com/us-en/careers",
     "category": "Streaming & Music Services",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "QSC",
@@ -8629,8 +8674,9 @@
     "careers_url": "https://www.rcf.it/en/work-with-us",
     "category": "Professional Audio & Live Sound",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "RCS Sound Software",
@@ -8638,16 +8684,18 @@
     "category": "Professional Audio & Live Sound",
     "verified": true,
     "open_application": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "ReadSpeaker",
     "careers_url": "https://www.readspeaker.com/careers/",
     "category": "Voice & Speech Technology",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "Realme",
@@ -8710,8 +8758,9 @@
     "careers_url": "https://www.reloop.com/jobcenter",
     "category": "DJ Equipment",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "Remedy Entertainment",
@@ -8759,8 +8808,9 @@
     "careers_url": "https://app.dover.com/dover/careers/64b57c81-9467-4ad2-9c8c-128f553157b5",
     "category": "Voice & Speech Technology",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "Resident Advisor",
@@ -8802,8 +8852,9 @@
     "careers_url": "https://www.respeecher.com/careers",
     "category": "Voice & Speech Technology",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "RestorEar",
@@ -9046,8 +9097,9 @@
     "careers_url": "https://roon.app/en/jobs",
     "category": "Hi-Fi & Consumer Speakers",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "Rosson Audio",
@@ -9121,8 +9173,9 @@
     "careers_url": "https://rupertneve.com/careers",
     "category": "Professional Audio & Live Sound",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "RWDI",
@@ -9265,8 +9318,9 @@
     "careers_url": "https://schoeps.de/ueber-uns/jobs-praktika.html",
     "category": "Professional Audio & Live Sound",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "sE Electronics",
@@ -9605,8 +9659,9 @@
     "careers_url": "https://www.snorelab.com/careers",
     "category": "Audio Health & Wellness",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "SoapBox Labs",
@@ -9661,8 +9716,9 @@
     "careers_url": "https://www.songkick.com/jobs",
     "category": "Streaming & Music Services",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "Songtradr",
@@ -10014,8 +10070,9 @@
     "careers_url": "https://www.spectrasonics.net/company/employment.php",
     "category": "Audio Plugins & Virtual Instruments",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "Speechelo",
@@ -10139,11 +10196,15 @@
   },
   {
     "name": "Stanford CCRMA",
-    "careers_url": "https://careersearch.stanford.edu/",
+    "careers_url": "https://careersearch.stanford.edu/hcmUI/CandidateExperience/en/sites/stanford/jobs?keyword=audio",
     "category": "Music Education Technology",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "http"
+    "source": "manual",
+    "scrape_method": "http",
+    "extra_careers_urls": [
+      "https://careersearch.stanford.edu/hcmUI/CandidateExperience/en/sites/stanford/jobs?keyword=acoustic"
+    ],
+    "ats_type": "oracle"
   },
   {
     "name": "Stantec",
@@ -10247,8 +10308,9 @@
     "careers_url": "https://www.stormaudio.com/join-our-team/",
     "category": "Hi-Fi & Consumer Speakers",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "Stride Hearing",
@@ -10557,8 +10619,9 @@
     "careers_url": "https://www.tascam.com/us/careers",
     "category": "Professional Audio & Live Sound",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "Tata Motors",
@@ -10742,8 +10805,9 @@
     "careers_url": "https://theatreprojects.com/careers/",
     "category": "Acoustic Consulting & Engineering",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "Thomann",
@@ -10799,8 +10863,9 @@
     "careers_url": "https://www.thx.com/careers",
     "category": "Headphones & Personal Audio",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "thyssenkrupp",
@@ -11143,7 +11208,8 @@
     "verified": true,
     "open_application": true,
     "source": "manual",
-    "scrape_method": "http"
+    "scrape_method": "http",
+    "scrape_blocked": true
   },
   {
     "name": "u-he Diva",
@@ -11353,7 +11419,8 @@
     "category": "Professional Audio & Live Sound",
     "verified": true,
     "source": "manual",
-    "scrape_method": "playwright"
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "Valhalla DSP",
@@ -11569,8 +11636,9 @@
     "careers_url": "https://voidacoustics.com/careers/",
     "category": "DJ Equipment",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "Voiser",
@@ -11685,7 +11753,8 @@
     "source": "manual",
     "scrape_method": "http",
     "website_url": "https://vydia.com",
-    "description": "Vydia is a music distribution, rights management and royalty platform for independent artists and labels."
+    "description": "Vydia is a music distribution, rights management and royalty platform for independent artists and labels.",
+    "scrape_blocked": true
   },
   {
     "name": "W.A. Production",
@@ -12018,8 +12087,9 @@
     "careers_url": "https://www.xilica.com/careers/",
     "category": "Professional Audio & Live Sound",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "playwright",
+    "scrape_blocked": true
   },
   {
     "name": "Xiph.Org Foundation",

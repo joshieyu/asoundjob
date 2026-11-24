@@ -806,6 +806,21 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 
 ## 9. Log (newest first, keep entries short)
 
+- **2026-11-24, unreadable companies to the blocked page** — At the owner's request, 68
+  still-failing companies whose careers page is real but unreadable to us are now
+  `scrape_blocked`, so they list on `/companies/blocked` and the cycle skips them: bot-blocked
+  (Audio-Technica, THX, Tascam, StormAudio, Guitar Center, Last.fm…), JS-only (AIVA, Audius,
+  ProjectSAM…), ATSes we lack (Dayforce: Ashly, Natus; Jobvite: Capcom; Zoho: Roon; JOIN:
+  Cyanite, Loudly; PeopleForce, Dover, Jobbet, UKG Ready, Paycom: Valcom), and careers pages
+  with no parseable listings (Korg, LANDR, Schoeps, Bitwig, Spectrasonics, Rupert Neve, Qobuz,
+  RCF…). Left out on purpose: pages that read fine and say "no openings" (Waves, AMS Neve,
+  Audio Precision, Slate Digital's empty Personio), since blocking would stop us noticing new
+  jobs; and dead, storefront or homepage URLs, which would put a bad link on the page.
+  Unblocked Neural DSP (Teamtailor now reads it) and Peavey (its careers page is gone).
+  Stanford CCRMA fixed instead: `careersearch.stanford.edu` is Oracle on a custom domain; the
+  `oracle` scraper now accepts any host when `ats_type` is `oracle` (3 board rows). JL Audio
+  unverified: its roles are posted by Garmin, which is scraped.
+
 - **2026-11-24, scrape audit, part 2** — `diagnose_failures` over all 377 failing companies:
   75 unknown, 52 JSON endpoints (almost all site chrome, not jobs), 46 storefronts, 36 dead
   URLs, 33 careers hosted elsewhere, 31 on an ATS we lacked or had not bound, 29 careers

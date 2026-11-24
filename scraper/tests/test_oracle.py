@@ -93,6 +93,30 @@ class TestOracleScraper(unittest.TestCase):
         self.assertEqual(len(jobs), 1)
         self.assertIn("Seismic Team", jobs[0].description or "")
 
+    def test_custom_domain_needs_the_oracle_ats_type(self) -> None:
+        url = "https://careersearch.stanford.edu/hcmUI/CandidateExperience/en/sites/stanford/jobs?keyword=audio"
+        urls: list[str] = []
+
+        def fake_fetch(address: str, settings: object) -> dict:
+            urls.append(address)
+            if "recruitingCEJobRequisitionDetails" in address:
+                return DETAIL
+            return search_payload([ROW], 1)
+
+        unbound = SimpleNamespace(ats_type=None, careers_url=url, priority=False)
+        self.assertFalse(self.scraper.can_handle(unbound))
+        with self.assertRaises(ScrapeError):
+            asyncio.run(self.scraper.fetch_jobs(unbound))
+        bound = SimpleNamespace(ats_type="oracle", careers_url=url, priority=False)
+        with patch("scraper.scrapers.ats.oracle.fetch_json", side_effect=fake_fetch):
+            jobs = asyncio.run(self.scraper.fetch_jobs(bound))
+        self.assertTrue(urls[0].startswith("https://careersearch.stanford.edu/hcmRestApi/"))
+        self.assertIn("siteNumber=stanford", urls[0])
+        self.assertEqual(
+            jobs[0].url,
+            "https://careersearch.stanford.edu/hcmUI/CandidateExperience/en/sites/stanford/job/2319",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
