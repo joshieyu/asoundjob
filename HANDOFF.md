@@ -164,7 +164,8 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   on URL shape.
 - ATS parsers (`scrapers/ats/`): adp (Workforce Now only), amazon, apple, ashby,
   awsm (WP Job Openings), bamboohr, eightfold, gibson, greenhouse, haileyhr, icims, jibe,
-  jobsyn, lever, pinpoint, recruitee, sigma, smartrecruiters, successfactors, ultipro, workable, workday.
+  jobsyn, lever, oracle, paylocity, pinpoint, recruitee, sigma, smartrecruiters, successfactors,
+  taleo, ultipro, workable, workday.
 - ATS results are `trust_empty` (empty means no jobs); generic results never are.
   If a dedicated parser claimed a board and failed, the fallback result is
   `partial` so it cannot deactivate what it did not see.
@@ -803,6 +804,18 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   `resolve_database_url`, so running from `scraper/` is fine).
 
 ## 9. Log (newest first, keep entries short)
+
+- **2026-11-24, Oracle Recruiting Cloud, INL, Langan** — New `oracle` scraper for Oracle
+  HCM Candidate Experience sites (`*.fa.*.oraclecloud.com/hcmUI/CandidateExperience/.../sites/
+  {site}`): the public `recruitingCEJobRequisitions` finder (honours `?keyword=`) plus
+  `recruitingCEJobRequisitionDetails` for descriptions; no login. Added Idaho National
+  Laboratory (professional site CX_1001 and intern site CX_1002, keyword "acoustic") and
+  Langan (Greenhouse; 576 jobs, only its two noise practice-leader roles score on). Corsair,
+  failing 55 cycles on playwright, now reads its 61 jobs; it moved from Headphones to Consumer
+  Electronics & Tech (partial), which keeps the 3 audio roles and drops 11 generic QA and
+  engineering roles. Modeltalker's URL is a Nemours hospital job page; the whole board is 471
+  clinical jobs, so it is scoped to `?keyword=ModelTalker` (0 today). Handshake links need a
+  login and cannot be scraped.
 
 - **2026-11-23, Songtradr, RS&H, Finders Seekers** — Songtradr repointed to its BambooHR
   board (`songtradr`); the old `songtradr.com/careers` page has no job links. Bandcamp still

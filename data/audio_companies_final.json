@@ -2564,10 +2564,12 @@
   {
     "name": "Corsair",
     "careers_url": "https://edix.fa.us2.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1/jobs",
-    "category": "Headphones & Personal Audio",
+    "category": "Consumer Electronics & Tech",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "http",
+    "ats_type": "oracle",
+    "website_url": "https://www.corsair.com/"
   },
   {
     "name": "Coselgi",
@@ -5075,6 +5077,19 @@
     "scrape_method": "http"
   },
   {
+    "name": "Idaho National Laboratory",
+    "careers_url": "https://elhe.fa.us8.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1001/jobs?keyword=acoustic",
+    "category": "Acoustic Consulting & Engineering",
+    "verified": true,
+    "source": "manual",
+    "scrape_method": "http",
+    "extra_careers_urls": [
+      "https://elhe.fa.us8.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1002/jobs?keyword=acoustic"
+    ],
+    "website_url": "https://inl.gov/",
+    "ats_type": "oracle"
+  },
+  {
     "name": "IEEE Signal Processing",
     "careers_url": "https://www.ieee.org/careers",
     "category": "Audio IP & Licensing",
@@ -5806,6 +5821,17 @@
     "verified": true,
     "source": "auto",
     "scrape_method": "playwright"
+  },
+  {
+    "name": "Langan",
+    "careers_url": "https://job-boards.greenhouse.io/langanengineeringandenvironmentalservicesllc",
+    "category": "Acoustic Consulting & Engineering",
+    "verified": true,
+    "source": "manual",
+    "scrape_method": "http",
+    "website_url": "https://www.langan.com/",
+    "ats_type": "greenhouse",
+    "ats_slug": "langanengineeringandenvironmentalservicesllc"
   },
   {
     "name": "Laran",
@@ -6790,11 +6816,12 @@
   },
   {
     "name": "Modeltalker",
-    "careers_url": "https://epyz.fa.us2.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1/job/5721",
+    "careers_url": "https://epyz.fa.us2.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1/jobs?keyword=ModelTalker",
     "category": "Voice & Speech Technology",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "http",
+    "ats_type": "oracle"
   },
   {
     "name": "Modulate",

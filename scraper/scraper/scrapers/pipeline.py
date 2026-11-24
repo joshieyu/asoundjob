@@ -27,6 +27,7 @@ from scraper.scrapers.ats.icims import IcimsScraper
 from scraper.scrapers.ats.jibe import JibeScraper
 from scraper.scrapers.ats.jobsyn import JobsynScraper
 from scraper.scrapers.ats.lever import LeverScraper
+from scraper.scrapers.ats.oracle import OracleScraper
 from scraper.scrapers.ats.paylocity import PaylocityScraper
 from scraper.scrapers.ats.pinpoint import PinpointScraper
 from scraper.scrapers.ats.recruitee import RecruiteeScraper
@@ -73,6 +74,7 @@ class ScrapePipeline:
         self.eightfold = EightfoldScraper(settings)
         self.pinpoint = PinpointScraper(settings)
         self.paylocity = PaylocityScraper(settings)
+        self.oracle = OracleScraper(settings)
         self.taleo = TaleoScraper(settings)
         self.haileyhr = HaileyHrScraper(settings)
         self.icims = IcimsScraper(settings)
@@ -101,6 +103,7 @@ class ScrapePipeline:
             "eightfold": self.eightfold,
             "pinpoint": self.pinpoint,
             "paylocity": self.paylocity,
+            "oracle": self.oracle,
             "taleo": self.taleo,
             "haileyhr": self.haileyhr,
             "icims": self.icims,
@@ -311,6 +314,7 @@ class ScrapePipeline:
             self.workday,
             self.pinpoint,
             self.paylocity,
+            self.oracle,
             self.taleo,
             self.haileyhr,
             self.icims,
