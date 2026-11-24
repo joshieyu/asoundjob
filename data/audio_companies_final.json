@@ -7401,11 +7401,14 @@
   },
   {
     "name": "Nintendo",
-    "careers_url": "https://careers.nintendo.com/",
+    "careers_url": "https://careers.nintendo.com/jobs/",
     "category": "Gaming, VR & Immersive Audio",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "http",
+    "ats_type": "greenhouse",
+    "ats_slug": "nintendo",
+    "website_url": "https://www.nintendo.com/"
   },
   {
     "name": "NIO",

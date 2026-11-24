@@ -805,6 +805,12 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 
 ## 9. Log (newest first, keep entries short)
 
+- **2026-11-24, Nintendo** — In the seed since the first commit and failing every cycle since
+  2026-09-17 (`careers.nintendo.com/` has no job links). The site is a front end for
+  Greenhouse board `nintendo` (76 jobs); bound to it. 4 board rows: two NTD audio software
+  roles, the Retro Studios Audio & Localization Producer, and Retro's "Technology Engineer"
+  (engine generalist; scores on "audio" in a list of engine areas, borderline).
+
 - **2026-11-24, Oracle Recruiting Cloud, INL, Langan** — New `oracle` scraper for Oracle
   HCM Candidate Experience sites (`*.fa.*.oraclecloud.com/hcmUI/CandidateExperience/.../sites/
   {site}`): the public `recruitingCEJobRequisitions` finder (honours `?keyword=`) plus
