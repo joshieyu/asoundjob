@@ -818,7 +818,7 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   jobs; and dead, storefront or homepage URLs, which would put a bad link on the page.
   Unblocked Neural DSP (Teamtailor now reads it) and Peavey (its careers page is gone).
   Stanford CCRMA fixed instead: `careersearch.stanford.edu` is Oracle on a custom domain; the
-  `oracle` scraper now accepts any host when `ats_type` is `oracle` (3 board rows). JL Audio
+  `oracle` scraper now accepts any host when `ats_type` is `oracle` (2 board rows). JL Audio
   unverified: its roles are posted by Garmin, which is scraped.
 
 - **2026-11-24, scrape audit, part 2** — `diagnose_failures` over all 377 failing companies:
