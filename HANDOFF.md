@@ -740,7 +740,7 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 | DiGiCo | `digico.biz/recruitment/`, healthy. |
 | Dirac Research | Re-verified 2026-11-12 (owner). Swedish audio DSP licensed to car and device makers; moved from Consumer Electronics (partial) to Audio Middleware & SDK (native), which keeps its Home & Pro developer role (score 80; 45 under partial). Jobs are on Hailey HR (`dirac.careers.haileyhr.app`, `scrapers/ats/haileyhr.py`): listing cards put location and department chips before an `<h3>` title, and descriptions are Markdown inside the Next.js `self.__next_f` stream (`<id>:T<hex bytes>,` text chunk), not the HTML. 4 board rows. |
 | Dolby | Eightfold `/api/pcsx/search`, `domain=dolby.com`; new Eightfold companies need two cycles (slug derived). |
-| ElevenLabs | Not seeded on purpose: 52 of 54 reachable board rows would be sales; research roles score 4 against the cutoff of 5. |
+| ElevenLabs | Bound to Ashby `elevenlabs` 2026-11-24 (owner), `partial` scope set in the DB. Earlier it was left off on purpose (52 of 54 board rows would have been sales); the 2026-11-24 measurement was 9 rows at native (5 commercial) and 2 at partial (Audio Engineering (Freelance), Android Engineer – Creative App). Its engineering titles are generic, so few score. Before this the seeded `elevenlabs.io/careers` page failed 42 cycles. |
 | Fender / inMusic / Logitech | Each board was being claimed by a sub-brand via shared-URL dedup; sub-brands are `verified: false`. |
 | Focusrite / Music Tribe | One board per group (Workable; Jobvite `musictribe`); brand entries retired. Check footers for umbrella owners. |
 | Garmin | Jibe JSON API via `JIBE_HOSTS` allowlist. |

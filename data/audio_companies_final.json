@@ -3567,11 +3567,14 @@
   },
   {
     "name": "ElevenLabs",
-    "careers_url": "https://elevenlabs.io/careers",
+    "careers_url": "https://jobs.ashbyhq.com/elevenlabs",
     "category": "Voice & Speech Technology",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "http",
+    "ats_type": "ashby",
+    "ats_slug": "elevenlabs",
+    "website_url": "https://elevenlabs.io/"
   },
   {
     "name": "Elipson",
