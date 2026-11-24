@@ -165,7 +165,8 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 - ATS parsers (`scrapers/ats/`): adp (Workforce Now only), amazon, apple, ashby,
   awsm (WP Job Openings), bamboohr, eightfold, gibson, greenhouse, haileyhr, icims, jibe,
   jobsyn, lever, oracle, paylocity, pinpoint, recruitee, sigma, smartrecruiters, successfactors,
-  taleo, ultipro, workable, workday.
+  taleo, teamtailor (`/jobs.rss`; a custom domain needs `ats_type: teamtailor`), ultipro,
+  workable, workday.
 - ATS results are `trust_empty` (empty means no jobs); generic results never are.
   If a dedicated parser claimed a board and failed, the fallback result is
   `partial` so it cannot deactivate what it did not see.
@@ -804,6 +805,23 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   `resolve_database_url`, so running from `scraper/` is fine).
 
 ## 9. Log (newest first, keep entries short)
+
+- **2026-11-24, scrape audit, part 1** — Of 1,472 companies, 345 verified ones had failed 3+
+  cycles (269 "no job links", 39 HTTP 403, 24 HTTP 404). Probed every failing or unverified
+  company against nine ATS APIs by name and scanned their pages for ATS links; most name
+  matches were other companies (Pinpoint's demo boards answer to any name). New `teamtailor`
+  scraper (RSS feed, a trusted empty): Neural DSP, Elektron, XLN Audio, Amuse, Tracklib,
+  Resolution Games (all empty today, so their stale rows now close properly) and Finders
+  Seekers. Paylocity and Taleo detail fetches stop at a deadline (Gentex was timing out at
+  90 s; HDR's third URL was skipped). Repointed: Texas Instruments, Legrand AV, Harmonic
+  (Oracle), Keysight and Navistar (Jibe; both left iCIMS), Otter.ai, TCL North America, LG
+  Electronics US, Baidu USA (Greenhouse), Kawasaki (UKG), Mackie (Paylocity), Kinetics Noise
+  Control (SmartRecruiters), Firelight/FMOD, GungHo America, Kirkegaard (BambooHR), Fairphone,
+  Slate Digital (Personio), Skullcandy, Earlens, Grass Valley, CereProc, Spatial, Cundall
+  (iCIMS); Aston Martin to http (PageUp lists 12 jobs over http, none on playwright).
+  Unverified: Native Instruments (now inMusic's Pinpoint board, like Akai) and Sleep Cycle
+  (no careers page left). Waves, Audio-Technica (Indeed only) and most small makers simply
+  have no openings; an empty generic page stays a failure by design.
 
 - **2026-11-24, Nintendo** — In the seed since the first commit and failing every cycle since
   2026-09-17 (`careers.nintendo.com/` has no job links). The site is a front end for

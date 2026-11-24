@@ -3,9 +3,10 @@ from __future__ import annotations
 import asyncio
 import json
 import re
+from time import monotonic
 from typing import TYPE_CHECKING, Any
 
-from scraper.scrapers.base import BaseScraper, RawJob, ScrapeError
+from scraper.scrapers.base import BaseScraper, RawJob, ScrapeError, company_budget, listing
 from scraper.scrapers.fetch import FetchError, fetch_html, parse_date
 from scraper.scrapers.link_extraction import extract_jsonld_jobs
 
@@ -24,6 +25,7 @@ DETAIL_URL = "https://recruiting.paylocity.com/Recruiting/Jobs/Details/{job_id}"
 
 MAX_DETAIL_FETCHES = 80
 DETAIL_CONCURRENCY = 6
+ENRICHMENT_BUDGET_FRACTION = 0.6
 
 
 class PaylocityScraper(BaseScraper):
@@ -40,16 +42,22 @@ class PaylocityScraper(BaseScraper):
         careers_url = (company.careers_url or "").strip()
         if not URL_PATTERN.match(careers_url):
             raise ScrapeError(f"No paylocity board in {company.careers_url}")
+        deadline = monotonic() + company_budget(self.settings, company) * ENRICHMENT_BUDGET_FRACTION
         page = await asyncio.to_thread(fetch_html, careers_url, self.settings)
-        jobs = parse_board(page)
+        jobs = listing()
+        jobs.extend(parse_board(page))
         semaphore = asyncio.Semaphore(DETAIL_CONCURRENCY)
         await asyncio.gather(
-            *(self._describe(job, semaphore) for job in jobs[:MAX_DETAIL_FETCHES])
+            *(self._describe(job, semaphore, deadline) for job in jobs[:MAX_DETAIL_FETCHES])
         )
         return jobs
 
-    async def _describe(self, job: RawJob, semaphore: asyncio.Semaphore) -> None:
+    async def _describe(
+        self, job: RawJob, semaphore: asyncio.Semaphore, deadline: float
+    ) -> None:
         async with semaphore:
+            if monotonic() >= deadline:
+                return
             try:
                 page = await asyncio.to_thread(fetch_html, job.url, self.settings)
             except FetchError:

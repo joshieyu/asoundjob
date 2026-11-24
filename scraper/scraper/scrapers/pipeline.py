@@ -35,6 +35,7 @@ from scraper.scrapers.ats.sigma import SigmaScraper
 from scraper.scrapers.ats.smartrecruiters import SmartRecruitersScraper
 from scraper.scrapers.ats.successfactors import SuccessFactorsScraper
 from scraper.scrapers.ats.taleo import TaleoScraper
+from scraper.scrapers.ats.teamtailor import TeamtailorScraper
 from scraper.scrapers.ats.ultipro import UltiproScraper
 from scraper.scrapers.ats.workable import WorkableScraper
 from scraper.scrapers.ats.workday import WorkdayScraper
@@ -76,6 +77,7 @@ class ScrapePipeline:
         self.paylocity = PaylocityScraper(settings)
         self.oracle = OracleScraper(settings)
         self.taleo = TaleoScraper(settings)
+        self.teamtailor = TeamtailorScraper(settings)
         self.haileyhr = HaileyHrScraper(settings)
         self.icims = IcimsScraper(settings)
         self.adp = AdpScraper(settings)
@@ -105,6 +107,7 @@ class ScrapePipeline:
             "paylocity": self.paylocity,
             "oracle": self.oracle,
             "taleo": self.taleo,
+            "teamtailor": self.teamtailor,
             "haileyhr": self.haileyhr,
             "icims": self.icims,
             "adp": self.adp,
@@ -316,6 +319,7 @@ class ScrapePipeline:
             self.paylocity,
             self.oracle,
             self.taleo,
+            self.teamtailor,
             self.haileyhr,
             self.icims,
             self.adp,

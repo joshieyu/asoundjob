@@ -5,10 +5,11 @@ import html
 import json
 import re
 from datetime import date, datetime
+from time import monotonic
 from typing import TYPE_CHECKING, Any
 from urllib.parse import parse_qs, unquote, urlparse
 
-from scraper.scrapers.base import BaseScraper, RawJob, ScrapeError, listing
+from scraper.scrapers.base import BaseScraper, RawJob, ScrapeError, company_budget, listing
 from scraper.scrapers.fetch import FetchError, _send, fetch_html
 
 if TYPE_CHECKING:
@@ -29,6 +30,7 @@ PAGE_SIZE = 25
 MAX_PAGES = 20
 MAX_DETAIL_FETCHES = 60
 DETAIL_CONCURRENCY = 6
+ENRICHMENT_BUDGET_FRACTION = 0.3
 MIN_DESCRIPTION_PART = 200
 EEO_HINTS = ("affirmative action", "employment equity", "equal opportunity")
 
@@ -44,6 +46,7 @@ class TaleoScraper(BaseScraper):
         return URL_PATTERN.match(company.careers_url.strip()) is not None
 
     async def fetch_jobs(self, company: Company) -> list[RawJob]:
+        deadline = monotonic() + company_budget(self.settings, company) * ENRICHMENT_BUDGET_FRACTION
         careers_url = (company.careers_url or "").strip()
         match = URL_PATTERN.match(careers_url)
         if not match:
@@ -72,7 +75,7 @@ class TaleoScraper(BaseScraper):
 
         semaphore = asyncio.Semaphore(DETAIL_CONCURRENCY)
         await asyncio.gather(
-            *(self._describe(job, semaphore) for job in jobs[:MAX_DETAIL_FETCHES])
+            *(self._describe(job, semaphore, deadline) for job in jobs[:MAX_DETAIL_FETCHES])
         )
         return jobs
 
@@ -96,8 +99,12 @@ class TaleoScraper(BaseScraper):
         except json.JSONDecodeError as exc:
             raise FetchError(f"Invalid JSON from {url}: {exc}") from exc
 
-    async def _describe(self, job: RawJob, semaphore: asyncio.Semaphore) -> None:
+    async def _describe(
+        self, job: RawJob, semaphore: asyncio.Semaphore, deadline: float
+    ) -> None:
         async with semaphore:
+            if monotonic() >= deadline:
+                return
             try:
                 page = await asyncio.to_thread(fetch_html, job.url, self.settings)
             except FetchError:

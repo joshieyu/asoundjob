@@ -1,15 +1,17 @@
 from __future__ import annotations
 
+import asyncio
 import json
 import unittest
 from datetime import date
 from types import SimpleNamespace
+from unittest.mock import patch
 from urllib.parse import quote
 
 from scraper.config import load_settings
 from scraper.scrapers.ats.paylocity import PaylocityScraper, parse_board
 from scraper.scrapers.ats.taleo import TaleoScraper, parse_detail_description, parse_search
-from scraper.scrapers.base import ScrapeError
+from scraper.scrapers.base import RawJob, ScrapeError
 
 SEARCH_PAYLOAD = {
     "pagingData": {"currentPageNo": 1, "pageSize": 25, "totalCount": 2},
@@ -111,3 +113,38 @@ class TestPaylocity(unittest.TestCase):
             ),
         )
         self.assertTrue(scraper.can_handle(company))
+
+async def _describe_past_deadline(scraper: PaylocityScraper | TaleoScraper, job: RawJob) -> None:
+    await scraper._describe(job, asyncio.Semaphore(1), 0.0)
+
+
+class TestEnrichmentDeadline(unittest.TestCase):
+    def test_paylocity_skips_detail_fetches_past_the_deadline(self) -> None:
+        scraper = PaylocityScraper(load_settings())
+        job = RawJob(
+            title="Sr. Acoustic Engineer",
+            url="https://recruiting.paylocity.com/Recruiting/Jobs/Details/1",
+            external_id="1",
+        )
+        calls: list[str] = []
+
+        def fake_fetch(url: str, settings: object) -> str:
+            calls.append(url)
+            return ""
+
+        with patch("scraper.scrapers.ats.paylocity.fetch_html", fake_fetch):
+            asyncio.run(_describe_past_deadline(scraper, job))
+        self.assertEqual(calls, [])
+
+    def test_taleo_skips_detail_fetches_past_the_deadline(self) -> None:
+        scraper = TaleoScraper(load_settings())
+        job = RawJob(title="Acoustician", url="https://example.taleo.net/job/1", external_id="1")
+        calls: list[str] = []
+
+        def fake_fetch(url: str, settings: object) -> str:
+            calls.append(url)
+            return ""
+
+        with patch("scraper.scrapers.ats.taleo.fetch_html", fake_fetch):
+            asyncio.run(_describe_past_deadline(scraper, job))
+        self.assertEqual(calls, [])
