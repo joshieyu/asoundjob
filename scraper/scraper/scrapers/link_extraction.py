@@ -1305,6 +1305,9 @@ def extract_accordion_jobs(html: str, base_url: str) -> list[RawJob]:
     return jobs
 
 
+MAX_JSONLD_GRAPH_NODES = 200
+
+
 def extract_jsonld_jobs(html: str, base_url: str) -> list[RawJob]:
     soup = BeautifulSoup(html, "html.parser")
     jobs: list[RawJob] = []
@@ -1318,7 +1321,13 @@ def extract_jsonld_jobs(html: str, base_url: str) -> list[RawJob]:
         except (json.JSONDecodeError, TypeError):
             continue
         items = data if isinstance(data, list) else [data]
-        for item in items:
+        graph = [
+            node
+            for item in items
+            if isinstance(item, dict) and isinstance(item.get("@graph"), list)
+            for node in item["@graph"][:MAX_JSONLD_GRAPH_NODES]
+        ]
+        for item in items + graph:
             if not isinstance(item, dict):
                 continue
             if _is_job_posting(item):

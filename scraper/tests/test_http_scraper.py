@@ -9,8 +9,8 @@ from unittest.mock import patch
 from scraper.config import load_settings
 from scraper.models import Company
 from scraper.scrapers.base import ScrapeError
+from scraper.scrapers.detail_enrichment import MIN_DESCRIPTION_CHARS
 from scraper.scrapers.http_scraper import (
-    MIN_DESCRIPTION_CHARS,
     HttpScraper,
     _is_same_page_anchor,
     extract_description,
@@ -69,6 +69,7 @@ LISTING_WITH_LONG_DESCRIPTION_HTML = """
             "title": "Audio DSP Engineer",
             "url": "https://example.com/careers/jobs/1",
             "description": LONG_DESCRIPTION,
+            "jobLocation": "Berlin, Germany",
         }
     )
 )

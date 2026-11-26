@@ -10670,8 +10670,9 @@
     "careers_url": "https://careers.teenage.engineering/jobs",
     "category": "Electronic Musical Instruments",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "playwright"
+    "source": "manual",
+    "scrape_method": "playwright",
+    "ats_type": "teamtailor"
   },
   {
     "name": "TEF (Gold Line)",

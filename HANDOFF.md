@@ -164,9 +164,20 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   on URL shape.
 - ATS parsers (`scrapers/ats/`): adp (Workforce Now only), amazon, apple, ashby,
   awsm (WP Job Openings), bamboohr, eightfold, gibson, greenhouse, haileyhr, icims, jibe,
-  jobsyn, lever, oracle, paylocity, pinpoint, recruitee, sigma, smartrecruiters, successfactors,
+  jobsyn, lever, oracle, paylocity, personio (`/xml?language=en`), pinpoint, recruitee, sigma,
+  smartrecruiters, successfactors,
   taleo, teamtailor (`/jobs.rss`; a custom domain needs `ats_type: teamtailor`), ultipro,
   workable, workday.
+- **Detail pages fill missing locations, not only missing descriptions** (2026-11-26,
+  `scrapers/detail_enrichment.py`). The HTTP scraper and the browser scraper fetch a job's
+  detail page (plain HTTP, same host for HTTP; up to 150 / 60 jobs within the budget) when
+  its description is under 200 characters *or* it has no location, then read the page's
+  `JobPosting` JSON-LD (including inside `@graph`) and fall back to schema.org microdata
+  (`itemprop="jobLocation"` → locality/region/country). A posting is used only when its url
+  or exact title matches the job, never as a lone fallback, because detail pages often embed
+  related jobs. The HTTP scraper then falls back to page text for the description; the
+  browser scraper does not. SuccessFactors reads each listing row's location too, so a
+  board past its detail budget still has locations.
 - ATS results are `trust_empty` (empty means no jobs); generic results never are.
   If a dedicated parser claimed a board and failed, the fallback result is
   `partial` so it cannot deactivate what it did not see.
@@ -805,6 +816,17 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   `resolve_database_url`, so running from `scraper/` is fine).
 
 ## 9. Log (newest first, keep entries short)
+
+- **2026-11-26, locations and descriptions from detail pages** — The owner noticed jobs with a
+  location only in the body text. 183 of 1,262 board rows had no location and 102 no real
+  description. New shared step reads structured data from detail pages for any job missing
+  either (see §4.2). SuccessFactors listing rows now carry their location (Sonova 31,
+  Demant 7, HATCI 4 were blank whenever detail enrichment ran out of budget), and its detail
+  parser reads `addressLocality/Region/Country` metas instead of only `streetAddress`. New
+  Personio XML scraper (`office` gives the location; an empty feed is a trusted empty board,
+  so Slate Digital stops failing). Teenage Engineering bound to Teamtailor. Not fixable this
+  way: Meta (detail pages answer plain HTTP with 400), and sites with no structured data
+  (Arup, Arturia, Audison, ESS, IK, Listen, Muse; Rockford and Kicker post PDFs).
 
 - **2026-11-26, WS Audiology on Teamtailor; ATS switches keep job ids** — All 173 active WSA
   jobs had no location and no description: its four careers sites (`careers`, `careersusa`,

@@ -29,6 +29,7 @@ from scraper.scrapers.ats.jobsyn import JobsynScraper
 from scraper.scrapers.ats.lever import LeverScraper
 from scraper.scrapers.ats.oracle import OracleScraper
 from scraper.scrapers.ats.paylocity import PaylocityScraper
+from scraper.scrapers.ats.personio import PersonioScraper
 from scraper.scrapers.ats.pinpoint import PinpointScraper
 from scraper.scrapers.ats.recruitee import RecruiteeScraper
 from scraper.scrapers.ats.sigma import SigmaScraper
@@ -78,6 +79,7 @@ class ScrapePipeline:
         self.oracle = OracleScraper(settings)
         self.taleo = TaleoScraper(settings)
         self.teamtailor = TeamtailorScraper(settings)
+        self.personio = PersonioScraper(settings)
         self.haileyhr = HaileyHrScraper(settings)
         self.icims = IcimsScraper(settings)
         self.adp = AdpScraper(settings)
@@ -108,6 +110,7 @@ class ScrapePipeline:
             "oracle": self.oracle,
             "taleo": self.taleo,
             "teamtailor": self.teamtailor,
+            "personio": self.personio,
             "haileyhr": self.haileyhr,
             "icims": self.icims,
             "adp": self.adp,
@@ -320,6 +323,7 @@ class ScrapePipeline:
             self.oracle,
             self.taleo,
             self.teamtailor,
+            self.personio,
             self.haileyhr,
             self.icims,
             self.adp,

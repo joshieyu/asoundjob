@@ -11,6 +11,7 @@ from urllib.parse import parse_qs, quote, urljoin, urlsplit
 from bs4 import BeautifulSoup
 
 from scraper.scrapers.base import BaseScraper, RawJob, ScrapeError, company_budget, listing
+from scraper.scrapers.detail_enrichment import microdata_location
 from scraper.scrapers.fetch import FetchError, fetch_html, parse_date, post_json
 
 if TYPE_CHECKING:
@@ -196,8 +197,55 @@ def parse_listing_page(html_text: str, origin: str) -> list[RawJob]:
         if key in seen:
             continue
         seen.add(key)
-        jobs.append(RawJob(title=title, url=url, external_id=external_id))
+        row = anchor.find_parent(["tr", "li"])
+        jobs.append(
+            RawJob(
+                title=title,
+                url=url,
+                external_id=external_id,
+                location=_row_location(row) if row is not None else None,
+            )
+        )
     return jobs
+
+
+def _row_location(row: Any) -> str | None:
+    for node in row.find_all(class_="jobLocation"):
+        if node.name == "a" or node.find(class_="jobLocation") is not None:
+            continue
+        text = node.get_text(" ", strip=True)
+        if text:
+            return text
+    parts: dict[str, str] = {}
+    for field in row.find_all(class_="section-field"):
+        if field.find_parent(class_="sub-section-desktop") is None and row.find(
+            class_="sub-section-desktop"
+        ):
+            continue
+        label_node = field.find(class_="section-label")
+        label = label_node.get_text(" ", strip=True).lower() if label_node else ""
+        classes = set(field.get("class") or [])
+        role = next(
+            (
+                name
+                for name in ("location", "city", "state", "country")
+                if name in classes or label == name or label == f"{name}s"
+            ),
+            None,
+        )
+        if role is None or role in parts:
+            continue
+        if label_node is not None:
+            label_node.extract()
+        value = field.get_text(" ", strip=True)
+        if value:
+            parts[role] = value
+    ordered = [parts.get(name) for name in ("location", "city", "state", "country")]
+    names: list[str] = []
+    for name in ordered:
+        if name and not any(name.lower() == seen.lower() for seen in names):
+            names.append(name)
+    return ", ".join(names) or None
 
 
 def parse_api_jobs(payload: Any, origin: str) -> list[RawJob] | None:
@@ -275,24 +323,11 @@ def extract_detail(html_text: str) -> dict[str, Any]:
         if posted_date:
             detail["posted_date"] = posted_date
 
-    location = _extract_location(soup)
+    location = microdata_location(html_text)
     if location:
         detail["location"] = location
 
     return detail
-
-
-def _extract_location(soup: BeautifulSoup) -> Optional[str]:
-    address_node = soup.find("meta", attrs={"itemprop": "streetAddress"})
-    if address_node is not None:
-        content = str(address_node.get("content") or "").strip()
-        if content:
-            return content
-    location_node = soup.find(itemprop="jobLocation")
-    if location_node is None:
-        return None
-    text = location_node.get_text(" ", strip=True)
-    return text or None
 
 
 def _parse_java_date(value: Any) -> Optional[date]:

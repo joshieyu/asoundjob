@@ -7,17 +7,16 @@ from typing import Any, Optional
 from urllib.parse import urlparse
 
 from scraper.scrapers.base import BaseScraper, RawJob, ScrapeError
+from scraper.scrapers.detail_enrichment import apply_structured_detail, needs_detail
 from scraper.scrapers.fetch import fetch_html
-from scraper.scrapers.link_extraction import extract_jsonld_jobs
 from scraper.scrapers.pagination import collect_paginated
-from scraper.scrapers.pdf_description import enrich_pdf_jobs
+from scraper.scrapers.pdf_description import enrich_pdf_jobs, is_pdf_url
 
 logger = logging.getLogger(__name__)
 
 PDF_ENRICHMENT_BUDGET_FRACTION = 0.85
 MIN_PDF_DESCRIPTION_CHARS = 200
 
-JSONLD_DETAIL_HOSTS = frozenset({"jobs.thyssenkrupp.com"})
 MAX_JSONLD_DETAIL_FETCHES = 60
 JSONLD_DETAIL_CONCURRENCY = 4
 
@@ -122,11 +121,12 @@ class PlaywrightScraper(BaseScraper):
             raise ScrapeError("page loaded but no job links found")
         deadline = start + self.settings.per_company_timeout * PDF_ENRICHMENT_BUDGET_FRACTION
         await enrich_pdf_jobs(jobs, self.settings, deadline, MIN_PDF_DESCRIPTION_CHARS)
-        if uses_jsonld_details(url):
-            await self._enrich_from_jsonld(jobs, deadline)
+        await self._enrich_from_details(jobs, url, deadline)
         return jobs
 
-    async def _enrich_from_jsonld(self, jobs: list[RawJob], deadline: float) -> None:
+    async def _enrich_from_details(
+        self, jobs: list[RawJob], listing_url: str, deadline: float
+    ) -> None:
         semaphore = asyncio.Semaphore(JSONLD_DETAIL_CONCURRENCY)
 
         async def enrich(job: RawJob) -> None:
@@ -138,9 +138,15 @@ class PlaywrightScraper(BaseScraper):
                 except Exception as exc:
                     logger.warning("playwright: detail fetch failed for %s: %s", job.url, exc)
                     return
-            apply_jsonld_detail(job, html)
+            apply_structured_detail(job, html)
 
-        candidates = [job for job in jobs if not job.description][:MAX_JSONLD_DETAIL_FETCHES]
+        candidates = [
+            job
+            for job in jobs
+            if needs_detail(job)
+            and not is_pdf_url(job.url)
+            and not _same_page(job.url, listing_url)
+        ][:MAX_JSONLD_DETAIL_FETCHES]
         await asyncio.gather(*(enrich(job) for job in candidates))
 
     async def close(self) -> None:
@@ -182,20 +188,7 @@ async def settle_links(page: Any, timeout_ms: int) -> None:
         remaining -= LINK_SETTLE_POLL_MS
 
 
-def uses_jsonld_details(url: str) -> bool:
-    host = urlparse(url).netloc.lower()
-    if host.startswith("www."):
-        host = host[4:]
-    return host in JSONLD_DETAIL_HOSTS
-
-
-def apply_jsonld_detail(job: RawJob, html: str) -> None:
-    for detail in extract_jsonld_jobs(html, job.url):
-        if not detail.description:
-            continue
-        job.description = detail.description
-        if not job.location and detail.location:
-            job.location = detail.location
-        if not job.posted_date and detail.posted_date:
-            job.posted_date = detail.posted_date
-        return
+def _same_page(job_url: str, listing_url: str) -> bool:
+    return urlparse(job_url)._replace(fragment="").geturl() == urlparse(
+        listing_url
+    )._replace(fragment="").geturl()

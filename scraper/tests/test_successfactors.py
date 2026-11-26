@@ -169,6 +169,36 @@ class TestParseListingPage(unittest.TestCase):
         self.assertEqual(len(jobs), 1)
         self.assertEqual(jobs[0].external_id, "1428516433")
 
+    def test_table_rows_carry_their_location(self) -> None:
+        html_text = (
+            '<table><tr class="data-row"><td class="colTitle">'
+            '<a class="jobTitle-link" href="/job/Warszawa-Engineer/1442021133/">Engineer</a>'
+            '<span class="jobLocation visible-phone"><span class="jobLocation">'
+            "Warszawa, Poland</span></span></td>"
+            '<td class="colLocation"><span class="jobLocation">Warszawa, Poland</span></td>'
+            "</tr></table>"
+        )
+        jobs = parse_listing_page(html_text, ORIGIN)
+        self.assertEqual(jobs[0].location, "Warszawa, Poland")
+
+    def test_tiles_join_labelled_location_fields(self) -> None:
+        html_text = (
+            '<ul><li class="job-tile"><div class="sub-section-desktop">'
+            '<a class="jobTitle-link" href="/demant/job/Smorum-Engineer/1458488733/">'
+            "Principal Electro-Acoustic Engineer</a>"
+            '<div class="section-field customfield2"><span class="section-label">ID</span>'
+            "<div>39668</div></div>"
+            '<div class="section-field customfield4"><span class="section-label">Country'
+            "</span><div>Denmark</div></div>"
+            '<div class="section-field customfield5"><span class="section-label">Location'
+            "</span><div>Smørum</div></div>"
+            '</div><div class="sub-section-mobile">'
+            '<div class="section-field customfield5"><span class="section-label">Location'
+            "</span><div>Elsewhere</div></div></div></li></ul>"
+        )
+        jobs = parse_listing_page(html_text, ORIGIN)
+        self.assertEqual(jobs[0].location, "Smørum, Denmark")
+
     def test_ignores_anchors_without_job_title_link_class(self) -> None:
         html_text = '<a class="other-link" href="/x/job/y/1/">Not a job</a>'
         self.assertEqual(parse_listing_page(html_text, ORIGIN), [])
@@ -195,6 +225,19 @@ class TestExtractDetail(unittest.TestCase):
         self.assertEqual(detail["location"], "Middelfart, DK, 5500")
         self.assertEqual(detail["posted_date"], date(2026, 8, 21))
         self.assertIn("Advanced signal", detail["description"])
+
+    def test_reads_locality_region_and_country_metas(self) -> None:
+        html_text = (
+            '<div itemscope itemtype="http://schema.org/JobPosting">'
+            '<span itemprop="jobLocation" itemscope itemtype="http://schema.org/Place">'
+            '<span itemprop="address" itemscope>'
+            '<meta itemprop="addressLocality" content="Superior Charter Township">'
+            '<meta itemprop="addressRegion" content="MI">'
+            '<meta itemprop="postalCode" content="48198">'
+            '<meta itemprop="addressCountry" content="US"></span></span></div>'
+        )
+        detail = extract_detail(html_text)
+        self.assertEqual(detail["location"], "Superior Charter Township, MI, US")
 
     def test_falls_back_to_description_node_without_jobdescription_span(self) -> None:
         detail = extract_detail(DETAIL_HTML_NO_JOBDESCRIPTION_WRAPPER)

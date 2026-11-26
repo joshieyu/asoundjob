@@ -3,17 +3,28 @@ from __future__ import annotations
 import asyncio
 import unittest
 from typing import Optional
+from unittest.mock import patch
 
 from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 
 from scraper.config import load_settings
 from scraper.models import Company
 from scraper.scrapers.base import RawJob, ScrapeError
-from scraper.scrapers.playwright_scraper import (
-    PlaywrightScraper,
-    apply_jsonld_detail,
-    uses_jsonld_details,
+from scraper.scrapers.detail_enrichment import apply_structured_detail
+from scraper.scrapers.playwright_scraper import PlaywrightScraper
+
+DETAIL_FETCHES = patch(
+    "scraper.scrapers.playwright_scraper.fetch_html",
+    side_effect=ConnectionError("no network in tests"),
 )
+
+
+def setUpModule() -> None:
+    DETAIL_FETCHES.start()
+
+
+def tearDownModule() -> None:
+    DETAIL_FETCHES.stop()
 
 CAREERS_URL = "https://example.com/careers"
 
@@ -231,10 +242,6 @@ class TestPlaywrightPaginationErrors(unittest.TestCase):
         self.assertEqual(scraper._page_status, {})
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 DETAIL_PAGE = (
     '<script type="application/ld+json">{"@context": "https://schema.org", '
     '"@type": "JobPosting", "title": "NVH Engineer", '
@@ -246,21 +253,38 @@ DETAIL_PAGE = (
 
 
 class TestJsonLdDetails(unittest.TestCase):
-    def test_only_listed_hosts_fetch_details(self) -> None:
-        self.assertTrue(uses_jsonld_details("https://jobs.thyssenkrupp.com/en?search=NVH"))
-        self.assertFalse(uses_jsonld_details("https://jobs.thyssenkrupp.com.evil.net/"))
-        self.assertFalse(uses_jsonld_details("https://careers.example.com/"))
+    def test_jobs_missing_a_location_are_read_from_their_detail_pages(self) -> None:
+        fetched: list[str] = []
+
+        def fake_fetch(url: str, settings: object) -> str:
+            fetched.append(url)
+            return DETAIL_PAGE.replace("NVH Engineer", "Audio DSP Engineer")
+
+        async def go() -> list[RawJob]:
+            scraper = make_scraper([FakeResponse(200)], JOBS_HTML)
+            return await scraper.fetch_jobs(make_company())
+
+        with patch("scraper.scrapers.playwright_scraper.fetch_html", fake_fetch):
+            jobs = asyncio.run(go())
+        self.assertEqual(len(fetched), 2)
+        dsp = next(job for job in jobs if job.title == "Audio DSP Engineer")
+        self.assertEqual(dsp.location, "Sibiu, RO")
+        self.assertIn("damper rigs", dsp.description or "")
 
     def test_detail_fills_description_and_keeps_listing_fields(self) -> None:
         job = RawJob(
             title="NVH Engineer", url="https://jobs.thyssenkrupp.com/en/job/x/1", location="Sibiu"
         )
-        apply_jsonld_detail(job, DETAIL_PAGE)
+        apply_structured_detail(job, DETAIL_PAGE)
         self.assertIn("damper rigs", job.description or "")
         self.assertEqual(job.location, "Sibiu")
         self.assertIsNotNone(job.posted_date)
 
     def test_page_without_job_posting_leaves_job_alone(self) -> None:
         job = RawJob(title="NVH Engineer", url="https://jobs.thyssenkrupp.com/en/job/x/1")
-        apply_jsonld_detail(job, "<html></html>")
+        apply_structured_detail(job, "<html></html>")
         self.assertIsNone(job.description)
+
+
+if __name__ == "__main__":
+    unittest.main()
