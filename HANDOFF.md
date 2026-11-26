@@ -817,6 +817,17 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 
 ## 9. Log (newest first, keep entries short)
 
+- **2026-11-26, locations guessed from description text** — `scraper/text_location.py`:
+  for a job with no scraped location, `location_from_text` reads labelled fields
+  ("Location:", "Work location", "Standort", "Sede di lavoro"…) and prose ("based in/out of",
+  "located in"…), keeps only values that `detect_country` resolves, trims run-on sentences
+  and street addresses, and gives up when the candidates disagree on the country or the
+  prose lists company offices. The normalizer uses it, and `backfill_relevance` fills
+  existing rows. Measured on 3,000 jobs whose location is known: it guessed 469, and 97.2%
+  had the right country (most misses are bodies that name another office, e.g. OpenAI
+  London naming San Francisco). Title tails ("… - Texas", "(Dublin, OH)") were tried and
+  left out: 91% right, and they mistake codes such as NL (Newfoundland) for countries.
+
 - **2026-11-26, locations and descriptions from detail pages** — The owner noticed jobs with a
   location only in the body text. 183 of 1,262 board rows had no location and 102 no real
   description. New shared step reads structured data from detail pages for any job missing

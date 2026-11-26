@@ -14,6 +14,7 @@ from scraper.normalizer import (
     with_company_domain,
 )
 from scraper.overrides import effective_categories, effective_is_audio
+from scraper.text_location import location_from_text
 
 
 def backfill(dry_run: bool = False) -> None:
@@ -38,7 +39,13 @@ def backfill(dry_run: bool = False) -> None:
         related = 0
         recategorized = 0
         relocated = 0
+        located = 0
         for job, scope, company_category, company_name in rows:
+            if not job.location:
+                guessed = location_from_text(job.description)
+                if guessed:
+                    job.location = guessed
+                    located += 1
             country = detect_country(job.location)
             if job.country != country:
                 job.country = country
@@ -67,7 +74,7 @@ def backfill(dry_run: bool = False) -> None:
         print(
             f"scored {len(rows)} scraped jobs: {related} audio-related, "
             f"{len(rows) - related} filtered out, {recategorized} recategorized, "
-            f"{relocated} country changed"
+            f"{relocated} country changed, {located} located from description text"
         )
 
         if dry_run:

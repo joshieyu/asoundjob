@@ -12,6 +12,7 @@ from typing import Optional
 from scraper.config import Settings
 from scraper.countries import detect_country
 from scraper.scrapers.base import RawJob
+from scraper.text_location import location_from_text
 
 logger = logging.getLogger(__name__)
 
@@ -2017,7 +2018,7 @@ class Normalizer:
         if job_type is None and raw.description:
             job_type = normalize_job_type(raw.description[:500])
 
-        location = clean_location(raw.location)
+        location = clean_location(raw.location) or location_from_text(raw.description)
         return NormalizedJob(
             title=title,
             url=raw.url.strip(),
