@@ -33,6 +33,9 @@ def nj(title: str, url: str, external_id: str | None = None) -> NormalizedJob:
     return NormalizedJob(title=title, url=url, external_id=external_id)
 
 
+TRAINER_URL = "https://careers.example.com/jobs/8791998-trainer"
+
+
 class TestReconcile(unittest.TestCase):
     def setUp(self) -> None:
         self.session = make_session()
@@ -156,6 +159,42 @@ class TestReconcile(unittest.TestCase):
         self.assertEqual(stats.inserted, 1)
         self.assertEqual(stats2.inserted, 0)
         self.assertEqual(stats2.updated, 1)
+
+    def test_a_url_keyed_row_keeps_its_id_when_an_ats_starts_reporting_it(self) -> None:
+        reconcile_company_jobs(
+            self.session,
+            self.company,
+            [nj("Audiology Trainer", TRAINER_URL)],
+            trust_empty=False,
+        )
+        self.session.flush()
+        original_id = self.all_jobs()[0].id
+        stats = reconcile_company_jobs(
+            self.session,
+            self.company,
+            [
+                nj("Audiology Trainer", f"{TRAINER_URL}/", "8791998"),
+                nj("Fitter", "https://careers.example.com/jobs/2-fitter", "2"),
+            ],
+            trust_empty=True,
+        )
+        self.session.flush()
+        self.assertEqual(stats.inserted, 1)
+        self.assertEqual(stats.updated, 1)
+        self.assertEqual(stats.deactivated, 0)
+        kept = self.session.get(Job, original_id)
+        assert kept is not None
+        self.assertTrue(kept.is_active)
+        self.assertEqual(kept.external_id, "8791998")
+        again = reconcile_company_jobs(
+            self.session,
+            self.company,
+            [nj("Audiology Trainer", TRAINER_URL, "8791998")],
+            trust_empty=True,
+        )
+        self.session.flush()
+        self.assertEqual(again.inserted, 0)
+        self.assertEqual(again.deactivated, 1)
 
     def test_same_page_jobs_with_distinct_external_ids_deactivate_independently(
         self,

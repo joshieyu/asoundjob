@@ -105,11 +105,22 @@ def reconcile_company_jobs(
         if (ident := identity_for_job(row)) is not None
     }
 
+    by_bare_url = {
+        _url_identity(row.url): row
+        for row in existing_rows
+        if not row.external_id and row.url
+    }
+
     fetched_identities: set[str] = set()
     for normalized in fetched:
         ident = identity_for_raw(normalized)
         fetched_identities.add(ident)
         row = by_identity.get(ident)
+        if row is None and normalized.external_id:
+            row = by_bare_url.pop(_url_identity(normalized.url), None)
+            if row is not None:
+                row.external_id = normalized.external_id
+                by_identity[ident] = row
         if row is None:
             session.add(
                 Job(

@@ -806,6 +806,18 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 
 ## 9. Log (newest first, keep entries short)
 
+- **2026-11-26, WS Audiology on Teamtailor; ATS switches keep job ids** — All 173 active WSA
+  jobs had no location and no description: its four careers sites (`careers`, `careersusa`,
+  `careersemea`, `careersapac.wsa.com`) are Teamtailor, read as generic pages. Now bound to
+  the three regional feeds (`careers.wsa.com/jobs.rss` is capped at 100 and duplicates them):
+  241 jobs, all with location and description. `reconcile_company_jobs` now matches a fetched
+  job that carries an `external_id` to an existing row keyed only by URL and adopts the id, so
+  moving a company from generic scraping to an ATS no longer closes and re-adds every job
+  under new ids (localised URLs such as `/fr/jobs/…` still churn once). With descriptions,
+  US clinic roles started scoring, so `CLINICAL_HEARING_TITLE` gains "patient care
+  specialist/coordinator/…" and "communicative disorders assistant" (no current board row
+  matched). Left on: six Australian "Customer Care Coordinator" clinic roles (score 45).
+
 - **2026-11-24, unreadable companies to the blocked page** — At the owner's request, 68
   still-failing companies whose careers page is real but unreadable to us are now
   `scrape_blocked`, so they list on `/companies/blocked` and the cycle skips them: bot-blocked

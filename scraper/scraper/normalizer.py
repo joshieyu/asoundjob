@@ -959,6 +959,8 @@ CLINICAL_HEARING_TITLE = re.compile(
     r"trainee|dispenser|consultant|provider|advisor|technician|audiologist)\b|"
     r"\bhearing wellness advisor\b|"
     r"\bclinician\b|"
+    r"\bpatient care (?:specialist|coordinator|representative|associate)\b|"
+    r"\bcommunicative disorders assistant\b|"
     r"\bspeech (?:therapist|pathologist)\b|"
     r"audioproth[ée]siste|audioprotesista|audiolog[íi]a|audiologista|audionom|"
     r"h[öo]r\w{0,12}akustiker|audioloog",

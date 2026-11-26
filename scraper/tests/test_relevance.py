@@ -382,6 +382,17 @@ class TestClinicalHearingTitles(unittest.TestCase):
         self.assertEqual(score, 0)
         self.assertFalse(related)
 
+    def test_clinic_patient_care_and_cda_roles_are_dispensing(self) -> None:
+        description = "Join our hearing clinic team helping patients with hearing loss."
+        for title in (
+            "Patient Care Specialist- New York $500 Sign On Bonus!",
+            "My Hearing Centers - Patient Care Coordinator",
+            "CDA - Communicative Disorders Assistant",
+        ):
+            with self.subTest(title=title):
+                _, related = score_relevance(title, description, [], "native")
+                self.assertFalse(related)
+
     def test_beltone_town_variant_audiologist_title_is_dispensing(self) -> None:
         """Beltone posts town-by-town variants of this title across the
         board; "Gilbert, AZ" is one storefront among dozens."""

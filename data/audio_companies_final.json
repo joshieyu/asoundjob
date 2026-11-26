@@ -12002,12 +12002,17 @@
   },
   {
     "name": "WS Audiology (Signia/Widex)",
-    "careers_url": "https://careers.wsa.com/jobs",
+    "careers_url": "https://careersusa.wsa.com/jobs",
     "category": "Hearing Aid & Hearing Tech",
     "verified": true,
     "source": "manual",
     "scrape_method": "http",
-    "website_url": "https://www.wsa.com/"
+    "website_url": "https://www.wsa.com/",
+    "extra_careers_urls": [
+      "https://careersemea.wsa.com/jobs",
+      "https://careersapac.wsa.com/jobs"
+    ],
+    "ats_type": "teamtailor"
   },
   {
     "name": "WSDG (Walters-Storyk Design Group)",
