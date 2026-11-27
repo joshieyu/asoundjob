@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, Optional
 
 from scraper.scrapers.base import BaseScraper, RawJob
 from scraper.scrapers.fetch import fetch_json, parse_date
+from scraper.scrapers.keyword_scope import scope_to_keywords
 
 if TYPE_CHECKING:
     from scraper.models import Company
@@ -45,7 +46,7 @@ class LeverScraper(BaseScraper):
             raise ValueError(f"No lever slug in {company.careers_url}")
         url = api_url_for(company.careers_url or "", slug)
         data = await asyncio.to_thread(fetch_json, url, self.settings)
-        return parse_postings(data)
+        return scope_to_keywords(parse_postings(data), company.careers_url or "")
 
 
 def _full_description(item: dict) -> Optional[str]:

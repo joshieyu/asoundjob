@@ -635,6 +635,14 @@
     "scrape_method": "playwright"
   },
   {
+    "name": "Anduril",
+    "careers_url": "https://job-boards.greenhouse.io/andurilindustries?q=acoustic&q=sonar&q=audio",
+    "category": "Acoustic Consulting & Engineering",
+    "verified": true,
+    "source": "manual",
+    "ats_type": "greenhouse"
+  },
+  {
     "name": "Anghami",
     "careers_url": "https://anghami.zenats.com/en/careers_page",
     "category": "Streaming & Music Services",
@@ -745,6 +753,14 @@
     "scrape_method": "http"
   },
   {
+    "name": "Aptiv",
+    "careers_url": "https://aptiv.wd5.myworkdayjobs.com/aptiv_Careers?q=audio",
+    "category": "Automotive OEMs",
+    "verified": true,
+    "source": "manual",
+    "ats_type": "workday"
+  },
+  {
     "name": "Aquatic AV",
     "careers_url": "https://www.aquaticav.com/pages/careers",
     "category": "Car Audio",
@@ -821,6 +837,14 @@
     "verified": false,
     "source": "auto",
     "scrape_method": "http"
+  },
+  {
+    "name": "ASM Global",
+    "careers_url": "https://asmglobal.wd1.myworkdayjobs.com/Careers?q=audio",
+    "category": "Professional Audio & Live Sound",
+    "verified": true,
+    "source": "manual",
+    "ats_type": "workday"
   },
   {
     "name": "AssemblyAI",
@@ -1492,6 +1516,14 @@
     "scrape_method": "playwright"
   },
   {
+    "name": "Believe",
+    "careers_url": "https://jobs.smartrecruiters.com/believe",
+    "category": "Streaming & Music Services",
+    "verified": true,
+    "source": "manual",
+    "ats_type": "smartrecruiters"
+  },
+  {
     "name": "Belkin",
     "careers_url": "https://belkin.wd5.myworkdayjobs.com/belkin_careers/jobs",
     "category": "Consumer Electronics & Tech",
@@ -1676,6 +1708,14 @@
     "verified": false,
     "source": "auto",
     "scrape_method": "http"
+  },
+  {
+    "name": "Bland AI",
+    "careers_url": "https://jobs.ashbyhq.com/bland",
+    "category": "Voice & Speech Technology",
+    "verified": true,
+    "source": "manual",
+    "ats_type": "ashby"
   },
   {
     "name": "Blaupunkt",
@@ -2437,6 +2477,14 @@
     "scrape_blocked": true
   },
   {
+    "name": "Cirque du Soleil",
+    "careers_url": "https://jobs.lever.co/cirquedusoleil",
+    "category": "Professional Audio & Live Sound",
+    "verified": true,
+    "source": "manual",
+    "ats_type": "lever"
+  },
+  {
     "name": "Cirrus Logic",
     "careers_url": "https://jobs.eu.lever.co/cirrus",
     "category": "Audio Semiconductors",
@@ -2701,6 +2749,14 @@
     "verified": false,
     "source": "auto",
     "scrape_method": "http"
+  },
+  {
+    "name": "Cresta",
+    "careers_url": "https://job-boards.greenhouse.io/cresta",
+    "category": "Voice & Speech Technology",
+    "verified": true,
+    "source": "manual",
+    "ats_type": "greenhouse"
   },
   {
     "name": "Crestron Electronics",
@@ -3672,6 +3728,22 @@
     "scrape_method": "http"
   },
   {
+    "name": "Ellipsis Health",
+    "careers_url": "https://jobs.ashbyhq.com/ellipsis-health",
+    "category": "Voice & Speech Technology",
+    "verified": true,
+    "source": "manual",
+    "ats_type": "ashby"
+  },
+  {
+    "name": "Embark Studios",
+    "careers_url": "https://embarkstudios.teamtailor.com/jobs",
+    "category": "Gaming, VR & Immersive Audio",
+    "verified": true,
+    "source": "manual",
+    "ats_type": "teamtailor"
+  },
+  {
     "name": "Embrace Hearing",
     "careers_url": "https://embracehearing.com/user-guides",
     "category": "Hearing Aid & Hearing Tech",
@@ -4362,6 +4434,14 @@
     "verified": false,
     "source": "auto",
     "scrape_method": "http"
+  },
+  {
+    "name": "Genelec",
+    "careers_url": "https://genelec.teamtailor.com/jobs",
+    "category": "Professional Audio & Live Sound",
+    "verified": true,
+    "source": "manual",
+    "ats_type": "teamtailor"
   },
   {
     "name": "General Motors",
@@ -5088,6 +5168,14 @@
     "scrape_method": "http"
   },
   {
+    "name": "Hume AI",
+    "careers_url": "https://jobs.ashbyhq.com/hume-ai",
+    "category": "Voice & Speech Technology",
+    "verified": true,
+    "source": "manual",
+    "ats_type": "ashby"
+  },
+  {
     "name": "Hungama",
     "careers_url": "https://www.hungama.com/careers",
     "category": "Streaming & Music Services",
@@ -5623,10 +5711,10 @@
   },
   {
     "name": "KEF",
-    "careers_url": "https://us.kef.com/",
+    "careers_url": "https://us.kef.com/pages/careers",
     "category": "Hi-Fi & Consumer Speakers",
     "verified": true,
-    "source": "auto",
+    "source": "manual",
     "scrape_method": "http"
   },
   {
@@ -6039,6 +6127,17 @@
     "scrape_method": "http"
   },
   {
+    "name": "Leidos",
+    "careers_url": "https://leidos.wd5.myworkdayjobs.com/External?q=acoustic",
+    "category": "Acoustic Consulting & Engineering",
+    "verified": true,
+    "source": "manual",
+    "ats_type": "workday",
+    "extra_careers_urls": [
+      "https://leidos.wd5.myworkdayjobs.com/External?q=sonar"
+    ]
+  },
+  {
     "name": "LennarDigital",
     "careers_url": "https://jobs.lennardigital.com/",
     "category": "Audio Plugins & Virtual Instruments",
@@ -6185,6 +6284,14 @@
     "source": "manual",
     "scrape_method": "http",
     "website_url": "https://www.livenation.com/"
+  },
+  {
+    "name": "LiveKit",
+    "careers_url": "https://jobs.ashbyhq.com/livekit",
+    "category": "Voice & Speech Technology",
+    "verified": true,
+    "source": "manual",
+    "ats_type": "ashby"
   },
   {
     "name": "LiveOne",
@@ -7453,6 +7560,14 @@
     "scrape_method": "playwright"
   },
   {
+    "name": "Neuphonic",
+    "careers_url": "https://jobs.ashbyhq.com/neuphonic",
+    "category": "Voice & Speech Technology",
+    "verified": true,
+    "source": "manual",
+    "ats_type": "ashby"
+  },
+  {
     "name": "Neural DSP",
     "careers_url": "https://careers.neuraldsp.com/jobs",
     "category": "Professional Audio & Live Sound",
@@ -7500,6 +7615,14 @@
     "verified": true,
     "source": "auto",
     "scrape_method": "playwright"
+  },
+  {
+    "name": "Nexstar Media Group",
+    "careers_url": "https://nexstar.wd5.myworkdayjobs.com/nexstar?q=audio",
+    "category": "Recording Studios & Post Houses",
+    "verified": true,
+    "source": "manual",
+    "ats_type": "workday"
   },
   {
     "name": "NHT Loudspeakers",
@@ -7604,6 +7727,14 @@
     "verified": false,
     "source": "auto",
     "scrape_method": "http"
+  },
+  {
+    "name": "Nordic Semiconductor",
+    "careers_url": "https://nordicsemiconductor.teamtailor.com/jobs",
+    "category": "Consumer Electronics & Tech",
+    "verified": true,
+    "source": "manual",
+    "ats_type": "teamtailor"
   },
   {
     "name": "Nordost",
@@ -8010,6 +8141,14 @@
     "scrape_method": "playwright"
   },
   {
+    "name": "Parloa",
+    "careers_url": "https://jobs.ashbyhq.com/parloa",
+    "category": "Voice & Speech Technology",
+    "verified": true,
+    "source": "manual",
+    "ats_type": "ashby"
+  },
+  {
     "name": "Pass Labs",
     "careers_url": "https://www.passlabs.com/careers",
     "category": "Hi-Fi & Consumer Speakers",
@@ -8119,6 +8258,14 @@
     "verified": false,
     "source": "auto",
     "scrape_method": "http"
+  },
+  {
+    "name": "Phonic AI",
+    "careers_url": "https://jobs.ashbyhq.com/phonic",
+    "category": "Voice & Speech Technology",
+    "verified": true,
+    "source": "manual",
+    "ats_type": "ashby"
   },
   {
     "name": "Photoservice",
@@ -8938,6 +9085,14 @@
     "scrape_method": "http"
   },
   {
+    "name": "Retell AI",
+    "careers_url": "https://jobs.ashbyhq.com/retell-ai",
+    "category": "Voice & Speech Technology",
+    "verified": true,
+    "source": "manual",
+    "ats_type": "ashby"
+  },
+  {
     "name": "Reunion Blues",
     "careers_url": "https://jobs.reunionblues.com/",
     "category": "Audio Accessories & Cables",
@@ -9000,6 +9155,14 @@
     "verified": true,
     "source": "auto",
     "scrape_method": "playwright"
+  },
+  {
+    "name": "Rime",
+    "careers_url": "https://jobs.ashbyhq.com/rime",
+    "category": "Voice & Speech Technology",
+    "verified": true,
+    "source": "manual",
+    "ats_type": "ashby"
   },
   {
     "name": "RingCentral",
@@ -9127,11 +9290,11 @@
   },
   {
     "name": "Roland",
-    "careers_url": "https://www.youtube.com/watch?v=jaO0LffIs1A",
+    "careers_url": "https://roland.teamtailor.com/jobs",
     "category": "Electronic Musical Instruments",
     "verified": true,
-    "source": "auto",
-    "scrape_method": "http"
+    "source": "manual",
+    "ats_type": "teamtailor"
   },
   {
     "name": "Roli",
@@ -9364,6 +9527,14 @@
     "verified": false,
     "source": "auto",
     "scrape_method": "http"
+  },
+  {
+    "name": "Saronic",
+    "careers_url": "https://jobs.ashbyhq.com/saronic?q=acoustic&q=sonar&q=audio",
+    "category": "Acoustic Consulting & Engineering",
+    "verified": true,
+    "source": "manual",
+    "ats_type": "ashby"
   },
   {
     "name": "SB Satori",
@@ -10727,6 +10898,14 @@
     "scrape_method": "playwright"
   },
   {
+    "name": "Tavus",
+    "careers_url": "https://jobs.ashbyhq.com/tavus",
+    "category": "Voice & Speech Technology",
+    "verified": true,
+    "source": "manual",
+    "ats_type": "ashby"
+  },
+  {
     "name": "TC Electronic",
     "careers_url": "https://www.musictribe.com/careers",
     "category": "Professional Audio & Live Sound",
@@ -10802,6 +10981,14 @@
     "scrape_method": "playwright"
   },
   {
+    "name": "TelevisaUnivision",
+    "careers_url": "https://univision.wd1.myworkdayjobs.com/External?q=audio",
+    "category": "Streaming & Music Services",
+    "verified": true,
+    "source": "manual",
+    "ats_type": "workday"
+  },
+  {
     "name": "Tempo Semiconductor",
     "careers_url": "https://temposemi.com/about/careers/",
     "category": "Audio Semiconductors",
@@ -10870,6 +11057,18 @@
     "verified": false,
     "source": "auto",
     "scrape_method": "http"
+  },
+  {
+    "name": "Thales",
+    "careers_url": "https://thales.wd3.myworkdayjobs.com/Careers?q=acoustic",
+    "category": "Acoustic Consulting & Engineering",
+    "verified": true,
+    "source": "manual",
+    "ats_type": "workday",
+    "extra_careers_urls": [
+      "https://thales.wd3.myworkdayjobs.com/Careers?q=sonar",
+      "https://thales.wd3.myworkdayjobs.com/Careers?q=audio"
+    ]
   },
   {
     "name": "thatgamecompany",
@@ -11551,6 +11750,14 @@
     "scrape_method": "http"
   },
   {
+    "name": "Vapi",
+    "careers_url": "https://jobs.ashbyhq.com/vapi",
+    "category": "Voice & Speech Technology",
+    "verified": true,
+    "source": "manual",
+    "ats_type": "ashby"
+  },
+  {
     "name": "Varjo",
     "careers_url": "https://varjo.com/jobs",
     "category": "Gaming, VR & Immersive Audio",
@@ -12079,6 +12286,14 @@
     "verified": false,
     "source": "auto",
     "scrape_method": "http"
+  },
+  {
+    "name": "Wispr Flow",
+    "careers_url": "https://jobs.ashbyhq.com/wispr-flow",
+    "category": "Voice & Speech Technology",
+    "verified": true,
+    "source": "manual",
+    "ats_type": "ashby"
   },
   {
     "name": "Wisycom",

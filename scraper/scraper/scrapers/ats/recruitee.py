@@ -89,8 +89,8 @@ def parse_offers(data: Any) -> list[RawJob]:
 def _format_salary(salary_obj: Any) -> str:
     if not isinstance(salary_obj, dict):
         return ""
-    smin = salary_obj.get("min")
-    smax = salary_obj.get("max")
+    smin = _amount(salary_obj.get("min"))
+    smax = _amount(salary_obj.get("max"))
     currency = salary_obj.get("currency") or ""
     if not smin and not smax:
         return ""
@@ -98,12 +98,22 @@ def _format_salary(salary_obj: Any) -> str:
     if currency:
         parts.append(currency)
     if smin and smax:
-        parts.append(f"{int(smin):,}–{int(smax):,}")
-    elif smin:
-        parts.append(f"{int(smin):,}")
-    elif smax:
-        parts.append(f"{int(smax):,}")
+        parts.append(f"{smin}–{smax}")
+    else:
+        parts.append(smin or smax)
     return " ".join(parts)
+
+
+def _amount(value: Any) -> str:
+    try:
+        number = float(str(value).replace(",", ""))
+    except (TypeError, ValueError):
+        return ""
+    if number <= 0:
+        return ""
+    if number.is_integer():
+        return f"{int(number):,}"
+    return f"{number:,.2f}"
 
 
 def _normalize_employment_type(code: str | None) -> str | None:

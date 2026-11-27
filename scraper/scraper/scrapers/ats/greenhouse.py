@@ -7,6 +7,7 @@ from urllib.parse import parse_qs, urlsplit
 
 from scraper.scrapers.base import BaseScraper, RawJob
 from scraper.scrapers.fetch import fetch_json, parse_date
+from scraper.scrapers.keyword_scope import scope_to_keywords
 
 if TYPE_CHECKING:
     from scraper.models import Company
@@ -42,7 +43,7 @@ class GreenhouseScraper(BaseScraper):
         data = await asyncio.to_thread(
             fetch_json, API_URL.format(slug=slug), self.settings
         )
-        return parse_board(data)
+        return scope_to_keywords(parse_board(data), company.careers_url or "")
 
 
 def parse_board(data: dict) -> list[RawJob]:

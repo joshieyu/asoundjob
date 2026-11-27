@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any
 
 from scraper.scrapers.base import BaseScraper, RawJob
 from scraper.scrapers.fetch import fetch_json, parse_date
+from scraper.scrapers.keyword_scope import scope_to_keywords
 
 if TYPE_CHECKING:
     from scraper.models import Company
@@ -38,7 +39,7 @@ class AshbyScraper(BaseScraper):
         data = await asyncio.to_thread(
             fetch_json, API_URL.format(slug=slug), self.settings
         )
-        return parse_jobs(data)
+        return scope_to_keywords(parse_jobs(data), company.careers_url or "")
 
 
 def parse_jobs(data: Any) -> list[RawJob]:

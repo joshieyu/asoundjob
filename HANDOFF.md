@@ -246,6 +246,10 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   three or more, and keeps quoted phrases literal; Radancy ranks the whole corpus
   rather than filtering; Amazon must carry `base_query`. Pick terms by scraping
   unfiltered once and keeping only terms that recover board rows others miss.
+- **Greenhouse, Ashby and Lever take `?q=` too** (2026-11-27, `scrapers/keyword_scope.py`).
+  Their APIs have no search, so the scraper fetches the whole board and keeps jobs whose
+  title or description has a word starting with any `q` value (case-insensitive, up to 10).
+  Used for big non-audio boards: Anduril 2,599 → 56 jobs, Saronic 312 → 6.
 - **Call-to-action prefixes are stripped from titles** (`CTA_PREFIX_RE`,
   2026-11-12): "View posting : X", "Apply now – X", "View job: X". A dash only
   counts with spaces around it, so "Read-Out IC Design Engineer" survives. It
@@ -819,6 +823,20 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   `resolve_database_url`, so running from `scraper/` is fine).
 
 ## 9. Log (newest first, keep entries short)
+
+- **2026-11-27, 26 companies added, Roland and KEF repointed** — Probed public ATS APIs by
+  name slug for ~1,300 names (new candidates plus every failing or unverified entry) and a
+  few Workday tenants, then ran each hit through the pipeline. Added: voice AI (Hume AI,
+  Bland AI, Parloa, Cresta, Rime, Neuphonic, Vapi, Retell AI, Wispr Flow, LiveKit, Ellipsis
+  Health, Phonic AI, Tavus), live and venue (Cirque du Soleil, ASM Global `?q=audio`),
+  broadcast (Nexstar, TelevisaUnivision, both `?q=audio`), defence sonar (Thales, Leidos,
+  Anduril, Saronic, keyword-scoped), and Genelec, Believe, Embark Studios, Nordic
+  Semiconductor, Aptiv. Roland's URL was a YouTube video (now Teamtailor); KEF's was its
+  homepage. Name-slug probing of the failing/unverified set found almost nothing real:
+  first-word slugs collide with unrelated companies, so check every hit's job titles.
+  Recruitee boards with decimal salary strings ("53.00") crashed the scrape; fixed.
+  Rejected after measuring: Zipline, Archer, Boeing, Carrier, Johnson Controls (no real
+  acoustics roles today), Speechify (738 duplicated data-labelling posts), medical scribes.
 
 - **2026-11-27, iCIMS request-time dates** — Shure's and RS&H's iCIMS pages stamp JSON-LD
   `datePosted` as the request time minus exactly two years (and `validThrough` as plus one),
