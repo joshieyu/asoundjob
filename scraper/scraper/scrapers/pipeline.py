@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
 import time
 from typing import Optional
 from urllib.parse import urlsplit
@@ -60,6 +61,14 @@ logger = logging.getLogger(__name__)
 MULTI_URL_BUDGET_UNITS = 3.0
 DISCOVERY_VERIFY_LABEL = "verify"
 
+
+
+SEARCH_PATH_RE = re.compile(r"/search-?jobs/[^/?#]{1,120}", re.IGNORECASE)
+
+
+def is_search_scoped(url: str) -> bool:
+    parts = urlsplit(url)
+    return bool(parts.query) or SEARCH_PATH_RE.search(parts.path) is not None
 
 class ScrapePipeline:
     def __init__(self, settings: Settings) -> None:
@@ -442,7 +451,7 @@ class ScrapePipeline:
     ) -> None:
         if not html:
             return
-        if urlsplit(company.careers_url or "").query:
+        if is_search_scoped(company.careers_url or ""):
             return
         findings = discover(html, company.careers_url or "")
         if not findings:

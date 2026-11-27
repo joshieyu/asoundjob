@@ -824,6 +824,13 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 
 ## 9. Log (newest first, keep entries short)
 
+- **2026-11-27, Booz Allen lost its keyword scope** — ATS discovery skipped URLs with a
+  query string but not Radancy search paths, so `careers.boozallen.com/careers/SearchJobs/
+  acoustic` got auto-bound to its Workday board and scraped 1,000 unscoped jobs (board
+  14 → 7). `is_search_scoped` now also covers `/SearchJobs/<term>` and `/search-jobs/<term>`
+  paths; Booz Allen is seeded on `bah.wd1.myworkdayjobs.com/BAH_Jobs?q=acoustic` (+ `?q=sonar`),
+  12 board rows with locations. Checked: no other scoped company was rebound.
+
 - **2026-11-27, place-list locations on listing pages** — `anchor_location` found a
   location only through markup ("location" in a class, id or label), so Meta's generated
   class names gave 23 board jobs no location. A fallback (`place_list_location`) now takes

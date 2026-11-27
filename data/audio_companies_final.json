@@ -1849,13 +1849,14 @@
   },
   {
     "name": "Booz Allen Hamilton",
-    "careers_url": "https://careers.boozallen.com/careers/SearchJobs/acoustic",
+    "careers_url": "https://bah.wd1.myworkdayjobs.com/BAH_Jobs?q=acoustic",
     "category": "Acoustic Consulting & Engineering",
     "verified": true,
     "source": "manual",
     "extra_careers_urls": [
-      "https://careers.boozallen.com/careers/SearchJobs/sonar"
-    ]
+      "https://bah.wd1.myworkdayjobs.com/BAH_Jobs?q=sonar"
+    ],
+    "ats_type": "workday"
   },
   {
     "name": "Bosch Group",
