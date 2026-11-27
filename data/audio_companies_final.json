@@ -2982,11 +2982,11 @@
   },
   {
     "name": "Deezer",
-    "careers_url": "https://www.deezer.com/en/jobs",
+    "careers_url": "https://deezer.teamtailor.com/jobs",
     "category": "Streaming & Music Services",
     "verified": true,
     "source": "manual",
-    "scrape_method": "http"
+    "ats_type": "teamtailor"
   },
   {
     "name": "Definitive Technology",
