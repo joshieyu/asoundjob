@@ -1034,6 +1034,14 @@ AUDIO_REQUIREMENT = re.compile(
 
 AUDIO_REQUIREMENT_BONUS = 45
 
+AUDIO_TEAM = re.compile(
+    r"\b(?:lead|leading|join|joining|manage|managing|part of|member of)\s{1,3}"
+    r"(?:(?:the|our|a|an)\s{1,3})?(?:[\w'’-]{1,30}\s{1,3}){0,3}?"
+    + AUDIO_DOMAIN
+    + r"(?:\s{1,3}[\w&/-]{1,20}){0,4}?\s{1,3}teams?\b",
+    re.IGNORECASE,
+)
+
 INFOTAINMENT_TITLE = re.compile(r"\binfotainment\b", re.IGNORECASE)
 
 NON_AUDIO_ACOUSTIC = re.compile(
@@ -1095,7 +1103,7 @@ CORPORATE_ROLE = re.compile(
     r"internal audit|legal counsel|legal innovation|"
     r"office assistant|administrative|library|plumber|electrician|carpenter|accounting|"
     r"groundskeeper|custodian|housekeeper|mailroom|switchboard|"
-    r"volleyball|athletic|coach|sports|intramural|"
+    r"volleyball|athletic|coach|scrum master|sports|intramural|"
     r"lecturer|instructor|teaching assistant|adjunct|professor of|"
     r"director of development|director of admissions|financial aid|"
     r"student affairs|student engagement|registrar|enrollment|"
@@ -1346,7 +1354,7 @@ def score_relevance(
     elif weak_mentions >= 3:
         score += 15
 
-    if AUDIO_REQUIREMENT.search(role_text):
+    if AUDIO_REQUIREMENT.search(role_text) or AUDIO_TEAM.search(role_text):
         score += AUDIO_REQUIREMENT_BONUS
 
     if audio_category:
