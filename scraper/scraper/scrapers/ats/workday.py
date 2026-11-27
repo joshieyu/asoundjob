@@ -6,6 +6,7 @@ import re
 from datetime import date, timedelta
 from typing import TYPE_CHECKING, Any
 
+from scraper.countries import detect_country
 from scraper.scrapers.base import BaseScraper, RawJob, listing
 from scraper.scrapers.fetch import FetchError, extract_query, retry_on_timeout
 
@@ -21,6 +22,8 @@ URL_PATTERN = re.compile(
 )
 
 HOST_WITH_DC_RE = re.compile(r"^[a-z0-9]{1,63}\.wd\d+$", re.IGNORECASE)
+LOCATION_COUNT_RE = re.compile(r"^\s{0,3}\d{1,4}\s{1,3}Locations?\s{0,3}$", re.IGNORECASE)
+MAX_EXTRA_LOCATIONS = 20
 
 LIST_BODY = {"appliedFacets": {}, "limit": 20, "offset": 0, "searchText": ""}
 PAGE_SIZE = 20
@@ -132,6 +135,7 @@ class WorkdayScraper(BaseScraper):
                         job.external_id, self.settings,
                     )
                     job.description = _extract_description(detail)
+                    apply_detail_location(job, detail)
                 except Exception:
                     pass
 
@@ -217,6 +221,47 @@ def _extract_description(detail: dict[str, Any]) -> str | None:
     if not isinstance(info, dict):
         return None
     return info.get("jobDescription")
+
+
+def apply_detail_location(job: RawJob, detail: Any) -> None:
+    info = detail.get("jobPostingInfo") if isinstance(detail, dict) else None
+    if not isinstance(info, dict):
+        return
+    primary = _text(info.get("location"))
+    country = _descriptor(info.get("country")) or _descriptor(
+        (info.get("jobRequisitionLocation") or {}).get("country")
+        if isinstance(info.get("jobRequisitionLocation"), dict)
+        else None
+    )
+    placeholder = not job.location or LOCATION_COUNT_RE.match(job.location) is not None
+    if not primary:
+        if placeholder:
+            job.location = country or job.location
+        elif country and detect_country(job.location) is None:
+            job.location = f"{job.location}, {country}"
+        return
+    located = primary
+    if country and detect_country(primary) is None:
+        located = f"{primary}, {country}"
+    if placeholder:
+        extra = info.get("additionalLocations")
+        others = [_text(e) for e in extra] if isinstance(extra, list) else []
+        names = [located, *(o for o in others[:MAX_EXTRA_LOCATIONS] if o and o != primary)]
+        job.location = "; ".join(dict.fromkeys(names))
+    elif job.location == primary:
+        job.location = located
+
+
+def _text(value: Any) -> str | None:
+    if not isinstance(value, str):
+        return None
+    return " ".join(value.split()) or None
+
+
+def _descriptor(value: Any) -> str | None:
+    if not isinstance(value, dict):
+        return None
+    return _text(value.get("descriptor"))
 
 
 def _parse_time_type(value: Any) -> str | None:

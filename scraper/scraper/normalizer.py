@@ -1379,20 +1379,45 @@ def score_relevance(
 
 CURRENCY_SYMBOLS = {"$": "USD", "£": "GBP", "€": "EUR"}
 
+AMOUNT = r"\d{1,3}(?:[,.]\d{3}){1,3}(?:\.\d{1,2})?|\d{1,7}(?:\.\d{1,2})?"
+
 SALARY_RANGE_RE = re.compile(
-    r"(?P<cur1>[$£€]|USD|EUR|GBP|CAD|AUD|CHF|SEK|NOK|DKK)?\s*"
-    r"(?P<a>\d{1,3}(?:[,.]\d{3})+|\d+(?:\.\d+)?)\s*(?P<amult>[kK])?\s*"
-    r"(?:[-–—~]|\bto\b|\band\b)\s*"
-    r"(?P<cur2>[$£€])?\s*"
-    r"(?P<b>\d{1,3}(?:[,.]\d{3})+|\d+(?:\.\d+)?)\s*(?P<bmult>[kK])?"
-    r"(?:\s*(?P<code>USD|EUR|GBP|CAD|AUD|CHF|SEK|NOK|DKK))?",
+    r"(?P<cur1>[$£€]|USD|EUR|GBP|CAD|AUD|CHF|SEK|NOK|DKK)?\s{0,3}"
+    rf"(?P<a>{AMOUNT})\s{{0,3}}(?P<amult>[kK])?\s{{0,3}}"
+    r"(?P<sep>[-–—~]|\bto\b|\band\b)\s{0,3}"
+    r"(?:USD|EUR|GBP)?\s{0,3}(?P<cur2>[$£€])?\s{0,3}"
+    rf"(?P<b>{AMOUNT})\s{{0,3}}(?P<bmult>[kK])?"
+    r"(?:\s{0,3}(?P<code>USD|EUR|GBP|CAD|AUD|CHF|SEK|NOK|DKK))?",
 )
 
 SALARY_SINGLE_RE = re.compile(
-    r"(?P<cur>[$£€])\s*(?P<v>\d{1,3}(?:[,.]\d{3})+|\d+(?:\.\d+)?)\s*(?P<mult>[kK])?"
-    r"\s*(?P<plus>\+)?"
-    r"(?:\s*(?P<code>USD|EUR|GBP))?",
+    rf"(?P<cur>[$£€])\s{{0,3}}(?P<v>{AMOUNT})\s{{0,3}}(?P<mult>[kK])?"
+    r"\s{0,3}(?P<plus>\+)?"
+    r"(?:\s{0,3}(?P<code>USD|EUR|GBP))?",
 )
+
+SALARY_LEAD_RE = re.compile(
+    r"salary|\bpay\b|compensation|\bwages?\b|\brate\b|\bbase\b|stipend|\bOTE\b|earn",
+    re.IGNORECASE,
+)
+SALARY_TRAIL_RE = re.compile(
+    r"^\s{0,3}(?:/|per\s)\s{0,3}(?:hour|hr|year|yr|annum)|^\s{0,3}(?:annually|hourly|salary\b|base\s{1,3}(?:pay|salary))",
+    re.IGNORECASE,
+)
+SALARY_MONTHLY_RE = re.compile(
+    r"^\s{0,3}(?:[A-Z]{3}\s{0,3})?(?:/\s{0,3}(?:month|mo)\b|per\s{1,3}month|a\s{1,3}month|monthly)",
+    re.IGNORECASE,
+)
+SALARY_INVISIBLE_RE = re.compile("[\ufeff\u200b\u200c\u200d\u2060]")
+SALARY_NOISE_RE = re.compile(
+    r"coverage|insurance|revenue|raised|funding|valuation|spend|fine\b|reimburse|stipend\s{1,3}for",
+    re.IGNORECASE,
+)
+SALARY_NOISE_WINDOW = 40
+SALARY_LEAD_WINDOW = 80
+SALARY_TRAIL_WINDOW = 20
+SALARY_TAG_RE = re.compile(r"<[^>]{0,500}>")
+DOTTED_THOUSANDS_RE = re.compile(r"^\d{1,3}(?:\.\d{3}){1,3}$")
 
 
 @dataclass
@@ -1874,6 +1899,8 @@ def _apply_test_override(
 
 
 def _parse_number(raw: str) -> int:
+    if DOTTED_THOUSANDS_RE.match(raw):
+        return int(raw.replace(".", ""))
     cleaned = raw.replace(",", "")
     return int(float(cleaned))
 
@@ -1888,48 +1915,90 @@ def _plausible_annual(value: int) -> bool:
     return 10_000 <= value <= 2_000_000
 
 
+def _salary_text(text: str) -> str:
+    stripped = SALARY_TAG_RE.sub(" ", html.unescape(text))
+    unescaped = SALARY_INVISIBLE_RE.sub("", html.unescape(stripped))
+    return " ".join(unescaped.split())
+
+
 def parse_salary(text: str | None) -> tuple[Optional[int], Optional[int], Optional[str]]:
     if not text:
         return None, None, None
-
-    match = SALARY_RANGE_RE.search(text)
-    if match:
-        has_context = bool(
-            match.group("cur1")
-            or match.group("cur2")
-            or match.group("code")
-            or match.group("amult")
-            or match.group("bmult")
-        )
-        low = _parse_number(match.group("a"))
-        high = _parse_number(match.group("b"))
-        if match.group("amult"):
-            low *= 1000
-        elif low < 1000 and match.group("bmult"):
-            low *= 1000
-        if match.group("bmult"):
-            high *= 1000
-        elif high < 1000 and match.group("amult"):
-            high *= 1000
-        if not has_context and (low < 10_000 or high < 10_000):
-            return None, None, None
-        low = _annualize(low)
-        high = _annualize(high)
-        if _plausible_annual(low) and _plausible_annual(high) and high >= low:
-            currency = _resolve_currency(match.group("cur1"), match.group("code"))
-            return low, high, currency
-
-    match = SALARY_SINGLE_RE.search(text)
-    if match:
-        value = _parse_number(match.group("v"))
-        if match.group("mult"):
-            value *= 1000
-        value = _annualize(value)
-        if _plausible_annual(value):
-            currency = _resolve_currency(match.group("cur"), match.group("code"))
-            return value, None, currency
-
+    plain = _salary_text(text)
+    for match in SALARY_RANGE_RE.finditer(plain):
+        found = _range_salary(match, plain)
+        if found is not None:
+            return found
+    for match in SALARY_SINGLE_RE.finditer(plain):
+        found = _single_salary(match, plain)
+        if found is not None:
+            return found
     return None, None, None
+
+
+def _range_salary(
+    match: re.Match[str], text: str
+) -> tuple[Optional[int], Optional[int], Optional[str]] | None:
+    if _is_monthly(match, text):
+        return None
+    has_context = bool(
+        match.group("cur1")
+        or match.group("cur2")
+        or match.group("code")
+        or match.group("amult")
+        or match.group("bmult")
+    )
+    if not has_context and not _has_salary_lead(match, text):
+        return None
+    if match.group("sep") == "and" and not (match.group("cur1") or match.group("cur2")):
+        return None
+    low = _parse_number(match.group("a"))
+    high = _parse_number(match.group("b"))
+    if match.group("amult"):
+        low *= 1000
+    elif low < 1000 and match.group("bmult"):
+        low *= 1000
+    if match.group("bmult"):
+        high *= 1000
+    elif high < 1000 and match.group("amult"):
+        high *= 1000
+    if not has_context and (low < 10_000 or high < 10_000):
+        return None
+    low = _annualize(low)
+    high = _annualize(high)
+    if _plausible_annual(low) and _plausible_annual(high) and high >= low:
+        return low, high, _resolve_currency(match.group("cur1"), match.group("code"))
+    return None
+
+
+def _single_salary(
+    match: re.Match[str], text: str
+) -> tuple[Optional[int], Optional[int], Optional[str]] | None:
+    if _is_monthly(match, text):
+        return None
+    trail = text[match.end():match.end() + SALARY_TRAIL_WINDOW]
+    if not (_has_salary_lead(match, text) or SALARY_TRAIL_RE.search(trail)):
+        return None
+    noise = text[max(0, match.start() - SALARY_NOISE_WINDOW):match.start()]
+    if SALARY_NOISE_RE.search(noise):
+        return None
+    value = _parse_number(match.group("v"))
+    if match.group("mult"):
+        value *= 1000
+    value = _annualize(value)
+    if _plausible_annual(value):
+        return value, None, _resolve_currency(match.group("cur"), match.group("code"))
+    return None
+
+
+def _has_salary_lead(match: re.Match[str], text: str) -> bool:
+    lead = text[max(0, match.start() - SALARY_LEAD_WINDOW):match.start()]
+    return SALARY_LEAD_RE.search(lead) is not None
+
+
+def _is_monthly(match: re.Match[str], text: str) -> bool:
+    trail = text[match.end():match.end() + SALARY_TRAIL_WINDOW]
+    return SALARY_MONTHLY_RE.search(trail) is not None
 
 
 def _resolve_currency(symbol: str | None, code: str | None) -> Optional[str]:

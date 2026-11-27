@@ -824,6 +824,20 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 
 ## 9. Log (newest first, keep entries short)
 
+- **2026-11-27, salary and location coverage** — `parse_salary` took only the first
+  range-shaped match and gave up if it was "3-5 years"; it now strips (and un-escapes) HTML,
+  tries every range then every single amount, keeps cents (`$121,000.00 - $171,000.00` was
+  read as a single figure), reads `61.500` as thousands, skips monthly pay, requires pay
+  wording for a bare number or an "and"-joined range ("401K and 403B"), and rejects single
+  amounts after insurance/revenue/funding words. On the 1,407 board jobs: 114 gained a
+  salary, 82 single figures became ranges, 9 lost one (all wrong: "$35 Billion",
+  "$30M raised", "a fine not exceeding $100"); 423 → 485 with salary. Lever's structured
+  `salaryRange` (yearly/hourly) is now read. Workday detail pages fill "N Locations" with
+  the real names and add `country.descriptor` to bare cities ("Palaiseau" → "Palaiseau,
+  France"), which was most of Workday's 83 board jobs without a country.
+  `backfill_relevance` does not re-parse salary (it cannot tell structured from text);
+  a rescrape does.
+
 - **2026-11-27, Ashby salaries** — Ashby's posting API returns pay only with
   `includeCompensation=true`, and it lives outside the description, so no Ashby job had a
   salary (owner spotted Wispr Flow's $220K–$350K). The scraper now asks for it and passes

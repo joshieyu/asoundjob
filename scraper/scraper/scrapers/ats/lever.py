@@ -18,6 +18,8 @@ URL_PATTERN = re.compile(
 
 API_URL = "https://api.lever.co/v0/postings/{slug}?mode=json"
 EU_API_URL = "https://api.eu.lever.co/v0/postings/{slug}?mode=json"
+SALARY_INTERVALS = {"per-year-salary": 1, "per-hour-wage": 2080}
+MAX_ANNUAL_SALARY = 5_000_000
 
 
 def api_url_for(careers_url: str, slug: str) -> str:
@@ -77,6 +79,7 @@ def parse_postings(data: Any) -> list[RawJob]:
         categories = item.get("categories") or {}
         commitment = categories.get("commitment")
         job_type = commitment.lower().replace("_", "-") if commitment else None
+        salary_min, salary_max, currency = salary_range(item.get("salaryRange"))
         jobs.append(
             RawJob(
                 title=title,
@@ -86,6 +89,32 @@ def parse_postings(data: Any) -> list[RawJob]:
                 description=_full_description(item),
                 job_type=job_type,
                 posted_date=parse_date(item.get("createdAt")),
+                salary_min=salary_min,
+                salary_max=salary_max,
+                salary_currency=currency,
             )
         )
     return jobs
+
+
+def salary_range(value: Any) -> tuple[int | None, int | None, str | None]:
+    if not isinstance(value, dict):
+        return None, None, None
+    multiplier = SALARY_INTERVALS.get(str(value.get("interval") or ""))
+    if multiplier is None:
+        return None, None, None
+    low = _annual(value.get("min"), multiplier)
+    high = _annual(value.get("max"), multiplier)
+    if low is None and high is None:
+        return None, None, None
+    if low is not None and high is not None and high < low:
+        return None, None, None
+    currency = value.get("currency")
+    return low, high, currency if isinstance(currency, str) and currency else None
+
+
+def _annual(value: Any, multiplier: int) -> int | None:
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or value <= 0:
+        return None
+    annual = int(round(value * multiplier))
+    return annual if annual <= MAX_ANNUAL_SALARY else None
