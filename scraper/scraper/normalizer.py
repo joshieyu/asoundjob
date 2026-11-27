@@ -2001,10 +2001,14 @@ class Normalizer:
         company_category: str | None = None,
         company_name: str | None = None,
     ) -> NormalizedJob:
-        salary_text = " ".join(
-            part for part in (raw.title, raw.description) if part
-        )
-        salary_min, salary_max, salary_currency = parse_salary(salary_text)
+        if raw.salary_min or raw.salary_max:
+            salary_min, salary_max = raw.salary_min, raw.salary_max
+            salary_currency = raw.salary_currency
+        else:
+            salary_text = " ".join(
+                part for part in (raw.title, raw.description) if part
+            )
+            salary_min, salary_max, salary_currency = parse_salary(salary_text)
 
         title = strip_gender_markers(raw.title.strip())
 

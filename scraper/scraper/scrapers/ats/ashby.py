@@ -16,7 +16,9 @@ URL_PATTERN = re.compile(
     re.IGNORECASE,
 )
 
-API_URL = "https://api.ashbyhq.com/posting-api/job-board/{slug}"
+API_URL = "https://api.ashbyhq.com/posting-api/job-board/{slug}?includeCompensation=true"
+HOURS_PER_YEAR = 2080
+MAX_ANNUAL_SALARY = 5_000_000
 
 
 class AshbyScraper(BaseScraper):
@@ -63,6 +65,7 @@ def parse_jobs(data: Any) -> list[RawJob]:
         emp_type = item.get("employmentType")
         job_type = _normalize_employment_type(emp_type)
         description = item.get("descriptionHtml") or item.get("descriptionPlain")
+        salary_min, salary_max, currency = compensation(item.get("compensation"))
         jobs.append(
             RawJob(
                 title=title,
@@ -72,9 +75,50 @@ def parse_jobs(data: Any) -> list[RawJob]:
                 description=description,
                 job_type=job_type,
                 posted_date=parse_date(item.get("publishedAt")),
+                salary_min=salary_min,
+                salary_max=salary_max,
+                salary_currency=currency,
             )
         )
     return jobs
+
+
+def compensation(value: Any) -> tuple[int | None, int | None, str | None]:
+    if not isinstance(value, dict):
+        return None, None, None
+    components = value.get("summaryComponents")
+    if not isinstance(components, list):
+        return None, None, None
+    for component in components:
+        if not isinstance(component, dict) or component.get("compensationType") != "Salary":
+            continue
+        multiplier = _annual_multiplier(component.get("interval"))
+        if multiplier is None:
+            continue
+        low = _annual(component.get("minValue"), multiplier)
+        high = _annual(component.get("maxValue"), multiplier)
+        if low is None and high is None:
+            continue
+        if low is not None and high is not None and high < low:
+            continue
+        currency = component.get("currencyCode")
+        return low, high, currency if isinstance(currency, str) and currency else None
+    return None, None, None
+
+
+def _annual_multiplier(interval: Any) -> int | None:
+    if interval == "1 YEAR":
+        return 1
+    if interval == "1 HOUR":
+        return HOURS_PER_YEAR
+    return None
+
+
+def _annual(value: Any, multiplier: int) -> int | None:
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or value <= 0:
+        return None
+    annual = int(round(value * multiplier))
+    return annual if annual <= MAX_ANNUAL_SALARY else None
 
 
 def _normalize_employment_type(value: str | None) -> str | None:

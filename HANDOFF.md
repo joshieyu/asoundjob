@@ -824,6 +824,13 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 
 ## 9. Log (newest first, keep entries short)
 
+- **2026-11-27, Ashby salaries** — Ashby's posting API returns pay only with
+  `includeCompensation=true`, and it lives outside the description, so no Ashby job had a
+  salary (owner spotted Wispr Flow's $220K–$350K). The scraper now asks for it and passes
+  the Salary component as structured `RawJob.salary_min/max/currency` (yearly, or hourly
+  ×2080; other intervals ignored). The normalizer prefers structured salary over text
+  parsing; any scraper that has structured pay should set those fields.
+
 - **2026-11-27, 26 companies added, Roland and KEF repointed** — Probed public ATS APIs by
   name slug for ~1,300 names (new candidates plus every failing or unverified entry) and a
   few Workday tenants, then ran each hit through the pipeline. Added: voice AI (Hume AI,

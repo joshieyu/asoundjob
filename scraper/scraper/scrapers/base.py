@@ -29,6 +29,9 @@ class RawJob:
     job_type: Optional[str] = None
     posted_date: Optional[date] = None
     remote_hint: bool = False
+    salary_min: Optional[int] = None
+    salary_max: Optional[int] = None
+    salary_currency: Optional[str] = None
 
 
 @dataclass
