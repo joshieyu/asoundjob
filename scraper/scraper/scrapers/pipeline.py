@@ -14,6 +14,7 @@ from scraper.database import get_session_factory
 from scraper.deduplicator import merge_identity, seed_query_keys
 from scraper.models import Company
 from scraper.scrapers.ats.adp import AdpScraper
+from scraper.scrapers.ats.alignerr import AlignerrScraper
 from scraper.scrapers.ats.amazon import AmazonScraper
 from scraper.scrapers.ats.apple import AppleScraper
 from scraper.scrapers.ats.ashby import AshbyScraper
@@ -26,12 +27,14 @@ from scraper.scrapers.ats.haileyhr import HaileyHrScraper
 from scraper.scrapers.ats.icims import IcimsScraper
 from scraper.scrapers.ats.jibe import JibeScraper
 from scraper.scrapers.ats.jobsyn import JobsynScraper
+from scraper.scrapers.ats.jtable import JTableScraper
 from scraper.scrapers.ats.lever import LeverScraper
 from scraper.scrapers.ats.oracle import OracleScraper
 from scraper.scrapers.ats.paylocity import PaylocityScraper
 from scraper.scrapers.ats.personio import PersonioScraper
 from scraper.scrapers.ats.pinpoint import PinpointScraper
 from scraper.scrapers.ats.recruitee import RecruiteeScraper
+from scraper.scrapers.ats.rippling import RipplingScraper
 from scraper.scrapers.ats.sigma import SigmaScraper
 from scraper.scrapers.ats.smartrecruiters import SmartRecruitersScraper
 from scraper.scrapers.ats.successfactors import SuccessFactorsScraper
@@ -80,6 +83,9 @@ class ScrapePipeline:
         self.taleo = TaleoScraper(settings)
         self.teamtailor = TeamtailorScraper(settings)
         self.personio = PersonioScraper(settings)
+        self.jtable = JTableScraper(settings)
+        self.rippling = RipplingScraper(settings)
+        self.alignerr = AlignerrScraper(settings)
         self.haileyhr = HaileyHrScraper(settings)
         self.icims = IcimsScraper(settings)
         self.adp = AdpScraper(settings)
@@ -111,6 +117,9 @@ class ScrapePipeline:
             "taleo": self.taleo,
             "teamtailor": self.teamtailor,
             "personio": self.personio,
+            "jtable": self.jtable,
+            "rippling": self.rippling,
+            "alignerr": self.alignerr,
             "haileyhr": self.haileyhr,
             "icims": self.icims,
             "adp": self.adp,
@@ -324,6 +333,9 @@ class ScrapePipeline:
             self.taleo,
             self.teamtailor,
             self.personio,
+            self.jtable,
+            self.rippling,
+            self.alignerr,
             self.haileyhr,
             self.icims,
             self.adp,

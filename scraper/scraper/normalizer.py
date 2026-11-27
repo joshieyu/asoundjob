@@ -560,6 +560,9 @@ CATEGORY_KEYWORDS: dict[str, dict[str, tuple[str, ...]]] = {
             "harshness",
             "vibro-acoustic",
             "vibroacoustic",
+            "shock and vibration",
+            "experimental modal analysis",
+            "modal testing",
         ),
         "weak": (
             "structural vibration",

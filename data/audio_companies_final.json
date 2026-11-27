@@ -408,6 +408,14 @@
     "scrape_method": "playwright"
   },
   {
+    "name": "Alignerr",
+    "careers_url": "https://www.alignerr.com/jobs?search=audio%20engineer",
+    "category": "Staffing & Recruiting Agencies",
+    "verified": true,
+    "source": "manual",
+    "ats_type": "alignerr"
+  },
+  {
     "name": "Allen & Heath",
     "careers_url": "https://www.allen-heath.com/about/careers/current-vacancies/",
     "category": "Professional Audio & Live Sound",
@@ -1800,6 +1808,16 @@
     "scrape_method": "http"
   },
   {
+    "name": "Booz Allen Hamilton",
+    "careers_url": "https://careers.boozallen.com/careers/SearchJobs/acoustic",
+    "category": "Acoustic Consulting & Engineering",
+    "verified": true,
+    "source": "manual",
+    "extra_careers_urls": [
+      "https://careers.boozallen.com/careers/SearchJobs/sonar"
+    ]
+  },
+  {
     "name": "Bosch Group",
     "careers_url": "https://jobs.smartrecruiters.com/BoschGroup?q=audio+sound",
     "category": "Consumer Electronics & Tech",
@@ -1840,6 +1858,17 @@
     "verified": true,
     "source": "auto",
     "scrape_method": "http"
+  },
+  {
+    "name": "Boston Dynamics",
+    "careers_url": "https://bostondynamics.wd1.myworkdayjobs.com/Boston_Dynamics?q=audio",
+    "category": "Consumer Electronics & Tech",
+    "verified": true,
+    "source": "manual",
+    "ats_type": "workday",
+    "extra_careers_urls": [
+      "https://bostondynamics.wd1.myworkdayjobs.com/Boston_Dynamics?q=acoustic"
+    ]
   },
   {
     "name": "Boulder Amplifiers",
@@ -1905,6 +1934,18 @@
     "verified": false,
     "source": "auto",
     "scrape_method": "http"
+  },
+  {
+    "name": "Brunswick Corporation",
+    "careers_url": "https://brunswick.wd1.myworkdayjobs.com/search?q=NVH",
+    "category": "Automotive OEMs",
+    "verified": true,
+    "source": "manual",
+    "ats_type": "workday",
+    "extra_careers_urls": [
+      "https://brunswick.wd1.myworkdayjobs.com/search?q=acoustic",
+      "https://brunswick.wd1.myworkdayjobs.com/search?q=audio"
+    ]
   },
   {
     "name": "Bruton Music",
@@ -1990,6 +2031,14 @@
     "open_application": true,
     "source": "auto",
     "scrape_method": "playwright"
+  },
+  {
+    "name": "Burns & McDonnell",
+    "careers_url": "https://burnsmcd.jobs/jobs/?q=noise&q=acoustic&q=acoustical",
+    "category": "Acoustic Consulting & Engineering",
+    "verified": true,
+    "source": "manual",
+    "ats_type": "jobsyn"
   },
   {
     "name": "Buro Happold",
@@ -5146,6 +5195,14 @@
     "scrape_method": "http"
   },
   {
+    "name": "IES Communications",
+    "careers_url": "https://joinus.ies-co.com/jobs?keywords=audio",
+    "category": "Professional Audio & Live Sound",
+    "verified": true,
+    "source": "manual",
+    "ats_type": "jibe"
+  },
+  {
     "name": "iFi Audio",
     "careers_url": "https://ifi-audio.com/pages/job-board",
     "category": "Hi-Fi & Consumer Speakers",
@@ -6210,6 +6267,14 @@
     "scrape_method": "http"
   },
   {
+    "name": "Los Alamos National Laboratory",
+    "careers_url": "https://lanl.jobs/search/searchjobs?keyword=acoustic&keyword=vibration",
+    "category": "Acoustic Consulting & Engineering",
+    "verified": true,
+    "source": "manual",
+    "ats_type": "jtable"
+  },
+  {
     "name": "Lotoo",
     "careers_url": "https://www.lotoo.com/en/careers",
     "category": "Headphones & Personal Audio",
@@ -6243,6 +6308,14 @@
     "verified": false,
     "source": "auto",
     "scrape_method": "http"
+  },
+  {
+    "name": "LPL Financial",
+    "careers_url": "https://lplfinancial.wd1.myworkdayjobs.com/External?q=audio",
+    "category": "Professional Audio & Live Sound",
+    "verified": true,
+    "source": "manual",
+    "ats_type": "workday"
   },
   {
     "name": "LR Baggs",
@@ -9153,6 +9226,17 @@
     "ats_slug": "careers-rsandh"
   },
   {
+    "name": "RTX",
+    "careers_url": "https://globalhr.wd5.myworkdayjobs.com/REC_RTX_Ext_Gateway?q=acoustics",
+    "category": "Acoustic Consulting & Engineering",
+    "verified": true,
+    "source": "manual",
+    "ats_type": "workday",
+    "extra_careers_urls": [
+      "https://globalhr.wd5.myworkdayjobs.com/REC_RTX_Ext_Gateway?q=sonar"
+    ]
+  },
+  {
     "name": "Ruark Audio",
     "careers_url": "https://www.ruarkaudio.co.uk/careers",
     "category": "Hi-Fi & Consumer Speakers",
@@ -9612,6 +9696,17 @@
     "verified": true,
     "source": "manual",
     "scrape_method": "http"
+  },
+  {
+    "name": "SLB",
+    "careers_url": "https://apply.slb.com/careers?domain=slb.com&query=transducer",
+    "category": "Acoustic Consulting & Engineering",
+    "verified": true,
+    "source": "manual",
+    "ats_type": "eightfold",
+    "extra_careers_urls": [
+      "https://apply.slb.com/careers?domain=slb.com&query=acoustic"
+    ]
   },
   {
     "name": "Sleep Cycle",
@@ -11159,6 +11254,14 @@
     "verified": true,
     "source": "auto",
     "scrape_method": "http"
+  },
+  {
+    "name": "Turtlebox",
+    "careers_url": "https://ats.rippling.com/turtlebox/jobs",
+    "category": "Hi-Fi & Consumer Speakers",
+    "verified": true,
+    "source": "manual",
+    "ats_type": "rippling"
   },
   {
     "name": "Twilio Voice",

@@ -102,6 +102,28 @@ class TestParsing(unittest.TestCase):
         self.assertTrue(has_more)
         self.assertEqual(parse_page({"jobs": []}, "u"), ([], False))
 
+    def test_reads_flat_search_documents(self) -> None:
+        doc = {
+            "guid": "9F59FE26557B484784E26E997B9B122F",
+            "title_exact": "Staff Noise Control Engineer - Environmental Services",
+            "reqid": "262912",
+            "location_exact": "Kansas City, MO",
+            "description": "**Description** Model noise from power plants.",
+            "date_new": "2026-11-04T13:33:19Z",
+        }
+        other_site = {
+            **doc, "guid": "A60F3CA08BC9470DBAFF4ECCD836D069", "location_exact": "Brea, CA"
+        }
+        items, has_more = parse_page({"jobs": [doc, other_site], "pagination": {}}, "u")
+        self.assertFalse(has_more)
+        (job,) = group_jobs(items, "burnsmcd.jobs")
+        self.assertEqual(job.title, "Staff Noise Control Engineer - Environmental Services")
+        self.assertEqual(job.external_id, "262912")
+        self.assertEqual(job.url, "https://burnsmcd.jobs/9F59FE26557B484784E26E997B9B122F/job/")
+        self.assertEqual(job.location, "Kansas City, MO; Brea, CA")
+        self.assertIn("power plants", job.description or "")
+        self.assertIsNotNone(job.posted_date)
+
     def test_bad_payload_raises(self) -> None:
         with self.assertRaises(ScrapeError):
             parse_page({"errors": {"origin": "The origin is required."}}, "u")

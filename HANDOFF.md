@@ -162,9 +162,12 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   persists it only on success.
 - **`ats_type` is a routing cache, not the mechanism** — every parser also matches
   on URL shape.
-- ATS parsers (`scrapers/ats/`): adp (Workforce Now only), amazon, apple, ashby,
+- ATS parsers (`scrapers/ats/`): adp (Workforce Now only), alignerr (`/api/jobs?search=`;
+  needs `search=` terms, collapses per-city copies of one posting), amazon, apple, ashby,
   awsm (WP Job Openings), bamboohr, eightfold, gibson, greenhouse, haileyhr, icims, jibe,
-  jobsyn, lever, oracle, paylocity, personio (`/xml?language=en`), pinpoint, recruitee, sigma,
+  jobsyn (both response shapes: wrapped Google Talent jobs and flat Solr documents),
+  jtable (`/Search/SearchResults` boards such as lanl.jobs; `ats_type: jtable` only, each
+  `keyword=` capped at its top 40 because the search is fuzzy), rippling (public board API), lever, oracle, paylocity, personio (`/xml?language=en`), pinpoint, recruitee, sigma,
   smartrecruiters, successfactors,
   taleo, teamtailor (`/jobs.rss`; a custom domain needs `ats_type: teamtailor`), ultipro,
   workable, workday.
@@ -816,6 +819,16 @@ Where to look: `README.md` (running, gates, data flow, every tool),
   `resolve_database_url`, so running from `scraper/` is fine).
 
 ## 9. Log (newest first, keep entries short)
+
+- **2026-11-27, eleven companies from LinkedIn links** — Added at the owner's request, each
+  checked to put the linked job on the board: Burns & McDonnell (`.jobs`, which needed the
+  jobsyn Solr shape), Booz Allen (Avature search pages; its TLS rejects macOS LibreSSL, test
+  from the server), RTX (Workday tenant `globalhr`, since careers.rtx.com is behind
+  Cloudflare), SLB (Eightfold at apply.slb.com), Boston Dynamics, LPL Financial and Brunswick
+  (Workday), Los Alamos (new `jtable` scraper), Turtlebox (new `rippling` scraper), Alignerr
+  (new `alignerr` scraper, filed as a staffing agency so its hundreds of transcription gigs
+  need a strong signal) and IES Communications (Jibe). Deezer moved to its Teamtailor feed.
+  NVH gains "shock and vibration"/modal testing; audio ML gains music version identification.
 
 - **2026-11-26, locations guessed from description text** — `scraper/text_location.py`:
   for a job with no scraped location, `location_from_text` reads labelled fields

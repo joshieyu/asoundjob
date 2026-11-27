@@ -91,11 +91,14 @@ def parse_page(payload: Any, url: str) -> tuple[list[dict[str, Any]], bool]:
     jobs_raw = payload.get("jobs")
     if not isinstance(jobs_raw, list):
         raise ScrapeError(f"Unexpected jobsyn payload from {url}: jobs is not a list")
-    items = [
-        wrapper["job"]
-        for wrapper in jobs_raw
-        if isinstance(wrapper, dict) and isinstance(wrapper.get("job"), dict)
-    ]
+    items: list[dict[str, Any]] = []
+    for wrapper in jobs_raw:
+        if not isinstance(wrapper, dict):
+            continue
+        if isinstance(wrapper.get("job"), dict):
+            items.append(wrapper["job"])
+        elif isinstance(wrapper.get("guid"), str):
+            items.append(_from_solr(wrapper))
     pagination = payload.get("pagination")
     has_more = isinstance(pagination, dict) and pagination.get("has_more_pages") is True
     return items, has_more
@@ -133,6 +136,21 @@ def group_jobs(items: list[dict[str, Any]], host: str) -> list[RawJob]:
     for key, job in grouped.items():
         job.location = "; ".join(locations[key]) or None
     return list(grouped.values())
+
+
+def _from_solr(doc: dict[str, Any]) -> dict[str, Any]:
+    attributes: dict[str, Any] = {}
+    for name, field in (("reqid", "reqid"), ("city_display", "location_exact")):
+        value = doc.get(field)
+        if isinstance(value, (str, int)) and str(value).strip():
+            attributes[name] = {"stringValues": [str(value).strip()]}
+    return {
+        "requisitionId": doc["guid"],
+        "title": doc.get("title_exact") or doc.get("title"),
+        "description": doc.get("description"),
+        "postingPublishTime": doc.get("date_new") or doc.get("date_added"),
+        "customAttributes": attributes,
+    }
 
 
 def _attribute(attributes: dict[str, Any], name: str) -> str | None:
