@@ -820,6 +820,13 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 
 ## 9. Log (newest first, keep entries short)
 
+- **2026-11-27, iCIMS request-time dates** — Shure's and RS&H's iCIMS pages stamp JSON-LD
+  `datePosted` as the request time minus exactly two years (and `validThrough` as plus one),
+  so every job showed "2 years ago". `_parse_jsonld_date` now drops any timestamp within an
+  hour of now minus 1–3 whole years (`is_request_time_stamp`); midnight dates are kept. The
+  stored stamps on those two boards were cleared by hand, since an update never blanks a date;
+  the site then falls back to the first-seen date.
+
 - **2026-11-27, eleven companies from LinkedIn links** — Added at the owner's request, each
   checked to put the linked job on the board: Burns & McDonnell (`.jobs`, which needed the
   jobsyn Solr shape), Booz Allen (Avature search pages; its TLS rejects macOS LibreSSL, test

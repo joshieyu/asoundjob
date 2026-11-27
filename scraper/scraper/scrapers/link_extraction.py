@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import re
-from datetime import date
+from datetime import date, datetime, timedelta, timezone
 from typing import Optional
 from urllib.parse import urljoin, urlparse
 
@@ -1437,9 +1437,33 @@ def _parse_jsonld_location(loc: object) -> str | None:
 def _parse_jsonld_date(value: object) -> date | None:
     if not value or not isinstance(value, str):
         return None
+    if is_request_time_stamp(value):
+        return None
     from scraper.scrapers.fetch import parse_date
 
     return parse_date(value)
+
+
+REQUEST_STAMP_YEARS = (1, 2, 3)
+REQUEST_STAMP_TOLERANCE = timedelta(hours=1)
+
+
+def is_request_time_stamp(value: str, now: datetime | None = None) -> bool:
+    try:
+        stamp = datetime.fromisoformat(value.strip().replace("Z", "+00:00"))
+    except ValueError:
+        return False
+    if stamp.tzinfo is None or (stamp.hour, stamp.minute, stamp.second) == (0, 0, 0):
+        return False
+    current = now or datetime.now(timezone.utc)
+    for years in REQUEST_STAMP_YEARS:
+        try:
+            shifted = current.replace(year=current.year - years)
+        except ValueError:
+            shifted = current.replace(year=current.year - years, day=28)
+        if abs(stamp - shifted) <= REQUEST_STAMP_TOLERANCE:
+            return True
+    return False
 
 
 def _normalize_employment_type(value: str) -> str | None:
