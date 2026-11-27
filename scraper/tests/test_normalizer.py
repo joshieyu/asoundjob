@@ -185,6 +185,13 @@ class TestTitleAnchoring(unittest.TestCase):
 
 
 class TestCategories(unittest.TestCase):
+    def test_music_version_identification_is_audio_ml(self) -> None:
+        cats = classify_categories(
+            "Research Internship - Music Version Identification",
+            "Develop scalable audio representations that capture harmonic similarity.",
+        )
+        self.assertIn("audio_aiml", cats)
+
     def test_dsp_title(self) -> None:
         cats = classify_categories("Senior DSP Engineer", "Design filters and EQs")
         self.assertIn("audio_dsp_embedded", cats)
