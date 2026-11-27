@@ -8,6 +8,7 @@ from urllib.parse import urljoin, urlparse
 
 from bs4 import BeautifulSoup, Tag
 
+from scraper.countries import detect_country
 from scraper.scrapers.base import RawJob
 
 JOB_HINT = re.compile(
@@ -853,6 +854,9 @@ MAX_LOCATION_WORDS = 12
 LOCATION_SCAN_LIMIT = 400
 LOCATION_ENTRY_LIMIT = 12
 LOCATION_FORM_ANCESTOR_WALK = 6
+PLACE_LIST_SPLIT_RE = re.compile(r"\s{0,3}[⋅·•|;]\s{0,3}")
+PLACE_TAGS = frozenset({"div", "span", "p", "li", "ul", "small"})
+PLACE_BLOCK_CHILDREN = frozenset({"div", "p", "ul", "ol", "li", "h1", "h2", "h3", "h4", "h5", "h6"})
 
 
 def _location_attr_hit(node: Tag) -> bool:
@@ -915,6 +919,23 @@ def card_location(card: Tag) -> Optional[str]:
     return None
 
 
+def place_list_location(card: Tag) -> Optional[str]:
+    for node in card.find_all(PLACE_TAGS, limit=LOCATION_SCAN_LIMIT):
+        if _inside_form_control(node) or node.find(PLACE_BLOCK_CHILDREN):
+            continue
+        parts = [
+            part
+            for part in PLACE_LIST_SPLIT_RE.split(_clean_text(node.get_text(" ", strip=True)))
+            if part
+        ]
+        if not parts or len(parts) > LOCATION_ENTRY_LIMIT:
+            continue
+        cleaned = [clean_location_value(part) for part in parts]
+        if all(value and "," in value and detect_country(value) for value in cleaned):
+            return "; ".join(value for value in cleaned if value)
+    return None
+
+
 def anchor_location(anchor: Tag) -> Optional[str]:
     node: Tag = anchor
     for _ in range(MAX_ANCESTOR_WALK):
@@ -927,6 +948,17 @@ def anchor_location(anchor: Tag) -> Optional[str]:
         location = card_location(node)
         if location:
             return location
+    node = anchor
+    for _ in range(MAX_ANCESTOR_WALK):
+        location = place_list_location(node)
+        if location:
+            return location
+        parent = node.parent
+        if not isinstance(parent, Tag) or parent.name in ("body", "html"):
+            break
+        if not _has_single_job_anchor(parent, anchor):
+            break
+        node = parent
     return None
 
 

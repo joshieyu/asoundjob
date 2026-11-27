@@ -824,6 +824,13 @@ Where to look: `README.md` (running, gates, data flow, every tool),
 
 ## 9. Log (newest first, keep entries short)
 
+- **2026-11-27, place-list locations on listing pages** — `anchor_location` found a
+  location only through markup ("location" in a class, id or label), so Meta's generated
+  class names gave 23 board jobs no location. A fallback (`place_list_location`) now takes
+  the first short non-heading element in the job's card whose every `⋅ · • | ;`-separated
+  part has a comma and resolves to a country ("Sunnyvale, CA ⋅ Redmond, WA"). It only fills
+  blanks. Meta: 71 of 76 links located, all 23 board jobs correct.
+
 - **2026-11-27, salary and location coverage** — `parse_salary` took only the first
   range-shaped match and gave up if it was "3-5 years"; it now strips (and un-escapes) HTML,
   tries every range then every single amount, keeps cents (`$121,000.00 - $171,000.00` was
